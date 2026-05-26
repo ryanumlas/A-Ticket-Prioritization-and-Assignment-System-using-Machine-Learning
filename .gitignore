@@ -23,5 +23,7 @@ dist-ssr
 *.sln
 *.sw?
 # env files
-backend/.env
 .env
+backend/.env
+frontend/.env
+**/.env
