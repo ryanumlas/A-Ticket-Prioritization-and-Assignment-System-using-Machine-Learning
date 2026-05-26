@@ -1,5 +1,5 @@
 from django.urls import path
-from .views import CreateTicketView, ListTicketView, DetailTicketView, UpdateTicketView, DeleteTicketView, CreateCategoryView, UpdateCategoryView, CreateSymptomCodeView, SLARulesCreateView, SLARulesUpdateView
+from .views import CreateTicketView, ListTicketView, DetailTicketView, UpdateTicketView, DeleteTicketView, CreateCategoryView, KeywordUpdateView ,KeywordCreateView, UpdateCategoryView, CreateSymptomCodeView, SLARulesCreateView, SLARulesUpdateView
 
 urlpatterns = [
     # --- Ticket URLs ---
@@ -16,6 +16,9 @@ urlpatterns = [
     # --- SLA Rules URLs ---
     path('sla-rules/create/', SLARulesCreateView.as_view(), name='create-sla-rules'),
     path('sla-rules/update/<int:pk>/', SLARulesUpdateView.as_view(), name='update-sla-rules'),
+    # --- Keyword URLs ---
+    path('keywords/create/', KeywordCreateView.as_view(), name='create-keyword'),
+    path('keywords/update/<int:pk>/', KeywordUpdateView.as_view(), name='update-keyword'),
     # path('<int:ticket_id>/assignees/add/', AddTicketAssigneeView.as_view(), name='add-ticket-assignee'),
     # path('<int:ticket_id>/assignees/update/', UpdateTicketAssigneeView.as_view(), name='update-ticket-assignee'),
 ]

@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Ticket, Category, SymptomCode, TicketComments, SLARules, ReviewFlags, TicketAssistance
+from .models import Ticket, Category, SymptomCode, TicketComments, SLARules, ReviewFlags, TicketAssistance, Keyword
 from django.utils import timezone
 from datetime import timedelta
 
@@ -19,6 +19,7 @@ class TicketSerializer(serializers.ModelSerializer):
             'department',
             'subject',
             'description',
+            'affected_scope',
             'category',
             'symptom_code',
             'status',
@@ -77,12 +78,17 @@ class CategorySerializer(serializers.ModelSerializer):
         fields = ['id', 'name', 'department', 'created_by', 'updated_by', 'created_at', 'updated_at']
         read_only_fields = ['created_by', 'updated_by', 'created_at', 'updated_at']
 
+# --- Keyword Serializer ---
 class KeywordSerializer(serializers.ModelSerializer):
     class Meta:
-        model = SymptomCode
-        fields = ['id', 'symptom_code', 'category', 'priority', 'keyword', 'score', 'active_flag', 'created_by', 'updated_by', 'created_at', 'updated_at']
+        model = Keyword
+        fields = ['id', 'category', 'symptom_code', 'keyword', 'weight', 'active_flag', 'created_by', 'updated_by', 'created_at', 'updated_at']
         read_only_fields = ['created_by', 'updated_by', 'created_at', 'updated_at']
 
+class KeywordUpdateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Keyword
+        fields = ['weight']
 class SymptomCodeSerializer(serializers.ModelSerializer):
     class Meta:
         model = SymptomCode

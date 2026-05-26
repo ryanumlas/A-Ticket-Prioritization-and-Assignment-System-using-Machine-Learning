@@ -2,30 +2,49 @@ import google.generativeai as genai
 import os
 import json
 from dotenv import load_dotenv
+from .models import TicketAIAnalysis
 
 load_dotenv()
 
 genai.configure(api_key=os.getenv("GOOGLE_API_KEY"))
+
+# genai.configure(api_key="AIzaSyCq-S-BGHQPZ9LJGeqe52WrDDwmXTEcrzI")
+
+import json
+import re
 
 def analyze_ticket(ticket):
     model = genai.GenerativeModel("gemini-2.5-flash")
 
     prompt = f"""
     You are an IT support ticket analyzer.
-    Extract key information and return ONLY valid JSON.
 
-    Ticket Title: {ticket.title}
-    Ticket Description: {ticket.description}
+    Your task is to extract structured information for an IT ticket classification system.
 
-    Return ONLY this JSON:
-    {{"keywords": ["word1", "word2"], "summarized_issue": "brief summary"}}
+    Ticket Title:
+    {ticket.subject}
 
-    Rules:
-    - keywords must be single words
-    - no markdown
-    - no backticks
-    - no extra text
-    """
+    Ticket Description:
+    {ticket.description}
+
+    Return ONLY valid JSON in this format:
+
+    {{
+        "cleaned_text": "short cleaned version of the issue",
+        "summary": "brief 1 sentence summary",
+        "keywords": ["keyword1", "keyword2", "keyword3"]
+    }}
+
+    IMPORTANT RULES:
+    - keywords MUST be short standardized IT terms only (1-3 words max)
+    - keywords must be generic IT categories, NOT full sentences
+    - use only common IT terms such as:
+    vpn, network, internet, login, password, crash, slow, update, installation, server, access
+    - do NOT generate long phrases like "cannot connect to vpn"
+    - do NOT include symptom codes or categories
+    - keep keywords consistent and reusable for database matching
+    - output must be valid JSON only
+"""
 
     response = model.generate_content(
         prompt,
@@ -37,29 +56,48 @@ def analyze_ticket(ticket):
 
     raw_text = response.text.strip()
 
-    if raw_text.startswith("```"):
-        raw_text = raw_text.replace("```json", "").replace("```", "").strip()
+    raw_text = raw_text.replace("```json", "").replace("```", "").strip()
 
     try:
-        gemini_result = json.loads(raw_text)
-    except json.JSONDecodeError:
-        ticket_data = {
-            "keywords": [],
-            "summarized_issue": "Failed to parse AI response",
-            "category": "Other",
-            "error": raw_text
+        match = re.search(r"\{.*\}", raw_text, re.DOTALL)
+
+        if not match:
+            raise ValueError("No JSON found in Gemini response")
+
+        data = json.loads(match.group())
+
+        ai_analysis, created = TicketAIAnalysis.objects.update_or_create(
+            ticket=ticket,
+            defaults={
+                "cleaned_text": data.get("cleaned_text", ""),
+                "summary": data.get("summary", ""),
+                "keywords": data.get("keywords", []),
+                "model_version": "gemini-2.5-flash"
+            }
+        )
+
+        return data
+
+    except Exception as e:
+        fallback = {
+            "cleaned_text": "",
+            "summary": "AI parsing failed",
+            "keywords": []
         }
 
-    combined = combined_text(
-        ticket,
-        gemini_result['keywords'],
-        gemini_result['summarized_issue']
-    )
+        TicketAIAnalysis.objects.update_or_create(
+            ticket=ticket,
+            defaults={
+                "cleaned_text": "",
+                "summary": "AI parsing failed",
+                "keywords": [],
+                "model_version": "gemini-2.5-flash"
+            }
+        )
 
-    return {
-        "gemini_result": gemini_result,
-        "combined_text": combined
-    }
+        print("Gemini parsing error:", str(e))
+
+        return fallback
 
 
 def combined_text(ticket, keywords, summarized_issue):

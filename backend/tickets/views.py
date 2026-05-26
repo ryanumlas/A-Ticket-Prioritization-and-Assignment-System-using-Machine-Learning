@@ -3,9 +3,12 @@ from rest_framework.response import Response
 from rest_framework import viewsets, generics
 from rest_framework.views import APIView
 from rest_framework.permissions import IsAuthenticated, AllowAny
-from .models import Ticket, Category, SymptomCode, TicketComments, SLARules, ReviewFlags, TicketAssistance
-from .serializers import SymptomCodeSerializer, TicketSerializer, CategorySerializer, TicketAssistanceSerializer, TicketCommentSerializer, TicketStatusHistory, SLARulesSerializer, SLARulesUpdateSerializer
+from .models import Ticket, Category, SymptomCode, TicketComments, SLARules, ReviewFlags, TicketAssistance, Keyword
+from .serializers import (SymptomCodeSerializer, TicketSerializer, CategorySerializer, 
+TicketAssistanceSerializer, TicketCommentSerializer, TicketStatusHistory, SLARulesSerializer, SLARulesUpdateSerializer, KeywordSerializer, KeywordUpdateSerializer)
 from users.models import User
+from ai.services import analyze_ticket
+from tickets.services import classify_ticket
 
 # Create your views here.
 
@@ -16,7 +19,23 @@ class CreateTicketView(generics.CreateAPIView):
     permission_classes = [IsAuthenticated]
 
     def perform_create(self, serializer):
-        serializer.save(submitted_by=self.request.user)
+        ticket = serializer.save(submitted_by=self.request.user)
+
+        analyze_ticket(ticket)
+
+        result = classify_ticket(ticket)
+
+        symptom = SymptomCode.objects.filter(code=result.get("symptom_code")).first()
+
+        category = symptom.category if symptom else None
+
+        ticket.symptom_code = symptom
+        ticket.category = category
+
+        if not symptom or not category:
+            ticket.is_under_review = True
+
+        ticket.save()
 
 class ListTicketView(generics.ListAPIView):
     queryset = Ticket.objects.all()
@@ -37,6 +56,7 @@ class DeleteTicketView(generics.DestroyAPIView):
     queryset = Ticket.objects.all()
     serializer_class = TicketSerializer
     permission_classes = [IsAuthenticated]
+# --- End ---
 
 # --- Category Views ---
 class CreateCategoryView(generics.CreateAPIView):
@@ -48,12 +68,14 @@ class UpdateCategoryView(generics.UpdateAPIView):
     queryset = Category.objects.all()
     serializer_class = CategorySerializer
     permission_classes = [IsAuthenticated]
+# --- End ---
 
 # --- Symptom Code Views ---
 class CreateSymptomCodeView(generics.CreateAPIView):
     queryset = SymptomCode.objects.all()
     serializer_class = SymptomCodeSerializer
     permission_classes = [AllowAny]
+# --- End ---
 
 # --- SLA Rules Views ---
 class SLARulesCreateView(generics.CreateAPIView):
@@ -65,6 +87,19 @@ class SLARulesUpdateView(generics.UpdateAPIView):
     queryset = SLARules.objects.all()
     serializer_class = SLARulesUpdateSerializer
     permission_classes = [AllowAny]
+# --- End ---
+
+# --- Keyword Views ---
+class KeywordCreateView(generics.CreateAPIView):
+    queryset = Keyword.objects.all()
+    serializer_class = KeywordSerializer
+    permission_classes = [AllowAny]
+
+class KeywordUpdateView(generics.UpdateAPIView):
+    queryset = Keyword.objects.all()
+    serializer_class = KeywordSerializer
+    permission_classes = [AllowAny]
+# --- End ---
 
 # class AddTicketAssigneeView(generics.CreateAPIView):
 #     permission_classes = [IsAuthenticated]
