@@ -1,87 +1,100 @@
-import google.generativeai as genai
-import os
-import json
+import spacy
+import re
 from dotenv import load_dotenv
 from .models import TicketAIAnalysis
 
 load_dotenv()
 
-genai.configure(api_key=os.getenv("GOOGLE_API_KEY"))
+try:
+    nlp = spacy.load("en_core_web_sm")
+except OSError:
+    import subprocess
+    import sys
+    subprocess.check_call([sys.executable, "-m", "spacy", "download", "en_core_web_sm"])
+    nlp = spacy.load("en_core_web_sm")
 
-# genai.configure(api_key="AIzaSyCq-S-BGHQPZ9LJGeqe52WrDDwmXTEcrzI")
 
-import json
-import re
+def clean_text(text):
+    doc = nlp(text.lower())
+
+    non_technical = {
+        'day','morning','afternoon','evening','night','time','today',
+        'tomorrow','yesterday','week','month','year','hour','minute',
+        'people','person','stuff','way','issue','problem','case','point',
+        'thing','really','very','quite','just','actually','usually','always','sometimes'
+    }
+
+    tokens = []
+
+    for token in doc:
+        word = token.lemma_.lower()
+
+        if (
+            not token.is_punct
+            and not token.is_stop
+            and word not in non_technical
+            and len(word) > 2
+        ):
+            tokens.append(word)
+
+    return " ".join(tokens).strip()
+
+def extract_keywords(text):
+    doc = nlp(text.lower())
+
+    IT_TERMS = {
+        'error','crash','freeze','lag','slow','fail',
+        'login','password','access','security',
+        'network','internet','wifi','vpn','server',
+        'cpu','memory','disk','storage','ram',
+        'application','software','hardware',
+        'install','update','boot','startup',
+        'respond','response','pc','computer','file','system'
+    }
+
+    keywords = []
+
+    for token in doc:
+        word = token.lemma_.lower()
+
+        if word in IT_TERMS:
+            keywords.append(word)
+
+    return list(dict.fromkeys(keywords))[:10]
 
 def analyze_ticket(ticket):
-    model = genai.GenerativeModel("gemini-2.5-flash")
-
-    prompt = f"""
-    You are an IT support ticket analyzer.
-
-    Your task is to extract structured information for an IT ticket classification system.
-
-    Ticket Title:
-    {ticket.subject}
-
-    Ticket Description:
-    {ticket.description}
-
-    Return ONLY valid JSON in this format:
-
-    {{
-        "cleaned_text": "short cleaned version of the issue",
-        "summary": "brief 1 sentence summary",
-        "keywords": ["keyword1", "keyword2", "keyword3"]
-    }}
-
-    IMPORTANT RULES:
-    - keywords MUST be short standardized IT terms only (1-3 words max)
-    - keywords must be generic IT categories, NOT full sentences
-    - use only common IT terms such as:
-    vpn, network, internet, login, password, crash, slow, update, installation, server, access
-    - do NOT generate long phrases like "cannot connect to vpn"
-    - do NOT include symptom codes or categories
-    - keep keywords consistent and reusable for database matching
-    - output must be valid JSON only
-"""
-
-    response = model.generate_content(
-        prompt,
-        generation_config=genai.types.GenerationConfig(
-            temperature=0.3,
-            max_output_tokens=700
-        )
-    )
-
-    raw_text = response.text.strip()
-
-    raw_text = raw_text.replace("```json", "").replace("```", "").strip()
-
+    """Analyze ticket using spaCy for text structuring and keyword extraction."""
     try:
-        match = re.search(r"\{.*\}", raw_text, re.DOTALL)
-
-        if not match:
-            raise ValueError("No JSON found in Gemini response")
-
-        data = json.loads(match.group())
-
-        ai_analysis, created = TicketAIAnalysis.objects.update_or_create(
+        full_text = f"{ticket.subject} {ticket.description}"
+        
+        cleaned_text = clean_text(full_text)
+        keywords = extract_keywords(full_text)
+        
+        data = {
+            "cleaned_text": cleaned_text,
+            "keywords": keywords
+        }
+        
+        TicketAIAnalysis.objects.update_or_create(
             ticket=ticket,
             defaults={
-                "cleaned_text": data.get("cleaned_text", ""),
-                "summary": data.get("summary", ""),
-                "keywords": data.get("keywords", []),
-                "model_version": "gemini-2.5-flash"
+                "cleaned_text": cleaned_text,
+                "keywords": keywords,
+                "model_version": "spacy-en_core_web_sm"
             }
         )
-
+        
+        print("spaCy analysis successful:")
+        print(f"  Cleaned text: {cleaned_text[:100]}...")
+        print(f"  Keywords: {keywords}")
+        
         return data
 
     except Exception as e:
+        print("spaCy analysis error:", str(e))
+        
         fallback = {
             "cleaned_text": "",
-            "summary": "AI parsing failed",
             "keywords": []
         }
 
@@ -89,22 +102,13 @@ def analyze_ticket(ticket):
             ticket=ticket,
             defaults={
                 "cleaned_text": "",
-                "summary": "AI parsing failed",
                 "keywords": [],
-                "model_version": "gemini-2.5-flash"
+                "model_version": "spacy-en_core_web_sm"
             }
         )
 
-        print("Gemini parsing error:", str(e))
-
         return fallback
 
-
-def combined_text(ticket, keywords, summarized_issue):
-    return f"""
-    Ticket Title: {ticket.title}
-    Ticket Description: {ticket.description}
-    Extracted Keywords: {', '.join(keywords)}
-    Summarized Issue: {summarized_issue}
-    """
+def combined_text(ticket, summary, cleaned_text):
+    return f"Subject: {ticket.subject} Description: {ticket.description} Cleaned Text: {cleaned_text} Summary: {summary}"
 

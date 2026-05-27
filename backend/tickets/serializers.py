@@ -82,7 +82,7 @@ class CategorySerializer(serializers.ModelSerializer):
 class KeywordSerializer(serializers.ModelSerializer):
     class Meta:
         model = Keyword
-        fields = ['id', 'category', 'symptom_code', 'keyword', 'weight', 'active_flag', 'created_by', 'updated_by', 'created_at', 'updated_at']
+        fields = ['id', 'category', 'symptom_code', 'keyword', 'weight', 'active', 'created_by', 'updated_by', 'created_at', 'updated_at']
         read_only_fields = ['created_by', 'updated_by', 'created_at', 'updated_at']
 
 class KeywordUpdateSerializer(serializers.ModelSerializer):

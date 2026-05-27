@@ -127,15 +127,25 @@ class Keyword(models.Model):
     category = models.ForeignKey(Category, on_delete=models.CASCADE, related_name='keywords')
     symptom_code = models.ForeignKey('SymptomCode', on_delete=models.SET_NULL, null=True, blank=True, related_name='keywords_symptom_code')
     keyword = models.CharField(max_length=100)
-    weight = models.PositiveIntegerField(null=True, blank=True)
-    active_flag = models.BooleanField(default=True)
+    weight = models.PositiveIntegerField(default=1)
+    active = models.BooleanField(default=True)
     created_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='created_keywords')
-    updated_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='updated_ckeywords')
+    updated_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='updated_keywords')
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
         db_table = 'keywords'
+        constraints = [
+            models.UniqueConstraint(fields=['symptom_code', 'keyword'], name='unique_keyword_per_symptom')
+        ]
+    
+    def clean(self):
+        """Validate that keyword is 1-2 words only."""
+        from django.core.exceptions import ValidationError
+        word_count = len(self.keyword.split())
+        if word_count > 2:
+            raise ValidationError("Keyword must be 1-2 words maximum.")
 
 class SymptomCode(models.Model):
     category = models.ForeignKey(Category, on_delete=models.SET_NULL, null=True, blank=True, related_name='symptom_codes')

@@ -7,8 +7,7 @@ from .models import Ticket, Category, SymptomCode, TicketComments, SLARules, Rev
 from .serializers import (SymptomCodeSerializer, TicketSerializer, CategorySerializer, 
 TicketAssistanceSerializer, TicketCommentSerializer, TicketStatusHistory, SLARulesSerializer, SLARulesUpdateSerializer, KeywordSerializer, KeywordUpdateSerializer)
 from users.models import User
-from ai.services import analyze_ticket
-from tickets.services import classify_ticket
+from .classification_layer import classify_ticket
 
 # Create your views here.
 
@@ -20,21 +19,23 @@ class CreateTicketView(generics.CreateAPIView):
 
     def perform_create(self, serializer):
         ticket = serializer.save(submitted_by=self.request.user)
-
-        analyze_ticket(ticket)
-
+        
+        # Classify ticket using rule-based scoring
         result = classify_ticket(ticket)
-
-        symptom = SymptomCode.objects.filter(code=result.get("symptom_code")).first()
-
-        category = symptom.category if symptom else None
-
-        ticket.symptom_code = symptom
-        ticket.category = category
-
-        if not symptom or not category:
+        
+        # Assign classification result to ticket
+        if result["status"] != "no_match":
+            symptom = SymptomCode.objects.filter(code=result["symptom_code"]).first()
+            
+            if symptom:
+                ticket.symptom_code = symptom
+                ticket.category = symptom.category
+                ticket.department = symptom.category.department if symptom.category else None
+        
+        # Mark for review if ambiguous or no match
+        if result["needs_review"]:
             ticket.is_under_review = True
-
+        
         ticket.save()
 
 class ListTicketView(generics.ListAPIView):
