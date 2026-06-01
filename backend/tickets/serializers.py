@@ -63,13 +63,13 @@ class TicketStatusHistory(serializers.ModelSerializer):
 class SLARulesSerializer(serializers.ModelSerializer):
     class Meta:
         model = SLARules
-        fields = ['id', 'priority_level', 'response_time', 'created_by', 'updated_by', 'created_at', 'updated_at']
+        fields = ['id', 'priority_level', 'response_time', 'resolution_time', 'created_by', 'updated_by', 'created_at', 'updated_at']
         read_only_fields = ['created_at', 'created_by', 'updated_at', 'updated_by']
 
 class SLARulesUpdateSerializer(serializers.ModelSerializer):
     class Meta:
         model = SLARules
-        fields = ['priority_level', 'response_time']
+        fields = ['resolution_time']
 # --- Category Serializer --- 
 
 class CategorySerializer(serializers.ModelSerializer):
@@ -82,7 +82,7 @@ class CategorySerializer(serializers.ModelSerializer):
 class KeywordSerializer(serializers.ModelSerializer):
     class Meta:
         model = Keyword
-        fields = ['id', 'category', 'symptom_code', 'keyword', 'weight', 'active_flag', 'created_by', 'updated_by', 'created_at', 'updated_at']
+        fields = ['id', 'symptom_code', 'keyword', 'weight', 'is_active', 'created_by', 'updated_by', 'created_at', 'updated_at']
         read_only_fields = ['created_by', 'updated_by', 'created_at', 'updated_at']
 
 class KeywordUpdateSerializer(serializers.ModelSerializer):

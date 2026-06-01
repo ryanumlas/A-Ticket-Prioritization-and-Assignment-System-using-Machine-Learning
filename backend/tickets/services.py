@@ -9,7 +9,14 @@ def classify_ticket(ticket):
 
     for kw in keywords:
         matches = Keyword.objects.filter(keyword__iexact=kw)
+
+        print(f"Keyword: {kw}")
+        print(f"Matches: {matches.count()}")
+
         for match in matches:
+            print(
+                f"Matched -> {match.keyword} | {match.symptom_code.code} | Weight={match.weight}"
+            )
             code = match.symptom_code.code
 
             if code not in scores:

@@ -101,6 +101,7 @@ class TicketStatusHistory(models.Model):
 class SLARules(models.Model):
     priority_level = models.CharField(max_length=20, unique=True)
     response_time = models.DurationField()
+    resolution_time = models.DurationField()
     created_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='created_sla_rules')
     updated_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='updated_sla_rules')
     created_at = models.DateTimeField(auto_now_add=True)
@@ -124,11 +125,10 @@ class Category(models.Model):
         db_table = 'categories'
 
 class Keyword(models.Model):
-    category = models.ForeignKey(Category, on_delete=models.CASCADE, related_name='keywords')
     symptom_code = models.ForeignKey('SymptomCode', on_delete=models.SET_NULL, null=True, blank=True, related_name='keywords_symptom_code')
     keyword = models.CharField(max_length=100)
     weight = models.PositiveIntegerField(null=True, blank=True)
-    active_flag = models.BooleanField(default=True)
+    is_active = models.BooleanField(default=True)
     created_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='created_keywords')
     updated_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='updated_ckeywords')
     created_at = models.DateTimeField(auto_now_add=True)
