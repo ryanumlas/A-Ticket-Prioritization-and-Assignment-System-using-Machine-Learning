@@ -104,7 +104,7 @@ def analyze_ticket(ticket):
         prompt,
         generation_config=genai.types.GenerationConfig(
             temperature=0.1,
-            max_output_tokens=1000
+            max_output_tokens=2000
         )
     )
 

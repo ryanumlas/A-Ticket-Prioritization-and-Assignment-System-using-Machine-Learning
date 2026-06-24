@@ -5,10 +5,11 @@ from rest_framework.views import APIView
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from .models import Ticket, Category, SymptomCode, TicketComments, SLARules, ReviewFlags, TicketAssistance, Keyword
 from .serializers import (SymptomCodeSerializer, TicketSerializer, CategorySerializer, 
-TicketAssistanceSerializer, TicketCommentSerializer, TicketStatusHistory, SLARulesSerializer, SLARulesUpdateSerializer, KeywordSerializer, KeywordUpdateSerializer)
+TicketAssistanceSerializer, TicketCommentSerializer, TicketStatusHistory, SLARulesSerializer, 
+SLARulesUpdateSerializer, KeywordSerializer, KeywordUpdateSerializer, UpdateSymptomCodeSerializer)
 from users.models import User
 from ai.services import analyze_ticket
-from tickets.services import classify_ticket
+from tickets.services import classify_ticket, calculate_priority
 
 # Create your views here.
 
@@ -34,6 +35,12 @@ class CreateTicketView(generics.CreateAPIView):
 
         if not symptom or not category:
             ticket.is_under_review = True
+
+        if symptom:
+            ticket.priority = calculate_priority(
+                symptom.priority, 
+                ticket.affected_scope
+            )
 
         ticket.save()
 
@@ -74,6 +81,11 @@ class UpdateCategoryView(generics.UpdateAPIView):
 class CreateSymptomCodeView(generics.CreateAPIView):
     queryset = SymptomCode.objects.all()
     serializer_class = SymptomCodeSerializer
+    permission_classes = [AllowAny]
+
+class UpdateSymptomCodeView(generics.UpdateAPIView):
+    queryset = SymptomCode.objects.all()
+    serializer_class = UpdateSymptomCodeSerializer
     permission_classes = [AllowAny]
 # --- End ---
 

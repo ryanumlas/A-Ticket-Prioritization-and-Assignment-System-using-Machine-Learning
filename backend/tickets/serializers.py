@@ -92,8 +92,13 @@ class KeywordUpdateSerializer(serializers.ModelSerializer):
 class SymptomCodeSerializer(serializers.ModelSerializer):
     class Meta:
         model = SymptomCode
-        fields = ['id', 'code', 'category', 'description', 'created_by', 'updated_by', 'created_at', 'updated_at']
+        fields = ['id', 'code', 'category', 'description', 'created_by', 'updated_by', 'created_at', 'updated_at', 'based_priority']
         read_only_fields = ['created_by', 'updated_by', 'created_at', 'updated_at']
+    
+class UpdateSymptomCodeSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = SymptomCode
+        fields = ['based_priority']
 
 # class TicketSLASerializer(serializers.ModelSerializer):
 #     class Meta:

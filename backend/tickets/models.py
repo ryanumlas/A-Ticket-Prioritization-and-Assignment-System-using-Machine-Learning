@@ -19,11 +19,10 @@ class Ticket(models.Model):
         # CLOSED = 'closed', 'Closed'
         # NEEDS_INPUT = 'needs_input', 'Needs Input'
     class AffectedScope(models.TextChoices):
-        SINGLE = 'single', 'Single User'
-        SMALL_GROUP = 'small_group', 'Small Group'
+        INDIVIDUAL = 'individual', 'Individual'
+        GROUP = 'group', 'Group'
         DEPARTMENT = 'department', 'Department'
-        WHOLE_OFFICE = 'whole_office', 'Whole Office'
-        PRODUCTION = 'production', 'Production'
+        ORGANIZATION_WIDE = 'organization wide', 'Organization Wide'
 
     submitted_by = models.ForeignKey(User, on_delete=models.CASCADE, related_name='submitted_tickets')
     category = models.ForeignKey('Category', on_delete=models.SET_NULL, null=True, blank=True, related_name='tickets_category')
@@ -34,7 +33,7 @@ class Ticket(models.Model):
     priority = models.ForeignKey('SLARules', on_delete=models.SET_NULL, null=True, blank=True, related_name='tickets_priority')
     subject = models.CharField(max_length=255)
     description = models.TextField()
-    affected_scope = models.CharField(max_length=20, choices=AffectedScope.choices, default=AffectedScope.SINGLE)
+    affected_scope = models.CharField(max_length=20, choices=AffectedScope.choices, default=AffectedScope.INDIVIDUAL)
     is_under_review = models.BooleanField(default=False)
     estimated_resolution_time = models.DurationField(null=True, blank=True)
     is_escalated = models.BooleanField(default=False)
@@ -141,6 +140,7 @@ class SymptomCode(models.Model):
     category = models.ForeignKey(Category, on_delete=models.SET_NULL, null=True, blank=True, related_name='symptom_codes')
     code = models.CharField(max_length=50, unique=True)
     description = models.TextField(blank=True)
+    based_priority = models.CharField(max_length=20, null=True, blank=True)
     created_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='created_symptom_codes')
     updated_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='updated_symptom_codes')
     created_at = models.DateTimeField(auto_now_add=True)
