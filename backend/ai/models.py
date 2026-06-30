@@ -9,8 +9,6 @@ class TicketAnalysis(models.Model):
         MANUAL_OVERRIDE = 'manual_override', 'Manual Override'
 
     ticket = models.OneToOneField('tickets.Ticket', on_delete=models.CASCADE, related_name='ai_prediction')
-    predicted_priority = models.ForeignKey('tickets.SLARules', on_delete=models.SET_NULL, null=True, blank=True, related_name='ai_predictions')
-    predicted_category = models.ForeignKey('tickets.Category', on_delete=models.SET_NULL, null=True, blank=True, related_name='ai_predictions')
     predicted_symptom_code = models.ForeignKey('tickets.SymptomCode', on_delete=models.SET_NULL, null=True, blank=True, related_name='ai_predictions')
     recommended_department = models.ForeignKey('departments.Department', on_delete=models.SET_NULL, null=True, blank=True, related_name='ai_recommendations')
     estimated_resolution_time = models.DurationField(null=True, blank=True)  

@@ -8,6 +8,7 @@ from .serializers import (SymptomCodeSerializer, TicketSerializer, CategorySeria
 TicketAssistanceSerializer, TicketCommentSerializer, TicketStatusHistory, SLARulesSerializer, 
 SLARulesUpdateSerializer, KeywordSerializer, KeywordUpdateSerializer, UpdateSymptomCodeSerializer)
 from users.models import User
+from ai.models import TicketAnalysis, TicketAIAnalysis
 from ai.services import analyze_ticket
 from tickets.services import classify_ticket, calculate_priority
 
@@ -34,13 +35,25 @@ class CreateTicketView(generics.CreateAPIView):
         ticket.category = category
 
         if not symptom or not category:
+            ReviewFlags.objects.create(
+                ticket=ticket,
+                reason=ReviewFlags.Reasons.SYMPTOM_NOT_DETECTED,
+                status=ReviewFlags.Status.PENDING,
+                source_type=ReviewFlags.SourceType.SYSTEM_GENERATED
+            )
             ticket.is_under_review = True
 
-        if symptom:
-            ticket.priority = calculate_priority(
-                symptom.priority, 
+        if symptom and category:
+            final_priority = calculate_priority(
+                symptom.based_priority, 
                 ticket.affected_scope
+            )   
+
+            sla_rule = SLARules.objects.get(
+                priority_level = final_priority
             )
+
+            ticket.priority = sla_rule
 
         ticket.save()
 

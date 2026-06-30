@@ -8,6 +8,14 @@ from tickets.models import Ticket
 
 
 class TicketSerializer(serializers.ModelSerializer):
+    priority = serializers.CharField(
+        source='priority.priority_level',
+        read_only=True
+    )
+    created_at_formatted = serializers.SerializerMethodField()
+    sla_deadline = serializers.SerializerMethodField()
+    time_remaining = serializers.SerializerMethodField()
+
     class Meta:
         model = Ticket
         fields = [
@@ -25,11 +33,13 @@ class TicketSerializer(serializers.ModelSerializer):
             'status',
             'priority',
             'is_under_review',
-            'estimated_resolution_time',
+            'sla_deadline',
+            'time_remaining',
             'is_escalated',
             'resolved_at',
             'resolved_by',
             'created_at',
+            'created_at_formatted',
             'updated_at',
         ]
         read_only_fields = [
@@ -39,7 +49,27 @@ class TicketSerializer(serializers.ModelSerializer):
             'resolved_at',
             'created_at',
             'updated_at',
-        ]
+        ]   
+
+    def get_sla_deadline(self, obj):
+        if not obj.priority:
+            return None
+        
+        deadline = obj.created_at + obj.priority.resolution_time  
+
+        return deadline.strftime("%B %d, %Y %I:%M %p")
+    
+    def get_time_remaining(self, obj):
+        if not obj.priority:
+            return None
+
+        deadline = obj.created_at + obj.priority.resolution_time
+        remaining = deadline - timezone.now()
+
+        return str(remaining)
+    
+    def get_created_at_formatted(self, obj):
+        return obj.created_at.strftime("%B %d, %Y %I:%M %p")
 
 class TicketAssistanceSerializer(serializers.ModelSerializer):
     class Meta:

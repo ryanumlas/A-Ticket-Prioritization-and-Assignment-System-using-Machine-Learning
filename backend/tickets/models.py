@@ -35,7 +35,7 @@ class Ticket(models.Model):
     description = models.TextField()
     affected_scope = models.CharField(max_length=20, choices=AffectedScope.choices, default=AffectedScope.INDIVIDUAL)
     is_under_review = models.BooleanField(default=False)
-    estimated_resolution_time = models.DurationField(null=True, blank=True)
+    estimated_resolution_time = models.DurationField(null=True, blank=True) # REMOVE THIS
     is_escalated = models.BooleanField(default=False)
     resolved_at = models.DateTimeField(null=True, blank=True)
     resolved_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='resolved_tickets')
@@ -152,7 +152,7 @@ class SymptomCode(models.Model):
 class ReviewFlags(models.Model):
     class Reasons(models.TextChoices):
         LOW_CONFIDENCE = 'low_confidence', 'Low Confidence'
-        HIGH_PRIORITY = 'high_priority', 'High Priority'
+        SYMPTOM_NOT_DETECTED = 'symptom_not_detected', 'Symptom Not Detected'
         UNCLEAR_DESCRIPTION = 'unclear_description', 'Unclear Description'
         MANUAL_OVERRIDE = 'manual_override', 'Manual Override'
         OTHER = 'other', 'Other'
@@ -169,7 +169,7 @@ class ReviewFlags(models.Model):
         SYSTEM_GENERATED = 'system_generated', 'System Generated'
 
     ticket = models.ForeignKey(Ticket, on_delete=models.CASCADE, related_name='review_flags_ticket')
-    prediction = models.ForeignKey(TicketAnalysis, on_delete=models.CASCADE, related_name='review_flags_prediction')
+    prediction = models.ForeignKey(TicketAnalysis, on_delete=models.CASCADE, null=True, blank=True, related_name='review_flags_prediction')
     reason = models.CharField(max_length=20, choices=Reasons.choices)
     source_type = models.CharField(max_length=20, choices=SourceType.choices)
     status = models.CharField(max_length=20, choices=Status.choices, default=Status.PENDING)

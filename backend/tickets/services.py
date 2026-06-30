@@ -1,6 +1,5 @@
 from h11 import Response
-
-from .models import Keyword, SymptomCode, Ticket
+from .models import Keyword, SymptomCode, Ticket, ReviewFlags, Category
 from ai.models import TicketAIAnalysis
 
 def classify_ticket(ticket):
@@ -15,7 +14,6 @@ def classify_ticket(ticket):
     for kw in keywords:
         kw = kw.lower().strip()
 
-        # better matching (NOT exact anymore)
         matches = Keyword.objects.filter(keyword__icontains=kw)
 
         print(f"Keyword: {kw}")
