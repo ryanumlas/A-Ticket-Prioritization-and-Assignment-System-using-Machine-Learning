@@ -20,6 +20,7 @@ class TicketSerializer(serializers.ModelSerializer):
         model = Ticket
         fields = [
             'id',
+            'ticket_code',
             'submitted_by',
             'assigned_to',
             'created_by',
@@ -27,6 +28,7 @@ class TicketSerializer(serializers.ModelSerializer):
             'department',
             'subject',
             'description',
+            'business_impact',
             'affected_scope',
             'category',
             'symptom_code',
@@ -66,7 +68,14 @@ class TicketSerializer(serializers.ModelSerializer):
         deadline = obj.created_at + obj.priority.resolution_time
         remaining = deadline - timezone.now()
 
-        return str(remaining)
+        if remaining.total_seconds() <= 0:
+            return "Overdue"
+
+        days = remaining.days
+        hours = remaining.seconds // 3600
+        minutes = (remaining.seconds % 3600) // 60
+
+        return f"{days}d {hours}h {minutes}m"
     
     def get_created_at_formatted(self, obj):
         return obj.created_at.strftime("%B %d, %Y %I:%M %p")
@@ -128,7 +137,12 @@ class SymptomCodeSerializer(serializers.ModelSerializer):
 class UpdateSymptomCodeSerializer(serializers.ModelSerializer):
     class Meta:
         model = SymptomCode
-        fields = ['based_priority']
+        fields = ['description']
+
+class CreateSymptomCodeSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = SymptomCode
+        fields = ['code', 'category', 'description', 'based_priority']
 
 # class TicketSLASerializer(serializers.ModelSerializer):
 #     class Meta:

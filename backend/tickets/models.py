@@ -22,8 +22,9 @@ class Ticket(models.Model):
         INDIVIDUAL = 'individual', 'Individual'
         GROUP = 'group', 'Group'
         DEPARTMENT = 'department', 'Department'
-        ORGANIZATION_WIDE = 'organization wide', 'Organization Wide'
+        ORGANIZATION_WIDE = 'organization_wide', 'Organization Wide'
 
+    ticket_code = models.CharField(max_length=20, unique=True, editable=False)
     submitted_by = models.ForeignKey(User, on_delete=models.CASCADE, related_name='submitted_tickets')
     category = models.ForeignKey('Category', on_delete=models.SET_NULL, null=True, blank=True, related_name='tickets_category')
     symptom_code = models.ForeignKey('SymptomCode', on_delete=models.SET_NULL, null=True, blank=True, related_name='tickets_symptom_code')
@@ -33,9 +34,9 @@ class Ticket(models.Model):
     priority = models.ForeignKey('SLARules', on_delete=models.SET_NULL, null=True, blank=True, related_name='tickets_priority')
     subject = models.CharField(max_length=255)
     description = models.TextField()
+    business_impact = models.TextField()
     affected_scope = models.CharField(max_length=20, choices=AffectedScope.choices, default=AffectedScope.INDIVIDUAL)
     is_under_review = models.BooleanField(default=False)
-    estimated_resolution_time = models.DurationField(null=True, blank=True) # REMOVE THIS
     is_escalated = models.BooleanField(default=False)
     resolved_at = models.DateTimeField(null=True, blank=True)
     resolved_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='resolved_tickets')
@@ -46,7 +47,16 @@ class Ticket(models.Model):
 
     class Meta:
         db_table = 'tickets'
-    
+        
+    def save(self, *args, **kwargs):
+        is_new = self.pk is None
+
+        super().save(*args, **kwargs)
+
+        if is_new and not self.ticket_code:
+            self.ticket_code = f"TKT-{self.id:06d}"
+            super().save(update_fields=["ticket_code"])
+
     def __str__(self):
         return f"Ticket #{self.id} - {self.subject}"
 

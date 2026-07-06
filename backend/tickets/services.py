@@ -54,7 +54,8 @@ def classify_ticket(ticket):
         "status": "Classification successful"
     }
 
-def calculate_priority(based_priority, affected_scope):
+
+def calculate_priority(based_priority, affected_scope, business_critical):
     PRIORITY_ORDER = {
         "P5": 5,
         "P4": 4,
@@ -75,22 +76,158 @@ def calculate_priority(based_priority, affected_scope):
 
     if priority_number is None:
         return "P5"
-
-    if affected_scope == Ticket.AffectedScope.INDIVIDUAL:
-        pass
     
-    elif affected_scope == Ticket.AffectedScope.GROUP:
-        priority_number -= 1
-    
-    elif affected_scope == Ticket.AffectedScope.DEPARTMENT:
-        priority_number -= 2
-    
-    elif affected_scope == Ticket.AffectedScope.ORGANIZATION_WIDE:
-        priority_number = 1
+    if based_priority == "P5":
+        if affected_scope == Ticket.AffectedScope.INDIVIDUAL:
+            if business_critical:
+                priority_number = 3
+            else: 
+                priority_number = 5
         
-    else:
-        pass
+        elif affected_scope == Ticket.AffectedScope.GROUP:
+            if business_critical:
+                priority_number = 2
+            else:
+                priority_number = 5
+
+        elif affected_scope == Ticket.AffectedScope.DEPARTMENT:
+            if business_critical:
+                priority_number = 2
+            else:
+                priority_number = 4
+        
+        elif affected_scope == Ticket.AffectedScope.ORGANIZATION_WIDE:
+            if business_critical:
+                priority_number = 1
+            else:
+                priority_number = 2
+        else:
+            raise ValueError(f"Invalid affected_scope: {affected_scope}")
+        
+    if based_priority == "P4":
+        if affected_scope == Ticket.AffectedScope.INDIVIDUAL:
+            if business_critical:
+                priority_number = 3
+            else: 
+                priority_number = 4
+        
+        elif affected_scope == Ticket.AffectedScope.GROUP:
+            if business_critical:
+                priority_number = 2
+            else:
+                priority_number = 4
+
+        elif affected_scope == Ticket.AffectedScope.DEPARTMENT:
+            if business_critical:
+                priority_number = 1
+            else:
+                priority_number = 3
+        
+        elif affected_scope == Ticket.AffectedScope.ORGANIZATION_WIDE:
+            if business_critical:
+                priority_number = 1
+            else:
+                priority_number = 2
+        else:
+            raise ValueError(f"Invalid affected_scope: {affected_scope}")
+
+    if based_priority == "P3":
+        if affected_scope == Ticket.AffectedScope.INDIVIDUAL:
+            if business_critical:
+                priority_number = 2
+            else: 
+                priority_number = 3
+        
+        elif affected_scope == Ticket.AffectedScope.GROUP:
+            if business_critical:
+                priority_number = 2
+            else:
+                priority_number = 3
+
+        elif affected_scope == Ticket.AffectedScope.DEPARTMENT:
+            if business_critical:
+                priority_number = 1
+            else:
+                priority_number = 3
+        
+        elif affected_scope == Ticket.AffectedScope.ORGANIZATION_WIDE:
+            if business_critical:
+                priority_number = 1
+            else:
+                priority_number = 2
+        else:
+            raise ValueError(f"Invalid affected_scope: {affected_scope}")
+        
+    priority_number = max(1, priority_number)
+
+    return PRIORITY_LABELS[priority_number]
+                
+
+    # if affected_scope == Ticket.AffectedScope.INDIVIDUAL:
+    #     pass
+    
+    # elif affected_scope == Ticket.AffectedScope.GROUP:
+    #     priority_number -= 1
+    
+    # elif affected_scope == Ticket.AffectedScope.DEPARTMENT:
+    #     priority_number -= 2
+    
+    # elif affected_scope == Ticket.AffectedScope.ORGANIZATION_WIDE:
+    #     priority_number = 1
+        
+    # else:
+    #     pass
 
     priority_number = max(1, priority_number)
 
     return PRIORITY_LABELS[priority_number]
+
+
+
+# WAG NA TO PANGET PAG SCORING
+
+# def calculate_priority(based_priority, affected_scope, urgency_detected):
+#     PRIORITY_SCORE = {
+#         "P5": 1,
+#         "P4": 2,
+#         "P3": 3,
+#         "P2": 4,
+#         "P1": 5
+#     }
+
+#     AFFECTED_SCOPE_SCORE = {
+#         "individual": 1,
+#         "group": 2,
+#         "department": 3,
+#         "organization_wide": 4
+#     }
+
+#     URGENCY_SCORE = {
+#         False: 0,
+#         True: 2
+#     }
+
+#     PRIORITY_LABELS = {
+#         5: "P5",
+#         4: "P4",
+#         3: "P3",
+#         2: "P2",
+#         1: "P1"
+#     }
+
+#     technical_score = PRIORITY_SCORE[based_priority]
+#     impact_score = AFFECTED_SCOPE_SCORE[affected_scope]
+#     urgency_score = URGENCY_SCORE[urgency_detected]  
+
+#     total_score = technical_score + impact_score + urgency_score
+
+#     if total_score >= 10:
+#         return "P1"
+#     elif total_score >= 8:
+#         return "P2"
+#     elif total_score >= 6:
+#         return "P3"
+#     elif total_score >= 4:
+#         return "P4"
+#     else:
+#         return "P5"

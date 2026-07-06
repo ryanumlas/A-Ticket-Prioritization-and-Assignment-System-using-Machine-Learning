@@ -1,12 +1,13 @@
+from time import timezone
 from django.shortcuts import render
 from rest_framework.response import Response
-from rest_framework import viewsets, generics
+from rest_framework import viewsets, generics, status
 from rest_framework.views import APIView
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from .models import Ticket, Category, SymptomCode, TicketComments, SLARules, ReviewFlags, TicketAssistance, Keyword
 from .serializers import (SymptomCodeSerializer, TicketSerializer, CategorySerializer, 
 TicketAssistanceSerializer, TicketCommentSerializer, TicketStatusHistory, SLARulesSerializer, 
-SLARulesUpdateSerializer, KeywordSerializer, KeywordUpdateSerializer, UpdateSymptomCodeSerializer)
+SLARulesUpdateSerializer, KeywordSerializer, KeywordUpdateSerializer, UpdateSymptomCodeSerializer, CreateSymptomCodeSerializer)
 from users.models import User
 from ai.models import TicketAnalysis, TicketAIAnalysis
 from ai.services import analyze_ticket
@@ -23,7 +24,18 @@ class CreateTicketView(generics.CreateAPIView):
     def perform_create(self, serializer):
         ticket = serializer.save(submitted_by=self.request.user)
 
-        analyze_ticket(ticket)
+        analysis = analyze_ticket(ticket)
+
+        if analysis["is_unclear"]:
+            ReviewFlags.objects.create(
+                ticket=ticket,
+                reason=ReviewFlags.Reasons.UNCLEAR_DESCRIPTION,
+                status=ReviewFlags.Status.PENDING,
+                source_type=ReviewFlags.SourceType.SYSTEM_GENERATED
+            )
+            ticket.is_under_review = True
+            ticket.save()
+            return
 
         result = classify_ticket(ticket)
 
@@ -31,10 +43,9 @@ class CreateTicketView(generics.CreateAPIView):
 
         category = symptom.category if symptom else None
 
-        ticket.symptom_code = symptom
-        ticket.category = category
+        department = category.department if category else None
 
-        if not symptom or not category:
+        if not symptom:
             ReviewFlags.objects.create(
                 ticket=ticket,
                 reason=ReviewFlags.Reasons.SYMPTOM_NOT_DETECTED,
@@ -42,11 +53,18 @@ class CreateTicketView(generics.CreateAPIView):
                 source_type=ReviewFlags.SourceType.SYSTEM_GENERATED
             )
             ticket.is_under_review = True
-
+            ticket.save()
+            return
+        
+        ticket.symptom_code = symptom
+        ticket.category = category
+        ticket.department = department
+        
         if symptom and category:
             final_priority = calculate_priority(
                 symptom.based_priority, 
-                ticket.affected_scope
+                ticket.affected_scope,
+                analysis["business_critical"]
             )   
 
             sla_rule = SLARules.objects.get(
@@ -57,6 +75,45 @@ class CreateTicketView(generics.CreateAPIView):
 
         ticket.save()
 
+class UpdateTicketStatusView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def patch(self, request, pk):
+        ticket = Ticket.objects.get(pk=pk)
+
+        new_status = request.data.get('status')
+
+        if new_status == Ticket.TicketStatus.OPEN:
+            ticket.status = Ticket.TicketStatus.OPEN
+        
+        elif new_status == Ticket.TicketStatus.IN_PROGRESS:
+            ticket.status = Ticket.TicketStatus.IN_PROGRESS
+        
+        elif new_status == Ticket.TicketStatus.RESOLVED:
+            ticket.status = Ticket.TicketStatus.RESOLVED
+            ticket.resolved_at = timezone.now()
+            ticket.resolved_by = request.user
+        
+        elif new_status == Ticket.TicketStatus.CLOSED:
+            ticket.status = Ticket.TicketStatus.CLOSED
+
+        elif new_status == Ticket.TicketStatus.REOPENED:
+            ticket.status = Ticket.TicketStatus.REOPENED
+            ticket.resolved_at = None
+            ticket.resolved_by = None
+        
+        elif new_status == Ticket.TicketStatus.PENDING:
+            ticket.status = Ticket.TicketStatus.PENDING
+
+        elif new_status == Ticket.TicketStatus.CANCELLED:
+            ticket.status = Ticket.TicketStatus.CANCELLED
+
+        else:
+            return Response({"error": "Invalid status"}, status=status.HTTP_400_BAD_REQUEST)
+        
+        ticket.save()
+
+        return Response({"message": f"Ticket status updated to {ticket.status}"}, status=status.HTTP_200_OK)
 class ListTicketView(generics.ListAPIView):
     queryset = Ticket.objects.all()
     serializer_class = TicketSerializer
@@ -93,7 +150,7 @@ class UpdateCategoryView(generics.UpdateAPIView):
 # --- Symptom Code Views ---
 class CreateSymptomCodeView(generics.CreateAPIView):
     queryset = SymptomCode.objects.all()
-    serializer_class = SymptomCodeSerializer
+    serializer_class = CreateSymptomCodeSerializer
     permission_classes = [AllowAny]
 
 class UpdateSymptomCodeView(generics.UpdateAPIView):

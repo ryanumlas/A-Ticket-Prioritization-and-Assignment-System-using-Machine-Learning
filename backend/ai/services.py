@@ -15,47 +15,59 @@ def analyze_ticket(ticket):
     prompt = f"""
     You are an IT support ticket analyzer.
 
-    Analyze the ticket and extract structured information for an IT Service Management (ITSM) ticket classification system.
+    Analyze the following IT support ticket and extract structured information for an IT Service Management (ITSM) ticket classification system.
 
     Ticket Title:
     {ticket.subject}
 
-    Ticket Description:
+    Issue Description:
     {ticket.description}
+
+    Business Impact:
+    {ticket.business_impact}
 
     Return ONLY valid JSON in this exact format:
 
     {{
         "cleaned_text": "short cleaned version of the issue",
         "summary": "brief one sentence summary",
-        "keywords": ["keyword1", "keyword2", "keyword3"]
+        "keywords": ["keyword1", "keyword2", "keyword3"],
+        "is_unclear": false,
+        "business_critical": false
     }}
 
-    IMPORTANT RULES:
+    IMPORTANT
 
     - Return ONLY valid JSON.
-    - Do not include markdown.
-    - Do not include explanations.
-    - Do not include code blocks.
+    - Do NOT include markdown.
+    - Do NOT include explanations.
+    - Do NOT include code blocks.
 
-    CLEANED TEXT:
+    CLEANED TEXT
+    - Maximum 30 words.
     - Remove unnecessary words.
     - Keep only important technical details.
-    - Maximum 30 words.
 
-    SUMMARY:
+    SUMMARY
     - One concise sentence.
-    - Describe the user's issue clearly.
+    - Clearly summarize the reported issue.
+    - If the ticket is unclear, explain that insufficient information was provided.
 
-    KEYWORDS:
-    - Return 3 to 8 keywords only.
-    - Keywords must represent the actual technical symptoms or failure indicators.
-    - Keywords should be 1 to 4 words.
+    KEYWORDS
+    - Return 3 to 8 keywords.
     - Use standardized IT support terminology.
-    - Prioritize symptoms, failures, connectivity issues, access issues, performance issues, and software problems.
-    - Avoid generic words.
+    - Keywords must represent ONLY technical symptoms or failure indicators explicitly mentioned by the user.
+    - Keywords should contain 1 to 4 words.
+    - Prioritize:
+    1. Failure symptoms
+    2. Error conditions
+    3. Access problems
+    4. Connectivity problems
+    5. Performance problems
+    - Return an empty array ([]) if the ticket is unclear.
+    - Do NOT infer or invent technical symptoms.
 
-    GOOD EXAMPLES:
+    Good examples:
 
     ["shutdown", "overheat", "fan noise"]
 
@@ -63,11 +75,9 @@ def analyze_ticket(ticket):
 
     ["application crash", "freeze", "not responding"]
 
-    ["login", "password", "authentication failed"]
+    ["authentication failed", "login", "password"]
 
-    ["installation failed", "update error", "software install"]
-
-    BAD EXAMPLES:
+    Bad examples:
 
     ["computer"]
 
@@ -77,25 +87,62 @@ def analyze_ticket(ticket):
 
     ["help"]
 
-    ["system"]
+    IS_UNCLEAR
 
-    ["user"]
+    Set "is_unclear" to true ONLY if:
+    - The issue lacks sufficient technical details.
+    - No identifiable technical symptom is described.
+    - The ticket cannot be reasonably classified.
+    - The issue is not IT-related.
 
-    PRIORITY ORDER FOR KEYWORDS:
+    If true:
+    - Return [] for keywords.
+    - Do NOT guess technical symptoms.
+    - Still generate a short summary explaining that more information is needed.
 
-    1. Failure symptoms
-    2. Error conditions
-    3. Access problems
-    4. Connectivity problems
-    5. Performance problems
+    Otherwise:
+    "is_unclear": false
 
-    DO NOT:
-    - Generate symptom codes.
-    - Generate categories.
-    - Generate departments.
-    - Generate priority levels.
-    - Generate explanations.
-    - Generate full sentences as keywords.
+    IMPACT DETECTION
+
+    Analyze BOTH the Issue Description and Business Impact.
+
+    Set "business_critical" to true ONLY if the user explicitly describes one or more of the following:
+    - A business deadline.
+    - Inability to continue working.
+    - Business operations are interrupted.
+    - Production or critical services are unavailable.
+    - Customer or client impact.
+    - A meeting, presentation, payroll, deployment, or other time-sensitive business activity that cannot proceed.
+
+    Set "business_critical" to false if:
+
+    - The user only says "urgent", "ASAP", "immediately", or similar emotional language.
+    - The user requests faster service without describing a concrete business impact.
+    - Business criticality must be inferred or assumed.
+
+    Do NOT infer business criticality.
+
+    Only detect business criticality when it is explicitly supported by the information provided.
+
+    DO NOT
+
+    Do NOT generate:
+    - Symptom Codes
+    - Categories
+    - Priority Levels
+    - Assignment Groups
+    - Departments
+    - Root Causes
+    - Explanations
+
+    Do NOT:
+    - Guess missing information.
+    - Infer technical symptoms.
+    - Infer business criticality.
+    - Include unrelated keywords.
+
+    If multiple unrelated issues exist, extract information only for the primary issue.
 
     Output valid JSON only.
     """
