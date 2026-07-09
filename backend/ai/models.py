@@ -1,6 +1,6 @@
 from django.db import models
 from users.models import User
-from departments.models import Department
+from departments.models import ITDepartment
 
 class TicketAnalysis(models.Model):
     class ModelType(models.TextChoices):
@@ -9,9 +9,7 @@ class TicketAnalysis(models.Model):
         MANUAL_OVERRIDE = 'manual_override', 'Manual Override'
 
     ticket = models.OneToOneField('tickets.Ticket', on_delete=models.CASCADE, related_name='ai_prediction')
-    predicted_symptom_code = models.ForeignKey('tickets.SymptomCode', on_delete=models.SET_NULL, null=True, blank=True, related_name='ai_predictions')
-    recommended_department = models.ForeignKey('departments.Department', on_delete=models.SET_NULL, null=True, blank=True, related_name='ai_recommendations')
-    estimated_resolution_time = models.DurationField(null=True, blank=True)  
+    predicted_symptom_code = models.ForeignKey('tickets.SymptomCode', on_delete=models.SET_NULL, null=True, blank=True, related_name='ai_predictions') 
     model_used = models.CharField(max_length=255, blank=True, null=True)
     overall_confidence = models.FloatField(null=True, blank=True)
     was_overridden = models.BooleanField(default=False)

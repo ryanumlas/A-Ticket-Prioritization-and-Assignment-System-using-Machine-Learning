@@ -1,7 +1,7 @@
 from django.db import models
 from users.models import User
 from ai.models import TicketAnalysis
-from departments.models import Department
+from departments.models import ITDepartment, EmployeeDepartment, OfficeLocation
 
 # Create your models here.
 class Ticket(models.Model):
@@ -28,7 +28,10 @@ class Ticket(models.Model):
     submitted_by = models.ForeignKey(User, on_delete=models.CASCADE, related_name='submitted_tickets')
     category = models.ForeignKey('Category', on_delete=models.SET_NULL, null=True, blank=True, related_name='tickets_category')
     symptom_code = models.ForeignKey('SymptomCode', on_delete=models.SET_NULL, null=True, blank=True, related_name='tickets_symptom_code')
-    department = models.ForeignKey(Department, on_delete=models.SET_NULL, null=True, blank=True, related_name='tickets_department')
+    it_department = models.ForeignKey(ITDepartment, on_delete=models.SET_NULL, null=True, blank=True, related_name='tickets_it_department')
+    employee_department = models.ForeignKey(EmployeeDepartment, on_delete=models.SET_NULL, null=True, blank=True, related_name='tickets_employee_department')
+    office_location = models.ForeignKey(OfficeLocation, on_delete=models.SET_NULL, null=True, blank=True, related_name='tickets_office_location')
+    workstation = models.CharField(max_length=100, blank=True)
     assigned_to = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='assigned_tickets')
     status = models.CharField(max_length=20, choices=TicketStatus.choices, default=TicketStatus.OPEN)
     priority = models.ForeignKey('SLARules', on_delete=models.SET_NULL, null=True, blank=True, related_name='tickets_priority')
@@ -123,7 +126,7 @@ class SLARules(models.Model):
         return f"SLA Rule - {self.priority_level}"
 
 class Category(models.Model):
-    department = models.ForeignKey(Department, on_delete=models.SET_NULL, null=True, blank=True, related_name='categories')
+    it_department = models.ForeignKey(ITDepartment, on_delete=models.SET_NULL, null=True, blank=True, related_name='categories')
     name = models.CharField(max_length=100, unique=True)
     created_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='created_categories')
     updated_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='updated_categories')

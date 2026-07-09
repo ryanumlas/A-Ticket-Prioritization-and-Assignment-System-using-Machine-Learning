@@ -1,6 +1,6 @@
 from django.db import models
 from django.contrib.auth.models import AbstractUser
-from departments.models import Department
+from departments.models import ITDepartment
 
 # class UserManager(BaseUserManager):
 #     use_in_migrations = True
@@ -64,7 +64,7 @@ class ITSupportProfile(models.Model):
         offline = 'offline', 'Offline'
 
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='it_support_profile')
-    department = models.ForeignKey(Department, on_delete=models.SET_NULL, null=True, blank=True, related_name='it_support_profiles')
+    it_department = models.ForeignKey(ITDepartment, on_delete=models.SET_NULL, null=True, blank=True, related_name='it_support_profiles')
     workload_limit = models.IntegerField(default=5)
     current_workload = models.IntegerField(default=0)
     availability_status = models.CharField(max_length=20, choices=AvailabilityStatus.choices, default=AvailabilityStatus.available)
