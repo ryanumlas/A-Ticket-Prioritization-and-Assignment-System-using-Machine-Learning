@@ -56,10 +56,9 @@ class TicketSerializer(serializers.ModelSerializer):
     def get_sla_deadline(self, obj):
         if not obj.priority:
             return None
-        
-        deadline = obj.created_at + obj.priority.resolution_time  
 
-        return deadline.strftime("%B %d, %Y %I:%M %p")
+        deadline = obj.created_at + obj.priority.resolution_time
+        return timezone.localtime(deadline).strftime("%B %d, %Y %I:%M %p")
     
     def get_time_remaining(self, obj):
         if not obj.priority:
@@ -78,7 +77,7 @@ class TicketSerializer(serializers.ModelSerializer):
         return f"{days}d {hours}h {minutes}m"
     
     def get_created_at_formatted(self, obj):
-        return obj.created_at.strftime("%B %d, %Y %I:%M %p")
+        return timezone.localtime(obj.created_at).strftime("%B %d, %Y %I:%M %p")
 
 class TicketAssistanceSerializer(serializers.ModelSerializer):
     class Meta:
@@ -89,8 +88,8 @@ class TicketAssistanceSerializer(serializers.ModelSerializer):
 class TicketCommentSerializer(serializers.ModelSerializer):
     class Meta:
         model = TicketComments
-        fields = ['id', 'ticket', 'commented_by', 'message', 'created_at', 'comment_type', 'is_internal']
-        read_only_fields = ['created_at', 'created_by', 'updated_at', 'updated_by']
+        fields = ['id', 'ticket', 'commented_by', 'message', 'created_at', 'comment_type']
+        read_only_fields = ['created_at', 'updated_at', 'updated_by']
         
 class TicketStatusHistory(serializers.ModelSerializer):
     class Meta:

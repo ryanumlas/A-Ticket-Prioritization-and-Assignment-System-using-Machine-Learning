@@ -1,0 +1,293 @@
+cleaned_text,symptom_code
+"My desktop is not turning on after arriving at work today. I already checked the power cable, restarted the UPS, and tried another electrical outlet but the computer is still completely dead. There are no lights or fan activity.",HW-001
+"I cannot use my workstation because it does not power on anymore. I verified that the outlet has electricity and even replaced the power cable with another working one but the issue remains.",HW-001
+"My computer suddenly shut down while I was working yesterday. This morning it no longer powers on. I already reconnected all the cables and restarted the UPS but there is still no response.",HW-001
+"The desktop assigned to me has no power. I already unplugged it for several minutes, connected it to another outlet, and pressed the power button multiple times but nothing happens.",HW-001
+"I tried turning on my office PC this morning but it does not respond at all. I checked the outlet using another device and it works, so I believe the problem is with the desktop itself.",HW-001
+"My workstation cannot be powered on after yesterday's power interruption. I already restarted the UPS, checked all power connections, and tested another outlet but it still refuses to start.",HW-001
+"The computer in my cubicle will not power on anymore. I already checked the extension cord and reconnected the power cable but there are still no indicator lights.",HW-001
+"I cannot access my files because my desktop does not turn on. I already followed the troubleshooting guide by checking the outlet, reconnecting the cable, and restarting the UPS but nothing changed.",HW-001
+"The system unit remains completely off after pressing the power button several times. I already tried another power cable and confirmed that the electrical outlet is working properly.",HW-001
+"My desktop was working yesterday before I went home. Today it does not power on anymore even after reconnecting the power cable and restarting the UPS.",HW-001
+"Our office computer suddenly stopped working and now it cannot be turned on. I already disconnected all USB devices and checked every cable but the system still has no power.",HW-001
+"I already verified that the monitor is working but the CPU itself has no power. I also checked the wall outlet and restarted the UPS but there is still no response.",HW-001
+"The workstation assigned to me does not start anymore. I already removed the extension cord and connected it directly to the wall outlet but it still won't power on.",HW-001
+"My desktop does not show any signs of power after checking the electrical supply. There are no lights, no fan movement, and no sound when pressing the power button.",HW-001
+"I cannot continue my work because my desktop computer is completely dead. I already checked the outlet, changed the power cable, and restarted the UPS but it still won't turn on.",HW-001
+"The desktop stopped working after yesterday's scheduled shutdown. I tried another outlet and another power cable but the computer still does not power on.",HW-001
+"I noticed that my workstation has no power this morning. I already unplugged it, waited a few minutes, and plugged it back in but nothing happened.",HW-001
+"The CPU does not receive power even though the monitor and printer connected to the same outlet are working. I already restarted the UPS but the issue remains.",HW-001
+"I already performed the recommended troubleshooting by checking all cables and using another electrical outlet but my desktop still cannot be powered on.",HW-001
+"The computer assigned to me suddenly became unresponsive after lunch yesterday. Today it refuses to power on even after reconnecting everything.",HW-001
+"My desktop cannot be switched on anymore. I already verified that electricity is available in the office and tried another extension cord but there are still no signs of power.",HW-001
+"I cannot start my workstation today because the power button does not respond at all. I already checked the outlet and restarted the UPS but the desktop remains off.",HW-001
+"The office desktop has completely stopped powering on. I already replaced the power cable and tested the outlet using another device but the issue persists.",HW-001
+"My assigned desktop has no power this morning. I already followed the usual troubleshooting by reconnecting the power cable and restarting the UPS but the computer is still completely unresponsive.",HW-001
+"My computer is completely dead today. I already checked the power source and confirmed the outlet is working but the system unit still will not turn on.",HW-001
+"I already moved the desktop to another working outlet and replaced the power cable but it still refuses to power on. I am unable to perform my tasks because of this issue.",HW-001
+"My workstation does not start anymore after yesterday's office power fluctuation. I restarted the UPS and checked all the cables but nothing has changed.",HW-001
+"The computer remains completely off after reconnecting the power supply. There are no indicator lights after several attempts to power it on.",HW-001
+"I already checked the electrical outlet. I restarted the UPS and reconnected all external cables but my desktop still cannot be powered on. The issue started this morning.",HW-001
+"My desktop computer no longer powers on. I already checked the outlet, reconnected the power cable, and restarted the UPS but the computer remains completely unresponsive.",HW-001
+"My desktop is not turning on today. I already checked the power cable and tried another outlet but nothing happens when I press the power button.",HW-001
+"I cannot start my computer this morning. The monitor has power but the system unit does not respond at all.",HW-001
+"My workstation suddenly shut down yesterday afternoon and now it won't turn back on. I already restarted the UPS but it is still dead.",HW-001
+"The computer assigned to me has no power. I checked the electrical outlet and even changed the power cable but it still won't start.",HW-001
+"When I arrived at the office today my PC would not turn on. I unplugged it for a few minutes and connected it again but there is still no response.",HW-001
+"I pressed the power button several times but nothing happens. I already checked if the outlet has electricity and it does.",HW-001
+"My desktop worked fine yesterday before I went home. This morning it does not power on anymore even after checking all the cables.",HW-001
+"My workstation is completely dead. There are no lights or any indication that it is receiving power after pressing the power button.",HW-001
+"I already tried connecting my desktop to another working outlet but it still refuses to power on. I cannot continue my work today.",HW-001
+"My office computer suddenly stopped working. After shutting it down yesterday it never powered back on despite trying the basic troubleshooting steps.",HW-001
+"The CPU does not seem to receive any power. I already checked the UPS and power strip but the issue remains the same.",HW-001
+"I cannot use my workstation because it does not turn on anymore. I verified that the outlet works by plugging in another device.",HW-001
+"My computer has been completely unresponsive since this morning. I already replaced the power cord and restarted the UPS but it still won't power on.",HW-001
+"The desktop is not powering on after yesterday's power interruption. I already checked every cable connected to it.",HW-001
+"I was about to start my shift but my desktop won't turn on. The monitor works but the computer itself remains off.",HW-001
+"The computer suddenly lost power while I was working. After that it never turned on again even after reconnecting everything.",HW-001
+"I already followed the troubleshooting guide by checking the outlet, power cable, and UPS but my desktop still has no power.",HW-001
+"The workstation in my cubicle cannot be powered on anymore. There are no indicator lights at all.",HW-001
+"My desktop does not respond when pressing the power button. I already tried another extension cord but nothing changed.",HW-001
+"The office PC has no power today. I already confirmed that electricity is available in the room but the computer remains off.",HW-001
+"I restarted the UPS because I thought that might be causing the problem but my desktop still does not turn on afterwards.",HW-001
+"My desktop won't power on after yesterday's scheduled shutdown. I have already checked all the external connections.",HW-001
+"The computer seems completely dead. There is no light on the power button and the desktop shows no signs of starting.",HW-001
+"I disconnected all USB devices thinking one of them might be causing the issue but the desktop still won't turn on.",HW-001
+"My workstation suddenly became unusable because it no longer powers on. I need assistance as soon as possible since I cannot continue my assigned work.",HW-001
+"My computer does not start anymore. I switched it to another outlet and used another power cable but the issue still persists.",HW-001
+"This morning my desktop wouldn't boot at all. It worked normally yesterday before leaving the office.",HW-001
+"I cannot log in because my desktop has no power. I already checked the wall outlet and restarted the UPS.",HW-001
+"The system unit is completely off even though the monitor and printer connected to the same outlet are working normally.",HW-001
+"The computer is not responding after pressing the power button. I waited a few minutes before trying again but it is still the same.",HW-001
+"I cannot finish my tasks because my workstation refuses to power on. I already checked the power source but found nothing unusual.",HW-001
+"My desktop appears to have no power at all. I don't see any lights or hear any sounds when trying to start it.",HW-001
+"The system unit does not start anymore even after reconnecting the power cable securely. Everything else on my desk has power.",HW-001
+"The desktop stopped working unexpectedly yesterday and now it cannot be powered on despite trying the usual troubleshooting steps.",HW-001
+"I have already tried everything I know including checking the outlet, restarting the UPS, reconnecting the power cable, and pressing the power button multiple times but my computer still won't turn on.",HW-001
+"Good morning. I was about to start my work today but my desktop would not turn on. I already made sure that the monitor has power and checked if the outlet was working. I also unplugged and plugged the power cable back in but nothing happens when I press the power button. Because of this I cannot access our payroll system.",HW-001
+"My computer was working yesterday before I left the office. Today it won't turn on anymore. I already tried another outlet and restarted the UPS but it is still completely off.",HW-001
+"Desktop won't turn on this morning. Already checked the cable and tried another socket but still nothing.",HW-001
+"I cannot start my workstation today. There are no indicator lights on the system unit even after reconnecting the power cable. I also asked my teammate to try another outlet but it still would not power on.",HW-001
+"The computer suddenly shut down while I was encoding reports yesterday afternoon. Since then it has not powered on again. I already checked the power cable and restarted the UPS but the issue is still the same.",HW-001
+"Nothing happens when I press the power button. The monitor works but the system unit looks completely dead.",HW-001
+"My desktop cannot be switched on. I already disconnected everything except the power cable to make sure no other device was causing the issue but it still won't start.",HW-001
+"PC not opening. Already checked the power cable and outlet. Still dead. Please help.",HW-001
+"The workstation assigned to me has no power. I already checked with another employee and the outlet is working because his charger works there. My desktop however still refuses to start.",HW-001
+"My computer stopped working after yesterday's power interruption. I tried turning it on several times today but nothing happens. I cannot continue preparing today's documents.",HW-001
+"The system unit does not respond anymore. I already replaced the power cable with another one from a nearby workstation but it still has no power.",HW-001
+"Computer won't start. Already tried plugging it somewhere else.",HW-001
+"I noticed there are no indicator lights when I try to turn on my desktop. I restarted the UPS and checked the wall outlet but there is still no response from the computer.",HW-001
+"I cannot use my assigned workstation because it does not power on anymore. I have already checked the basic connections but the desktop remains completely off.",HW-001
+"My desktop was accidentally unplugged yesterday. After plugging it back in it never powered on again. I already checked the outlet and tried another cable but nothing changed.",HW-001
+"The office desktop has completely stopped working. There are no indicator lights and the system unit does not respond after pressing the power button.",HW-001
+"Desktop no power. Already restarted the UPS. Still not working.",HW-001
+"My workstation cannot be powered on this morning. Everything else on my desk has electricity except the computer itself. I need assistance because I cannot log into our internal system.",HW-001
+"The desktop has no response when pressing the power button. I already waited a few minutes before trying again but the issue remains.",HW-001
+"Computer not opening. Already checked the outlet.",HW-001
+"I tried using another extension cord because I thought ours was defective but the desktop still would not turn on. The monitor is working properly so I believe the issue is with the system unit.",HW-001
+"The computer shut down unexpectedly yesterday and today it does not power on anymore. I already reconnected all cables and restarted the UPS without success.",HW-001
+"I am unable to perform my tasks because my desktop remains completely off. I checked the outlet using another device and confirmed that electricity is available.",HW-001
+"My desktop won't turn on. I already checked the power cable but I don't know what else to do.",HW-001
+"The workstation in our department has no power. We already tried another electrical outlet but the system unit still has no response after pressing the power button.",HW-001
+"My PC suddenly became unusable because it no longer powers on. It was working fine yesterday before I shut it down.",HW-001
+"CPU not opening after restart. Already check cable and power.",HW-001
+"This morning I found that my desktop was completely dead. I restarted the UPS and reconnected the power cable but there were still no lights or fan activity. I cannot access my work applications because of this.",HW-001
+"The desktop assigned to me cannot be powered on anymore. I confirmed that the monitor and printer connected to the same outlet are working but the system unit itself remains off.",HW-001
+"Need help with my workstation. It won't turn on today even after checking the outlet and reconnecting the power cable. I have pending reports that I cannot finish without access to my desktop.",HW-001
+"Good morning. I am unable to use my workstation because it does not turn on anymore. Yesterday before leaving the office I shut it down normally without any issues. This morning when I pressed the power button nothing happened. I already checked if the monitor and extension cord have power and they do. I also unplugged and plugged the power cable back in but the system unit still does not respond. I cannot continue processing today's purchase requests because I cannot log into the system.",HW-001
+"I encountered an issue with my desktop when I arrived at work today. The computer is completely unresponsive and there are no lights or sounds coming from the system unit. I tried using another electrical outlet and another power cable from a nearby workstation but it still would not power on. I currently cannot access my email or company applications needed for today's tasks.",HW-001
+"My assigned desktop suddenly stopped working. Yesterday afternoon everything was fine before I went home but this morning it no longer powers on. I checked the wall outlet using another device and confirmed that electricity is available. I also restarted the UPS just in case but the desktop remains completely off. I need assistance because I am unable to finish my pending reports.",HW-001
+"I cannot start my computer today. When I press the power button there is absolutely no response from the system unit. There are no lights no fan movement and no sound. I already made sure the power cable is securely connected and even borrowed another cable from my coworker to test it but the problem is still the same. Please assist as soon as possible because I cannot perform my assigned work.",HW-001
+"This morning I noticed that my workstation would not turn on. The monitor powers on normally but the system unit appears to have no power at all. I already disconnected the desktop from the extension cord and plugged it directly into the wall outlet but it still would not start. Since I cannot access the inventory system my work is currently delayed.",HW-001
+"I was about to begin my shift when I found that my desktop would not power on. Yesterday there were no problems before shutting it down. I already checked the electrical outlet restarted the UPS and confirmed that nearby computers are working normally. Unfortunately my workstation still has no response when pressing the power button. I would appreciate your assistance because I cannot continue my daily tasks.",HW-001
+"My desktop unexpectedly stopped working after yesterday's office power interruption. Today I tried turning it on several times but it remains completely off. I already followed the basic troubleshooting guide by checking the outlet reconnecting the power cable and trying another extension cord. None of these resolved the issue and I am unable to access our accounting application.",HW-001
+"The computer assigned to me cannot be powered on today. I initially thought the outlet might be the problem so I tested another workstation there and it worked without any issues. I also checked all visible cables connected to my desktop but the system unit still does not respond. Because of this I cannot continue encoding today's transactions.",HW-001
+"I am requesting assistance because my desktop does not start anymore. When I arrived this morning I pressed the power button but nothing happened. I already unplugged the power cable waited a few minutes plugged it back in and even tried another outlet. The monitor has power but the system unit itself appears completely dead. I currently have pending client requests that I cannot process.",HW-001
+"My workstation has become unusable because it no longer powers on. Yesterday it was functioning normally until the end of my shift. This morning there are no indicator lights and no signs that the desktop is receiving power. I have already checked the outlet restarted the UPS and reconnected every external cable that I could access but the issue persists. I am unable to access the company portal and complete today's assigned work.",HW-001
+"Good morning. When I turned on my computer today the monitor stayed black. I already restarted the computer and checked the monitor cable but I still cannot see anything on the screen. I cannot access my work files because of this.",HW-002
+"My desktop seems to turn on normally but the monitor does not show anything. I already switched the monitor off and on again but it is still just a black screen.",HW-002
+"I cannot use my workstation because nothing appears on the monitor after turning on the computer. Yesterday everything was working normally before I went home.",HW-002
+"When I started my computer this morning the monitor displayed ""No Signal."" I already checked the cable connection but the issue is still happening.",HW-002
+"The screen stays black after I turn on my desktop. I already restarted everything but it still doesn't display the login screen.",HW-002
+"My monitor has power but nothing appears after starting my computer. I already tried reconnecting the display cable but there was no change.",HW-002
+"I am unable to work because my monitor remains blank after turning on my desktop. I have already restarted the computer twice but the problem is still there.",HW-002
+"The computer starts but my screen never loads. It just stays black from the moment I turn it on.",HW-002
+"Yesterday everything was working fine but today my monitor does not display anything after I switched on my computer. I already checked the cables under my desk.",HW-002
+"My workstation only shows a black screen after startup. I waited several minutes thinking it was loading but nothing ever appeared.",HW-002
+"The monitor suddenly went black while I was working on a report. Restarting the computer did not bring the display back.",HW-002
+"Nothing appears on my monitor after I turn on the desktop. I already made sure the monitor itself is powered on.",HW-002
+"I cannot even reach the login screen because the monitor stays blank after I power on the computer. I need this fixed since I have reports due today.",HW-002
+"My desktop seems okay but the monitor only says ""No Signal."" I already unplugged and plugged the cable back in but nothing changed.",HW-002
+"The screen is completely black after turning on my workstation. I already tried another monitor from a nearby desk but it still doesn't display anything.",HW-002
+"I was working normally when my screen suddenly became black. The monitor never came back even after restarting the computer.",HW-002
+"Every time I turn on my computer the monitor stays blank. I cannot access the company system because I never reach the login page.",HW-002
+"My monitor is on but it doesn't show anything from my computer. I already checked the cable connections but the issue remains.",HW-002
+"The display disappeared while I was using Excel. I restarted the workstation but the screen is still black after startup.",HW-002
+"I cannot continue today's work because nothing is showing on my monitor. I already checked that the monitor has power but I still cannot see anything.",HW-002
+"When I started my computer this morning the monitor displayed ""No Signal."" I already checked the cable connection but the issue is still happening.",HW-002
+"I cannot use my workstation because nothing appears on the screen after startup. I already checked that the monitor has electricity and the cables seem properly connected.",HW-002
+"The computer starts normally but the monitor stays black from the beginning. I already asked a coworker to help me check the cables but we still couldn't get any display.",HW-002
+"My monitor suddenly stopped showing anything while I was working on Excel. Restarting the desktop did not resolve the issue. I still cannot see anything on the screen.",HW-002
+"The monitor is powered on but nothing is displayed after turning on my desktop. I already disconnected and reconnected the monitor cable but the issue still exists.",HW-002
+"I am unable to access my work because my monitor only shows a black screen. I already restarted both the monitor and desktop several times but nothing has changed.",HW-002
+"The display never appears after I switch on my computer. I waited a few minutes in case it was still loading but the screen remained blank.",HW-002
+"I was preparing today's reports when the monitor suddenly became black. After restarting the computer the display never came back. I cannot continue working until this is resolved.",HW-002
+"My workstation starts but I cannot see the login page because the monitor remains blank. I already checked all visible connections but there is still no display.",HW-002
+"The monitor has power but it only shows ""No Signal."" I already checked if the cable was loose but everything looks connected properly.",HW-002
+"Nothing appears on my monitor after turning on my desktop this morning. Yesterday everything was working as expected. I would appreciate your assistance because I cannot access our system.",HW-002
+"The screen remains completely black after startup. I already restarted the computer and checked if the monitor was connected correctly but the issue is still there.",HW-002
+"I cannot continue my work because my monitor does not display anything after switching on my computer. The monitor is powered on but I never see the Windows login screen.",HW-002
+"My desktop seems to be running but the monitor never shows anything. I already tried another display cable from a nearby workstation but the problem remains.",HW-002
+"The monitor suddenly lost its display while I was working. After restarting my computer I still cannot get anything to appear on the screen.",HW-002
+"Good morning. My desktop powers on normally but my monitor stays blank. I already checked the cable connection and restarted the workstation several times but nothing is displayed. I need my computer to complete today's assigned work.",HW-002
+"I turned on my computer today but the monitor is only showing a black screen. I already confirmed the monitor itself is working by connecting it to another desktop. The issue only happens with my assigned workstation.",HW-002
+"I arrived at the office this morning and turned on my computer as usual, but nothing appeared on my monitor. I already restarted the desktop and checked if the monitor cable was securely connected, but the screen is still completely black. I cannot access the purchasing system to continue my work.",HW-002
+"Good morning. My monitor is powered on but it does not display anything after starting the computer. I already tried turning both the monitor and desktop off and on again but the issue is still there. Please assist because I have pending documents to finish today.",HW-002
+"While preparing reports yesterday afternoon my screen suddenly went black. I restarted the computer hoping it would return, but after restarting nothing is displayed anymore. I cannot continue working because I cannot see anything on the monitor.",HW-002
+"The monitor only shows ""No Signal"" whenever I turn on my workstation. I already checked the cable connection and made sure it was connected properly, but the message still appears every time.",HW-002
+"My desktop powers on but I never reach the login screen because the monitor remains blank. I already waited several minutes thinking it was still loading but nothing appeared.",HW-002
+"Everything was working normally yesterday before I left the office. Today my monitor stays black after turning on my desktop. I already restarted the workstation several times without success.",HW-002
+"I cannot use my assigned computer because the monitor does not show anything after startup. The monitor has power but the screen stays blank. I already checked the cables under my desk but nothing changed.",HW-002
+"The display suddenly disappeared while I was updating records. After restarting my workstation the monitor still doesn't display anything. I need assistance because I have deadlines to meet today.",HW-002
+"My workstation starts but the screen remains black from the beginning. I already checked if the monitor was plugged in properly and even asked my teammate to verify the connections, but the problem remains.",HW-002
+"The monitor worked fine yesterday but today it is only showing a black screen after turning on my computer. I cannot access my email or company applications because of this issue.",HW-002
+"I tried restarting my desktop several times but nothing appears on the monitor. The monitor itself is powered on, however I cannot even reach the Windows login screen.",HW-002
+"Good morning. After switching on my desktop today I noticed that the monitor remained blank. I already disconnected and reconnected the monitor cable but I still cannot get any display.",HW-002
+"The monitor became black while I was working earlier. I saved what I could before restarting the computer, but after restarting the display never returned.",HW-002
+"Nothing appears on my screen after starting my workstation today. Yesterday I had no issues using the same computer. I already checked the visible cables but the problem still exists.",HW-002
+"My desktop turns on but I cannot see anything on the monitor. I already borrowed another monitor to check if mine was faulty, but it still does not display anything.",HW-002
+"The computer seems to start normally but the monitor keeps showing ""No Signal."" I already checked all cable connections but I still cannot use my workstation.",HW-002
+"I am unable to continue my daily tasks because my monitor stays black after startup. I already restarted the desktop twice but nothing appears on the screen.",HW-002
+"This morning my monitor would not display anything after turning on my desktop. I already confirmed that the monitor has power but it never shows the login screen.",HW-002
+"The display suddenly disappeared while I was reviewing spreadsheets. Restarting the computer did not fix the issue and the monitor remains blank.",HW-002
+"I cannot log into the company system because my monitor stays black every time I start the computer. I already checked the monitor cable but the issue continues.",HW-002
+"My workstation was functioning yesterday afternoon but today nothing appears on the screen after startup. I already restarted both the monitor and desktop several times.",HW-002
+"The monitor is on but I cannot see anything after turning on my desktop. I already tried another cable from a nearby workstation but the issue is still the same.",HW-002
+"Good morning. I cannot continue today's work because my monitor does not display anything after turning on the computer. I already checked the monitor settings and restarted everything but there is still no display.",HW-002
+"I switched on my desktop today but the monitor remained completely black. I thought it was still loading so I waited for several minutes but nothing appeared.",HW-002
+"My screen suddenly went blank while I was entering data. I restarted the workstation afterwards but the monitor still shows nothing after startup.",HW-002
+"The monitor says ""No Signal"" even though my desktop is turned on. I already checked that the cable is connected properly but I still cannot use my computer.",HW-002
+"Nothing is displayed on my monitor today after turning on the computer. Yesterday it was working normally. I would appreciate your assistance because I cannot access our internal system.",HW-002
+"The monitor remains blank after I start my workstation. I already restarted the desktop, checked the cables, and confirmed that the monitor has electricity but nothing appears.",HW-002
+"I cannot see the Windows login screen because my monitor stays black after startup. I already restarted the computer and waited for a few minutes but the display never appeared.",HW-002
+"The display disappeared unexpectedly while I was working this morning. Restarting the computer did not restore the screen and I am unable to continue my assigned tasks.",HW-002
+"My desktop won't turn on this morning. I haven't tried anything yet because I'm not sure what to check.",HW-001
+"Hi IT. My PC won't start today. Please assist.",HW-001
+"I arrived at work this morning and my computer won't power on anymore. It was working normally before I left yesterday.",HW-001
+"Good morning. I cannot use my workstation because it does not power on. I have not performed any troubleshooting yet since I wanted IT to check it first.",HW-001
+"Please help. I have an online client meeting in a few minutes and my desktop suddenly won't turn on. I cannot access my presentation or meeting files.",HW-001
+"My workstation suddenly stopped working this morning. There are no lights on the system unit when I press the power button.",HW-001
+"Computer not opening. Need help please.",HW-001
+"PC dead. Nothing happens.",HW-001
+"My desktop does not power on after arriving this morning. I already checked the power cable and tried another electrical outlet but there is still no response from the computer.",HW-001
+"I cannot continue processing payroll because my assigned computer refuses to power on. The monitor has electricity but the system unit appears completely dead.",HW-001
+"The computer suddenly shut down while I was preparing today's reports yesterday afternoon. This morning it no longer powers on. I already restarted the UPS and checked all visible cables.",HW-001
+"I already checked the outlet using another device and confirmed it has power. Unfortunately my desktop still won't turn on after reconnecting the power cable.",HW-001
+"My computer won't switch on today. Yesterday it was perfectly fine before I logged out and went home.",HW-001
+"Desktop not opening after weekend. Already restart UPS. Still no power.",HW-001
+"I pressed the power button several times but absolutely nothing happens. I don't see any indicator lights on the system unit.",HW-001
+"My workstation won't power on anymore. I cannot access SAP to process today's purchase requests.",HW-001
+"I already replaced the power cable with one from another workstation but the desktop still refuses to start.",HW-001
+"The office computer assigned to me has completely stopped working. There are no lights or sounds coming from the system unit after pressing the power button.",HW-001
+"Need assistance. My desktop won't turn on and I have urgent documents that need to be submitted before noon.",HW-001
+"I think my computer has no power. I don't know what happened because it was working fine yesterday.",HW-001
+"My workstation is completely unresponsive this morning. I already unplugged the power cable, waited for several minutes, plugged it back in, and tried another outlet but the issue remains.",HW-001
+"The computer assigned to me won't power on. I verified that nearby workstations are functioning normally so the issue seems isolated to my machine.",HW-001
+"My desktop suddenly stopped working overnight. I cannot access our accounting software because the computer will not start.",HW-001
+"Hi IT Team. My desktop refuses to power on today. I have already confirmed that the monitor and other devices connected to the same outlet are receiving electricity. The issue appears to be with the computer itself.",HW-001
+"Good morning. I am requesting assistance because my workstation no longer powers on. I have attempted basic troubleshooting including checking the outlet and restarting the UPS but there is still no response. This is preventing me from accessing today's client records.",HW-001
+"Computer no power. Already check cable. Please assist.",HW-001
+"I was about to log in for today's shift but my desktop would not start. There are no indicator lights even after reconnecting the power cable.",HW-001
+"My PC suddenly became unusable this morning. I haven't made any hardware changes recently.",HW-001
+"I cannot open my desktop. I tried another extension cord but the system unit still does not power on.",HW-001
+"The desktop is completely dead today. I already confirmed that electricity is available because my phone charger works using the same outlet.",HW-001
+"My desktop won't turn on today. I haven't tried anything yet because I'm not familiar with troubleshooting computers.",HW-001
+"I arrived at work this morning and my computer is not opening anymore. It was working fine before I went home yesterday.",HW-001
+"I cannot use my assigned workstation because it won't start. I need access to our HR system for today's tasks.",HW-001
+"My computer won't power on after pressing the power button several times. I'm not sure what caused it.",HW-001
+"Good morning. I was about to start my shift but my desktop won't turn on anymore. I haven't checked anything yet because I wanted IT to look at it first.",HW-001
+"My PC is not opening today. Please check because I don't know what happened.",HW-001
+"I can't access my work because my computer won't start. Yesterday everything was working normally.",HW-001
+"The workstation assigned to me does not power on this morning. I need it to answer customer emails.",HW-001
+"My desktop suddenly stopped working overnight. There are no lights when I press the power button.",HW-001
+"I was about to print today's reports but my computer won't turn on anymore.",HW-001
+"My office computer is completely off. I already tried pressing the power button a few times but nothing happens.",HW-001
+"Desktop not turning on. Need assistance.",HW-001
+"I cannot log into the inventory system because my desktop won't power on today.",HW-001
+"My workstation was working before I left yesterday. Today it doesn't respond anymore when I try to start it.",HW-001
+"My computer won't open. I have a lot of pending work today so I need help as soon as possible.",HW-001
+"The system unit appears completely dead. I don't hear any sound or see any lights when trying to turn it on.",HW-001
+"I need assistance with my desktop because it won't start this morning. I haven't experienced this issue before.",HW-001
+"Computer no power. Please check.",HW-001
+"My desktop won't switch on today. I haven't moved it or changed anything since yesterday.",HW-001
+"The workstation assigned to me won't power on. I cannot continue processing today's transactions.",HW-001
+"I was preparing for today's meeting but my desktop won't start anymore. I cannot access my presentation files.",HW-001
+"My computer suddenly won't turn on today. Yesterday there weren't any problems before I shut it down.",HW-001
+"I need my desktop for today's payroll processing but it refuses to power on.",HW-001
+"My PC won't boot. I don't know if it's a hardware problem or something else.",HW-001
+"I cannot access the company portal because my workstation does not power on anymore.",HW-001
+"My desktop is completely unresponsive. I haven't tried fixing it because I'm afraid I'll make it worse.",HW-001
+"Hi IT. My computer won't turn on today. Can someone please check it?",HW-001
+"My workstation isn't starting this morning. I already informed my supervisor that I'm unable to continue my work.",HW-001
+"The computer assigned to me has no power. It was working yesterday afternoon before I logged out.",HW-001
+"Please assist. My desktop won't power on and I cannot continue my assigned tasks today.",HW-001
+"I turned on my computer this morning but the screen never came up. The monitor has a light on it but I can't see anything.",HW-002
+"My computer seems to start but the monitor stays dark the whole time. I waited several minutes but nothing happened.",HW-002
+"After logging out yesterday everything was normal. Today my desktop starts but I can't get anything to appear on the screen.",HW-002
+"The monitor stays blank even though the computer sounds like it's running normally.",HW-002
+"My screen suddenly went dark while I was reviewing emails. After restarting, the display never returned.",HW-002
+"I can hear the computer running but the monitor doesn't show anything at all.",HW-002
+"When I came in this morning the monitor would not show the Windows login page. I already restarted the computer once.",HW-002
+"My desktop powers on but I only get a blank screen. I cannot access any of my files.",HW-002
+"I was using Excel when my screen suddenly disappeared. Restarting didn't fix it.",HW-002
+"The monitor has power but it never shows my desktop anymore.",HW-002
+"My computer starts but the display doesn't. I can't continue preparing today's reports.",HW-002
+"I cannot see anything after turning my computer on. It looks like it's running but there's no picture.",HW-002
+"Everything seems normal except nothing appears on the monitor after startup.",HW-002
+"My workstation starts but the screen stays empty. I don't even reach the login screen.",HW-002
+"The monitor suddenly stopped displaying while I was working. Since then I haven't been able to use my computer.",HW-002
+"The desktop seems okay because I can hear it, but my monitor doesn't show anything.",HW-002
+"I tried restarting my computer twice but the screen remains completely blank.",HW-002
+"The monitor is on but all I see is a dark screen after startup.",HW-002
+"My display disappeared while I was entering data into our system. It never came back after restarting.",HW-002
+"I need assistance because my monitor never loads the Windows screen anymore.",HW-002
+"My workstation was working yesterday. Today the monitor doesn't display anything after I turn the computer on.",HW-002
+"The screen never wakes up even though the computer has already started.",HW-002
+"I left my computer for lunch and when I came back the monitor was black. Restarting didn't help.",HW-002
+"My desktop powers on normally but the monitor remains empty from start to finish.",HW-002
+"I cannot access our payroll application because nothing appears on my monitor after startup.",HW-002
+"The monitor suddenly lost the picture while I was processing transactions. It hasn't come back since.",HW-002
+"My computer makes its usual startup sounds but the display stays black.",HW-002
+"I don't know if it's the monitor or the computer, but I can't see anything after turning it on.",HW-002
+"I've restarted my workstation several times already but I still can't get anything to appear on the screen.",HW-002
+"My monitor never reaches the login page. It stays blank every time I start my desktop.",HW-002
+"My monitor stayed black after I unlocked my computer this morning. I restarted the desktop but the screen never came back.",HW-002
+"I was able to hear the Windows startup sound but the monitor never displayed anything.",HW-002
+"The display suddenly disappeared while I was updating customer records. Restarting the workstation did not solve the problem.",HW-002
+"I powered on my desktop today but the monitor remained blank. I cannot continue answering customer inquiries.",HW-002
+"My workstation appears to be running but there is no image on the monitor. I already waited several minutes thinking it was still loading.",HW-002
+"The monitor went black while I was attending an online meeting. I restarted everything but there is still no display.",HW-002
+"I can't use my computer because the screen stays black after startup. The monitor itself seems to have power.",HW-002
+"My desktop boots up but nothing is displayed. I cannot access the accounting system.",HW-002
+"The screen suddenly turned off while I was reviewing documents. The desktop is still running but I can't see anything.",HW-002
+"I tried restarting my workstation three times but the monitor never displays the Windows login screen.",HW-002
+"Good morning. My desktop powers on but the monitor remains blank. I cannot access today's purchase requests.",HW-002
+"I noticed that my monitor is receiving power but there is no picture after turning on the computer.",HW-002
+"The display is completely blank even though I can hear the computer running normally.",HW-002
+"I cannot continue preparing today's reports because my monitor does not display anything.",HW-002
+"My workstation starts but the screen never shows the desktop environment.",HW-002
+"Everything looks powered on except my monitor is not showing any image. I don't know if the issue is with the computer or the display.",HW-002
+"My screen suddenly froze and then became completely black. After restarting, the display never returned.",HW-002
+"I arrived this morning and my monitor wouldn't display anything after starting my desktop.",HW-002
+"I am unable to log in because the screen remains blank from startup until now.",HW-002
+"My computer sounds like it is working but my monitor remains completely dark.",HW-002
+"The display disappeared while I was entering payroll information. Restarting the workstation didn't restore it.",HW-002
+"I cannot use my assigned workstation because I never get any display after startup.",HW-002
+"My desktop turns on normally but I cannot see the login page anymore.",HW-002
+"The monitor worked yesterday afternoon but today it only stays black after powering on my computer.",HW-002
+"My workstation starts as usual but there is no output on the monitor. I already waited several minutes before restarting.",HW-002
+"The monitor is powered on but it never shows anything except a black screen.",HW-002
+"I left my workstation for a few minutes and when I returned the display was already gone. Restarting didn't help.",HW-002
+"I cannot access our internal portal because nothing appears on the monitor after startup.",HW-002
+"The computer appears operational but there is still no display after multiple restarts.",HW-002
+"My monitor suddenly stopped displaying while I was processing invoices. The desktop continues running but I cannot see anything on the screen.",HW-002

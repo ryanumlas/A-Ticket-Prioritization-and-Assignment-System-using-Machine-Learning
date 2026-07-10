@@ -1,0 +1,5 @@
+cleaned_text,expected
+"Good morning. My desktop won't turn on anymore.",HW-001
+"My monitor is completely black after startup.",HW-002
+"I cannot see the Windows login screen.",HW-002
+"The system unit has no lights when I press the power button.",HW-001

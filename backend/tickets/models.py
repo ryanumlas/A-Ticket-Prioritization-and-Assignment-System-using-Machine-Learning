@@ -88,9 +88,6 @@ class TicketComments(models.Model):
     commented_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='ticket_comments')
     message = models.TextField()
     comment_type = models.CharField(max_length=20, choices=CommentType.choices, default=CommentType.PUBLIC_REPLY)
-    is_internal = models.BooleanField(default=False)
-    created_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='created_tickets_comments')
-    updated_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='updated_tickets_comments')
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
