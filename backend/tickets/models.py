@@ -163,6 +163,7 @@ class ReviewFlags(models.Model):
     class Reasons(models.TextChoices):
         LOW_CONFIDENCE = 'low_confidence', 'Low Confidence'
         SYMPTOM_NOT_DETECTED = 'symptom_not_detected', 'Symptom Not Detected'
+        KEYWORDS_CONFLICT = 'keywords_conflict', 'Keywords Conflict'
         UNCLEAR_DESCRIPTION = 'unclear_description', 'Unclear Description'
         MANUAL_OVERRIDE = 'manual_override', 'Manual Override'
         OTHER = 'other', 'Other'
