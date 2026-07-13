@@ -5,13 +5,15 @@ from rest_framework_simplejwt.views import TokenObtainPairView
 from rest_framework.permissions import AllowAny, IsAuthenticated
 
 from .models import User, ITSupportProfile, UserRoles
-from .serializers import UserSerializer, ITSupportProfileSerializer, UserListSerializer, UserRolesSerializer
+from .serializers import UserSerializer, ITSupportProfileSerializer, UserListSerializer, UserRolesSerializer, CustomTokenObtainPairSerializer
 
 class RegisterView(generics.CreateAPIView):
     queryset = User.objects.all()
     serializer_class = UserSerializer
     permission_classes = [AllowAny] 
 
+class CustomTokenView(TokenObtainPairView):
+    serializer_class = CustomTokenObtainPairSerializer
 class UserListView(generics.ListAPIView):
     queryset = User.objects.all()
     serializer_class = UserListSerializer   

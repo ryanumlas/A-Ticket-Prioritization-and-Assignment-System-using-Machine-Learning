@@ -1,7 +1,9 @@
 import './App.css'
 import react from 'react'
-import { BrowserRouter, Router, Routes, Route, Navigate } from 'react-router-dom'
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import Login from './pages/Login'
+import Sidebar from './components/Sidebar'
+import Dashboard from "./pages/Dashboard";
 import NotFound from './pages/NotFound'
 import ProtectedRoute from './components/ProtectedRoute'
 
@@ -11,15 +13,14 @@ function Logout() {
 }
 
 function App() {
-
   return (
-    <BrowserRouter>
-      <Routes>
-        <Route path="/login" element={<Login />} />
-        <Route path="/logout" element={<Logout />} />
-        <Route path="*" element={<NotFound />} />
-      </Routes>
-    </BrowserRouter>
+    <Routes>
+      <Route path="/dashboard" element={<Dashboard />} />
+      <Route path="/sidebar" element={<Sidebar />} />
+      <Route path="/login" element={<Login />} />
+      <Route path="/logout" element={<Logout />} />
+      <Route path="*" element={<NotFound />} />
+    </Routes>
   )
 }
 

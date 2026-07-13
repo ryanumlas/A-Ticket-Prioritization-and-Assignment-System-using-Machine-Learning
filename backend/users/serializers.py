@@ -1,6 +1,53 @@
 from rest_framework import serializers
+from django.contrib.auth import get_user_model
+from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
+from django.contrib.auth import authenticate
 from .models import User, ITSupportProfile, UserRoles
 
+class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
+
+    @classmethod
+    def get_token(cls, user):
+        token = super().get_token(user)
+
+        token["username"] = user.username
+        token["role"] = user.role.name
+
+        return token
+    
+    def validate(self, attrs):
+        username = attrs.get("username")
+        password = attrs.get("password")
+
+        user = authenticate(
+            username=username,
+            password=password
+        )
+
+        if user is None:
+            User = get_user_model()
+
+            if not User.objects.filter(username=username).exists():
+                raise serializers.ValidationError(
+                    {
+                        "username": "Username does not exist"
+                    }
+                )
+            else:
+                raise serializers.ValidationError(
+                    {
+                        "password": "Incorrect Password"
+                    }
+                )
+        if not user.is_active:
+            raise serializers.ValidationError(
+                {
+                    "account": "Account is inactive"
+                }
+            )
+        return super().validate(attrs)
+
+   
 class ITSupportProfileSerializer(serializers.ModelSerializer):
     class Meta:
         model = ITSupportProfile
