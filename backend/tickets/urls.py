@@ -1,5 +1,5 @@
 from django.urls import path
-from .views import CreateTicketView, ListTicketView, DetailTicketView, UpdateSymptomCodeView, UpdateTicketView, DeleteTicketView, CreateCategoryView, KeywordUpdateView ,KeywordCreateView, UpdateCategoryView, CreateSymptomCodeView, SLARulesCreateView, SLARulesUpdateView
+from .views import TicketListEmployeeView, CreateTicketView, ListTicketView, DetailTicketView, UpdateSymptomCodeView, UpdateTicketView, DeleteTicketView, CreateCategoryView, KeywordUpdateView ,KeywordCreateView, UpdateCategoryView, CreateSymptomCodeView, SLARulesCreateView, SLARulesUpdateView
 
 urlpatterns = [
     # --- Ticket URLs ---
@@ -8,6 +8,7 @@ urlpatterns = [
     path('detail/<int:pk>/', DetailTicketView.as_view(), name='detail-ticket'),
     path('update/<int:pk>/', UpdateTicketView.as_view(), name='update-ticket'),
     path('delete/<int:pk>/', DeleteTicketView.as_view(), name='delete-ticket'),
+    path('employee/list/', TicketListEmployeeView.as_view(), name="ticket-list"),
     
     # --- Category URLs ---
     path('categories/create/', CreateCategoryView.as_view(), name='create-category'),

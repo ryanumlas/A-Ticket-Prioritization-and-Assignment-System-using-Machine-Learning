@@ -22,12 +22,18 @@ export default function Dashboard() {
         MainContent = <div className="p-6">Access Denied / Invalid Role</div>;
     }
     return (
-        <div className="flex min-h-screen w-screen overflow-hidden">
-            <Sidebar/>
+        <div className="flex w-screen h-screen overflow-hidden bg-gray-50">
+            <Sidebar />
+            <div className="flex-1 h-screen overflow-y-auto flex flex-col">
+            
+                <div className="h-20 border-b border-gray-300 bg-white shrink-0">
+                </div>
 
-            <main>
-                {MainContent}
-            </main>
+                <main className="p-6">
+                    {MainContent}
+                </main>
+
+            </div>
         </div>
     );
 }

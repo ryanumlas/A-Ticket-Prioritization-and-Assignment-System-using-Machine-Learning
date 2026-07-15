@@ -133,6 +133,16 @@ class DeleteTicketView(generics.DestroyAPIView):
     queryset = Ticket.objects.all()
     serializer_class = TicketSerializer
     permission_classes = [IsAuthenticated]
+
+class TicketListEmployeeView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        user = request.user
+
+        tickets = Ticket.objects.filter(submitted_by=user)
+        serializer = TicketSerializer(tickets, many=True)
+        return Response(serializer.data)
 # --- End ---
 
 # --- Category Views ---
