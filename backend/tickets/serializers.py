@@ -78,16 +78,11 @@ class TicketSerializer(serializers.ModelSerializer):
     def get_created_at_formatted(self, obj):
         return timezone.localtime(obj.created_at).strftime("%B %d, %Y %I:%M %p")
 
-from rest_framework import serializers
-from .models import Ticket
-
 
 class TicketCreateSerializer(serializers.ModelSerializer):
     class Meta:
         model = Ticket
         fields = [
-            "employee_department",
-            "office_location",
             "workstation",
             "subject",
             "description",
@@ -126,16 +121,6 @@ class TicketCreateSerializer(serializers.ModelSerializer):
         return value
 
     def validate(self, attrs):
-        if not attrs.get("employee_department"):
-            raise serializers.ValidationError({
-                "employee_department": "Employee Department is required."
-            })
-
-        if not attrs.get("office_location"):
-            raise serializers.ValidationError({
-                "office_location": "Office Location is required."
-            })
-
         if not attrs.get("affected_scope"):
             raise serializers.ValidationError({
                 "affected_scope": "Affected Scope is required."

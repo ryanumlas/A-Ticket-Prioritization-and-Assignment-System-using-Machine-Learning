@@ -6,9 +6,9 @@ from rest_framework.response import Response
 from rest_framework_simplejwt.views import TokenObtainPairView
 from rest_framework.permissions import AllowAny, IsAuthenticated
 
-from .models import User, ITSupportProfile, UserRoles
+from .models import User, ITSupportProfile, UserRoles, UserProfile
 from tickets.models import Ticket
-from .serializers import UserSerializer, ITSupportProfileSerializer, UserListSerializer, UserRolesSerializer, CustomTokenObtainPairSerializer
+from .serializers import UserSerializer, ITSupportProfileSerializer, UserListSerializer, UserRolesSerializer, CustomTokenObtainPairSerializer, UserProfileUpdateSerializer
 
 class RegisterView(generics.CreateAPIView):
     queryset = User.objects.all()
@@ -41,6 +41,11 @@ class UserListView(generics.ListAPIView):
 class UserUpdateView(generics.UpdateAPIView):
     queryset = User.objects.all()
     serializer_class = UserSerializer
+    permission_classes = [AllowAny]
+
+class UserProfileUpdateView(generics.UpdateAPIView):
+    queryset = UserProfile.objects.all()
+    serializer_class = UserProfileUpdateSerializer
     permission_classes = [AllowAny]
 
 class CreateITSupportProfileView(generics.CreateAPIView):

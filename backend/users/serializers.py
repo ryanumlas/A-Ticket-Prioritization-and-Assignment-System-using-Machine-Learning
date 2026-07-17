@@ -2,7 +2,8 @@ from rest_framework import serializers
 from django.contrib.auth import get_user_model
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from django.contrib.auth import authenticate
-from .models import User, ITSupportProfile, UserRoles
+from django.db import transaction
+from .models import User, ITSupportProfile, UserRoles, UserProfile
 
 class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
 
@@ -10,11 +11,32 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
     def get_token(cls, user):
         token = super().get_token(user)
 
+        token["profile_id"] = user.profile.id
         token["username"] = user.username
         token["role"] = user.role.name
         token["first_name"] = user.first_name
         token["last_name"] = user.last_name
         token["user_code"] = user.user_code
+        token["employee_department"] = (
+            user.profile.employee_department.name
+            if user.profile.employee_department
+            else None
+        )
+        token["office_location"] = (
+            user.profile.office_location.name
+            if user.profile.office_location
+            else None
+        )
+        token["employee_department_id"] = (
+            user.profile.employee_department.id
+            if user.profile.employee_department
+            else None
+        )
+        token["office_location_id"] = (
+            user.profile.office_location.id
+            if user.profile.office_location
+            else None
+        )
  
         return token
     
@@ -64,8 +86,11 @@ class UserSerializer(serializers.ModelSerializer):
         fields = ['id', 'username', 'password', 'role', 'email', 'first_name', 'last_name', 'user_code']
         extra_kwargs = {'password': {'write_only': True}}
 
+    @transaction.atomic
     def create(self, validated_data):
         user = User.objects.create_user(**validated_data)
+
+        UserProfile.objects.create(user=user)
         return user
     
 class UserRolesSerializer(serializers.ModelSerializer):
@@ -81,3 +106,8 @@ class UserListSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = ['id', 'username', 'password', 'first_name', 'last_name', 'role', 'current_workload', 'expertise', 'availability_status']
+
+class UserProfileUpdateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = UserProfile
+        fields = ['employee_department', 'office_location']

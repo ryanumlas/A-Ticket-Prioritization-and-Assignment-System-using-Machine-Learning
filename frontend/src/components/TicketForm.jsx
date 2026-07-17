@@ -3,20 +3,17 @@ import { useState, useEffect } from "react"
 import api from '../api';
 
 export default function TicketForm() {
+    const user = getCurrentUser()
     const [formData, setFormData] = useState({
         subject: "",
         description: "",
         affected_scope: "",
         business_impact: "",
-        employee_department: "",
-        office_location: "",
         workstation: "",
     })
-    const [departments, setDepartments] = useState([]);
-    const [locations, setLocations] = useState([]);
+    // const [departments, setDepartments] = useState([]);
+    // const [locations, setLocations] = useState([]);
     const [loading, setLoading] = useState(false);
-    const user = getCurrentUser()
-
     const affectedScopeChoices = [
         { value: "individual", label: "Individual" },
         { value: "group", label: "Group" },
@@ -24,22 +21,22 @@ export default function TicketForm() {
         { value: "organization_wide", label: "Organization Wide" }
     ];
 
-    useEffect(() => {
-        const fetchDropdownOptions = async () => {
-            try {
-                const [deptResponse, locResponse] = await Promise.all([
-                    api.get("/departments/employee/list/"),
-                    api.get("/departments/office/list/")
-                ]) 
-                setDepartments(deptResponse.data || []);
-                setLocations(locResponse.data || []);
-            } catch (error) {
-                console.error(error);
-            }
-        };
+    // useEffect(() => {
+    //     const fetchDropdownOptions = async () => {
+    //         try {
+    //             const [deptResponse, locResponse] = await Promise.all([
+    //                 api.get("/departments/employee/list/"),
+    //                 api.get("/departments/office/list/")
+    //             ]) 
+    //             setDepartments(deptResponse.data || []);
+    //             setLocations(locResponse.data || []);
+    //         } catch (error) {
+    //             console.error(error);
+    //         }
+    //     };
         
-        fetchDropdownOptions();
-    }, []);
+    //     fetchDropdownOptions();
+    // }, []);
 
     const handleChange = (e) => {
         setFormData({
@@ -59,8 +56,6 @@ export default function TicketForm() {
                 description: "",
                 affected_scope: "",
                 business_impact: "",
-                employee_department: "",
-                office_location: "",
                 workstation: "",
             })
             alert("SUCCESS!")
@@ -96,26 +91,28 @@ export default function TicketForm() {
 
                 <div className="flex flex-col">
                     <label className="mb-2 font-medium">Department</label>
-                    <select className="border border-gray-300 rounded-md p-2" name="employee_department" value={formData.employee_department} onChange={handleChange}>
+                    {/* <select className="border border-gray-300 rounded-md p-2" name="employee_department" value={formData.employee_department} onChange={handleChange}>
                         <option value="">Select Department</option>
                         {departments.map((dept) => (
                             <option key={dept.id} value={dept.id}>
                                 {dept.name}
                             </option>
                         ))}
-                    </select>
+                    </select> */}
+                    <input type="text" readOnly value={user.employee_department || "null"} className="border border-gray-300 rounded-md p-2"/>
                 </div>
 
                 <div className="flex flex-col">
                     <label className="mb-2 font-medium">Office Location</label>
-                    <select className="border border-gray-300 rounded-md p-2" name="office_location" value={formData.office_location} onChange={handleChange}>
+                    {/* <select className="border border-gray-300 rounded-md p-2" name="office_location" value={formData.office_location} onChange={handleChange}>
                         <option value="">Select Office</option>
                         {locations.map((loc) => (
                             <option key={loc.id} value={loc.id}>
                                 {loc.name}
                             </option>
                         ))}
-                    </select>
+                    </select> */}
+                    <input type="text" readOnly value={user.office_location || "null"} className="border border-gray-300 rounded-md p-2"/>
                 </div>
 
                 <div className="flex flex-col">

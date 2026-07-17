@@ -41,6 +41,8 @@ class Ticket(models.Model):
     affected_scope = models.CharField(max_length=20, choices=AffectedScope.choices, default=AffectedScope.INDIVIDUAL)
     is_under_review = models.BooleanField(default=False)
     is_escalated = models.BooleanField(default=False)
+    escalated_at = models.DateTimeField(null=True,blank=True)
+    assigned_at = models.DateTimeField(null=True,blank=True)
     resolved_at = models.DateTimeField(null=True, blank=True)
     resolved_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='resolved_tickets')
     updated_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='updated_tickets')

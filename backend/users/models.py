@@ -1,6 +1,6 @@
 from django.db import models
 from django.contrib.auth.models import AbstractUser
-from departments.models import ITDepartment
+from departments.models import ITDepartment, EmployeeDepartment, OfficeLocation
 
 # class UserManager(BaseUserManager):
 #     use_in_migrations = True
@@ -57,6 +57,17 @@ class User(AbstractUser):
     def __str__(self):
         return self.username 
 
+class UserProfile(models.Model):
+    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name="profile")
+
+    employee_department = models.ForeignKey(EmployeeDepartment, on_delete=models.SET_NULL, null=True, blank=True)
+    office_location = models.ForeignKey(OfficeLocation, on_delete=models.SET_NULL, null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        db_table = "user_profiles"
+
 class ITSupportProfile(models.Model):
     class AvailabilityStatus(models.TextChoices):
         available = 'available', 'Available'
@@ -68,8 +79,8 @@ class ITSupportProfile(models.Model):
     workload_limit = models.IntegerField(default=5)
     current_workload = models.IntegerField(default=0)
     availability_status = models.CharField(max_length=20, choices=AvailabilityStatus.choices, default=AvailabilityStatus.available)
-    created_by = models.ForeignKey('self', on_delete=models.SET_NULL, null=True, blank=True, related_name='created_it_support_profiles')
-    updated_by = models.ForeignKey('self', on_delete=models.SET_NULL, null=True, blank=True, related_name='updated_it_support_profiles')
+    created_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='created_it_support_profiles')
+    updated_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='updated_it_support_profiles')
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 

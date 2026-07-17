@@ -25,7 +25,8 @@ class CreateTicketView(generics.CreateAPIView):
 
     @transaction.atomic
     def perform_create(self, serializer):
-        ticket = serializer.save(submitted_by=self.request.user)
+        profile = self.request.user.profile
+        ticket = serializer.save(submitted_by=self.request.user, employee_department=profile.employee_department, office_location=profile.office_location)
 
         analysis = analyze_ticket(ticket)
 
@@ -41,12 +42,18 @@ class CreateTicketView(generics.CreateAPIView):
             return
 
         result = classify_ticket(ticket)
+        print(result)
+
 
         symptom = SymptomCode.objects.filter(code=result.get("symptom_code")).first()
 
+        print("Symptom:", symptom)
+
         category = symptom.category if symptom else None
+        print("Category:", category)
 
         department = category.it_department if category else None
+        print("Department:", department)
 
         if not symptom:
             ReviewFlags.objects.create(
@@ -88,6 +95,8 @@ class CreateTicketView(generics.CreateAPIView):
         if sla_rule:
             ticket.priority = sla_rule
 
+        ticket.status = Ticket.TicketStatus.OPEN
+        
         ticket.save()
 
 class UpdateTicketStatusView(APIView):
