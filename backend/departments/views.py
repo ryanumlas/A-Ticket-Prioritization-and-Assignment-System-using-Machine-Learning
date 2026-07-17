@@ -20,6 +20,11 @@ class ITDepartmentUpdateView(generics.UpdateAPIView):
     serializer_class = ITDepartmentSerializer
     permission_classes = [IsAuthenticated]
 
+class EmployeeDepartmentListView(generics.ListAPIView):
+    queryset = EmployeeDepartment.objects.all()
+    serializer_class = EmployeeDepartmentSerializer
+    permission_classes = [AllowAny]
+
 class EmployeeDepartmentCreateView(generics.CreateAPIView):
     queryset = EmployeeDepartment.objects.all()
     serializer_class = EmployeeDepartmentSerializer
@@ -28,4 +33,14 @@ class EmployeeDepartmentCreateView(generics.CreateAPIView):
 class OfficeLocationCreateView(generics.CreateAPIView):
     queryset = OfficeLocation.objects.all()
     serializer_class = OfficeLocationSerializer
+    permission_classes = [AllowAny]
+
+class OfficeLocationDeleteView(generics.DestroyAPIView):
+    queryset = OfficeLocation.objects.all()
+    serializer_class = OfficeLocationSerializer
+    permission_classes = [AllowAny]
+
+class OfficeLocationListView(generics.ListAPIView):
+    queryset = OfficeLocation.objects.all()
+    serializer_class = OfficeLocationSerializer 
     permission_classes = [AllowAny]

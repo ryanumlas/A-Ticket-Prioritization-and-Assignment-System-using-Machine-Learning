@@ -1,5 +1,5 @@
 import { getCurrentUser } from "../utils/auth";
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import api from '../api';
 
 export default function TicketForm() {
@@ -12,8 +12,34 @@ export default function TicketForm() {
         office_location: "",
         workstation: "",
     })
+    const [departments, setDepartments] = useState([]);
+    const [locations, setLocations] = useState([]);
     const [loading, setLoading] = useState(false);
     const user = getCurrentUser()
+
+    const affectedScopeChoices = [
+        { value: "individual", label: "Individual" },
+        { value: "group", label: "Group" },
+        { value: "department", label: "Department" },
+        { value: "organization_wide", label: "Organization Wide" }
+    ];
+
+    useEffect(() => {
+        const fetchDropdownOptions = async () => {
+            try {
+                const [deptResponse, locResponse] = await Promise.all([
+                    api.get("/departments/employee/list/"),
+                    api.get("/departments/office/list/")
+                ]) 
+                setDepartments(deptResponse.data || []);
+                setLocations(locResponse.data || []);
+            } catch (error) {
+                console.error(error);
+            }
+        };
+        
+        fetchDropdownOptions();
+    }, []);
 
     const handleChange = (e) => {
         setFormData({
@@ -22,7 +48,9 @@ export default function TicketForm() {
         });
     }
 
-    const handleSubmit = async () => {
+    const handleSubmit = async (e) => {
+        e.preventDefault()
+
         setLoading(true);
         try {
             const response = await api.post("/tickets/create/", formData);
@@ -68,15 +96,25 @@ export default function TicketForm() {
 
                 <div className="flex flex-col">
                     <label className="mb-2 font-medium">Department</label>
-                    <select className="border border-gray-300 rounded-md p-2" name="affected_scope" value={formData.affected_scope} onChange={handleChange}>
-                        <option>Select Department</option>
+                    <select className="border border-gray-300 rounded-md p-2" name="employee_department" value={formData.employee_department} onChange={handleChange}>
+                        <option value="">Select Department</option>
+                        {departments.map((dept) => (
+                            <option key={dept.id} value={dept.id}>
+                                {dept.name}
+                            </option>
+                        ))}
                     </select>
                 </div>
 
                 <div className="flex flex-col">
                     <label className="mb-2 font-medium">Office Location</label>
                     <select className="border border-gray-300 rounded-md p-2" name="office_location" value={formData.office_location} onChange={handleChange}>
-                        <option>Select Office</option>
+                        <option value="">Select Office</option>
+                        {locations.map((loc) => (
+                            <option key={loc.id} value={loc.id}>
+                                {loc.name}
+                            </option>
+                        ))}
                     </select>
                 </div>
 
@@ -108,7 +146,12 @@ export default function TicketForm() {
                 <div className="w-60">
                     <label className="block mb-2 font-medium">Affected Scope</label>
                     <select className="w-full border border-gray-300 rounded-md p-2" name="affected_scope" value={formData.affected_scope} onChange={handleChange}>
-                        <option>Select Scope</option>
+                        <option value="">Select Scope</option>
+                        {affectedScopeChoices.map((choice) => (
+                            <option key={choice.value} value={choice.value}>
+                                {choice.label}
+                            </option>
+                        ))}
                     </select>
                 </div>
 
