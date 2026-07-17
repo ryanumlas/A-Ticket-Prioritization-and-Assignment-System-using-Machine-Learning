@@ -38,6 +38,7 @@ class CreateTicketView(generics.CreateAPIView):
                 source_type=ReviewFlags.SourceType.SYSTEM_GENERATED
             )
             ticket.is_under_review = True
+            ticket.status = Ticket.TicketStatus.UNDER_REVIEW
             ticket.save()
             return
 
@@ -63,6 +64,7 @@ class CreateTicketView(generics.CreateAPIView):
                 source_type=ReviewFlags.SourceType.SYSTEM_GENERATED
             )
             ticket.is_under_review = True
+            ticket.status = Ticket.TicketStatus.UNDER_REVIEW
             ticket.save()
             return
         
@@ -74,6 +76,7 @@ class CreateTicketView(generics.CreateAPIView):
                 source_type=ReviewFlags.SourceType.SYSTEM_GENERATED
             )
             ticket.is_under_review=True
+            ticket.status = Ticket.TicketStatus.UNDER_REVIEW
             ticket.save()
             return
         
@@ -178,7 +181,7 @@ class CreateCategoryView(generics.CreateAPIView):
 class UpdateCategoryView(generics.UpdateAPIView):
     queryset = Category.objects.all()
     serializer_class = CategorySerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [AllowAny]
 # --- End ---
 
 # --- Symptom Code Views ---
