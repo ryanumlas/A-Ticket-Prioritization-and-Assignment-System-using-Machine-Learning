@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import TicketTableEmployee from "../components/TicketTableEmployee";
 
 export default function EmployeeTicket() {
-    const [ticketList, setTicketList] = useState(null);
+    const [ticketList, setTicketList] = useState([]);
 
     useEffect(() => {
         const fetchTicketList = async () => {

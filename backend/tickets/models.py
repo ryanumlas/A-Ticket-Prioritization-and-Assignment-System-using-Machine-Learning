@@ -31,7 +31,7 @@ class Ticket(models.Model):
     it_department = models.ForeignKey(ITDepartment, on_delete=models.SET_NULL, null=True, blank=True, related_name='tickets_it_department')
     employee_department = models.ForeignKey(EmployeeDepartment, on_delete=models.SET_NULL, null=True, blank=True, related_name='tickets_employee_department')
     office_location = models.ForeignKey(OfficeLocation, on_delete=models.SET_NULL, null=True, blank=True, related_name='tickets_office_location')
-    workstation = models.CharField(max_length=100, blank=True)
+    workstation = models.CharField(max_length=100, null=True, blank=True)
     assigned_to = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='assigned_tickets')
     status = models.CharField(max_length=20, choices=TicketStatus.choices, default=TicketStatus.OPEN)
     priority = models.ForeignKey('SLARules', on_delete=models.SET_NULL, null=True, blank=True, related_name='tickets_priority')
@@ -43,7 +43,6 @@ class Ticket(models.Model):
     is_escalated = models.BooleanField(default=False)
     resolved_at = models.DateTimeField(null=True, blank=True)
     resolved_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='resolved_tickets')
-    created_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='created_tickets')
     updated_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='updated_tickets')
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -163,6 +162,7 @@ class ReviewFlags(models.Model):
     class Reasons(models.TextChoices):
         LOW_CONFIDENCE = 'low_confidence', 'Low Confidence'
         SYMPTOM_NOT_DETECTED = 'symptom_not_detected', 'Symptom Not Detected'
+        MISSING_DEPARTMENT = 'missing_department', 'Missing Department'
         KEYWORDS_CONFLICT = 'keywords_conflict', 'Keywords Conflict'
         UNCLEAR_DESCRIPTION = 'unclear_description', 'Unclear Description'
         MANUAL_OVERRIDE = 'manual_override', 'Manual Override'

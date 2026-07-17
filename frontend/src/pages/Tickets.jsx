@@ -26,7 +26,7 @@ export default function Ticket() {
                 <div className="h-20 border-b border-gray-300 bg-white mb-20 shrink-0">
                 </div>
 
-                <main className="flex-1 h-full">
+                <main className="flex-1 h-full p-6">
                     {MainContent}
                 </main>
 

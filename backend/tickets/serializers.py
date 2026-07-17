@@ -23,7 +23,6 @@ class TicketSerializer(serializers.ModelSerializer):
             'ticket_code',
             'submitted_by',
             'assigned_to',
-            'created_by',
             'updated_by',
             'it_department',
             'employee_department',
@@ -47,7 +46,6 @@ class TicketSerializer(serializers.ModelSerializer):
         ]
         read_only_fields = [
             'submitted_by',
-            'created_by',
             'updated_by',
             'resolved_at',
             'created_at',
@@ -79,6 +77,71 @@ class TicketSerializer(serializers.ModelSerializer):
     
     def get_created_at_formatted(self, obj):
         return timezone.localtime(obj.created_at).strftime("%B %d, %Y %I:%M %p")
+
+from rest_framework import serializers
+from .models import Ticket
+
+
+class TicketCreateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Ticket
+        fields = [
+            "employee_department",
+            "office_location",
+            "workstation",
+            "subject",
+            "description",
+            "business_impact",
+            "affected_scope",
+        ]
+
+    def validate_subject(self, value):
+        value = value.strip()
+
+        if len(value) < 5:
+            raise serializers.ValidationError(
+                "Subject must be at least 5 characters."
+            )
+
+        return value
+
+    def validate_description(self, value):
+        value = value.strip()
+
+        if len(value) < 20:
+            raise serializers.ValidationError(
+                "Description must be at least 20 characters."
+            )
+
+        return value
+
+    def validate_business_impact(self, value):
+        value = value.strip()
+
+        if len(value) < 10:
+            raise serializers.ValidationError(
+                "Business Impact must be at least 10 characters."
+            )
+
+        return value
+
+    def validate(self, attrs):
+        if not attrs.get("employee_department"):
+            raise serializers.ValidationError({
+                "employee_department": "Employee Department is required."
+            })
+
+        if not attrs.get("office_location"):
+            raise serializers.ValidationError({
+                "office_location": "Office Location is required."
+            })
+
+        if not attrs.get("affected_scope"):
+            raise serializers.ValidationError({
+                "affected_scope": "Affected Scope is required."
+            })
+
+        return attrs
 
 class TicketAssistanceSerializer(serializers.ModelSerializer):
     class Meta:

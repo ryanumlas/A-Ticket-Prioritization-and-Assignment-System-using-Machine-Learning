@@ -5,6 +5,7 @@ import Login from './pages/Login'
 import Sidebar from './components/Sidebar'
 import Dashboard from "./pages/Dashboard";
 import Tickets from "./pages/Tickets";
+import SubmitTicket from './pages/SubmitTicket'
 import NotFound from './pages/NotFound'
 import ProtectedRoute from './components/ProtectedRoute'
 
@@ -24,6 +25,11 @@ function App() {
       <Route path="/tickets" element={
         <ProtectedRoute>
           <Tickets />
+        </ProtectedRoute>
+        } />
+      <Route path="/submit/ticket" element={
+        <ProtectedRoute>
+          <SubmitTicket />
         </ProtectedRoute>
         } />
       <Route path="/sidebar" element={<Sidebar />} />

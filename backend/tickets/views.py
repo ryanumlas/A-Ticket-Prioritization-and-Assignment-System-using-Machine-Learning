@@ -1,5 +1,6 @@
 from time import timezone
 from django.shortcuts import render
+from django.db import transaction
 from rest_framework.response import Response
 from rest_framework import viewsets, generics, status
 from rest_framework.views import APIView
@@ -7,7 +8,8 @@ from rest_framework.permissions import IsAuthenticated, AllowAny
 from .models import Ticket, Category, SymptomCode, TicketComments, SLARules, ReviewFlags, TicketAssistance, Keyword
 from .serializers import (SymptomCodeSerializer, TicketSerializer, CategorySerializer, 
 TicketAssistanceSerializer, TicketCommentSerializer, TicketStatusHistory, SLARulesSerializer, 
-SLARulesUpdateSerializer, KeywordSerializer, KeywordUpdateSerializer, UpdateSymptomCodeSerializer, CreateSymptomCodeSerializer)
+SLARulesUpdateSerializer, KeywordSerializer, KeywordUpdateSerializer, UpdateSymptomCodeSerializer, CreateSymptomCodeSerializer,
+TicketCreateSerializer)
 from users.models import User
 from ai.models import TicketAnalysis, TicketAIAnalysis
 from ai.services import analyze_ticket
@@ -18,9 +20,10 @@ from tickets.services import classify_ticket, calculate_priority
 # --- Ticket Views ---
 class CreateTicketView(generics.CreateAPIView):
     queryset = Ticket.objects.all()
-    serializer_class = TicketSerializer
+    serializer_class = TicketCreateSerializer
     permission_classes = [IsAuthenticated]
 
+    @transaction.atomic
     def perform_create(self, serializer):
         ticket = serializer.save(submitted_by=self.request.user)
 
@@ -43,7 +46,7 @@ class CreateTicketView(generics.CreateAPIView):
 
         category = symptom.category if symptom else None
 
-        department = category.department if category else None
+        department = category.it_department if category else None
 
         if not symptom:
             ReviewFlags.objects.create(
@@ -56,21 +59,33 @@ class CreateTicketView(generics.CreateAPIView):
             ticket.save()
             return
         
+        if not department:
+            ReviewFlags.objects.create(
+                ticket=ticket,
+                reason=ReviewFlags.Reasons.MISSING_DEPARTMENT,
+                status=ReviewFlags.Status.PENDING,
+                source_type=ReviewFlags.SourceType.SYSTEM_GENERATED
+            )
+            ticket.is_under_review=True
+            ticket.save()
+            return
+        
         ticket.symptom_code = symptom
         ticket.category = category
-        ticket.department = department
+        ticket.it_department = department
         
-        if symptom and category:
-            final_priority = calculate_priority(
-                symptom.based_priority, 
-                ticket.affected_scope,
-                analysis["business_critical"]
-            )   
+        
+        final_priority = calculate_priority(
+            symptom.based_priority, 
+            ticket.affected_scope,
+            analysis["business_critical"]
+        )   
 
-            sla_rule = SLARules.objects.get(
-                priority_level = final_priority
-            )
+        sla_rule = SLARules.objects.filter(
+            priority_level = final_priority
+        ).first()
 
+        if sla_rule:
             ticket.priority = sla_rule
 
         ticket.save()
@@ -191,6 +206,7 @@ class KeywordUpdateView(generics.UpdateAPIView):
     queryset = Keyword.objects.all()
     serializer_class = KeywordSerializer
     permission_classes = [AllowAny]
+
 # --- End ---
 
 # class AddTicketAssigneeView(generics.CreateAPIView):
