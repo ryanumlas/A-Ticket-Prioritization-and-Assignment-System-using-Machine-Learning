@@ -54,32 +54,62 @@ def analyze_ticket(ticket):
     - If the ticket is unclear, explain that insufficient information was provided.
 
     KEYWORDS
-    - Return 3 to 8 keywords.
-    - Use standardized IT support terminology.
-    - Keywords must represent ONLY technical symptoms or failure indicators explicitly mentioned by the user.
-    - Keywords should contain 1 to 4 words.
+
+    - Return 3 to 8 keywords or short phrases.
+    - Keywords must be based ONLY on symptoms explicitly mentioned in the ticket.
+    - Do NOT infer, generalize, summarize, or invent new technical terms.
+    - Preserve the wording as closely as possible to what the employee described.
+    - Each keyword should contain 1 to 4 words.
+    - Prefer simple IT helpdesk language rather than formal technical terminology.
     - Prioritize:
-    1. Failure symptoms
-    2. Error conditions
-    3. Access problems
-    4. Connectivity problems
-    5. Performance problems
-    - Return an empty array ([]) if the ticket is unclear.
-    - Do NOT infer or invent technical symptoms.
+    1. Main failure symptom
+    2. Error message (if any)
+    3. Device, application, or service involved
+    4. Connectivity issue (if applicable)
+    5. Performance issue (if applicable)
+    - Return an empty array ([]) if no clear technical symptom exists.
 
     Good examples:
 
-    ["shutdown", "overheat", "fan noise"]
+    Ticket:
+    "My internet is not working and I cannot access Microsoft Teams."
 
-    ["no internet connection", "wifi", "disconnect"]
+    Keywords:
+    ["no internet", "cannot access teams", "internet not working"]
 
-    ["application crash", "freeze", "not responding"]
+    ---
 
-    ["authentication failed", "login", "password"]
+    Ticket:
+    "My Outlook emails are stuck in the Outbox."
+
+    Keywords:
+    ["cannot send email", "outbox", "outlook"]
+
+    ---
+
+    Ticket:
+    "My desktop is very slow when opening applications."
+
+    Keywords:
+    ["computer slow", "slow applications", "desktop slow"]
+
+    ---
+
+    Ticket:
+    "I keep getting incorrect username or password."
+
+    Keywords:
+    ["incorrect password", "login failed", "username"]
 
     Bad examples:
 
-    ["computer"]
+    ["workstation connectivity"]
+
+    ["application slowness"]
+
+    ["email delivery failure"]
+
+    ["internal web application access"]
 
     ["problem"]
 

@@ -1,9 +1,11 @@
 import { getCurrentUser } from "../utils/auth";
 import { useState, useEffect } from "react"
+import { useLocation, useNavigate } from "react-router-dom";
 import api from '../api';
 
 export default function TicketForm() {
     const user = getCurrentUser()
+    const navigate = useNavigate();
     const [formData, setFormData] = useState({
         subject: "",
         description: "",
@@ -51,16 +53,17 @@ export default function TicketForm() {
         setLoading(true);
         try {
             const response = await api.post("/tickets/create/", formData);
-            setFormData({        
-                subject: "",
-                description: "",
-                affected_scope: "",
-                business_impact: "",
-                workstation: "",
-            })
-            alert("SUCCESS!")
+            navigate("/ticket-success", {
+                state: {
+                    message: response.data.message,
+                },
+            });
         } catch (error) {
-            console.error(error);
+            if (error.response) {
+                console.log(error.response.data);
+            } else {
+                console.error(error);
+            }
         } finally {
             setLoading(false);
         }

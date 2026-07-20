@@ -5,6 +5,7 @@ import Login from './pages/Login'
 import Sidebar from './components/Sidebar'
 import Dashboard from "./pages/Dashboard";
 import Tickets from "./pages/Tickets";
+import TicketSuccess from './components/TicketSuccess'
 import SubmitTicket from './pages/SubmitTicket'
 import NotFound from './pages/NotFound'
 import ProtectedRoute from './components/ProtectedRoute'
@@ -32,6 +33,7 @@ function App() {
           <SubmitTicket />
         </ProtectedRoute>
         } />
+      <Route path="/ticket-success" element={<TicketSuccess />} />
       <Route path="/sidebar" element={<Sidebar />} />
       <Route path="/login" element={<Login />} />
       <Route path="/logout" element={<Logout />} />

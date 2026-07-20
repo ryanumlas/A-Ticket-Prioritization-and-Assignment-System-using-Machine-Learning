@@ -23,6 +23,17 @@ class CreateTicketView(generics.CreateAPIView):
     serializer_class = TicketCreateSerializer
     permission_classes = [IsAuthenticated]
 
+    def create(self, request, *args, **kwargs):
+        super().create(request, *args, **kwargs)
+
+        return Response(
+            {
+                "success": True,
+                "message": "Ticket submitted successfully!"
+            },
+            status=status.HTTP_201_CREATED
+        )
+    
     @transaction.atomic
     def perform_create(self, serializer):
         profile = self.request.user.profile
@@ -47,14 +58,8 @@ class CreateTicketView(generics.CreateAPIView):
 
 
         symptom = SymptomCode.objects.filter(code=result.get("symptom_code")).first()
-
-        print("Symptom:", symptom)
-
         category = symptom.category if symptom else None
-        print("Category:", category)
-
         department = category.it_department if category else None
-        print("Department:", department)
 
         if not symptom:
             ReviewFlags.objects.create(
@@ -102,6 +107,7 @@ class CreateTicketView(generics.CreateAPIView):
         
         ticket.save()
 
+        
 class UpdateTicketStatusView(APIView):
     permission_classes = [IsAuthenticated]
 

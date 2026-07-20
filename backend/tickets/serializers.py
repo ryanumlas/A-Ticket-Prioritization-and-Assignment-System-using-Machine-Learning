@@ -8,13 +8,17 @@ from tickets.models import Ticket
 
 
 class TicketSerializer(serializers.ModelSerializer):
+    status = serializers.CharField(source='get_status_display', read_only=True)
+    
     priority = serializers.CharField(
         source='priority.priority_level',
         read_only=True
     )
     created_at_formatted = serializers.SerializerMethodField()
-    sla_deadline = serializers.SerializerMethodField()
-    time_remaining = serializers.SerializerMethodField()
+    response_deadline = serializers.SerializerMethodField()
+    response_time_remaining = serializers.SerializerMethodField()
+    resolution_deadline = serializers.SerializerMethodField()
+    resolution_time_remaining = serializers.SerializerMethodField()
 
     class Meta:
         model = Ticket
@@ -35,8 +39,10 @@ class TicketSerializer(serializers.ModelSerializer):
             'status',
             'priority',
             'is_under_review',
-            'sla_deadline',
-            'time_remaining',
+            "response_deadline",
+            "response_time_remaining",
+            'resolution_deadline',
+            'resolution_time_remaining',
             'is_escalated',
             'resolved_at',
             'resolved_by',
@@ -52,14 +58,47 @@ class TicketSerializer(serializers.ModelSerializer):
             'updated_at',
         ]   
 
-    def get_sla_deadline(self, obj):
+    # Priority: P3
+
+    # Response SLA
+    # • Deadline: July 18, 2026 3:30 PM
+    # • Time Remaining: 42m
+
+    # Resolution SLA
+    # • Deadline: July 19, 2026 2:30 PM
+    # • Time Remaining: 23h 42m
+    def get_response_deadline(self, obj):
+        if not obj.priority:
+            return None
+
+        deadline = obj.created_at + obj.priority.response_time
+        return timezone.localtime(deadline).strftime("%B %d, %Y %I:%M %p")
+    
+    def get_response_time_remaining(self, obj):
+        if not obj.priority:
+            return None
+
+        deadline = obj.created_at + obj.priority.response_time
+        remaining = deadline - timezone.now()
+
+        if remaining.total_seconds() <= 0:
+            return "Overdue"
+
+        days = remaining.days
+        hours = remaining.seconds // 3600
+        minutes = (remaining.seconds % 3600) // 60
+
+        return f"{days}d {hours}h {minutes}m"
+    
+    def get_resolution_deadline(self, obj):
         if not obj.priority:
             return None
 
         deadline = obj.created_at + obj.priority.resolution_time
         return timezone.localtime(deadline).strftime("%B %d, %Y %I:%M %p")
     
-    def get_time_remaining(self, obj):
+
+    def get_resolution_time_remaining(self, obj):
         if not obj.priority:
             return None
 

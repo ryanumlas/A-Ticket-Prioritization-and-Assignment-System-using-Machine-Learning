@@ -14,7 +14,7 @@ def classify_ticket(ticket):
     for kw in keywords:
         kw = kw.lower().strip()
 
-        matches = Keyword.objects.filter(keyword__icontains=kw)
+        matches = Keyword.objects.filter(keyword__iexact=kw)
 
         print(f"Keyword: {kw}")
         print(f"Matches: {matches.count()}")
