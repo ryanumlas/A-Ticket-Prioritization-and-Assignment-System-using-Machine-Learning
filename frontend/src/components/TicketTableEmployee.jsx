@@ -5,9 +5,9 @@ export default function TicketTableEmployee({ ticketList }) {
     const limitedTickets = ticketList.slice(0, 15);
 
     return(
-        <div className="max-h-[740px] overflow-y-auto bg-white no-scrollbar border-gray-300 border rounded-xl">
+        <div className="max-h-[550px] overflow-y-auto bg-white scrollbar border-gray-300 border rounded-xl">
             <table className="w-full text-sm">
-                <thead className="sticky top-0 z-20 shadow-sm">
+                <thead className="sticky top-0 z-20 shadow-sm bg-white">
                     <tr className="text-left ">
                         <th className="py-4 pl-10 font-semibold">Ticket ID</th>
                         <th className="px-4 pl-10 font-semibold">Subject</th>

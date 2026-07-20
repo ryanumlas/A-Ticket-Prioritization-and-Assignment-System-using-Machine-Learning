@@ -70,7 +70,7 @@ export default function TicketForm() {
     }
 
     return (
-        <form className="w-full max-w-5xl  bg-white border border-gray-300 rounded-2xl p-8" onSubmit={handleSubmit}>
+        <form className="mx-auto w-full max-w-5xl  bg-white border border-gray-300 rounded-2xl p-8" onSubmit={handleSubmit}>
 
             <h1 className="text-xl font-semibold mb-6">User Information</h1>
 

@@ -14,8 +14,10 @@ export default function TicketSuccess() {
     }, []);
 
     return(
-        <div>
-            <Check size={30}/>
+        <div className="border-gray-300 border w-150 rounded-xl p-5 m-5 items-center justify-center mx-auto shadow-md">
+            <div className=" text-green-600 rounded-full border-gray-300 border w-fit p-2 shadow-md">
+            <Check size={30} />
+            </div>
             <h1 className="text-3xl font-bold mt-4">
                 {state?.message || "Ticket submitted successfully."}
             </h1>
