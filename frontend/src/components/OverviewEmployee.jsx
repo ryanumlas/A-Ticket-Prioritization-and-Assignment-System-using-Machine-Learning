@@ -5,7 +5,7 @@ import { Wrench, Check, FolderOpen, FolderSearch } from "lucide-react"
 export default function OverviewEmployee({ overview }) {
     return(
         <div className="w-150 border border-gray-300 rounded-xl p-4">
-            <h1 className="font-semibold text-xl mb-4 text-gray-800">Quick Overview</h1>
+            <h1 className="font-semibold text-xl mb-4">Quick Overview</h1>
             <div className="grid grid-cols-2 gap-4 w-full max-w-xl">
                 <div className="bg-white border border-gray-300 p-4 rounded-lg">
                     <div className="w-10 h-10 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center mb-4">
