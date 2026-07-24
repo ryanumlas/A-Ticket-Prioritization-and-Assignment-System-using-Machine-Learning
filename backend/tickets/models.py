@@ -24,6 +24,13 @@ class Ticket(models.Model):
         DEPARTMENT = 'department', 'Department'
         ORGANIZATION_WIDE = 'organization_wide', 'Organization Wide'
 
+    class SLAStatus(models.TextChoices):
+        SAFE = "SAFE", "Safe"
+        WARNING = "WARNING", "Warning"
+        CRITICAL = "CRITICAL", "Critical"
+        BREACHED = "BREACHED", "Breached"
+        MET = "MET", "Met"
+
     ticket_code = models.CharField(max_length=20, unique=True, editable=False)
     submitted_by = models.ForeignKey(User, on_delete=models.CASCADE, related_name='submitted_tickets')
     category = models.ForeignKey('Category', on_delete=models.SET_NULL, null=True, blank=True, related_name='tickets_category')
@@ -39,9 +46,12 @@ class Ticket(models.Model):
     description = models.TextField()
     business_impact = models.TextField()
     affected_scope = models.CharField(max_length=20, choices=AffectedScope.choices, default=AffectedScope.INDIVIDUAL)
+    response_sla_status = models.CharField(max_length=20, choices=SLAStatus.choices,default=SLAStatus.SAFE)
+    resolution_sla_status = models.CharField(max_length=20,choices=SLAStatus.choices,default=SLAStatus.SAFE)
     is_under_review = models.BooleanField(default=False)
     is_escalated = models.BooleanField(default=False)
     escalated_at = models.DateTimeField(null=True,blank=True)
+    response_at = models.DateTimeField(null=True, blank=True)
     assigned_at = models.DateTimeField(null=True,blank=True)
     resolved_at = models.DateTimeField(null=True, blank=True)
     resolved_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='resolved_tickets')

@@ -1,6 +1,7 @@
 from h11 import Response
 from .models import Keyword, SymptomCode, Ticket, ReviewFlags, Category
 from ai.models import TicketAIAnalysis
+from django.utils import timezone
 
 def classify_ticket(ticket):
     analysis = TicketAIAnalysis.objects.get(ticket=ticket)
@@ -161,28 +162,78 @@ def calculate_priority(based_priority, affected_scope, business_critical):
     priority_number = max(1, priority_number)
 
     return PRIORITY_LABELS[priority_number]
+
+
+def calculate_status(remaining, total_duration):
+    WARNING_THRESHOLD = 50
+    CRITICAL_THRESHOLD = 25
+    if remaining.total_seconds() <= 0:
+        return Ticket.SLAStatus.BREACHED
+
+    percentage = (
+        remaining.total_seconds()
+        / total_duration.total_seconds()
+    ) * 100
+
+    if percentage <= CRITICAL_THRESHOLD:
+        return Ticket.SLAStatus.CRITICAL
+
+    if percentage <= WARNING_THRESHOLD:
+        return Ticket.SLAStatus.WARNING
+
+    return Ticket.SLAStatus.SAFE
                 
+def update_sla(ticket):
+    if not ticket.priority:
+        return
+    now = timezone.now()
 
-    # if affected_scope == Ticket.AffectedScope.INDIVIDUAL:
-    #     pass
-    
-    # elif affected_scope == Ticket.AffectedScope.GROUP:
-    #     priority_number -= 1
-    
-    # elif affected_scope == Ticket.AffectedScope.DEPARTMENT:
-    #     priority_number -= 2
-    
-    # elif affected_scope == Ticket.AffectedScope.ORGANIZATION_WIDE:
-    #     priority_number = 1
+    if ticket.status in [
+        Ticket.TicketStatus.IN_PROGRESS,
+        Ticket.TicketStatus.RESOLVED,
+        Ticket.TicketStatus.CLOSED,
+    ]:
+
+        if not ticket.response_at:
+            ticket.response_at = now
+        ticket.response_sla_status = Ticket.SLAStatus.MET
         
-    # else:
-    #     pass
+    else: 
+        response_deadline = (
+            ticket.created_at + ticket.priority.response_time
+        )
 
-    priority_number = max(1, priority_number)
+        response_remaining = response_deadline - now
 
-    return PRIORITY_LABELS[priority_number]
+        ticket.response_sla_status = calculate_status(
+            response_remaining,
+            ticket.priority.response_time,
+        )
+    if ticket.status in [
+        Ticket.TicketStatus.RESOLVED,
+        Ticket.TicketStatus.CLOSED,
+    ]:
+        ticket.resolution_sla_status = Ticket.SLAStatus.MET
 
+    else:
+        resolution_deadline = (
+            ticket.created_at + ticket.priority.resolution_time
+        )
 
+        resolution_remaining = resolution_deadline - now
+
+        ticket.resolution_sla_status = calculate_status(
+            resolution_remaining,
+            ticket.priority.resolution_time,
+        )
+
+    ticket.save(
+        update_fields=[
+            "response_at",
+            "response_sla_status",
+            "resolution_sla_status",
+        ]
+    )
 
 # WAG NA TO PANGET PAG SCORING
 

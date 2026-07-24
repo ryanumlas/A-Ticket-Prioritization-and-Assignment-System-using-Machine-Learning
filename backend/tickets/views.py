@@ -13,7 +13,7 @@ TicketCreateSerializer)
 from users.models import User
 from ai.models import TicketAnalysis, TicketAIAnalysis
 from ai.services import analyze_ticket
-from tickets.services import classify_ticket, calculate_priority
+from tickets.services import classify_ticket, calculate_priority, update_sla
 
 # Create your views here.
 
@@ -104,6 +104,10 @@ class CreateTicketView(generics.CreateAPIView):
             ticket.priority = sla_rule
 
         ticket.status = Ticket.TicketStatus.OPEN
+
+        update_sla(ticket)
+        
+        ticket.refresh_from_db()
         
         ticket.save()
 
