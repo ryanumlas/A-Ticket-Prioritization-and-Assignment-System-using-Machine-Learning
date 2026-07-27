@@ -9,6 +9,7 @@ import TicketSuccess from './components/TicketSuccess'
 import SubmitTicket from './pages/SubmitTicket'
 import NotFound from './pages/NotFound'
 import ProtectedRoute from './components/ProtectedRoute'
+import ActiveTicketSLA from './components/ActiveTicketSLA'
 
 function Logout() {
   localStorage.clear()
@@ -22,21 +23,22 @@ function App() {
         <ProtectedRoute>
           <Dashboard />
         </ProtectedRoute>
-        } />
+      } />
       <Route path="/tickets" element={
         <ProtectedRoute>
           <Tickets />
         </ProtectedRoute>
-        } />
+      } />
       <Route path="/submit/ticket" element={
         <ProtectedRoute>
           <SubmitTicket />
         </ProtectedRoute>
-        } />
+      } />
       <Route path="/ticket-success" element={<TicketSuccess />} />
       <Route path="/sidebar" element={<Sidebar />} />
       <Route path="/login" element={<Login />} />
       <Route path="/logout" element={<Logout />} />
+      <Route path="/" element={<Navigate to="/login" replace />} />
       <Route path="*" element={<NotFound />} />
     </Routes>
   )

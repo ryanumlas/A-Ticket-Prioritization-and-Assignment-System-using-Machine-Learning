@@ -9,13 +9,16 @@ export default function Dashboard() {
     
     let MainContent;
 
-    if (user?.role === "Employee") {
+    if (!user) {
+        MainContent = <div className="p-6">Please log in to view the dashboard.</div>;
+    }
+    else if (user.role === "Employee") {
         MainContent = <EmployeeDashboard/>;
     }
-    else if (user?.role === "IT Support Specialist") {
+    else if (user.role === "IT Support Specialist") {
         MainContent = <SupportDashboard/>;
     }
-    else if (user?.role === "IT Service Desk") {
+    else if (user.role === "IT Service Desk") {
         MainContent = <ServiceDeskDashboard/>;
     }
     else {

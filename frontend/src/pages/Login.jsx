@@ -19,7 +19,7 @@ export default function Login() {
         setLoading(true);
 
         try {
-            const response = await api.post("/user/token/", {
+            const response = await api.post("user/token/", {
                 username,
                 password,
             })

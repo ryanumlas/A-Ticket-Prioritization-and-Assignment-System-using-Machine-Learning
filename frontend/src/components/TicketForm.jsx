@@ -70,9 +70,9 @@ export default function TicketForm() {
     }
 
     return (
-        <form className="w-full max-w-5xl  bg-white border border-gray-300 rounded-2xl p-8" onSubmit={handleSubmit}>
+        <form className="mx-auto w-full max-w-5xl  bg-white border border-gray-300 rounded-lg p-6 text-sm" onSubmit={handleSubmit}>
 
-            <h1 className="text-xl font-semibold mb-6">User Information</h1>
+            <h1 className="text-lg font-semibold mb-3">User Information</h1>
 
             <div className="grid grid-cols-2 gap-x-10 gap-y-5">
 
@@ -130,7 +130,7 @@ export default function TicketForm() {
 
             <hr className="my-8 border-gray-300" />
 
-            <h1 className="text-xl font-semibold mb-6">Issue Details</h1>
+            <h1 className="text-lg font-semibold mb-3">Issue Details</h1>
 
             <div className="flex flex-col gap-5">
 

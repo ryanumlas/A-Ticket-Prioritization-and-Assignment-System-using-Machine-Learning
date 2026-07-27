@@ -105,11 +105,9 @@ class CreateTicketView(generics.CreateAPIView):
 
         ticket.status = Ticket.TicketStatus.OPEN
 
-        update_sla(ticket)
-        
-        ticket.refresh_from_db()
-        
         ticket.save()
+
+        update_sla(ticket)
 
         
 class UpdateTicketStatusView(APIView):
