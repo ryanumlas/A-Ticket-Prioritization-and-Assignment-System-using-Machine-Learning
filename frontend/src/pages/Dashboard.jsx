@@ -29,7 +29,7 @@ export default function Dashboard() {
             <Sidebar />
             <div className="flex-1 h-screen overflow-y-auto flex flex-col">
             
-                <div className="h-20 border-b border-gray-300 bg-white shrink-0">
+                <div className="h-14 border-b border-gray-300 bg-white shrink-0">
                 </div>
 
                 <main className="p-6">

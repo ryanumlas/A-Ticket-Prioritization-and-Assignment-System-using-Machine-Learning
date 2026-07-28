@@ -88,7 +88,7 @@ export const sidebarItems = {
         {
             type: "link",
             name: "My Tickets",
-            path: "/my-tickets",
+            path: "/tickets",
             icon: Ticket
         },
         {

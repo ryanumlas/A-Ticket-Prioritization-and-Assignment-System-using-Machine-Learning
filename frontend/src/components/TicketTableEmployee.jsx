@@ -1,11 +1,12 @@
 import api from "../api";
 import { useEffect, useState } from "react";
+import { formatDate } from "../utils/formatDate";
 
 export default function TicketTableEmployee({ ticketList }) {
     const limitedTickets = ticketList.slice(0, 15);
 
     return(
-        <div className="max-h-[550px] overflow-y-auto bg-white scrollbar border-gray-300 border rounded-lg">
+        <div className="max-h-[637px] overflow-y-auto bg-white scrollbar border-gray-300 border rounded-xl">
             <table className="w-full text-sm">
                 <thead className="sticky top-0 z-20 shadow-sm bg-white">
                     <tr className="text-left ">
@@ -29,7 +30,7 @@ export default function TicketTableEmployee({ ticketList }) {
                             <td className="px-4 pl-10 ">{ticket.assigned_to || "-"}</td>
                             <td className="px-4 pl-30 ">{ticket.priority || "-"}</td>
                             <td className="px-4 pl-10 ">{ticket.status || "-"}</td>
-                            <td className="px-4 pl-30 font-semibold">{new Date(ticket.created_at).toLocaleString()}</td>
+                            <td className="px-4 pl-30 font-semibold">{formatDate(ticket.created_at)}</td>
                         </tr>
                     ))}
                 </tbody>

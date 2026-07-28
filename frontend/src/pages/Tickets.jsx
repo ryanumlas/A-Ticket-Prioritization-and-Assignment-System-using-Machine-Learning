@@ -1,6 +1,7 @@
 import Sidebar from "../components/Sidebar"
 import { getCurrentUser } from "../utils/auth"
 import EmployeeTicket from "../pages/EmployeeTicket";
+import ServiceDeskTicket from "../pages/ServiceDeskTicket";
 import SupportTicket from  "../pages/SupportTicket";
 
 export default function Ticket() {
@@ -14,6 +15,9 @@ export default function Ticket() {
     else if (user?.role === "IT Support Specialist") {
         MainContent = <SupportTicket/>;
     }
+    else if (user?.role === "IT Service Desk") {
+        MainContent = <ServiceDeskTicket/>;
+    }
     else {
         MainContent = <div className="p-6">Access Denied / Invalid Role</div>;
     }
@@ -23,10 +27,10 @@ export default function Ticket() {
             <Sidebar />
             <div className="flex-1 h-screen flex flex-col">
             
-                <div className="h-20 border-b border-gray-300 bg-white mb-20 shrink-0">
+                <div className="h-14 border-b border-gray-300 bg-white mb-20 shrink-0">
                 </div>
 
-                <main className="flex-1 h-full p-6">
+                <main className="flex-1 h-full">
                     {MainContent}
                 </main>
 
