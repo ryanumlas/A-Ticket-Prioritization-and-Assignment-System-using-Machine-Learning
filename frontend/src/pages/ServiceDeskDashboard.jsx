@@ -3,6 +3,8 @@ import { ArrowRight } from "lucide-react";
 import ServiceDeskOverview from "../components/ServiceDeskOverview";
 import TicketTableServiceDesk from "../components/TicketTableServiceDesk";
 import { Link } from "react-router-dom";
+import SLAOverview from "../components/SLAOverview";
+import TicketsByCategoryChart from "../components/TicketsByCategoryChart";
 import AIResultPieChart from "../components/AIResultPieChart";
 
 export default function ServiceDeskDashboard() {
@@ -29,6 +31,14 @@ export default function ServiceDeskDashboard() {
 
                 <div className="col-span-5">
                     <AIResultPieChart />
+                </div>
+
+                <div className="col-span-5">
+                    <SLAOverview/>
+                </div>
+
+                <div className="col-span-7">
+                    <TicketsByCategoryChart/>
                 </div>
             </div>
         </div>

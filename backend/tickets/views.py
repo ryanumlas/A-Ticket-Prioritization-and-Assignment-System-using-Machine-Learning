@@ -9,7 +9,7 @@ from .models import Ticket, Category, SymptomCode, TicketComments, SLARules, Rev
 from .serializers import (SymptomCodeSerializer, TicketSerializer, CategorySerializer, 
 TicketAssistanceSerializer, TicketCommentSerializer, TicketStatusHistory, SLARulesSerializer, 
 SLARulesUpdateSerializer, KeywordSerializer, KeywordUpdateSerializer, UpdateSymptomCodeSerializer, CreateSymptomCodeSerializer,
-TicketCreateSerializer)
+TicketCreateSerializer, TicketUpdateSerializer, TicketDetailEmployeeSerializer)
 from users.models import User
 from ai.models import TicketAnalysis, TicketAIAnalysis
 from ai.services import analyze_ticket
@@ -102,6 +102,8 @@ class CreateTicketView(generics.CreateAPIView):
 
         if sla_rule:
             ticket.priority = sla_rule
+            ticket.response_deadline = (ticket.created_at + sla_rule.response_time)
+            ticket.resolution_deadline = (ticket.created_at + sla_rule.resolution_time)
 
         ticket.status = Ticket.TicketStatus.OPEN
 
@@ -161,8 +163,8 @@ class DetailTicketView(generics.RetrieveAPIView):
 
 class UpdateTicketView(generics.UpdateAPIView):
     queryset = Ticket.objects.all()
-    serializer_class = TicketSerializer
-    permission_classes = [IsAuthenticated]
+    serializer_class = TicketUpdateSerializer
+    permission_classes = [AllowAny]
 
 class DeleteTicketView(generics.DestroyAPIView):
     queryset = Ticket.objects.all()
@@ -178,6 +180,20 @@ class TicketListEmployeeView(APIView):
         tickets = Ticket.objects.filter(submitted_by=user)
         serializer = TicketSerializer(tickets, many=True)
         return Response(serializer.data)
+
+class TicketDetailEmployeeView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, ticket_id):
+        user = request.user
+
+        try:
+            ticket = Ticket.objects.get(id=ticket_id, submitted_by=user)
+        except Ticket.DoesNotExist:
+            return Response({"error": "Ticket not found or you do not have permission to view this ticket."}, status=status.HTTP_404_NOT_FOUND)
+        
+        serializer = TicketDetailEmployeeSerializer(ticket)
+        return Response(serializer.data)        
 # --- End ---
 
 # --- Category Views ---

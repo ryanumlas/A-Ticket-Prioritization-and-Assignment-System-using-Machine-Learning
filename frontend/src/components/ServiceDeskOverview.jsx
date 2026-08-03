@@ -106,7 +106,7 @@ export default function ServiceDeskOverview() {
                     </h2>
 
                     <p className="text-xs text-gray-400 mt-2">
-                        Waiting for employee update
+                        Returned for ticket revision
                     </p>
                 </div>
 

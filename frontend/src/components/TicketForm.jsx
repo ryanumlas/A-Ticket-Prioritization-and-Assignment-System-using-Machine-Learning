@@ -121,9 +121,12 @@ export default function TicketForm() {
                 <div className="flex flex-col">
                     <label className="mb-2 font-medium">Workstation</label>
                     <input
-                        type="text" value={formData.workstation} name="workstation" onChange={handleChange}
+                        type="text" maxLength={9} value={formData.workstation} name="workstation" onChange={handleChange}
                         className="border border-gray-300 rounded-md p-2"
                     />
+                    <p className="text-xs text-gray-500">
+                        {formData.workstation.length}/9
+                    </p>
                 </div>
 
             </div>
@@ -137,10 +140,13 @@ export default function TicketForm() {
                 <div>
                     <label className="block mb-2 font-medium">Subject</label>
                     <input
-                        type="text" value={formData.subject} onChange={handleChange}
+                        type="text" maxLength={100} value={formData.subject} onChange={handleChange}
                         placeholder="Input 1–2 sentence summary" name="subject"
                         className="w-full border border-gray-300 rounded-md p-2"
                     />
+                    <p className="text-xs text-gray-500">
+                        {formData.subject.length}/100
+                    </p>
                 </div>
 
                 <div className="w-60">
@@ -158,19 +164,25 @@ export default function TicketForm() {
                 <div>
                     <label className="block mb-2 font-medium">Description</label>
                     <textarea
-                        rows={6} value={formData.description} onChange={handleChange} name="description"
+                        rows={6} value={formData.description} maxLength={1000} onChange={handleChange} name="description"
                         placeholder="Describe your issue..."
                         className="w-full border border-gray-300 rounded-md p-3 resize-none"
                     />
+                    <p className="text-xs text-gray-500">
+                        {formData.description.length}/1000
+                    </p>
                 </div>
 
                 <div>
                     <label className="block mb-2 font-medium">Business Impact</label>
                     <textarea
-                        rows={4} value={formData.business_impact} onChange={handleChange} name="business_impact"
+                        rows={4} value={formData.business_impact} maxLength={500} onChange={handleChange} name="business_impact"
                         placeholder="Describe how this issue affects your work or business operations."
                         className="w-full border border-gray-300 rounded-md p-3 resize-none"
                     />
+                    <p className="text-xs text-gray-500">
+                        {formData.business_impact.length}/500
+                    </p>
                 </div>
 
                 <button

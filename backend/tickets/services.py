@@ -163,10 +163,10 @@ def calculate_priority(based_priority, affected_scope, business_critical):
 
     return PRIORITY_LABELS[priority_number]
 
-
 def calculate_status(remaining, total_duration):
     WARNING_THRESHOLD = 50
     CRITICAL_THRESHOLD = 25
+
     if remaining.total_seconds() <= 0:
         return Ticket.SLAStatus.BREACHED
 
@@ -180,35 +180,44 @@ def calculate_status(remaining, total_duration):
 
     if percentage <= WARNING_THRESHOLD:
         return Ticket.SLAStatus.WARNING
-
+    
     return Ticket.SLAStatus.SAFE
-                
+
+
 def update_sla(ticket):
     if not ticket.priority:
         return
     now = timezone.now()
 
+    if not ticket.response_deadline:
+        ticket.response_deadline = (
+            ticket.created_at + ticket.priority.response_time
+        )
+
+    if not ticket.resolution_deadline:
+        ticket.resolution_deadline = (
+            ticket.created_at + ticket.priority.resolution_time
+        )
+
     if ticket.status in [
+        Ticket.TicketStatus.UNDER_REVIEW,
         Ticket.TicketStatus.IN_PROGRESS,
         Ticket.TicketStatus.RESOLVED,
         Ticket.TicketStatus.CLOSED,
     ]:
-
         if not ticket.response_at:
             ticket.response_at = now
-        ticket.response_sla_status = Ticket.SLAStatus.MET
-        
-    else: 
-        response_deadline = (
-            ticket.created_at + ticket.priority.response_time
-        )
 
-        response_remaining = response_deadline - now
+        ticket.response_sla_status = Ticket.SLAStatus.MET
+
+    else:
+        response_remaining = ticket.response_deadline - now
 
         ticket.response_sla_status = calculate_status(
             response_remaining,
             ticket.priority.response_time,
         )
+
     if ticket.status in [
         Ticket.TicketStatus.RESOLVED,
         Ticket.TicketStatus.CLOSED,
@@ -216,19 +225,20 @@ def update_sla(ticket):
         ticket.resolution_sla_status = Ticket.SLAStatus.MET
 
     else:
-        resolution_deadline = (
-            ticket.created_at + ticket.priority.resolution_time
-        )
-
-        resolution_remaining = resolution_deadline - now
+        resolution_remaining = ticket.resolution_deadline - now
 
         ticket.resolution_sla_status = calculate_status(
             resolution_remaining,
             ticket.priority.resolution_time,
         )
+    print(ticket.ticket_code)
+    print(ticket.response_deadline)
+    print(ticket.resolution_deadline)
 
     ticket.save(
         update_fields=[
+            "response_deadline",
+            "resolution_deadline",
             "response_at",
             "response_sla_status",
             "resolution_sla_status",

@@ -13,9 +13,7 @@ class Ticket(models.Model):
         PENDING = 'pending', 'Pending'
         RESOLVED = 'resolved', 'Resolved'
         CLOSED = 'closed', 'Closed'
-        REOPENED = 'reopened', 'Reopened'
-        CANCELLED = 'cancelled', 'Cancelled'
-        BREACHED = 'breached', 'Breached'
+        REOPENED = 'reopened', 'Reopened'   
         # EXPIRED = 'expired', 'Expired'
         # ESCALATED = 'escalated', 'Escalated'
         # CLOSED = 'closed', 'Closed'
@@ -50,6 +48,8 @@ class Ticket(models.Model):
     affected_scope = models.CharField(max_length=20, choices=AffectedScope.choices, default=AffectedScope.INDIVIDUAL)
     response_sla_status = models.CharField(max_length=20, choices=SLAStatus.choices,default=SLAStatus.SAFE)
     resolution_sla_status = models.CharField(max_length=20,choices=SLAStatus.choices,default=SLAStatus.SAFE)
+    response_deadline = models.DateTimeField(null=True, blank=True)
+    resolution_deadline = models.DateTimeField(null=True, blank=True)   
     is_under_review = models.BooleanField(default=False)
     is_escalated = models.BooleanField(default=False)
     escalated_at = models.DateTimeField(null=True,blank=True)

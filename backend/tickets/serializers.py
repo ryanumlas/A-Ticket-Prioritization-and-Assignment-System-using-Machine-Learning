@@ -15,11 +15,6 @@ class TicketSerializer(serializers.ModelSerializer):
         read_only=True
     )
     created_at_formatted = serializers.SerializerMethodField()
-    response_deadline = serializers.SerializerMethodField()
-    response_time_remaining = serializers.SerializerMethodField()
-    resolution_deadline = serializers.SerializerMethodField()
-    resolution_time_remaining = serializers.SerializerMethodField()
-
     class Meta:
         model = Ticket
         fields = [
@@ -40,9 +35,7 @@ class TicketSerializer(serializers.ModelSerializer):
             'priority',
             'is_under_review',
             "response_deadline",
-            "response_time_remaining",
             'resolution_deadline',
-            'resolution_time_remaining',
             'is_escalated',
             'resolved_at',
             'resolved_by',
@@ -67,52 +60,51 @@ class TicketSerializer(serializers.ModelSerializer):
     # Resolution SLA
     # • Deadline: July 19, 2026 2:30 PM
     # • Time Remaining: 23h 42m
-    def get_response_deadline(self, obj):
-        if not obj.priority:
-            return None
+    # def get_response_deadline(self, obj):
+    #     if not obj.response_deadline:
+    #         return None
 
-        deadline = obj.created_at + obj.priority.response_time
-        return timezone.localtime(deadline).strftime("%B %d, %Y %I:%M %p")
+    #     return timezone.localtime(
+    #         obj.response_deadline
+    #     ).strftime("%B %d, %Y %I:%M %p")
     
-    def get_response_time_remaining(self, obj):
-        if not obj.priority:
-            return None
+    # def get_response_time_remaining(self, obj):
+    #     if not obj.response_deadline:
+    #         return None
 
-        deadline = obj.created_at + obj.priority.response_time
-        remaining = deadline - timezone.now()
+    #     remaining = obj.response_deadline - timezone.now()
 
-        if remaining.total_seconds() <= 0:
-            return "Overdue"
+    #     if remaining.total_seconds() <= 0:
+    #         return "Overdue"
 
-        days = remaining.days
-        hours = remaining.seconds // 3600
-        minutes = (remaining.seconds % 3600) // 60
+    #     days = remaining.days
+    #     hours = remaining.seconds // 3600
+    #     minutes = (remaining.seconds % 3600) // 60
 
-        return f"{days}d {hours}h {minutes}m"
+    #     return f"{days}d {hours}h {minutes}m"
     
-    def get_resolution_deadline(self, obj):
-        if not obj.priority:
-            return None
+    # def get_resolution_deadline(self, obj):
+    #     if not obj.resolution_deadline:
+    #         return None
 
-        deadline = obj.created_at + obj.priority.resolution_time
-        return timezone.localtime(deadline).strftime("%B %d, %Y %I:%M %p")
-    
+    #     return timezone.localtime(
+    #         obj.resolution_deadline
+    #     ).strftime("%B %d, %Y %I:%M %p")
 
-    def get_resolution_time_remaining(self, obj):
-        if not obj.priority:
-            return None
+    # def get_resolution_time_remaining(self, obj):
+    #     if not obj.resolution_deadline:
+    #         return None
 
-        deadline = obj.created_at + obj.priority.resolution_time
-        remaining = deadline - timezone.now()
+    #     remaining = obj.resolution_deadline - timezone.now()
 
-        if remaining.total_seconds() <= 0:
-            return "Overdue"
+    #     if remaining.total_seconds() <= 0:
+    #         return "Overdue"
 
-        days = remaining.days
-        hours = remaining.seconds // 3600
-        minutes = (remaining.seconds % 3600) // 60
+    #     days = remaining.days
+    #     hours = remaining.seconds // 3600
+    #     minutes = (remaining.seconds % 3600) // 60
 
-        return f"{days}d {hours}h {minutes}m"
+        # return f"{days}d {hours}h {minutes}m"
     
     def get_created_at_formatted(self, obj):
         return timezone.localtime(obj.created_at).strftime("%B %d, %Y %I:%M %p")
@@ -134,17 +126,24 @@ class TicketCreateSerializer(serializers.ModelSerializer):
 
         if len(value) < 5:
             raise serializers.ValidationError(
-                "Subject must be at least 5 characters."
+                "Subject must be at least 15 characters."
             )
-
+        if len(value) > 100:
+            raise serializers.ValidationError(
+                "Subject cannot exceed 100 characters."
+            )
         return value
 
     def validate_description(self, value):
         value = value.strip()
 
-        if len(value) < 20:
+        if len(value) < 50:
             raise serializers.ValidationError(
-                "Description must be at least 20 characters."
+                "Description must be at least 50 characters."
+            )
+        if len(value) > 1000:
+            raise serializers.ValidationError(
+                "Description cannot exceed 1000 characters."
             )
 
         return value
@@ -152,9 +151,13 @@ class TicketCreateSerializer(serializers.ModelSerializer):
     def validate_business_impact(self, value):
         value = value.strip()
 
-        if len(value) < 10:
+        if len(value) < 20:
             raise serializers.ValidationError(
-                "Business Impact must be at least 10 characters."
+                "Business Impact must be at least 20 characters."
+            )
+        if len(value) > 500:
+            raise serializers.ValidationError(
+                "Business impact cannot exceed 500 characters."
             )
 
         return value
@@ -166,6 +169,11 @@ class TicketCreateSerializer(serializers.ModelSerializer):
             })
 
         return attrs
+
+class TicketUpdateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Ticket
+        fields = ['status']
 
 class TicketAssistanceSerializer(serializers.ModelSerializer):
     class Meta:
@@ -184,6 +192,20 @@ class TicketStatusHistory(serializers.ModelSerializer):
         model = Ticket
         fields = ['id', 'ticket', 'previous_status', 'new_status', 'remarks', 'created_by', 'created_at']
         read_only_fields = ['created_at', 'created_by', 'updated_at', 'updated_by']
+
+class TicketDetailEmployeeSerializer(serializers.ModelSerializer):
+    status = serializers.CharField(source='get_status_display', read_only=True)
+    priority = serializers.CharField(source='priority.priority_level', read_only=True)
+    affected_scope = serializers.CharField(source='get_affected_scope_display', read_only=True)
+    first_name = serializers.CharField(source='submitted_by.first_name', read_only=True)
+    last_name = serializers.CharField(source='submitted_by.last_name', read_only=True)
+    user_code = serializers.CharField(source='submitted_by.user_code', read_only=True)
+    employee_department = serializers.CharField(source='employee_department.name', read_only=True)
+    office_location = serializers.CharField(source='office_location.name', read_only=True)
+    class Meta:
+        model = Ticket
+
+        fields = ['id','ticket_code', 'status', 'priority', 'subject', 'description', 'assigned_to', 'business_impact', 'affected_scope', 'updated_at', 'created_at', 'response_deadline', 'resolution_deadline', 'office_location', 'workstation','employee_department', 'first_name', 'last_name', 'user_code', 'is_escalated', 'resolved_at', 'resolved_by']
 
 # --- SLA Rules Serializer ---
 class SLARulesSerializer(serializers.ModelSerializer):
