@@ -141,7 +141,7 @@ export default function TicketForm() {
                     <label className="block mb-2 font-medium">Subject</label>
                     <input
                         type="text" maxLength={100} value={formData.subject} onChange={handleChange}
-                        placeholder="Input 1–2 sentence summary" name="subject"
+                        placeholder="Input 1-2 sentence summary" name="subject"
                         className="w-full border border-gray-300 rounded-md p-2"
                     />
                     <p className="text-xs text-gray-500">

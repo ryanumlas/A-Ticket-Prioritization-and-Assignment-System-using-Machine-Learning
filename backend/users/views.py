@@ -6,9 +6,9 @@ from rest_framework.response import Response
 from rest_framework_simplejwt.views import TokenObtainPairView
 from rest_framework.permissions import AllowAny, IsAuthenticated
 
-from .models import User, ITSupportProfile, UserRoles, UserProfile
+from .models import Specializations, User, ITSupportProfile, UserRoles, UserProfile, ITSupportSpecialization
 from tickets.models import Ticket
-from .serializers import UserSerializer, ITSupportProfileSerializer, UserListSerializer, UserRolesSerializer, CustomTokenObtainPairSerializer, UserProfileUpdateSerializer
+from .serializers import UserSerializer, ITSupportSpecializationCreateSerializer, ITSupportProfileSerializer,ITSupportProfileCreateSerializer, UserListSerializer, UserRolesSerializer, CustomTokenObtainPairSerializer, UserProfileUpdateSerializer, SpecializationSerializer
 
 class RegisterView(generics.CreateAPIView):
     queryset = User.objects.all()
@@ -65,4 +65,22 @@ class UserRoleListView(generics.ListAPIView):
 class UserRoleDeleteView(generics.DestroyAPIView):
     queryset = UserRoles.objects.all()
     serializer_class = UserRolesSerializer
+    permission_classes = [AllowAny]
+
+
+class SpecializationCreateView(generics.CreateAPIView):
+    queryset = Specializations.objects.all()
+    serializer_class = SpecializationSerializer
+    permission_classes = [AllowAny]
+
+
+class ITSupportProfileCreateView(generics.CreateAPIView):
+    queryset = ITSupportProfile.objects.all()
+    serializer_class = ITSupportProfileCreateSerializer
+    permission_classes = [AllowAny]
+
+
+class ITSupportSpecializationCreateView(generics.CreateAPIView):
+    queryset = ITSupportSpecialization.objects.all()
+    serializer_class = ITSupportSpecializationCreateSerializer
     permission_classes = [AllowAny]

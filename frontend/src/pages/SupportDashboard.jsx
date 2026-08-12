@@ -1,5 +1,5 @@
 export default function SupportDashboard() {
     return(
-        <h1>HAHAHAHAHAHA NIGGA</h1>
+        <h1>IT Support Specialist</h1>
     );
 }

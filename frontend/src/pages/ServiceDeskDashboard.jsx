@@ -21,7 +21,7 @@ export default function ServiceDeskDashboard() {
                         <div className="px-4 py-4 border-b border-gray-300 flex items-center justify-between">
                             <div>
                                 <h1 className="text-xl font-semibold">My Tickets</h1>
-                                <p className="text-sm text-gray-500">Recently assigned tickets</p>
+                                <p className="text-sm text-gray-500">Recently submitted tickets</p>
                             </div>
                             <Link to="/tickets" className="group flex items-center gap-2 bg-[#4C4CF9] px-6 py-2 text-white text-sm rounded-md hover:bg-[#3f3fe6] cursor-pointer">View All <ArrowRight size={16}/></Link>
                         </div>

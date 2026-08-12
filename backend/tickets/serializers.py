@@ -110,6 +110,7 @@ class TicketSerializer(serializers.ModelSerializer):
         return timezone.localtime(obj.created_at).strftime("%B %d, %Y %I:%M %p")
 
 
+
 class TicketCreateSerializer(serializers.ModelSerializer):
     class Meta:
         model = Ticket
@@ -246,7 +247,7 @@ class SymptomCodeSerializer(serializers.ModelSerializer):
 class UpdateSymptomCodeSerializer(serializers.ModelSerializer):
     class Meta:
         model = SymptomCode
-        fields = ['description']
+        fields = ['required_specialization']
 
 class CreateSymptomCodeSerializer(serializers.ModelSerializer):
     class Meta:

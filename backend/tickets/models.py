@@ -2,6 +2,7 @@ from django.db import models
 from users.models import User
 from ai.models import TicketAnalysis
 from departments.models import ITDepartment, EmployeeDepartment, OfficeLocation
+from users.models import UserProfile, Specializations
 
 # Create your models here.
 class Ticket(models.Model):
@@ -164,6 +165,7 @@ class SymptomCode(models.Model):
     code = models.CharField(max_length=50, unique=True)
     description = models.TextField(blank=True)
     based_priority = models.CharField(max_length=20, null=True, blank=True)
+    required_specialization = models.ForeignKey(Specializations, on_delete=models.SET_NULL, null=True, blank=True, related_name='tickets_required_specialization')
     created_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='created_symptom_codes')
     updated_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='updated_symptom_codes')
     created_at = models.DateTimeField(auto_now_add=True)

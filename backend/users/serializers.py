@@ -1,9 +1,10 @@
+from django.utils import timezone
 from rest_framework import serializers
 from django.contrib.auth import get_user_model
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from django.contrib.auth import authenticate
 from django.db import transaction
-from .models import User, ITSupportProfile, UserRoles, UserProfile
+from .models import ITSupportSpecialization, User, ITSupportProfile, UserRoles, UserProfile, Specializations
 
 class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
 
@@ -111,3 +112,35 @@ class UserProfileUpdateSerializer(serializers.ModelSerializer):
     class Meta:
         model = UserProfile
         fields = ['employee_department', 'office_location']
+
+class SpecializationSerializer(serializers.ModelSerializer):
+    created_at_formatted = serializers.SerializerMethodField()
+    class Meta:
+        model = Specializations
+        fields = ['name', 'created_at_formatted']
+
+    def get_created_at_formatted(self, obj):
+        return timezone.localtime(obj.created_at).strftime("%B %d, %Y %I:%M %p")
+
+class ITSupportProfileCreateSerializer(serializers.ModelSerializer):
+    created_at_formatted = serializers.SerializerMethodField()
+    class Meta:
+        model = ITSupportProfile
+        fields = ['user', 'availability_status', 'current_workload', 'workload_limit', 'it_department', 'created_at_formatted']
+
+    def get_created_at_formatted(self, obj):
+        return timezone.localtime(obj.created_at).strftime("%B %d, %Y %I:%M %p")
+
+
+class ITSupportSpecializationCreateSerializer(serializers.ModelSerializer):
+    created_at_formatted = serializers.SerializerMethodField()
+    specialization_name = serializers.CharField(
+        source='specialization.name',
+        read_only=True
+    )
+    class Meta:
+        model = ITSupportSpecialization
+        fields = ['it_support_profile', 'specialization', 'specialization_name', 'created_at_formatted']
+
+    def get_created_at_formatted(self, obj):
+        return timezone.localtime(obj.created_at).strftime("%B %d, %Y %I:%M %p")
