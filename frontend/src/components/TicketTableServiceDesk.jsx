@@ -2,68 +2,16 @@ import api from "../api";
 import { formatDate } from "../utils/formatDate";
 import { getCurrentUser } from "../utils/auth";
 
-export default function TicketTableServiceDesk({ maxRows = 15, dashboard = false,}) {
-    const ticketList = [
-    {
-        id: 1,
-        ticket_code: "TKT-0001",
-        subject: "My computer wont turn on",
-        priority: "P2",
-        status: "Open",
-        resolution_remaining: "3h 25m"
-    },
-    {
-        id: 2,
-        ticket_code: "TKT-0001",
-        subject: "My computer wont turn on",
-        priority: "P2",
-        status: "Open",
-        resolution_remaining: "3h 25m"
-    },
-    {
-        id: 3,
-        ticket_code: "TKT-0001",
-        subject: "My computer wont turn on",
-        priority: "P2",
-        status: "Open",
-        resolution_remaining: "3h 25m"
-    },
-        {
-        id: 4,
-        ticket_code: "TKT-0001",
-        subject: "My computer wont turn on",
-        priority: "P2",
-        status: "Open",
-        resolution_remaining: "3h 25m"
-    },
-        {
-        id: 5,
-        ticket_code: "TKT-0001",
-        subject: "My computer wont turn on",
-        priority: "P2",
-        status: "Open",
-        resolution_remaining: "3h 25m"
-    },
-        {
-        id: 6,
-        ticket_code: "TKT-0001",
-        subject: "My computer wont turn on",
-        priority: "P2",
-        status: "Open",
-        resolution_remaining: "3h 25m"
-    },
-        {
-        id: 7,
-        ticket_code: "TKT-0001",
-        subject: "My computer wont turn on",
-        priority: "P2",
-        status: "Open", 
-        resolution_remaining: "3h 25m"
-    },
-
-];
+export default function TicketTableServiceDesk({ ticketList, loading = false, maxRows = 15, dashboard = false }) {
     const limitedTickets = ticketList.slice(0, maxRows);
 
+    if (loading) {
+        return (
+            <div className="flex items-center justify-center py-12 text-sm text-gray-500">
+                Loading tickets...
+            </div>
+        );
+    }
     return(
         <div
             className={`bg-white ${
@@ -84,15 +32,43 @@ export default function TicketTableServiceDesk({ maxRows = 15, dashboard = false
                 </thead>
 
                 <tbody>
-                    {limitedTickets.map(ticket => (
-                        <tr key={ticket.id} className="border-t border-gray-300 hover:bg-gray-100">
-                            <td className="px-6 py-4 font-semibold">{ticket.ticket_code}</td>
-                            <td className="px-6">{ticket.subject}</td>
-                            <td className="px-6">{ticket.priority}</td>
-                            <td className="px-6">{ticket.status}</td>
-                            <td className="px-6 font-semibold">{ticket.resolution_remaining}</td>
+                    {limitedTickets.length > 0 ? (
+                        limitedTickets.map((ticket) => (
+                            <tr
+                                key={ticket.id}
+                                className="border-t border-gray-300 hover:bg-gray-100 transition cursor-pointer"
+                            >
+                                <td className="px-6 py-4 font-semibold">
+                                    {ticket.ticket_code || "-"}
+                                </td>
+
+                                <td className="px-6 py-4 truncate">
+                                    {ticket.subject || "-"}
+                                </td>
+
+                                <td className="px-6 py-4">
+                                    {ticket.priority || "-"}
+                                </td>
+
+                                <td className="px-6 py-4">
+                                    {ticket.status || "-"}
+                                </td>
+
+                                <td className="px-6 py-4 font-semibold">
+                                    {ticket.resolution_time_remaining || "-"}
+                                </td>
+                            </tr>
+                        ))
+                    ) : (
+                        <tr>
+                            <td
+                                colSpan="5"
+                                className="py-12 text-center text-sm text-gray-400"
+                            >
+                                No tickets found.
+                            </td>
                         </tr>
-                    ))}
+                    )}
                 </tbody>
             </table>
         </div>

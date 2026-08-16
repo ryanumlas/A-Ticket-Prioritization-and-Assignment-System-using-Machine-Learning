@@ -4,6 +4,7 @@ import api from "../api";
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import TicketDetailsEmployee from "../components/TicketDetailsEmployee";
+import TicketDetailsServiceDesk from "../components/TicketDetailsServiceDesk";
 
 export default function TicketDetails() {
     const user = getCurrentUser();
@@ -36,9 +37,9 @@ export default function TicketDetails() {
     // else if (user?.role === "IT Support Specialist") {
     //     MainContent = <SupportTicket/>;
     // }
-    // else if (user?.role === "IT Service Desk") {
-    //     MainContent = <ServiceDeskTicket/>;
-    // }
+    else if (user?.role === "IT Service Desk") {
+        MainContent = <TicketDetailsServiceDesk/>;
+    }
     else {
         MainContent = <div className="p-6">Access Denied / Invalid Role</div>;
     }

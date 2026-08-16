@@ -67,14 +67,15 @@ export default function TicketDetailsEmployee({ ticketDetails }) {
 
                         <p className="px-2 py-1 rounded-md text-sm font-medium">{formatDate(ticketDetails.created_at)}</p>
                     </div>
-
                     <div className="flex items-center">
-                        <div className="flex items-center gap-2 w-44">
-                            <User size={18} className="text-gray-600" />
-                            <p className="text-gray-600 text-sm">Assigned to</p>
+                        <div className="flex items-center gap-2 w-44 shrink-0">
+                            <User size={18} className="text-gray-500" />
+                            <p className="text-sm text-gray-500">Assigned to</p>
                         </div>
 
-                        <p className="px-2 py-1 rounded-md text-sm font-medium">{ticketDetails.assigned_to || "-"}</p>
+                        <span className="inline-flex items-center px-2.5 py-1 rounded-md bg-gray-100 border border-gray-300 text-sm font-medium">
+                            {ticketDetails.assigned_to || "Unassigned"}
+                        </span>
                     </div>
                     <div className="flex items-center">
                         <div className="flex items-center gap-2 w-44">

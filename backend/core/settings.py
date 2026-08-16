@@ -1,6 +1,7 @@
 from pathlib import Path
 from dotenv import load_dotenv
 from datetime import timedelta
+from celery.schedules import crontab
 import os
 
 load_dotenv()
@@ -165,3 +166,10 @@ CELERY_TASK_SERIALIZER = "json"
 CELERY_RESULT_SERIALIZER = "json"
 
 CELERY_TIMEZONE = "Asia/Manila"
+
+CELERY_BEAT_SCHEDULE = {
+    "update-all-sla": {
+        "task": "tickets.tasks.update_all_sla",
+        "schedule": 60.0,
+    },
+}

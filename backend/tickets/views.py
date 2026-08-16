@@ -9,7 +9,7 @@ from .models import Ticket, Category, SymptomCode, TicketComments, SLARules, Rev
 from .serializers import (SymptomCodeSerializer, TicketSerializer, CategorySerializer, 
 TicketAssistanceSerializer, TicketCommentSerializer, TicketStatusHistory, SLARulesSerializer, 
 SLARulesUpdateSerializer, KeywordSerializer, KeywordUpdateSerializer, UpdateSymptomCodeSerializer, CreateSymptomCodeSerializer,
-TicketCreateSerializer, TicketUpdateSerializer, TicketDetailEmployeeSerializer)
+TicketCreateSerializer, TicketUpdateSerializer, TicketDetailEmployeeSerializer, CategoryUpdateSerializer)
 from users.models import User
 from ai.models import TicketAnalysis, TicketAIAnalysis
 from ai.services import analyze_ticket
@@ -181,6 +181,16 @@ class TicketListEmployeeView(APIView):
         serializer = TicketSerializer(tickets, many=True)
         return Response(serializer.data)
 
+class TicketListServiceDeskView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        user = request.user
+
+        tickets = Ticket.objects.filter(assigned_to=user)
+        serializer = TicketSerializer(tickets, many=True)
+        return Response(serializer.data)
+
 class TicketDetailEmployeeView(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -194,6 +204,29 @@ class TicketDetailEmployeeView(APIView):
         
         serializer = TicketDetailEmployeeSerializer(ticket)
         return Response(serializer.data)        
+
+class TicketDetailServiceDeskView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, ticket_id):
+        user = request.user
+
+        try:
+            ticket = Ticket.objects.get(id=ticket_id, assigned_to=user)
+        except Ticket.DoesNotExist:
+            return Response({"error": "Ticket not found or you do not have permission to view this ticket."}, status=status.HTTP_404_NOT_FOUND)
+
+        serializer = TicketSerializer(ticket)
+        return Response(serializer.data)
+
+class TicketAssignedToServiceDeskView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        user = request.user
+
+        count = Ticket.objects.filter(assigned_to=user).count()
+        return Response({"assigned_ticket_count": count})
 # --- End ---
 
 # --- Category Views ---
@@ -204,7 +237,7 @@ class CreateCategoryView(generics.CreateAPIView):
 
 class UpdateCategoryView(generics.UpdateAPIView):
     queryset = Category.objects.all()
-    serializer_class = CategorySerializer
+    serializer_class = CategoryUpdateSerializer
     permission_classes = [AllowAny]
 # --- End ---
 

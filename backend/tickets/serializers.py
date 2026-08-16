@@ -9,6 +9,9 @@ from tickets.models import Ticket
 
 class TicketSerializer(serializers.ModelSerializer):
     status = serializers.CharField(source='get_status_display', read_only=True)
+    assigned_to = serializers.SerializerMethodField()   
+    resolution_time_remaining = serializers.SerializerMethodField()
+    response_time_remaining = serializers.SerializerMethodField()
     
     priority = serializers.CharField(
         source='priority.priority_level',
@@ -35,7 +38,9 @@ class TicketSerializer(serializers.ModelSerializer):
             'priority',
             'is_under_review',
             "response_deadline",
+            'response_time_remaining',
             'resolution_deadline',
+            'resolution_time_remaining',
             'is_escalated',
             'resolved_at',
             'resolved_by',
@@ -50,7 +55,42 @@ class TicketSerializer(serializers.ModelSerializer):
             'created_at',
             'updated_at',
         ]   
+    def get_response_time_remaining(self, obj):
+        return self._get_remaining_time(obj.response_deadline)
 
+    def get_resolution_time_remaining(self, obj):
+        return self._get_remaining_time(obj.resolution_deadline)
+
+    def _get_remaining_time(self, deadline):
+        if not deadline:
+            return None
+
+        remaining = deadline - timezone.now()
+
+        if remaining.total_seconds() <= 0:
+            return "Overdue"
+
+        total_seconds = int(remaining.total_seconds())
+
+        days, remainder = divmod(total_seconds, 86400)
+        hours, remainder = divmod(remainder, 3600)
+        minutes, _ = divmod(remainder, 60)
+
+        if days > 0:
+            return f"{days}d {hours}h"
+
+        if hours > 0:
+            return f"{hours}h {minutes}m"
+
+        return f"{minutes}m"
+
+    def get_assigned_to(self, obj):
+        if not obj.assigned_to:
+            return None
+        return f"{obj.assigned_to.first_name} {obj.assigned_to.last_name}".strip()
+
+    def get_created_at_formatted(self, obj):
+        return timezone.localtime(obj.created_at).strftime("%B %d, %Y %I:%M %p")
     # Priority: P3
 
     # Response SLA
@@ -105,9 +145,7 @@ class TicketSerializer(serializers.ModelSerializer):
     #     minutes = (remaining.seconds % 3600) // 60
 
         # return f"{days}d {hours}h {minutes}m"
-    
-    def get_created_at_formatted(self, obj):
-        return timezone.localtime(obj.created_at).strftime("%B %d, %Y %I:%M %p")
+
 
 
 
@@ -198,6 +236,7 @@ class TicketDetailEmployeeSerializer(serializers.ModelSerializer):
     status = serializers.CharField(source='get_status_display', read_only=True)
     priority = serializers.CharField(source='priority.priority_level', read_only=True)
     affected_scope = serializers.CharField(source='get_affected_scope_display', read_only=True)
+    assigned_to = serializers.SerializerMethodField()
     first_name = serializers.CharField(source='submitted_by.first_name', read_only=True)
     last_name = serializers.CharField(source='submitted_by.last_name', read_only=True)
     user_code = serializers.CharField(source='submitted_by.user_code', read_only=True)
@@ -208,6 +247,10 @@ class TicketDetailEmployeeSerializer(serializers.ModelSerializer):
 
         fields = ['id','ticket_code', 'status', 'priority', 'subject', 'description', 'assigned_to', 'business_impact', 'affected_scope', 'updated_at', 'created_at', 'response_deadline', 'resolution_deadline', 'office_location', 'workstation','employee_department', 'first_name', 'last_name', 'user_code', 'is_escalated', 'resolved_at', 'resolved_by']
 
+    def get_assigned_to(self, obj):
+        if not obj.assigned_to:
+            return None
+        return f"{obj.assigned_to.first_name} {obj.assigned_to.last_name}".strip()
 # --- SLA Rules Serializer ---
 class SLARulesSerializer(serializers.ModelSerializer):
     class Meta:
@@ -226,6 +269,11 @@ class CategorySerializer(serializers.ModelSerializer):
         model = Category
         fields = ['id', 'it_department', 'created_by', 'updated_by', 'created_at', 'updated_at']
         read_only_fields = ['created_by', 'updated_by', 'created_at', 'updated_at']
+
+class CategoryUpdateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Category
+        fields = ['it_department']
 
 # --- Keyword Serializer ---
 class KeywordSerializer(serializers.ModelSerializer):

@@ -3,38 +3,102 @@ from .models import Keyword, SymptomCode, Ticket, ReviewFlags, Category
 from ai.models import TicketAIAnalysis
 from django.utils import timezone
 
+import re
+
+
+def normalize_text(text):
+    text = text.lower().strip()
+
+    # Normalize curly apostrophes
+    text = text.replace("’", "'")
+
+    # Normalize whitespace
+    text = re.sub(r"\s+", " ", text)
+
+    return text
+
+
+def phrase_matches(keyword, text):
+    """
+    Checks whether the keyword exists as a complete phrase
+    inside the text.
+    """
+
+    keyword = normalize_text(keyword)
+    text = normalize_text(text)
+
+    if not keyword or not text:
+        return False
+
+    # Escape keyword so characters such as "." or "+" don't
+    # behave as regex operators.
+    pattern = rf"(?<!\w){re.escape(keyword)}(?!\w)"
+
+    return re.search(pattern, text) is not None
+
+
 def classify_ticket(ticket):
     analysis = TicketAIAnalysis.objects.get(ticket=ticket)
 
     keywords = analysis.keywords or []
-    subject_text = (ticket.subject or "").lower()
-    description_text = (ticket.description or "").lower()
+
+    subject_text = normalize_text(ticket.subject or "")
+    description_text = normalize_text(ticket.description or "")
 
     scores = {}
 
-    for kw in keywords:
-        kw = kw.lower().strip()
+    for gemini_kw in keywords:
 
-        matches = Keyword.objects.filter(keyword__iexact=kw)
+        gemini_kw = normalize_text(gemini_kw)
 
-        print(f"Keyword: {kw}")
-        print(f"Matches: {matches.count()}")
+        if not gemini_kw:
+            continue
 
-        for match in matches:
+        print(f"\nGemini Keyword: {gemini_kw}")
+
+        # Find database keywords that can match this
+        db_keywords = Keyword.objects.all()
+
+        keyword_found = False
+
+        for match in db_keywords:
+
+            db_kw = normalize_text(match.keyword)
+
+            # Check if database keyword is contained
+            # as a complete phrase in Gemini's extracted keyword
+            if not phrase_matches(db_kw, gemini_kw):
+                continue
+
+            keyword_found = True
+
             code = match.symptom_code.code
-            weight = match.weight or 0
+            base_weight = match.weight or 0
 
-            if kw in subject_text:
+            # Longer keywords are more specific
+            keyword_length = len(db_kw.split())
+
+            specificity_bonus = keyword_length
+
+            weight = base_weight + specificity_bonus
+
+            # Check subject
+            if phrase_matches(db_kw, subject_text):
                 weight *= 3
 
-            elif kw in description_text:
+            # Check description
+            elif phrase_matches(db_kw, description_text):
                 weight *= 1
 
             scores[code] = scores.get(code, 0) + weight
 
             print(
-                f"Matched -> {match.keyword} | {code} | Weight={weight}"
+                f"Matched -> {match.keyword} | "
+                f"{code} | Weight={weight}"
             )
+
+        if not keyword_found:
+            print("No database keyword match")
 
     if not scores:
         return {
@@ -45,7 +109,9 @@ def classify_ticket(ticket):
         }
 
     best_code = max(scores, key=scores.get)
+
     best_symptom = SymptomCode.objects.get(code=best_code)
+
     category = best_symptom.category
 
     return {

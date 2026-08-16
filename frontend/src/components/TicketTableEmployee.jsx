@@ -3,9 +3,17 @@ import { useEffect, useState } from "react";
 import { formatDate } from "../utils/formatDate";
 import { useNavigate } from "react-router-dom";
 
-export default function TicketTableEmployee({ ticketList = [], maxRows = 15, dashboard = false, }) {
+export default function TicketTableEmployee({ loading = false, ticketList = [], maxRows = 15, dashboard = false, }) {
     const navigate = useNavigate();
     const limitedTickets = ticketList.slice(0, maxRows);
+
+    if (loading) {
+        return (
+            <div className="flex items-center justify-center py-12 text-sm text-gray-500">
+                Loading tickets...
+            </div>
+        );
+    }
 
     return(
         <div
@@ -28,11 +36,12 @@ export default function TicketTableEmployee({ ticketList = [], maxRows = 15, das
                 </thead>
 
                 <tbody>
-                    {limitedTickets.map(ticket => (
-                        <tr
-                            key={ticket.id}
-                            onClick={() => navigate(`/ticket/${ticket.id}`)}
-                            className="border-t border-gray-300 hover:bg-gray-100 transition ease-in-out cursor-pointer"
+                    {limitedTickets.length > 0 ? (
+                        limitedTickets.map((ticket) => (
+                            <tr
+                                key={ticket.id}
+                                onClick={() => navigate(`/ticket/${ticket.id}`)}
+                                className="border-t border-gray-300 hover:bg-gray-100 transition ease-in-out cursor-pointer"
                         >
                             <td className="py-4 pl-6 font-semibold whitespace-nowrap">{ticket.ticket_code || "-"}</td>
                             <td className="px-4 pl-6 whitespace-nowrap">{ticket.subject || "-"}</td>
@@ -41,7 +50,18 @@ export default function TicketTableEmployee({ ticketList = [], maxRows = 15, das
                             <td className="px-4 whitespace-nowrap">{ticket.status || "-"}</td>
                             <td className="px-4 font-semibold whitespace-nowrap">{formatDate(ticket.created_at)}</td>
                         </tr>
-                    ))}
+                    ))
+                    ) : (
+                        <tr>
+                            <td
+                                colSpan="5"
+                                className="py-12 text-center text-sm text-gray-400"
+                            >
+                                No tickets found.
+                            </td>
+                        </tr>
+                    )
+                }
                 </tbody>
             </table>
         </div>

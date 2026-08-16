@@ -1,7 +1,7 @@
 from django.urls import path
 from .views import (TicketListEmployeeView, CreateTicketView, ListTicketView, DetailTicketView, UpdateSymptomCodeView, 
 UpdateTicketView, DeleteTicketView, CreateCategoryView, KeywordUpdateView ,KeywordCreateView, 
-UpdateCategoryView, CreateSymptomCodeView, SLARulesCreateView, SLARulesUpdateView, TicketDetailEmployeeView)
+UpdateCategoryView, CreateSymptomCodeView, SLARulesCreateView, SLARulesUpdateView, TicketDetailEmployeeView, TicketListServiceDeskView)
 
 urlpatterns = [
     # --- Ticket URLs ---
@@ -12,6 +12,7 @@ urlpatterns = [
     path('delete/<int:pk>/', DeleteTicketView.as_view(), name='delete-ticket'),
     path('employee/list/', TicketListEmployeeView.as_view(), name="ticket-list"),
     path('employee/detail/<int:ticket_id>/', TicketDetailEmployeeView.as_view(), name="ticket-detail"),
+    path('service-desk/list/', TicketListServiceDeskView.as_view(), name="ticket-list-service-desk"),
     # --- Category URLs ---
     path('categories/create/', CreateCategoryView.as_view(), name='create-category'),
     path('categories/update/<int:pk>/', UpdateCategoryView.as_view(), name='update-category'),

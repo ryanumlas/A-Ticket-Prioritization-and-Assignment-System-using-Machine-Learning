@@ -97,7 +97,7 @@ export default function EmployeeDashboard() {
                             </h1>
 
                             <p className="text-sm text-gray-500">
-                                Recently assigned tickets
+                                Recently submitted tickets
                             </p>
                         </div>
 
