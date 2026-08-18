@@ -7,17 +7,34 @@ import {
     ShieldCheck
 } from "lucide-react";
 import { getCurrentUser } from "../utils/auth";
+import api from "../api";
+import { useEffect, useState } from "react";
 
 export default function ServiceDeskOverview() {
     const user = getCurrentUser();
+    const [overviewData, setOverviewData] = useState(null);
 
+    useEffect(() => {
+        const fetchOverviewData = async () => {
+            try {
+                const response = await api.get("/tickets/service-desk/overview/");
+                setOverviewData(response.data);
+                console.log("Fetched service desk overview data:", response.data);
+            } catch (error) {
+                console.error("Error fetching service desk overview data:", error);
+            }
+        }
+
+        fetchOverviewData();
+    }, []);
+
+
+            
     return (
         <div className="w-full bg-white border border-gray-300 rounded-xl overflow-hidden">
 
-            {/* Service Desk Banner */}
             <div className="relative overflow-hidden bg-gradient-to-r from-[#4C4CF9] to-[#6366F1] px-6 py-5 text-white">
                 
-                {/* Decorative circles */}
                 <div className="absolute -right-8 -top-10 w-40 h-40 rounded-full bg-white/10" />
                 <div className="absolute right-24 -bottom-16 w-32 h-32 rounded-full bg-white/10" />
 
@@ -71,7 +88,7 @@ export default function ServiceDeskOverview() {
                         </p>
 
                         <h2 className="text-2xl font-bold text-gray-900 mt-1">
-                            12
+                            {overviewData?.assigned_tickets || 0}
                         </h2>
 
                         <p className="text-xs text-gray-400 mt-2">
@@ -102,7 +119,7 @@ export default function ServiceDeskOverview() {
                         </p>
 
                         <h2 className="text-2xl font-bold text-gray-900 mt-1">
-                            92%
+                            {overviewData?.auto_classified_tickets || 0} %
                         </h2>
 
                         <p className="text-xs text-gray-400 mt-2">
@@ -111,7 +128,6 @@ export default function ServiceDeskOverview() {
                     </div>
 
 
-                    {/* Flagged Tickets */}
                     <div className="border border-gray-200 rounded-xl p-4 hover:shadow-md hover:border-red-200 transition">
                         <div className="flex items-center justify-between">
 
@@ -133,7 +149,7 @@ export default function ServiceDeskOverview() {
                         </p>
 
                         <h2 className="text-2xl font-bold text-gray-900 mt-1">
-                            5
+                            {overviewData?.flagged_tickets || 0}
                         </h2>
 
                         <p className="text-xs text-gray-400 mt-2">

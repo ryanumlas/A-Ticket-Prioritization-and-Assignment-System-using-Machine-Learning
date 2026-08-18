@@ -5,6 +5,8 @@ import {
     ResponsiveContainer,
 } from "recharts";
 import { Bot, TriangleAlert } from "lucide-react";
+import api from "../api";
+import { useEffect, useState } from "react";
 
 const data = [
     { name: "Auto Classified", value: 92 },
@@ -14,6 +16,40 @@ const data = [
 const COLORS = ["#4C4CF9", "#F59E0B"];
 
 export default function AIOverviewPieChart() {
+    const [classifiedResults, setClassifiedResults] = useState(null);
+
+    useEffect(() => {
+        const fetchClassifiedResults = async () => {
+            try {
+                const response = await api.get("/tickets/service-desk/classified-results/");
+                setClassifiedResults(response.data);
+                console.log("Fetched classified results:", response.data);
+            } catch (error) {
+                console.error("Error fetching classified results:", error);
+            }
+        }
+        fetchClassifiedResults();
+    }, [])
+
+    const {
+        auto_classified_percentage,
+        manual_override_percentage,
+        rule_based_tickets,
+        manual_override_tickets,
+        total_tickets,
+    } = classifiedResults || {};
+
+    const data = [
+        {
+            name: "Auto Classified",
+            value: classifiedResults?.auto_classified_percentage || 0,
+        },
+        {
+            name: "Manual Override",
+            value: classifiedResults?.manual_override_percentage || 0,
+        }
+    ]
+
     return (
         <div className="bg-white border border-gray-300 rounded-xl p-4">
             <div className="flex items-center justify-between mb-6">
@@ -65,13 +101,13 @@ export default function AIOverviewPieChart() {
                                     Auto Classified
                                 </p>
                                 <h3 className="font-semibold">
-                                    1,150 Tickets
+                                    {rule_based_tickets || 0} Tickets
                                 </h3>
                             </div>
                         </div>
 
                         <span className="font-bold text-lg text-[#4C4CF9]">
-                            92%
+                            {auto_classified_percentage || 0}%
                         </span>
                     </div>
 
@@ -89,13 +125,13 @@ export default function AIOverviewPieChart() {
                                     Manual Review
                                 </p>
                                 <h3 className="font-semibold">
-                                    100 Tickets
+                                    {manual_override_tickets || 0} Tickets
                                 </h3>
                             </div>
                         </div>
 
                         <span className="font-bold text-lg text-amber-600">
-                            8%
+                            {manual_override_percentage || 0}%
                         </span>
                     </div>
 
@@ -105,7 +141,7 @@ export default function AIOverviewPieChart() {
                                 Total Tickets
                             </p>
                             <h3 className="text-2xl font-bold">
-                                1,250
+                                {total_tickets || 0}
                             </h3>
                         </div>
 
@@ -114,7 +150,7 @@ export default function AIOverviewPieChart() {
                                 AI Success Rate
                             </p>
                             <h3 className="text-2xl font-bold text-green-600">
-                                92%
+                                {auto_classified_percentage || 0}%
                             </h3>
                         </div>
                     </div>

@@ -1,7 +1,8 @@
 from django.urls import path
 from .views import (TicketListEmployeeView, CreateTicketView, ListTicketView, DetailTicketView, UpdateSymptomCodeView, 
 UpdateTicketView, DeleteTicketView, CreateCategoryView, KeywordUpdateView ,KeywordCreateView, 
-UpdateCategoryView, CreateSymptomCodeView, SLARulesCreateView, SLARulesUpdateView, TicketDetailEmployeeView, TicketListServiceDeskView)
+UpdateCategoryView, CreateSymptomCodeView, SLARulesCreateView, SLARulesUpdateView, TicketDetailEmployeeView, TicketListServiceDeskView, UpdateTicketStatusView, ManualOverrideTicketView,
+ServiceDeskOverviewView, ServiceDeskClassifiedResultsView)
 
 urlpatterns = [
     # --- Ticket URLs ---
@@ -9,10 +10,14 @@ urlpatterns = [
     path('list/', ListTicketView.as_view(), name='list-tickets'),
     path('detail/<int:pk>/', DetailTicketView.as_view(), name='detail-ticket'),
     path('update/<int:pk>/', UpdateTicketView.as_view(), name='update-ticket'),
+    path('update-status/<int:pk>/', UpdateTicketStatusView.as_view(), name='update-ticket-status'),
+    path('manual-override/<int:pk>/', ManualOverrideTicketView.as_view(), name='manual-override-ticket'),
     path('delete/<int:pk>/', DeleteTicketView.as_view(), name='delete-ticket'),
     path('employee/list/', TicketListEmployeeView.as_view(), name="ticket-list"),
     path('employee/detail/<int:ticket_id>/', TicketDetailEmployeeView.as_view(), name="ticket-detail"),
     path('service-desk/list/', TicketListServiceDeskView.as_view(), name="ticket-list-service-desk"),
+    path('service-desk/overview/', ServiceDeskOverviewView.as_view(), name="service-desk-overview"),
+    path('service-desk/classified-results/', ServiceDeskClassifiedResultsView.as_view(), name="service-desk-classified-results"),
     # --- Category URLs ---
     path('categories/create/', CreateCategoryView.as_view(), name='create-category'),
     path('categories/update/<int:pk>/', UpdateCategoryView.as_view(), name='update-category'),

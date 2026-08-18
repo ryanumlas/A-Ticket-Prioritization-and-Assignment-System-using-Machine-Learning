@@ -206,7 +206,9 @@ def analyze_ticket(ticket):
                 "cleaned_text": data.get("cleaned_text", ""),
                 "summary": data.get("summary", ""),
                 "keywords": data.get("keywords", []),
-                "model_version": "gemini-2.5-flash"
+                "model_version": "gemini-2.5-flash",
+                "business_critical": data.get("business_critical", False),
+                "is_unclear": data.get("is_unclear", False)
             }
         )
 

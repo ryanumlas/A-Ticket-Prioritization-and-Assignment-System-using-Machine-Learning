@@ -56,10 +56,65 @@ class TicketSerializer(serializers.ModelSerializer):
             'updated_at',
         ]   
     def get_response_time_remaining(self, obj):
-        return self._get_remaining_time(obj.response_deadline)
+
+            # Response SLA is already completed
+            if obj.response_at:
+                return "MET"
+
+            if not obj.response_deadline:
+                return None
+
+            remaining = obj.response_deadline - timezone.now()
+
+            if remaining.total_seconds() <= 0:
+                return "OVERDUE"
+
+            total_seconds = int(remaining.total_seconds())
+
+            days, remainder = divmod(total_seconds, 86400)
+            hours, remainder = divmod(remainder, 3600)
+            minutes, seconds = divmod(remainder, 60)
+
+            if days > 0:
+                return f"{days}d {hours}h {minutes}m"
+
+            if hours > 0:
+                return f"{hours}h {minutes}m"
+
+            if minutes > 0:
+                return f"{minutes}m {seconds}s"
+
+            return f"{seconds}s"
 
     def get_resolution_time_remaining(self, obj):
-        return self._get_remaining_time(obj.resolution_deadline)
+
+        if obj.resolved_at:
+            return "MET"
+
+        if not obj.resolution_deadline:
+            return None
+
+        remaining = obj.resolution_deadline - timezone.now()
+
+        if remaining.total_seconds() <= 0:
+            return "OVERDUE"
+
+        total_seconds = int(remaining.total_seconds())
+
+        days, remainder = divmod(total_seconds, 86400)
+        hours, remainder = divmod(remainder, 3600)
+        minutes, seconds = divmod(remainder, 60)
+
+        if days > 0:
+            return f"{days}d {hours}h {minutes}m"
+
+        if hours > 0:
+            return f"{hours}h {minutes}m"
+
+        if minutes > 0:
+            return f"{minutes}m {seconds}s"
+
+        return f"{seconds}s"
 
     def _get_remaining_time(self, deadline):
         if not deadline:
@@ -212,7 +267,7 @@ class TicketCreateSerializer(serializers.ModelSerializer):
 class TicketUpdateSerializer(serializers.ModelSerializer):
     class Meta:
         model = Ticket
-        fields = ['status']
+        fields = ['assigned_to']
 
 class TicketAssistanceSerializer(serializers.ModelSerializer):
     class Meta:

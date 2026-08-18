@@ -1,4 +1,4 @@
-from time import timezone
+from django.utils import timezone
 from django.shortcuts import render
 from django.db import transaction
 from rest_framework.response import Response
@@ -33,83 +33,268 @@ class CreateTicketView(generics.CreateAPIView):
             },
             status=status.HTTP_201_CREATED
         )
-    
+
     @transaction.atomic
     def perform_create(self, serializer):
+
         profile = self.request.user.profile
-        ticket = serializer.save(submitted_by=self.request.user, employee_department=profile.employee_department, office_location=profile.office_location)
+
+        ticket = serializer.save(
+            submitted_by=self.request.user,
+            employee_department=profile.employee_department,
+            office_location=profile.office_location
+        )
 
         analysis = analyze_ticket(ticket)
 
-        if analysis["is_unclear"]:
+        TicketAIAnalysis.objects.update_or_create(
+            ticket=ticket,
+            defaults={
+                "cleaned_text": analysis.get("cleaned_text", ""),
+                "summary": analysis.get("summary", ""),
+                "keywords": analysis.get("keywords", []),
+                "model_version": "gemini-2.5-flash",
+                "business_critical": analysis.get(
+                    "business_critical",
+                    False
+                ),
+                "is_unclear": analysis.get(
+                    "is_unclear",
+                    False
+                ),
+            }
+        )
+
+
+        if analysis.get("is_unclear", False):
+
             ReviewFlags.objects.create(
                 ticket=ticket,
                 reason=ReviewFlags.Reasons.UNCLEAR_DESCRIPTION,
                 status=ReviewFlags.Status.PENDING,
                 source_type=ReviewFlags.SourceType.SYSTEM_GENERATED
             )
+
             ticket.is_under_review = True
             ticket.status = Ticket.TicketStatus.UNDER_REVIEW
             ticket.save()
+
             return
 
         result = classify_ticket(ticket)
+
         print(result)
 
+        symptom = SymptomCode.objects.filter(
+            code=result.get("symptom_code")
+        ).first()
 
-        symptom = SymptomCode.objects.filter(code=result.get("symptom_code")).first()
         category = symptom.category if symptom else None
-        department = category.it_department if category else None
+        department = (
+            category.it_department
+            if category
+            else None
+        )
+
 
         if not symptom:
+
             ReviewFlags.objects.create(
                 ticket=ticket,
                 reason=ReviewFlags.Reasons.SYMPTOM_NOT_DETECTED,
                 status=ReviewFlags.Status.PENDING,
                 source_type=ReviewFlags.SourceType.SYSTEM_GENERATED
             )
+
             ticket.is_under_review = True
             ticket.status = Ticket.TicketStatus.UNDER_REVIEW
             ticket.save()
+
             return
-        
+
         if not department:
+
             ReviewFlags.objects.create(
                 ticket=ticket,
                 reason=ReviewFlags.Reasons.MISSING_DEPARTMENT,
                 status=ReviewFlags.Status.PENDING,
                 source_type=ReviewFlags.SourceType.SYSTEM_GENERATED
             )
-            ticket.is_under_review=True
+
+            ticket.is_under_review = True
             ticket.status = Ticket.TicketStatus.UNDER_REVIEW
             ticket.save()
+
             return
         
         ticket.symptom_code = symptom
         ticket.category = category
         ticket.it_department = department
-        
-        
+
+        TicketAnalysis.objects.update_or_create(
+            ticket=ticket,
+            defaults={
+                "model_type": TicketAnalysis.ModelType.RULE_BASED,
+                "model_used": "Rule-Based Classifier",
+                "predicted_symptom_code": symptom,
+                "created_by": self.request.user,
+            }
+        )
+
         final_priority = calculate_priority(
-            symptom.based_priority, 
+            symptom.based_priority,
             ticket.affected_scope,
-            analysis["business_critical"]
-        )   
+            analysis.get("business_critical", False)
+        )
+
 
         sla_rule = SLARules.objects.filter(
-            priority_level = final_priority
+            priority_level=final_priority
         ).first()
 
         if sla_rule:
             ticket.priority = sla_rule
-            ticket.response_deadline = (ticket.created_at + sla_rule.response_time)
-            ticket.resolution_deadline = (ticket.created_at + sla_rule.resolution_time)
+
+            ticket.response_deadline = (
+                ticket.created_at
+                + sla_rule.response_time
+            )
+
+            ticket.resolution_deadline = (
+                ticket.created_at
+                + sla_rule.resolution_time
+            )
 
         ticket.status = Ticket.TicketStatus.OPEN
 
         ticket.save()
 
         update_sla(ticket)
+
+class ManualOverrideTicketView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    @transaction.atomic
+    def patch(self, request, pk):
+        ticket = Ticket.objects.get(pk=pk)
+
+        symptom_code_id = request.data.get("symptom_code")
+
+        if not symptom_code_id:
+            return Response(
+                {"error": "symptom_code is required"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        symptom = SymptomCode.objects.filter(
+            id=symptom_code_id
+        ).first()
+
+        if not symptom:
+            return Response(
+                {"error": "Invalid symptom code"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        category = symptom.category
+        department = category.it_department if category else None
+
+        if not department:
+            return Response(
+                {"error": "Selected symptom code has no department"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        ai_analysis = TicketAIAnalysis.objects.filter(
+            ticket=ticket
+        ).first()
+
+        business_critical = (
+            ai_analysis.business_critical
+            if ai_analysis
+            else False
+        )
+        final_priority = calculate_priority(
+            symptom.based_priority,
+            ticket.affected_scope,
+            business_critical
+        )
+
+
+        sla_rule = SLARules.objects.filter(
+            priority_level=final_priority
+        ).first()
+
+        if not sla_rule:
+            return Response(
+                {
+                    "error": "No SLA rule found for calculated priority."
+                },
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        ticket.symptom_code = symptom
+        ticket.category = category
+        ticket.it_department = department
+
+        ticket.priority = sla_rule
+
+        ticket.response_deadline = (
+            ticket.created_at + sla_rule.response_time
+        )
+
+        ticket.resolution_deadline = (
+            ticket.created_at + sla_rule.resolution_time
+        )
+
+        ticket.is_under_review = False
+        ticket.status = Ticket.TicketStatus.OPEN
+
+        ticket.save()
+
+        ticket_analysis, created = TicketAnalysis.objects.get_or_create(
+            ticket=ticket
+        )
+
+        ticket_analysis.model_type = (
+            TicketAnalysis.ModelType.MANUAL_OVERRIDE
+        )
+
+        ticket_analysis.model_used = "Manual Override"
+
+        ticket_analysis.predicted_symptom_code = symptom
+
+        ticket_analysis.was_overridden = True
+
+        ticket_analysis.updated_by = request.user
+
+        if created:
+            ticket_analysis.created_by = request.user
+
+        ticket_analysis.save()
+
+        ReviewFlags.objects.filter(
+            ticket=ticket,
+            reason=ReviewFlags.Reasons.SYMPTOM_NOT_DETECTED,
+            status=ReviewFlags.Status.PENDING
+        ).update(
+            status=ReviewFlags.Status.RESOLVED
+        )
+        update_sla(ticket)
+
+        return Response(
+            {
+                "success": True,
+                "message": "Ticket manually overridden successfully.",
+                "ticket": ticket.ticket_code,
+                "symptom_code": symptom.code,
+                "priority": ticket.priority.priority_level,
+                "department": department.name,
+                "model_type": ticket_analysis.model_type,
+                "was_overridden": ticket_analysis.was_overridden,
+            },
+            status=status.HTTP_200_OK
+        )
 
         
 class UpdateTicketStatusView(APIView):
@@ -127,9 +312,17 @@ class UpdateTicketStatusView(APIView):
             ticket.status = Ticket.TicketStatus.IN_PROGRESS
         
         elif new_status == Ticket.TicketStatus.RESOLVED:
+            now = timezone.now()
+
             ticket.status = Ticket.TicketStatus.RESOLVED
-            ticket.resolved_at = timezone.now()
+            ticket.resolved_at = now
             ticket.resolved_by = request.user
+
+            if ticket.resolution_deadline:
+                if now <= ticket.resolution_deadline:
+                    ticket.resolution_sla_status = Ticket.SLAStatus.MET
+                else:
+                    ticket.resolution_sla_status = Ticket.SLAStatus.BREACHED
         
         elif new_status == Ticket.TicketStatus.CLOSED:
             ticket.status = Ticket.TicketStatus.CLOSED
@@ -161,10 +354,57 @@ class DetailTicketView(generics.RetrieveAPIView):
     serializer_class = TicketSerializer
     permission_classes = [IsAuthenticated]
 
-class UpdateTicketView(generics.UpdateAPIView):
-    queryset = Ticket.objects.all()
-    serializer_class = TicketUpdateSerializer
-    permission_classes = [AllowAny]
+class UpdateTicketView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    @transaction.atomic
+    def patch(self, request, pk):
+        ticket = Ticket.objects.get(pk=pk)
+
+        assigned_to_id = request.data.get("assigned_to")
+
+        if assigned_to_id is not None:
+
+            technician = User.objects.filter(
+                id=assigned_to_id
+            ).first()
+
+            if not technician:
+                return Response(
+                    {"error": "Invalid technician"},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+
+            ticket.assigned_to = technician
+
+            ticket.status = Ticket.TicketStatus.IN_PROGRESS
+
+
+        ticket.save()
+
+        update_sla(ticket)
+
+        return Response(
+            {
+                "success": True,
+                "message": "Ticket updated successfully.",
+                "ticket": ticket.ticket_code,
+                "status": ticket.status,
+                "assigned_to": (
+                    ticket.assigned_to.username
+                    if ticket.assigned_to
+                    else None
+                ),
+                "response_sla_status": (
+                    ticket.response_sla_status
+                ),
+                "resolution_sla_status": (
+                    ticket.resolution_sla_status
+                ),
+            },
+            status=status.HTTP_200_OK
+        )
+
 
 class DeleteTicketView(generics.DestroyAPIView):
     queryset = Ticket.objects.all()
@@ -219,14 +459,70 @@ class TicketDetailServiceDeskView(APIView):
         serializer = TicketSerializer(ticket)
         return Response(serializer.data)
 
-class TicketAssignedToServiceDeskView(APIView):
+class ServiceDeskOverviewView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
         user = request.user
 
-        count = Ticket.objects.filter(assigned_to=user).count()
-        return Response({"assigned_ticket_count": count})
+        assigned_tickets = Ticket.objects.filter(assigned_to=user)
+        count_assigned_tickets = assigned_tickets.count()
+
+        rule_based_tickets = TicketAnalysis.objects.filter(
+            model_type=TicketAnalysis.ModelType.RULE_BASED,
+        ).values("ticket").distinct().count()
+
+        manual_override_tickets = TicketAnalysis.objects.filter(
+            model_type=TicketAnalysis.ModelType.MANUAL_OVERRIDE,
+        ).values("ticket").distinct().count()
+
+        flagged_tickets = ReviewFlags.objects.filter(
+            status=ReviewFlags.Status.PENDING
+        ).values('ticket').distinct().count()
+
+        total_tickets = rule_based_tickets + manual_override_tickets
+
+        if total_tickets > 0:
+            auto_classified_percentage = (rule_based_tickets / total_tickets) * 100
+        else:
+            auto_classified_percentage = 0
+
+        return Response({
+            "assigned_tickets": count_assigned_tickets,
+            "auto_classified_tickets": round(auto_classified_percentage, 1),
+            "flagged_tickets": flagged_tickets
+        })
+
+class ServiceDeskClassifiedResultsView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        rule_based_tickets = TicketAnalysis.objects.filter(
+            model_type=TicketAnalysis.ModelType.RULE_BASED,
+        ).values("ticket").distinct().count()
+
+        manual_override_tickets = TicketAnalysis.objects.filter(
+            model_type=TicketAnalysis.ModelType.MANUAL_OVERRIDE,
+        ).values("ticket").distinct().count()
+
+        total_tickets = rule_based_tickets + manual_override_tickets
+
+        if total_tickets > 0:
+            auto_classified_percentage = (rule_based_tickets / total_tickets) * 100
+
+            manual_override_percentage = (manual_override_tickets / total_tickets) * 100
+        else:
+            auto_classified_percentage = 0
+            manual_override_percentage = 0
+
+        return Response({
+            "auto_classified_percentage": round(auto_classified_percentage, 1),
+            "rule_based_tickets": rule_based_tickets,
+            "total_tickets": total_tickets,
+            "manual_override_percentage": round(manual_override_percentage, 1),
+            "manual_override_tickets": manual_override_tickets
+        })
+
 # --- End ---
 
 # --- Category Views ---

@@ -27,6 +27,8 @@ class TicketAnalysis(models.Model):
 
 class TicketAIAnalysis(models.Model):
     ticket = models.OneToOneField('tickets.Ticket', on_delete=models.CASCADE, related_name='ai_analysis')
+    business_critical = models.BooleanField(default=False)
+    is_unclear = models.BooleanField(default=False)
     cleaned_text = models.TextField(blank=True, null=True)
     summary = models.TextField(blank=True, null=True)
     keywords = models.JSONField(blank=True, null=True)

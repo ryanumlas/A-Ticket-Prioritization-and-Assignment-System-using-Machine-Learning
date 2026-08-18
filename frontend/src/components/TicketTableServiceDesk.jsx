@@ -26,7 +26,7 @@ export default function TicketTableServiceDesk({ ticketList, loading = false, ma
                         <th className="w-[15%] px-6 py-3 font-semibold">Ticket ID</th>
                         <th className="w-[40%] px-6 font-semibold">Subject</th>
                         <th className="w-[12%] px-6 font-semibold">Priority</th>
-                        <th className="w-[13%] px-6 font-semibold">Status</th>
+                        <th className="w-[13%] px-4 font-semibold">Status</th>
                         <th className="w-[20%] px-6 font-semibold">SLA Remaining</th>
                     </tr>
                 </thead>
@@ -50,7 +50,7 @@ export default function TicketTableServiceDesk({ ticketList, loading = false, ma
                                     {ticket.priority || "-"}
                                 </td>
 
-                                <td className="px-6 py-4">
+                                <td className="px-4 py-4">
                                     {ticket.status || "-"}
                                 </td>
 
