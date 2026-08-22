@@ -1,6 +1,7 @@
 from h11 import Response
 from .models import Keyword, SymptomCode, Ticket, ReviewFlags, Category
 from ai.models import TicketAIAnalysis
+from machine_learning.predictor import predict_symptom_code
 from django.utils import timezone
 
 import re
@@ -266,7 +267,6 @@ def update_sla(ticket):
         )
 
     if ticket.status in [
-        Ticket.TicketStatus.UNDER_REVIEW,
         Ticket.TicketStatus.IN_PROGRESS,
         Ticket.TicketStatus.RESOLVED,
         Ticket.TicketStatus.CLOSED,
@@ -274,7 +274,10 @@ def update_sla(ticket):
         if not ticket.response_at:
             ticket.response_at = now
 
-        ticket.response_sla_status = Ticket.SLAStatus.MET
+        if ticket.response_at <= ticket.response_deadline:
+            ticket.response_sla_status = Ticket.SLAStatus.MET
+        else:
+            ticket.response_sla_status = Ticket.SLAStatus.BREACHED
 
     else:
         response_remaining = ticket.response_deadline - now
@@ -288,7 +291,15 @@ def update_sla(ticket):
         Ticket.TicketStatus.RESOLVED,
         Ticket.TicketStatus.CLOSED,
     ]:
-        ticket.resolution_sla_status = Ticket.SLAStatus.MET
+        if ticket.resolved_at:
+            if ticket.resolved_at <= ticket.resolution_deadline:
+                ticket.resolution_sla_status = (
+                    Ticket.SLAStatus.MET
+                )
+            else:
+                ticket.resolution_sla_status = (
+                    Ticket.SLAStatus.BREACHED
+                )
 
     else:
         resolution_remaining = ticket.resolution_deadline - now
@@ -310,6 +321,9 @@ def update_sla(ticket):
             "resolution_sla_status",
         ]
     )
+
+def predict_ticket(ticket):
+
 
 # WAG NA TO PANGET PAG SCORING
 

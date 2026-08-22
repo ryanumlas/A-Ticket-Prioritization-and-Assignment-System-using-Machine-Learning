@@ -1,0 +1,818 @@
+subject,description,symptom_code
+Login blocked due to locked profile,The sign-in page specifically says my profile is locked and needs to be unlocked before I can continue.,AC-004
+Program exits when printing,"Every time I try to print a report from the application, the whole program suddenly closes and I have to open it again.",SW-001
+Software preferences reset,"The program still works, but all of my required work preferences have returned to their defaults and need to be configured again.",SW-004
+Report layout changed,My reports are coming out with a different layout even though I'm using the same application and process as before. My teammate's reports still look normal.,SW-004
+Workstation restarted during encoding,"My workstation restarted on its own while I was encoding records. After restarting, I was able to sign back into Windows normally.",HW-006
+Network application disconnects then reconnects,"Our online application occasionally reports that the connection was lost, but it reconnects shortly afterward without restarting the computer.",NW-002
+Desktop powered but login screen missing,"The system unit is running normally, but I cannot see the Windows sign-in page.",HW-002
+PC says no network available,My PC is showing that no network is available. I haven't had any connection since arriving at the office this morning.,NW-001
+App freezes immediately after launch,The program becomes unresponsive almost immediately after I try to open it.,SW-001
+Sign in returns invalid credentials,The system reports invalid credentials even though I am using the password that currently works for my other company services.,AC-002
+Desktop shutdown not related to temperature,The machine has powered off even when it has only been running for a short time and remains cool.,HW-006
+Application crashes while processing requests,My application keeps crashing while I'm processing customer requests. The computer stays on and my other applications continue working normally.,SW-001
+Unable to continue assigned tasks,"Please assist. My desktop won't power on, and I cannot continue my assigned tasks today.",HW-001
+Can't approve after promotion,"I can access the system and review the required information, but the approval permission expected for my current role is not available.",AC-006
+App window never appears,"I can see that something starts briefly after clicking the program, but no application window appears.",SW-001
+Computer does not start despite working display,"The monitor appears normal, but there is no response at all from the system unit.",HW-001
+Display stopped but audio continued,"The screen suddenly went black during a meeting, but I could still hear audio from the computer.",HW-002
+Software stopped launching,"The application used to open normally, but clicking it now produces no usable window.",SW-001
+Need authorization for new project,"I joined a new project and can use the main platform, but I cannot access the project's restricted workspace.",AC-006
+Desktop completely dead,No lights or fans come on when I try to power up the workstation.,HW-001
+Machine only problematic after prolonged use,There is no problem immediately after powering it on. The freezing and slowdown appear only after several hours of continuous operation.,HW-003
+No signs of power from desktop,The computer appears to be completely dead. The power indicator does not light up and there is no sound or fan activity when I press the button.,HW-001
+Installer says changes were not completed,"After the installation attempt, I received a message saying the requested changes could not be completed. The application is still not installed.",SW-002
+No license available,The application won't let me continue because it says there are currently no licenses available. I was using the program without any issue earlier.,SW-005
+PC keeps restarting randomly,My PC has restarted on its own a few times today. It happens while I'm working and there doesn't seem to be any warning before it restarts.,HW-006
+Incorrect export location,"Reports are being generated successfully, but the application keeps exporting them to the wrong directory. I need the default export path corrected.",SW-004
+Account suddenly suspended,"My account was working yesterday, but today I received a notice saying it has been suspended and I cannot continue signing in.",AC-004
+Need first-time access to internal tool,"I can sign into my normal company services, but I have never been given access to this internal tool and now need it for my role.",AC-003
+Desktop shuts itself off,My desktop has shut itself off twice today after being used for around an hour. The case feels very hot whenever this happens.,HW-003
+Need unlock after repeated login attempts,Several incorrect sign-in attempts caused the account to lock. I now know the correct credentials but still cannot access the system.,AC-004
+Cannot open installed application,"The program is still installed on the workstation, but launching it does not work.",SW-001
+Need password reset for employee system,I can't remember my password for the employee system. My account was working before and I only need the password changed.,AC-001
+Cannot access files needed for meeting,"I have presentation files saved on my secondary drive, but I cannot access the drive today. Windows keeps giving me an error when I try to open it.",HW-005
+Authenticator code rejected,"I successfully pass the password step, but the system keeps rejecting the code generated by my authenticator application.",AC-005
+Forgot password for payroll system,I can't remember the password I use for the payroll system. I need it reset because I have payroll records to process today.,AC-001
+New patch keeps failing,A new patch became available for the software today. I've attempted to install it twice but both attempts failed.,SW-003
+Software says no license assigned,"When I sign into the application, it tells me there is no license assigned to my account. I cannot access the features required for my work.",SW-005
+Update progress no longer moving,The application has been on the updating screen for a while and the progress hasn't changed. I don't think the update is still running.,SW-003
+Can sign in online but not remotely,"The company website accepts my account normally. When I use the same account for secure remote access, the connection fails.",NW-003
+Drive shows error when opened,"The drive still appears in File Explorer, but when I click it I get an error instead of seeing my files. I haven't made any changes to the drive.",HW-005
+Application says trial is over,The program is telling me that the trial period has ended. This workstation should be using our company's licensed version.,SW-005
+OTP taking too long,"The code eventually arrives on my phone, but by the time I receive it the system says it is no longer valid.",AC-005
+Storage stopped during file copy,"I was copying a folder between drives when the transfer suddenly stopped. After that, the destination drive disappeared and hasn't returned.",HW-005
+Cannot view restricted report,"I am signed in successfully, but the reporting page says my account is not permitted to view the information.",AC-006
+Workstation has no signs of life,There are no indicator lights and I cannot hear any fans when I attempt to turn the machine on.,HW-001
+Cannot update payroll information,"I can log into payroll and view employee information, but I cannot update any records because the edit option is disabled for my account.",AC-006
+PC keeps turning off in afternoon,My PC has turned itself off several times during the afternoon this week. It normally happens after the machine has become very warm from being used for several hours.,HW-003
+System access needed after transfer,"I transferred departments this week. My old systems still work, but I need access to the applications used by my new team.",AC-003
+New staff needs payroll access,A new member of our payroll team needs access to the payroll application before they can begin processing employee records.,AC-003
+License disappeared after profile change,My user profile was updated yesterday and now the application says there is no valid license associated with my account.,SW-005
+System says forbidden,"I am successfully signed in, but opening the page I need returns a forbidden access message.",AC-006
+Hot workstation in accounting area,One Accounting desktop becomes much warmer than the others during the day and its performance drops significantly after prolonged use.,HW-003
+Need new password after expiration,"My account has not been disabled, but its password expired and I need to create a replacement before I can use it.",AC-001
+Computer boot interrupted every time,"The workstation begins its startup sequence normally, but something interrupts the process before login and the machine never becomes usable.",HW-004
+Program stuck after submitting request,I clicked submit and the application has remained on the same processing screen for several minutes. Other programs are still responsive.,SW-001
+Unexpected restart after login,I logged into my computer this morning and after about twenty minutes it restarted by itself. It happened again later in the afternoon.,HW-006
+Windows failed to start today,"Everything was fine yesterday, but this morning my desktop would not load Windows. The computer turns on, but it stays at the startup screen.",HW-004
+Application installation ends unexpectedly,"The installation process starts correctly but terminates before reaching the completion screen, leaving the application unavailable.",SW-002
+Files unavailable from second drive,"My computer turns on and Windows works, but I cannot access anything saved on the second drive. The drive doesn't appear where it normally does.",HW-005
+Password suddenly considered invalid,"Without making any changes, my password has started being reported as invalid.",AC-002
+Warehouse team cannot update inventory,"Several employees in the warehouse can sign into the inventory system, but none of us can update stock quantities today. We can only view the existing records.",AC-006
+Internet works but keeps disconnecting,"I still have internet access, but the connection isn't stable. It disappears for a short time and then reconnects on its own throughout the day.",NW-002
+Performance problem appears after prolonged use,"The computer starts the day normally and there are no startup issues. After several hours, however, it becomes hot, noisy, and much slower until it has time to cool.",HW-003
+Can't move existing program to required release,"I already have the software and can use it, but I cannot upgrade it to the version required by our department.",SW-003
+Repeated invalid password message,The system keeps showing an invalid password message whenever I try to access my account.,AC-002
+Can't log in account is locked,My password should be correct now but I still can't log in because the account says it has been locked.,AC-004
+Windows login screen not appearing,"I cannot continue my work because the monitor does not display anything after switching on my computer. The monitor is powered on, but I never see the Windows login screen.",HW-002
+CPU not opening after restart,CPU not opening after restart. Already checked the cable and power.,HW-001
+Desktop shuts off even when cool,"The unexpected shutdown also happens shortly after startup, before the machine has had time to get warm.",HW-006
+Wi-Fi signal keeps dropping out,"My workstation stays connected to Wi-Fi most of the time, but the connection periodically drops out and then reconnects.",NW-002
+Cannot open anything from second drive,"My computer itself is working fine, but I can't open anything saved on the second drive. It appears under This PC but gives me an error when I click it.",HW-005
+Access denied only on one resource,"My login works across the rest of the system, but one specific resource rejects my account.",AC-006
+Upgrade stopped before completion,"I was upgrading our work application to the newer release, but the process stopped before finishing and the old version is still installed.",SW-003
+Unable to reach desktop,"The workstation starts and I can see Windows trying to load, but I never get to my desktop. I've already restarted it and the same thing happens.",HW-004
+Desktop switched off in the middle of work,The computer was operating normally and then suddenly went completely off while I was entering information. I had to start it again manually.,HW-006
+Program says activation limit reached,"When I try to activate the application on this workstation, it reports that the allowed number of activations has already been reached.",SW-005
+Need access for cross-team assignment,I will be helping the accounting team with their backlog and need access to the application they use for transaction processing.,AC-003
+Work system login issue,"Hi IT, I can't get into our work system. My username and password are being rejected even though they worked yesterday.",AC-002
+Computer powers on but cannot boot,"There are lights, fan activity, and screen output, but the operating system does not start.",HW-004
+Network issue during customer calls,My customer calls haven't been stable today. The audio occasionally cuts out and I've been disconnected from two calls before being able to reconnect.,NW-002
+Cannot verify login while traveling,"I'm working away from the office today and can enter my password, but I'm not receiving the usual verification request on my registered phone.",AC-005
+PC unexpectedly went back to startup screen,"While I was working, the screen suddenly changed and the manufacturer logo appeared as the computer restarted.",HW-006
+Need inactive account restored,My account has become inactive after not being used for some time. I need to use the application again for a new assignment.,AC-004
+Purchase order editing unavailable,"I can open existing purchase orders in the procurement system, but I can't modify them anymore. I was able to make changes before.",AC-006
+Desktop turns off unpredictably,The workstation may work for hours and then suddenly power off. It does not seem related to long use or overheating.,HW-006
+Machine used to start on second attempt,"Recently the PC needed repeated button presses, but this morning it will not power up at all.",HW-001
+Login page not showing,"My desktop turns on normally, but I cannot see the login page anymore.",HW-002
+Upgrade fails at final stage,The application upgrade reaches the final stage but fails before completion. I can still access the previous version afterward.,SW-003
+Account needs reactivation,I returned to work today and my employee account appears to have been deactivated while I was away.,AC-004
+Computer keeps going off,"Computer keeps going off by itself. I turn it back on and it works again, but later it happens again.",HW-006
+PC slowed down during data entry,My PC started lagging badly while I was entering records today. I noticed the fan running very fast and the computer felt much hotter than it did earlier in the morning.,HW-003
+Computer freezes when opening drive,"Whenever I try opening my D drive, File Explorer becomes unresponsive for a long time. Other folders on my computer open normally.",HW-005
+Cannot sign in despite several attempts,"I have retried my username and password several times, but authentication continues to fail.",AC-002
+Need help with folder permissions,"I can see the department folder on the network, but I can't open anything inside it. Other members of my team are able to use the same files.",AC-006
+Application works but one menu is blocked,"I can use the application normally except for the administration menu. When I select it, the system says my role is not authorized.",AC-006
+Software worked before but now asks for key,"I've been using the application regularly, but it suddenly started asking me for a product key before allowing me to continue.",SW-005
+Program sending files to wrong location,"The application successfully creates the files I need, but they're being placed in another directory instead of our department folder.",SW-004
+Payroll workstation won't start,"I need my desktop for today's payroll processing, but it refuses to power on.",HW-001
+User has been deactivated,"When I enter my credentials, the system says the user has been deactivated.",AC-004
+Computer works better after resting,"My computer gets slow after I've been using it for a long time. If I shut it down and leave it alone for a while, it works better again when I turn it back on.",HW-003
+Program using wrong printer,Whenever I print from our work application it sends the document to a different printer. Printing from my other programs works normally.,SW-004
+Monitor suddenly lost picture,"The monitor suddenly lost the picture while I was processing transactions. The computer remained on, but the display hasn't come back since.",HW-002
+Nothing online works from my PC,"The workstation starts normally and Windows is responsive, but every service that needs connectivity fails to load.",NW-001
+Desktop refuses to start,I have pressed the power button several times and the system unit never begins running.,HW-001
+Several employee accounts disabled,A few employees returning from leave found that their company accounts are disabled and need to be reactivated before they can resume work.,AC-004
+Account inactive even with correct credentials,"My username and password should be correct, but login is refused because the account is marked inactive.",AC-004
+System stops before Windows loads,"The monitor shows startup activity, but the operating system does not become available.",HW-004
+Screen has power but no computer image,"The monitor's power light is on, but it does not show anything coming from the workstation.",HW-002
+Remote access worked yesterday,I used the company VPN throughout my shift yesterday. Today it reaches the sign-in page but refuses to let my account through.,NW-003
+Windows starts loading then machine resets,I can see the Windows logo before the computer restarts and begins the boot process again.,HW-004
+Installer gives error message,"When I run the setup file, it begins installing but eventually displays an error message and stops. The application never gets added to my computer.",SW-002
+Startup visibly hangs before login,"The system powers on and the screen shows Windows loading, but the login screen is never reached.",HW-004
+Operating system not found,"My computer powers on but shows ""Operating System Not Found."" I don't know what caused it because I shut down normally yesterday.",HW-004
+Need account reactivated,My existing account is currently inactive and I need it reactivated because I have been assigned to use the system again.,AC-004
+PC showing boot message,I switched on my PC and got a message about a boot device instead of the normal Windows screen. I'm not familiar with this message and didn't want to change anything.,HW-004
+Program installation rolls back,The setup copies files for several minutes and then reverses everything because it says the installation could not be completed.,SW-002
+Computer keeps restarting after long use,"My computer has restarted on its own a few times this week, usually later in the day. It gets noticeably hot before this happens.",HW-003
+PC works but I cannot see the screen,"The workstation seems to be running because I hear notifications, but the monitor is blank.",HW-002
+Unable to enter portal with normal credentials,"The portal is available and other employees can access it, but my usual username and password do not successfully authenticate.",AC-002
+Cannot get online this morning,My computer started normally but I haven't been able to get online since I logged in. Email and all of the websites I tried are unavailable.,NW-001
+Slow access to shared resources,"I can still access our network resources, but opening files and folders over the network is taking much longer than it normally does.",NW-002
+Computer starts normally after random shutdown,"After the workstation unexpectedly turns off, it usually starts and works normally again when powered back on.",HW-006
+High delay in online application,"There is a long delay whenever I click anything in our web application. The application still works, but responses are taking much longer than normal.",NW-002
+Monitor lost picture during normal use,"The screen became blank while I was working, although the system unit continued to operate.",HW-002
+One screen says no input,"My primary monitor still works normally, but the second display reports no input from the same workstation.",HW-002
+Update keeps restarting,"The application tries to update whenever I open it, but the process never finishes. When I reopen the program, it asks me to update again.",SW-003
+Need password changed for work account,The password on my existing account has expired. I need to update it so I can access my usual applications again.,AC-001
+Cannot reconnect to internal environment,"I still have normal internet access after the remote session ended, but attempts to reconnect to the company network are unsuccessful.",NW-003
+Software stops working randomly,The software works for some time and then suddenly I can't interact with it anymore. Closing and reopening it lets me continue temporarily.,SW-001
+Editing option disabled,"I can view the information normally, but all editing controls are disabled when I use my account.",AC-006
+Password change required,The system says I must change my password before I can continue. My current one has reached its expiration date.,AC-001
+Application update keeps rolling back,The update reaches near completion and then rolls everything back. I receive an unsuccessful update message afterward.,SW-003
+Cannot access network this afternoon,"The network was working this morning, but now my workstation has completely lost its connection. Restarting the browser didn't make any difference.",NW-001
+VPN permission problem,The VPN client says I am not authorized to connect to the company network even though I have used remote access before.,NW-003
+Application freezes on certain records,"Most records open normally, but when I try to view some customer records the application becomes stuck and I have to force close it.",SW-001
+Private company systems inaccessible,"Public websites and cloud services are available, but I cannot enter the network required for systems that are only accessible internally.",NW-003
+VPN worked before my transfer,"Since moving to another team, I can still use my normal company account but I haven't been able to get through the remote connection.",NW-003
+App crashes opening customer profile,"Every time I try opening a certain customer profile, the application suddenly closes. I can open the program again afterward.",SW-001
+Computer tower completely off,"The monitor has electricity, but the tower has no lights, no fan movement, and no response.",HW-001
+Password expired while I was away,"I was on leave when my account password expired, and I now need to set a new password before returning to work.",AC-001
+Application connection details need changing,"I can open the program, but it is configured with outdated connection information and cannot use the correct company resource until the settings are updated.",SW-004
+Cannot open files from D drive,"My D drive still appears on the computer, but I can't open any of the folders inside it. It just gives me an error whenever I click on them.",HW-005
+Computer asking for boot device,My computer is showing a screen asking me to choose a boot device. I haven't seen this before and I'm not sure what I should select.,HW-004
+Program crashes near end of process,"I can complete most of the process normally, but near the final step the program suddenly closes and I have to begin again.",SW-001
+Authenticator number does not match,The code shown in my authenticator app keeps being rejected by the login page even though I am entering the current number.,AC-005
+Cannot start software after login,"I can sign into Windows without any issue, but this program does not launch afterward.",SW-001
+Application says user is disabled,"The software reaches the login stage normally, but after entering my credentials it reports that this user account has been disabled.",AC-004
+Cannot open software for my task,"Everything else on the desktop works, but the application required for my task refuses to start.",SW-001
+Desktop completely unresponsive,My desktop is completely unresponsive. I haven't tried fixing it because I'm afraid I'll make it worse.,HW-001
+Approval notification stopped appearing,"I normally receive a notification on my phone whenever I log in, but today there is nothing for me to approve.",AC-005
+Application using incorrect connection settings,"The program launches normally, but one of its connected services does not work because the connection information configured in my application appears to be incorrect.",SW-004
+Installation fails when adding components,"The application setup starts normally, but it fails when it reaches the part where additional components are being installed.",SW-002
+Software update failed overnight,"I left the application updating before leaving yesterday, but this morning it showed that the update failed and the old version is still installed.",SW-003
+Internet not working at my desk,Good morning. I don't have internet access on my computer. I already restarted the workstation but I still cannot open any websites or online applications.,NW-001
+User locked despite knowing credentials,"The employee has confirmed their current password, but the account itself remains locked and prevents authentication.",AC-004
+Account says access temporarily blocked,"When I try to sign in, I get a message saying my account has been temporarily blocked due to repeated login attempts.",AC-004
+Workstation stops on random days,The desktop may work perfectly for several shifts and then unexpectedly shut itself down one or two times on another day.,HW-006
+PC begins loading then restarts,"The workstation powers on, starts Windows, then suddenly restarts before login.",HW-004
+Application stuck before main screen,The software launches partially but never reaches the main working area.,SW-001
+Application using outdated folder,"Our team moved the working files to a new location, but the program still tries to find them in the old folder and gives me an error.",SW-004
+Authentication error after maintenance,"Since the system maintenance last night, I have been receiving an authentication error whenever I try to sign in.",AC-002
+Please reset my account password,I can't remember my current password anymore. My account already exists and I just need assistance setting a new password.,AC-001
+Software asking for license key,The program suddenly started asking me to enter a license key before I can continue. I have been using this application on the same computer for several months.,SW-005
+Desktop not turning on,Desktop not turning on. Need assistance.,HW-001
+Two desktops won't come on,"Two workstations in our section are not responding when we try to start them. Their monitors have power, but neither system unit shows any activity.",HW-001
+Account automatically locked,The system appears to have automatically locked my profile after several failed authentication attempts.,AC-004
+Computer turns off unexpectedly,My computer turns off unexpectedly every now and then. I haven't noticed anything specific happening before it shuts down.,HW-006
+Remote access suddenly unavailable,I normally connect to our internal network from home every day. Today my account gets denied before the connection completes.,NW-003
+Desktop says network cable unplugged,Windows is saying that the network cable is unplugged even though the cable is connected to the back of my desktop. I currently have no internet access.,NW-001
+Approval request disappears,"I receive the authentication prompt on my phone, but it disappears before I can approve the login and the system eventually returns to the verification screen.",AC-005
+Update frozen at 70 percent,The software update reached around seventy percent and hasn't moved since. The application was already installed before I started updating it.,SW-003
+Team remote access denied,Several members of our team are unable to establish VPN connections because our accounts are being denied at the authentication step.,NW-003
+Workstation won't start at new location,"I connected the computer at the new desk, but the system unit remains completely inactive.",HW-001
+Need access to purchasing folder,I will start assisting with purchase requests and need access to the shared purchasing folder. This folder was not previously part of my responsibilities.,AC-003
+Update gives error near the end,The application update gets almost to the end and then displays an error. Afterward the software still shows the older version.,SW-003
+Installation ends early,"Every time I run the setup, it ends earlier than expected and the program isn't available afterward. There isn't a usable installation on my computer.",SW-002
+Internet usable but unreliable,"I can still access the internet, but I can't rely on the connection staying stable. It becomes slow or briefly disconnects several times during my shift.",NW-002
+Password reset needed for reporting system,I forgot the password I use for our reporting system. I need to reset it because I have reports that need to be submitted today.,AC-001
+Screen unavailable after workstation wakes,"The keyboard lights come on and Windows sounds can be heard after waking the computer, but the display remains dark.",HW-002
+Workstation randomly resets itself,"The computer sometimes starts over while I am already working, with no warning or clear trigger.",HW-006
+Workstation unavailable this morning,I was unable to begin my work because the desktop assigned to me would not start. The screen stays blank and the system unit shows no indication that it is receiving power.,HW-001
+Program remains frozen while opening,The software stays on its initial startup window and does not respond.,SW-001
+Cannot access anything beyond this computer,"Files and applications stored directly on the workstation work, but I cannot reach any resource outside the machine.",NW-001
+Computer keeps getting too warm,"Hi IT, can someone check my computer? It has been getting unusually warm lately even though I am only doing my regular office work.",HW-003
+Program still on old version,"I ran the software update earlier, but after it finished the application was still showing the previous version. Trying the update again gives me an error.",SW-003
+Computer gets hotter throughout shift,The workstation temperature gradually increases throughout the day and its performance becomes worse at the same time.,HW-003
+Authentication problem with my account,"Other parts of the service appear available, but I cannot authenticate using my account details.",AC-002
+Application keeps using old settings,"My application is still using the settings from my previous workstation. I can open and use the program, but I have to correct several options every time I start working.",SW-004
+Remote access keeps denying me,"I am working from home and can connect to the internet, but the secure connection to the company network keeps denying my login.",NW-003
+Received code but it doesn't work,"The security code arrived on my phone, but the website says it is invalid when I enter it.",AC-005
+Tower does not start but monitor does,"The monitor powers up and waits for input, while the desktop remains completely inactive.",HW-001
+Workstation starts fine then becomes slow,"The workstation is fast when I first turn it on, but it gradually gets slower throughout the day. By afternoon, the system unit is also very warm.",HW-003
+Computer keeps returning to startup,"Every time I turn on my desktop, it starts loading Windows and then restarts by itself. I haven't been able to log in today.",HW-004
+Program needs default settings changed,There is no installation or crashing problem. I need the application's default options adjusted so it follows our department's workflow.,SW-004
+Desktop gets hot with browser open,"The computer gets noticeably hot when I have several browser tabs and our internal system open. After some time, switching between applications becomes very slow.",HW-003
+Need disabled profile restored,"My account was working before, but it is now disabled. I need the existing profile restored rather than a new account created.",AC-004
+Network randomly slows to a crawl,The network will be fine for a while and then suddenly become so slow that I can barely work. A few minutes later it improves again.,NW-002
+Application not loading required add-in,"The main program works, but an add-in required by our team is disabled in its current configuration and does not appear when the software starts.",SW-004
+Cannot save new files to drive,"I can still see my D drive, but I cannot save anything to it anymore. I get an error every time I try to save or copy a file there.",HW-005
+Monitor blank but computer audio works,"The screen is black, but sounds from applications can still be heard.",HW-002
+Cannot activate new workstation,"I was assigned a new workstation and the software is already installed, but activation fails whenever I sign in with my company credentials.",SW-005
+Monitor on but no picture,"The monitor is powered on, but nothing is displayed after turning on my desktop. I disconnected and reconnected the display cable, but the issue remains.",HW-002
+VPN says I'm not permitted,"The connection reaches the company server, but I get a message saying my account is not permitted to use remote access.",NW-003
+Desktop remains off,I am unable to perform my tasks because my desktop remains completely off. I checked the outlet using another device and confirmed that electricity is available.,HW-001
+Remote work login not accepted,"I am working remotely today and can get online, but the company VPN does not accept my login details.",NW-003
+Remote session refuses valid credentials,"I can use the same company account for other services, but the secure remote connection says my credentials cannot be accepted.",NW-003
+Monitor black after lunch,"I left my computer for lunch, and when I came back the monitor was black. Restarting the workstation didn't help.",HW-002
+No response from desktop,The system unit stays completely silent when I attempt to power it up.,HW-001
+HR remote work access stopped,"I can sign into my employee account normally, but the remote connection needed for our internal HR resources no longer accepts my user.",NW-003
+Downloads repeatedly slow down,"Files begin downloading normally, but the transfer speed frequently drops almost to nothing before increasing again.",NW-002
+PC hot with constant fan noise,The workstation feels unusually warm and the fan runs almost continuously while applications respond slowly.,HW-003
+System unit completely dead,The system unit appears completely dead. I don't hear any sound or see any lights when trying to turn it on.,HW-001
+Login fails at credential check,The sign-in process reaches the credential check and then refuses my password.,AC-002
+Product key rejected,"I entered the key provided for the application, but the activation screen reports that the key cannot be accepted.",SW-005
+Not authorized to view page,"After logging into the application, I tried opening the reporting page and received a message saying I am not authorized to view it.",AC-006
+Can't load even basic websites,"No websites will open at all, and the other applications that normally communicate over the network are also disconnected.",NW-001
+Monitor powered but no display,"My monitor has power and the computer is running, but nothing appears on the screen. I tried reconnecting the display cable, but there was no change.",HW-002
+Desktop hot even with few programs,"Only a few programs are running, but after extended use the computer becomes hot and begins responding slowly.",HW-003
+Need help installing work application,"Good morning. I need to install an application for processing customer requests, but I can't get the setup to finish successfully.",SW-002
+Connection fails after security approval,"I enter my credentials and approve the verification request, but the remote network connection still ends with an error.",NW-003
+PC restarting before Windows opens,My PC keeps restarting while Windows is trying to load. It never gets far enough for me to enter my password.,HW-004
+Internet completely down on my PC,Internet is completely down on my computer. Pages aren't loading at all rather than just loading slowly.,NW-001
+Computer starts after several attempts,"The workstation powers on each time, but it often freezes during startup. After several restarts it may eventually reach Windows.",HW-004
+Application stuck after searching,I searched for an employee record and the application got stuck on the loading screen. It has been sitting there for several minutes without finishing.,SW-001
+PC not getting a connection,My PC isn't getting a network connection at all. I don't know what happened because it was working without any problems yesterday.,NW-001
+Cannot access accounting software,My desktop suddenly stopped working overnight. I cannot access our accounting software because the computer will not start.,HW-001
+PC finally stopped powering up,"For several days the machine sometimes needed multiple attempts to start, but now it shows no activity.",HW-001
+Computer slows after afternoon use,"There are no issues early in my shift, but after several hours the workstation heats up and becomes sluggish.",HW-003
+Requesting first access to team drive,I have never been included in the team's shared drive before and need access now that I have joined the group.,AC-003
+Program connected to wrong environment,"I can sign in to the application, but the records I'm seeing don't match what my coworkers see. My application appears to be configured for a different environment.",SW-004
+Create login for department application,Please create access for a new team member who needs to begin using our department application.,AC-003
+PC inactive after being relocated,The desktop was moved to another desk and now there are no lights or fan sounds when starting it.,HW-001
+Installer asking for missing component,"I'm trying to install the application, but setup says a required component is missing and won't continue with the installation.",SW-002
+Browser and email stopped together,"The browser cannot reach any page and email stopped synchronizing at the same time, along with the other network applications I use.",NW-001
+PC shut down before lunch,The workstation was working normally and suddenly turned off. It had only been running routine office applications.,HW-006
+Requesting password reset,Please assist with resetting my password. I forgot the current one and cannot access my work account.,AC-001
+Computer starts but login never appears,"The desktop powers on, displays the startup process, and then stalls before showing login.",HW-004
+Whole section experiencing delays,"Employees in our area still have network access, but websites, calls, and company systems are responding much more slowly than normal.",NW-002
+Program update fails while preserving old version,"Every update attempt ends with an error, but afterward the existing older application still opens and works as before.",SW-003
+System unit won't respond,I already made sure the cable is connected at the back. Pressing the front button still produces no activity from the machine.,HW-001
+Need access to system I've never used,I was assigned a new responsibility today that requires a system I haven't used before. Please provide the access needed for my account.,AC-003
+Software failed to install after restart,"I restarted my workstation and tried installing the software again, but the setup still fails before completion.",SW-002
+Application upgrade failed,"I tried upgrading the application this morning, but it returned to the previous version after the process failed.",SW-003
+Slow network after lunch,"The network was normal this morning, but after lunch everything became noticeably slower. I can still access my applications but there is a delay with almost every action.",NW-002
+Cannot scan MFA QR code,"I am setting up the authenticator app for the first time, but the QR code provided by the system will not register in the app.",AC-005
+Cannot sign in after browser update,"After my browser restarted for an update, the company application stopped accepting my login. My credentials still work on other company services.",AC-002
+Invalid username or password message,The system keeps displaying an invalid username or password message even though I am entering the credentials I normally use.,AC-002
+Need account password changed,The system is asking me to replace my expired password. I haven't been able to move past the password change screen.,AC-001
+Need new system added to my access,My current applications work normally. I have now been assigned work that requires access to an additional system I have never used.,AC-003
+Desktop is completely unresponsive,"I encountered an issue with my desktop when I arrived at work today. The computer is completely unresponsive and there are no lights or sounds coming from the system unit. I tried another electrical outlet and another power cable from a nearby workstation, but it still would not power on. I currently cannot access my email or company applications needed for today's tasks.",HW-001
+Shared systems responding slowly,"I can still access our network-based applications, but moving between pages or records now takes a noticeable amount of time.",NW-002
+Setup failed again,I tried installing the application twice already and both attempts failed. The program still isn't available on my workstation.,SW-002
+App never becomes usable,"The software begins opening, but the startup process never completes enough for me to work.",SW-001
+System does not recognize my credentials,"I have used this account regularly, but today the system behaves as if my username or password is incorrect.",AC-002
+Screen never came up,"I turned on my computer this morning, but the screen never came up. The monitor has a light on it, but I can't see anything.",HW-002
+Unable to recall account password,"I have the correct username and normally use this account, but I cannot remember the password required to access it.",AC-001
+Export folder needs to be changed,Our reports are still being exported to a directory that the department no longer uses. I need the application to send them to our current folder instead.,SW-004
+PC went off and will not return,The machine unexpectedly turned off and has shown no activity since.,HW-001
+Account suspended without warning,"I was able to sign in yesterday, but today the system says my account has been suspended.",AC-004
+Workstation has no display,"Good morning. I cannot continue today's work because my monitor does not display anything after turning on the computer. I checked the monitor settings and restarted everything, but there is still no display.",HW-002
+Several employees cannot authenticate,A few users with active accounts and known passwords are receiving authentication failures when signing into the same application.,AC-002
+Can't get past verification,"I can enter my username and password without a problem, but I get stuck on the next step where it asks me to verify my identity.",AC-005
+Phone approval works but login doesn't continue,"I approve the sign-in notification successfully, but the application remains on the verification screen and never completes authentication.",AC-005
+PC cannot reach anything after login,"I can sign into Windows and use the desktop, but once inside I cannot access any website or connected company application.",NW-001
+Drive making unusual sounds,There is an unusual clicking sound coming from my desktop whenever I try to access files on one of the drives. Some of the folders are no longer opening.,HW-005
+Unable to access D drive,"My D drive suddenly disappeared while I was working. I was able to open files from it earlier today, but now it no longer appears in File Explorer.",HW-005
+No signal because desktop is off,"The monitor reports no signal, but the system unit itself never starts and there are no lights or fan activity.",HW-001
+Printing to old office printer,I moved to another area of the office and the application keeps sending my documents to the printer near my previous desk.,SW-004
+Windows logo stays on screen,The Windows logo stays on my screen and doesn't move past that point. The computer itself is powered on and the monitor is displaying normally.,HW-004
+Update failed while preparing for shift,"I opened the application before my shift and it automatically started updating. The process failed, and now it continues asking me to try the update again.",SW-003
+Software became stuck after opening file,I opened a document inside the program and after that the entire application became stuck. I can still move between other programs normally.,SW-001
+External disk not recognized,"I connected my external disk like I normally do, but nothing appears on the computer. I tried unplugging it and using another USB port with the same result.",HW-005
+Valid credentials not authenticating,"The account is active, the password is current, and I am entering the correct information, but the service still refuses to complete the login.",AC-002
+Software becomes frozen after saving,"After I click save, the program sometimes becomes stuck and none of its buttons work anymore. I have to force it closed before I can continue.",SW-001
+Please unlock my account,"Hi IT, my account got locked after I tried logging in several times. I have the correct password now but it still won't let me try again.",AC-004
+Workstation gets worse later in the shift,"The computer works normally when I first arrive, but after being used for a few hours it becomes very warm and everything starts responding much more slowly.",HW-003
+Windows won't finish starting,The computer gets as far as the loading animation but never reaches the desktop.,HW-004
+PC has zero power activity,"The workstation does not show any lights, sound, or fan movement when switched on.",HW-001
+Computer sounds normal with blank screen,"I can hear the workstation running and the keyboard lights are on, but there is no image on the monitor.",HW-002
+Network delay during transactions,"I'm experiencing a noticeable delay whenever I submit information through our system. The transactions eventually go through, but they take much longer than usual.",NW-002
+Authorization issue after role update,"My new role has already been applied to my account and I can log into the system, but one of the functions required for my work still says I am not authorized to use it.",AC-006
+Cannot process payroll,"I cannot continue processing payroll because my assigned computer refuses to power on. The monitor has electricity, but the system unit appears completely dead.",HW-001
+Can't log in today,My work account won't let me sign in this morning. I'm using the same username and password I normally use.,AC-002
+System rebooted while I stepped away,I left the workstation for a short break and returned to find it had restarted.,HW-006
+Expired password after leave,I returned to work today and received a message that my password has expired. The system requires me to create another one.,AC-001
+Update failed after restart,"I restarted my computer and tried applying the software update again, but it still fails at the same stage.",SW-003
+Team unable to authenticate,Several employees in our department are unable to sign into the same application today. We are all receiving authentication failures with our existing accounts.,AC-002
+System keeps losing connection,"Our web application occasionally says the connection was lost while I'm using it. If I wait and try again, I can normally continue.",NW-002
+Display disappeared during work,The monitor became black in the middle of my task while the workstation itself continued running.,HW-002
+Desktop showing no boot device,"My desktop turns on but says ""No Boot Device"" on the screen. I haven't changed anything and it was working when I used it yesterday.",HW-004
+Heat appears before instability,"Before the workstation becomes unstable, I usually notice that the case is warmer than normal and the fan is running harder.",HW-003
+Request shared resource access,I joined the audit project and need initial access to the shared resources where the team stores the documents we will be reviewing.,AC-003
+Workstation restarted during file upload,"The desktop suddenly rebooted while uploading a document, even though the network and other systems were normal.",HW-006
+Connection lost while submitting report,My connection disappeared while I was submitting a report. The submission failed and now I cannot connect to any network resource.,NW-001
+Computer shuts down during video call,My computer suddenly shut down in the middle of a video call. It was getting very hot and the fan had been running loudly before it turned off.,HW-003
+Desktop not responding at startup,"I tried to start the computer before my shift, but the tower remains silent and none of its usual indicators appear.",HW-001
+Setup failed while copying files,"The installation fails while it is copying files to my workstation. I tried starting over, but it stops at around the same point.",SW-002
+Sign in keeps failing without explanation,I enter my username and password and the system simply reports that authentication failed without indicating that the account is locked.,AC-002
+Access removed from existing resource,"I have used this resource regularly in the past, but today the system says my account is no longer authorized to access it.",AC-006
+Need new password for existing account,"My account already exists, but I no longer remember the password. I only need help resetting it so I can regain access.",AC-001
+Installation ends with error,The installer goes through several steps and then gives me an error saying the installation could not be completed. The program does not appear afterward.,SW-002
+Desktop still won't start without USB devices,"I disconnected the USB devices from the computer in case one of them was causing the problem, but the system still would not power on.",HW-001
+App closes without reaching workspace,The software begins opening but exits before the working interface appears.,SW-001
+App keeps closing by itself,The application keeps closing by itself while I'm using it. I don't receive any warning before it disappears.,SW-001
+Desktop reset during file upload,"While I was uploading a work file, the entire machine unexpectedly restarted. The network and other computers nearby remained available.",HW-006
+Display suddenly disappeared,"The display disappeared unexpectedly while I was working this morning. The workstation remained on, but restarting the computer did not restore the screen and I am unable to continue my assigned tasks.",HW-002
+Can't get past company gateway,"The connection reaches the company gateway, but I can't get any further because my user account is rejected.",NW-003
+Network stopped without warning,The network stopped working without any warning while I was using the company portal. Since then my desktop has remained offline.,NW-001
+Can't finish moving large files,"Every time I transfer a large folder between local drives, the process slows down significantly and eventually fails.",HW-005
+Can still hear incoming messages,"The screen is completely dark, but notification sounds continue arriving from my open applications.",HW-002
+Forgot password after being away,I just came back from a long leave and I can't remember what password I was using before I left.,AC-001
+Cannot sign in after password change,"I already completed my password change and received confirmation that it was successful. However, the new password is being rejected when I try to log in.",AC-002
+Computer reset without update message,Windows did not show any update or restart request. The workstation simply stopped what I was doing and began starting again.,HW-006
+Old files work but newer ones don't,"Some documents on the workstation still open correctly, while others in the same storage area suddenly report that they cannot be read.",HW-005
+Software still set up for my old team,"I recently transferred teams but the application is still showing the defaults I used in my previous role. I can use the program, but I have to change several options each time.",SW-004
+Computer shut down after short use,The desktop had only been on for about twenty minutes when it suddenly powered off.,HW-006
+Cannot use account because it is suspended,The application says my user account has been suspended. I cannot proceed to the system even though the account was previously working.,AC-004
+Display disappeared while away,"I left my workstation for a few minutes, and when I returned, the display was already gone. The computer was still running, but restarting it didn't help.",HW-002
+Cannot get past activation,"The software is already on my computer, but every time I open it I get an activation screen. I tried signing in with my work account but it keeps coming back.",SW-005
+Display stays dark after waking computer,"The workstation appears to wake because the keyboard lights and fans come on, but the monitor remains black.",HW-002
+Screen went blank while entering data,"My screen suddenly went blank while I was entering data. I restarted the workstation afterward, but the monitor still shows nothing after startup.",HW-002
+Software profile mapped incorrectly,"I can access the application, but my profile is associated with the wrong workspace and needs its configuration corrected.",SW-004
+Unable to start Windows after power outage,"We had a power interruption yesterday. My computer still powers on today, but Windows no longer starts and it keeps going to a recovery screen.",HW-004
+Program asks for update repeatedly,The same update notification appears every time I start the program even though I've already tried installing it several times.,SW-003
+App startup never completes,"I have left the application loading for several minutes, but it still does not reach the usable screen.",SW-001
+Application remains outdated,"I've attempted to update the application several times, but it continues showing that I'm using an outdated version afterward.",SW-003
+License error after signing in,"My credentials are accepted by the application, but immediately afterward it reports a licensing problem and blocks access.",SW-005
+Cannot access files after permission change,I was working on the project files earlier today. After lunch I tried opening them again and started receiving a message saying I don't have the necessary access.,AC-006
+Screen went black while preparing reports,"I was preparing today's reports when the monitor suddenly went black. After restarting the computer, the display never came back. I cannot continue working until the issue is resolved.",HW-002
+Cannot move files in shared drive,"I can open the shared drive and view the documents, but I am unable to move files between folders because the system says the action is not permitted.",AC-006
+Computer no power,Computer no power. Already check cable. Please assist.,HW-001
+Computer stopped booting after update,"The machine still powers on normally, but since yesterday's update it gets partway through startup and never reaches the sign-in screen.",HW-004
+Unable to validate software license,The program starts normally but fails when it tries to validate the license. After that it prevents me from continuing into the application.,SW-005
+Department lost access to reports,"Several employees can still sign into the reporting system, but our department can no longer open the reports we normally use.",AC-006
+Boot menu appears unexpectedly,The computer powers on and displays a boot menu instead of continuing normally into Windows.,HW-004
+Workstation shuts off sometimes,"My workstation randomly turns off while I'm using it. It doesn't happen every day, but it has happened a few times recently.",HW-006
+Password issue after mandatory change,"The system required me to change my password, and now I cannot log back in using the new one.",AC-002
+Computer rebooted in middle of report,The report application was working normally when the whole computer unexpectedly restarted and interrupted what I was doing.,HW-006
+Software not appearing after setup,"I ran through the installation process, but after it finished I couldn't find the program anywhere. It looks like the setup did not complete properly.",SW-002
+Cannot get to my desktop,"The workstation has power and Windows begins to load, but I never get to my desktop. I'm unable to open any of my work applications.",HW-004
+Unable to complete software deployment,"The required software is supposed to be installed on my workstation, but the setup process fails before all of the components are added.",SW-002
+Application needs license renewal,The program is warning me that the license has expired and needs to be renewed before I can continue using the software.,SW-005
+Program update not completing,"The program starts downloading and applying the update, but it never reaches the point where it says the update was successful.",SW-003
+Application frozen on screen,"My work application is currently frozen on the screen. I can move the mouse and use other programs, but this application doesn't respond to anything I click.",SW-001
+Cannot update delivery status,"I can access the logistics application and see today's deliveries, but I am unable to change their status after they are completed.",AC-006
+Remote access not permitted,The VPN says my account does not have permission to connect remotely even though I previously used it for work.,NW-003
+No display this morning,"Yesterday everything was working fine, but today my monitor does not display anything after I switch on my computer. The desktop itself powers on, and I already checked the cables under my desk.",HW-002
+Authentication error when signing in,"After entering my username and password, I receive an authentication error instead of being taken into the application.",AC-002
+Update not going through,"The application keeps telling me there is a new version, but I can't get the update to go through. It stops before it finishes every time.",SW-003
+Workstation shut off unexpectedly,The system suddenly powered down and now there are no lights or fans when I press the button.,HW-001
+Activation keeps returning error,Every time I try to activate the program I receive the same error. I've already closed and reopened the application several times.,SW-005
+Patch fails on my workstation,"Our team was asked to install a new software patch. My coworkers completed theirs, but the patch keeps failing on my workstation.",SW-003
+Windows cannot read the drive,"My D drive is visible, but Windows says it cannot read it when I try to open it. I didn't format or change anything on the drive.",HW-005
+Need new account for document system,I don't have an account for the document management system yet. My manager asked me to start using it for our department records.,AC-003
+Unable to connect after moving desk,"My workstation was moved to another desk yesterday. Since setting it up here, I haven't been able to connect to the network at all.",NW-001
+Computer stuck on recovery cycle,The workstation alternates between startup and recovery screens without successfully opening Windows.,HW-004
+Software keeps asking me to activate,Every time I start the application it asks me to activate the product. I already signed in several times but the message keeps returning.,SW-005
+Tower remains off after button press,"I can turn on the display, but the desktop tower gives no response when I try to start it.",HW-001
+Cannot recall my account password,I'm trying to log into my company account but I honestly can't remember the password. I haven't changed it recently.,AC-001
+Computer won't turn on,Hi IT. My computer won't turn on today. Can someone please check it?,HW-001
+Password fails on workstation,"I can get to the login prompt without any problem, but my password is rejected when I enter it.",AC-002
+Windows startup never completes after crash,"Since the earlier crash, the PC powers on and visibly begins booting but cannot finish loading Windows.",HW-004
+System does not start,I cannot get any response from the computer itself when pressing its power control.,HW-001
+System unit is off while peripherals work,The system unit is completely off even though the monitor and printer connected to the same outlet are working normally.,HW-001
+Screen suddenly went black,"While preparing reports yesterday afternoon, my screen suddenly went black even though the workstation appeared to remain on. I restarted the computer hoping the display would return, but nothing is displayed anymore.",HW-002
+Software stops during calculation,"The application accepts the information I enter, but when it begins calculating the result it freezes and never completes.",SW-001
+Computer loops during startup,"My computer keeps showing the Windows logo, restarting, and then showing the logo again. It has been doing this repeatedly since this morning.",HW-004
+Monitor picture unstable,"The display repeatedly flashes, loses signal, and returns while Windows continues operating normally.",HW-002
+Customer refund option unavailable,"I can access the customer's transaction and review the payment details, but the option I normally use to process an approved refund is no longer available.",AC-006
+Software patch keeps getting rejected,"I'm trying to apply the patch provided for our application, but it keeps returning an error and doesn't make any changes to the installed version.",SW-003
+PC won't go past the logo,My PC is stuck on the logo when I turn it on. I tried switching it off and starting it again but it stops at the same place.,HW-004
+Computer stopped working overnight,"The workstation was fine when I left yesterday. When I arrived this morning, it would not start at all. There is no fan noise or indicator light from the system unit.",HW-001
+Software stays on loading message,The program shows that it is loading but remains in that state without opening.,SW-001
+Login approval failing for team,"Multiple team members are receiving the approval request on their phones, but approving it does not complete the login process.",AC-005
+Internet connection completely gone,My internet connection suddenly went away while I was working. It's been completely unavailable since then rather than just slow.,NW-001
+License renewal needed,The software is warning that the current license has ended and needs to be renewed before I can continue working.,SW-005
+Changed phone and cannot verify login,I recently changed my phone and my authenticator was set up on the old device. I cannot approve the verification request on my new phone.,AC-005
+Please create access for new staff member,We have a new staff member joining our department who needs access to the customer service system before their first shift.,AC-003
+Desktop suddenly shuts down during shift,The PC unexpectedly turns off during ordinary work and must be started again.,HW-006
+Cannot access inactive account,"My account still exists, but the system says it is inactive and won't allow me to sign in. I need to use it again for my new assignment.",AC-004
+Department reports saving to wrong location,Multiple users noticed that reports from the application are being saved to an outdated department folder. The reports themselves generate successfully.,SW-004
+Account suspended when signing in,My credentials lead to an account suspended notification instead of opening the system.,AC-004
+New application won't finish setup,This application has never been installed on my computer before. I can start the setup but can't get it to finish successfully.,SW-002
+Program says not responding,"The application shows ""Not Responding"" whenever I try to generate a report. Waiting doesn't seem to help and I eventually have to close it.",SW-001
+Access denied to shared folder,"I can sign into my company account normally, but when I open our department shared folder it says access denied. I was able to use the folder yesterday.",AC-006
+Internet has been lagging,"My internet has been lagging since I came in this morning. Websites work, but there's a noticeable delay whenever I open a page or submit something.",NW-002
+Network unavailable on one workstation,"Only my workstation seems to be affected. My teammates can connect normally, but my computer has no network access.",NW-001
+Unable to access payroll folder,"Our payroll files stored on my workstation's second drive are currently inaccessible. The drive shows up, but I receive an error whenever I try to open it.",HW-005
+Internet works only part of the time,"I can browse and use email, but the connection randomly stops working and comes back a little later.",NW-002
+Authentication issue only on VPN,"My account works on all other company systems, but I cannot authenticate through the VPN.",NW-003
+App stuck on please wait,"The application has been showing a please wait message for a long time. Normally this only appears for a few seconds, but now it never finishes.",SW-001
+Desktop no longer powers after setup change,The workstation was rearranged and now the system unit gives no response when switched on.,HW-001
+Employee profile currently disabled,The system recognizes my employee username but says the profile is currently disabled.,AC-004
+Unable to connect for client work,"I need to access our online client records, but my workstation has no network connection. I've been unable to start processing today's requests.",NW-001
+New software setup not completing,"IT provided an installer for a new tool we need, but I cannot get the setup to complete on my computer. It stops before reaching the final step.",SW-002
+PC not starting after power interruption,"Other equipment has power again, but the computer itself does not react when I try to switch it on.",HW-001
+Desktop tower stays off,The monitor says there is no signal because the tower itself does not appear to be starting.,HW-001
+Login failed after changing credentials,I updated my password earlier and have been unable to authenticate with the account since then.,AC-002
+Cannot remember system password,"I can remember my username and employee number, but I don't remember the password for the system anymore.",AC-001
+Permission prevents file changes,"I can open the file without difficulty, but the system blocks any attempt to change or save it.",AC-006
+One program keeps disappearing,"The workstation itself is stable, but this particular application unexpectedly closes while I am entering information.",SW-001
+Network drops briefly throughout shift,My connection does not stay completely unavailable. It disappears for short periods during the day and then returns without me doing anything.,NW-002
+Nothing visible after starting workstation,"The system unit comes on and I hear the usual startup sounds, but the monitor never shows the manufacturer logo or Windows.",HW-002
+Startup process interrupted every time,The workstation begins loading normally but fails before the operating system becomes available.,HW-004
+Restricted folder despite successful login,"My username and password work, but opening the required folder results in access denied.",AC-006
+Application stuck preparing update,"The software detected a new version, but it has been stuck preparing the update and never gets to the point where the new version is installed.",SW-003
+Application configured for wrong department,"After I transferred to another department, the application still shows options and defaults from my previous department. I can log in normally but the program isn't set up for my current work.",SW-004
+Verification sent to old phone,The system still sends my login confirmation to my previous phone even though I already have a replacement device.,AC-005
+Work account has no software license,"I can sign in with my company credentials, but the application says there isn't a license assigned to my account.",SW-005
+Computer doesn't fail at a specific time,The unexpected shutdown can happen in the morning or afternoon and does not seem related to how long the workstation has been running.,HW-006
+Need access for temporary assignment,I will be assisting the Finance department for the next few weeks and need access to their reporting application during the assignment.,AC-003
+Computer sends me to recovery,"Instead of opening normally, my computer takes me to a recovery page whenever I start it. I already restarted once but ended up there again.",HW-004
+Existing installer no longer completes,"We have successfully used this installation package on other machines, but this workstation repeatedly fails while trying to install the program.",SW-002
+Correct password but account locked,"I know the password is correct, but the system will not process the login because my account status is locked.",AC-004
+Password needs to be changed,The system says my current password has expired and I need to create a new one before I can log in.,AC-001
+Unable to start work this morning,"I turned on my workstation like usual this morning. It has power and shows the Windows logo, but it has been stuck there for several minutes and I cannot log in.",HW-004
+Drive asks me to format it,"When I click my drive, a message appears asking me to format it before I can use it. I didn't proceed because there are important files saved there.",HW-005
+Cannot open department resource,"I am signed into my account successfully, but I receive an access denied message whenever I try to open our department resource.",AC-006
+Multiple verification codes rejected,"I requested several new security codes after successfully entering my password, but every one of them is rejected.",AC-005
+Home connection works except company access,"Streaming, websites, and online meetings are all working, but I cannot establish the connection needed for our internal resources.",NW-003
+Latest update not going through,The latest update for our desktop application isn't going through on my workstation. The software itself was already installed and working before this.,SW-003
+Installation fails before shortcut appears,"The setup stops with an error before completing, and there is no shortcut or installed application available afterward.",SW-002
+Login information refused,"The page itself works normally, but my username and password combination is not being accepted.",AC-002
+Too many login attempts,I accidentally entered my password incorrectly several times and the system has now locked my account. I know the correct password now but cannot try again.,AC-004
+Installer not finishing,I've been waiting for the installer to finish but the progress hasn't moved for a long time. It seems to be stuck in the middle of the setup.,SW-002
+PC heating up while using Excel,"My computer becomes very hot while I am working with large Excel files. After some time, Excel and the other applications begin responding slowly.",HW-003
+New password works except on one service,"My updated password successfully signs me into other company applications, but one service continues rejecting the login.",AC-002
+Code already expired,"The login code is arriving several minutes late. When I try to use it, I get a message saying the code has expired.",AC-005
+Cannot reach any websites,"Every website I try gives me a connection error. I also cannot access our internal web applications, so it looks like my computer has no network access.",NW-001
+Account details being rejected,"I'm entering the username and password I've always used, but the application keeps telling me they aren't valid.",AC-002
+No indicator lights on desktop,"I noticed there are no indicator lights when I try to turn on my desktop. I restarted the UPS and checked the wall outlet, but there is still no response from the computer.",HW-001
+Computer becomes slow in afternoon,"Every morning my computer works fine, but sometime after lunch it starts getting slow. I've noticed it also gets much hotter around that time.",HW-003
+Cannot install company application,"I was asked to install a company application for my new tasks, but the installer keeps failing. I haven't been able to use the program because setup never completes.",SW-002
+Program stopped responding during normal work,I was using the application normally when its window froze. I could still switch to email and other programs without a problem.,SW-001
+Application keeps disappearing,"The program I use for processing orders keeps disappearing while I'm in the middle of entering information. I can open it again afterward, but anything I haven't saved is lost.",SW-001
+Desktop inactive while monitor is on,"The screen's light is on, but there is no sign that the computer itself has started.",HW-001
+Requesting access for new assignment,I was assigned to support another team and need access to their system for the first time.,AC-003
+Application no longer remembers default account,The software used to automatically choose the account our department uses. Now it selects another account every time I create a new transaction.,SW-004
+Locked out after password attempts,"After entering my password incorrectly several times, the system stopped allowing additional login attempts.",AC-004
+Visual output missing after waking,"The workstation appears awake and responds to keyboard input, but the monitor never restores the picture.",HW-002
+Need first time access to application,"I've never used this application before, but it is now required for my position. Please provide the necessary access to my existing company account.",AC-003
+Need authenticator moved to new device,I received a new company phone and need help moving my login verification to it. My account is still registered on the previous device.,AC-005
+PC switches off during ordinary tasks,"The shutdown has happened while using different programs, so it does not seem tied to one application.",HW-006
+PC suddenly lost power,"My PC suddenly lost power while I was working, but the monitor and other equipment connected nearby stayed on. I was able to start the PC again afterward.",HW-006
+Password problem prevents account access,"I can reach the service normally, but a credential error prevents me from signing into my account.",AC-002
+Need initial access to shared resource,"My manager added me to the project, but I have not yet been given access to the team's shared resources.",AC-003
+Cannot download customer documents,"I can view the customer's information in the portal, but the download option for their attached documents is unavailable for my account.",AC-006
+PC reaches BIOS then cannot continue,"The system displays its hardware startup information correctly, but afterward it cannot load Windows.",HW-004
+Cannot remember portal login password,"I know which account I need to use, but I don't remember the password for it anymore. Please assist with a reset.",AC-001
+Drive detected only sometimes,"The workstation works, but one of its storage drives is missing on some startups and appears normally on others.",HW-005
+Unable to upload due to permission,"The site works and I am logged in, but uploading files is disabled because my account does not have the required rights.",AC-006
+Can't reach anything on network,"I can't reach anything that uses the network from this computer. Local documents still open normally, but all network services are unavailable.",NW-001
+Computer went down but desk still had electricity,"My monitor and other devices stayed powered, but the system unit unexpectedly switched off while I was working.",HW-006
+New employee needs company account,A new employee is starting today and does not yet have an account for the company application they will be using.,AC-003
+Need help changing expired password,My password expired today and I'm unable to continue signing in until it is changed. Please assist with the reset.,AC-001
+Program says activation limit reached,The application won't activate because it says the allowed number of device activations has already been reached.,SW-005
+Password reset needed urgently,I forgot my login password and I have a client request that needs to be handled this morning. Please help me reset it.,AC-001
+Data drive missing this morning,"Windows loaded normally and I can use my applications, but the drive where my department files are stored is no longer listed.",HW-005
+Forgot password after leave,I just returned from leave and I can't remember the password for my work account. I need to reset it before I can access my applications.,AC-001
+System gets slow after heating up,My computer becomes slow after it has been running for a while. The fan gets louder and the case feels hot at the same time.,HW-003
+PC completely inactive after shutdown,The machine shut down normally yesterday and there were no problems during use. This morning it gives no response at all when I attempt to start it.,HW-001
+Account active but sign in unsuccessful,There is no message saying my account is locked or disabled. The system simply does not authenticate my normal login information.,AC-002
+Remote access failing for night shift,"A few employees starting the night shift can connect to the internet, but the secure company connection is denying their accounts.",NW-003
+System says contact administrator,I cannot sign into my account because the system says the user has been disabled and tells me to contact the administrator.,AC-004
+Can't use authentication method anymore,"The first sign-in stage works, but the verification method registered to my account is no longer available to me.",AC-005
+Desktop boots but nothing displayed,"My desktop boots up, but nothing is displayed on the monitor. I cannot access the accounting system.",HW-002
+Login works on one system only,"My company credentials successfully access email, but another work system says the same username or password is incorrect.",AC-002
+Program stopped working after lunch,"The application worked earlier today, but now it opens and then freezes shortly after I begin entering information.",SW-001
+Program says activation required,I opened the application to start my work and received an activation required message. I cannot use the program until it is activated.,SW-005
+Software will not start from any shortcut,"I tried launching the program from both the desktop and Start menu, but neither attempt opens it.",SW-001
+Cannot log in from my workstation,"My account normally works on this workstation, but this morning the application started rejecting my username and password.",AC-002
+Profile disabled after absence,"After being away from work for several weeks, I returned and found that my system profile is disabled.",AC-004
+Cannot open shared department folder,"My account works and I can use other resources, but the department folder says access is denied.",AC-006
+Desktop gets hot when multitasking,"Using email alone is fine, but when I open our reporting tools and browser together the machine becomes very warm and starts responding slowly.",HW-003
+Local spreadsheet disappeared,"A spreadsheet was saved successfully yesterday, but today the folder where it was stored is inaccessible even though Windows itself is running normally.",HW-005
+Several users lost folder permissions,"Multiple employees can access the shared drive, but a folder they normally use is suddenly returning access denied messages.",AC-006
+Disk appears and disappears,One of my drives keeps appearing and disappearing while I'm working. Sometimes I can access the files for a few minutes before the drive becomes unavailable again.,HW-005
+One local disk missing,"The workstation boots successfully, but only one of the two storage locations that normally appear in Windows is available.",HW-005
+Desktop frozen during startup,"The system unit is clearly running and the monitor shows the Windows loading screen, but the spinning indicator eventually stops and nothing else happens.",HW-004
+Application keeps shutting itself down,"The application has shut itself down several times today while I was using it. I can reopen it normally, but the problem keeps happening.",SW-001
+Not receiving SMS code,"The system says it sent a verification code to my registered mobile number, but I haven't received any text message.",AC-005
+Login error before my shift,"I tried opening our work system before starting my shift, but every login attempt returns an authentication error.",AC-002
+Application no longer activated after reinstall,"The program was reinstalled successfully and opens normally, but it no longer shows as activated and I cannot use all of its features.",SW-005
+Program looking in wrong directory,When I try to open one of our files through the application it automatically looks in a directory we stopped using months ago.,SW-004
+Existing user needs credential reset,"The user already has an established account and appropriate access, but they have forgotten their password and need a reset to regain entry.",AC-001
+System marks account inactive,I cannot access the login because the application says the account associated with my username is inactive.,AC-004
+PC started looping after update,"My PC completed an update last night. Now it shows the Windows logo, restarts, and repeats the same thing whenever I turn it on.",HW-004
+Computer won't finish loading,"The computer turns on fine but doesn't finish loading. I can see something on the monitor, so it's not a display issue, but I can't get into Windows.",HW-004
+Remote access failing for support team,"A few members of our support team have working internet connections, but our company accounts are being rejected when we try to connect remotely.",NW-003
+Unexpected shutdown after only short use,I had only been using the workstation for a short time when it suddenly powered down. It had been behaving normally until that moment.,HW-006
+Cannot see login page,"My workstation starts, but I cannot see the login page because the monitor remains blank. I checked the visible connections, but there is still no display.",HW-002
+Security code does not work,"I received the six-digit code and entered it right away, but the login screen says the code cannot be verified.",AC-005
+Monitor on but no desktop activity,"The screen has power, but the workstation produces no fan noise, lights, or response.",HW-001
+User profile disabled,"My credentials were working previously, but the application now reports that my user account has been disabled.",AC-004
+Computer shut down unexpectedly,"The computer shut down unexpectedly yesterday, and today it does not power on anymore. I reconnected all the cables and restarted the UPS without success.",HW-001
+Connection unstable since morning,"I have been able to work online, but the network repeatedly becomes unavailable for brief periods before recovering.",NW-002
+Cannot set up two step login,The system requires an extra security setup before I can use my account. I followed the instructions but the setup won't complete.,AC-005
+Cannot transfer software activation,"My workstation was replaced and I need to use the application on the new computer, but the license appears to still be tied to the previous machine.",SW-005
+Desktop struggling in warm office,"This workstation has started running very hot during the afternoon and becomes sluggish, especially when several programs are being used.",HW-003
+Application configured with incorrect path,"The program launches normally, but it looks for its working files in the wrong directory because the configured path is incorrect.",SW-004
+Application remains outdated,"The program continues working, but the required version update does not finish and I remain on the previous release.",SW-003
+Everything online feels delayed,"Nothing is completely unavailable, but everything that uses the network feels delayed today. Email, websites, and our internal system are all responding slowly.",NW-002
+Verification code never arrives,"My username and password are accepted, but I cannot finish signing in because the verification code is not being sent to my phone.",AC-005
+Computer hot while processing transactions,"While processing transactions today, I noticed that my computer became much hotter than usual. The system also started taking longer to open and switch between applications.",HW-003
+Image vanished without session ending,"The display disappeared, but my meeting and applications continued running in the background.",HW-002
+Please help me change my password,The system is requiring me to change my password because the current one has expired. I can't proceed until I set a new one.,AC-001
+Licenses unavailable for our team,Multiple employees are receiving a message that all available licenses are currently being used. We cannot open the application needed for today's processing.,SW-005
+Need additional system for changed role,"My existing account remains active, but after changing roles I need access provisioned to a system that was not included in my previous position.",AC-003
+Several employees not receiving codes,"Multiple employees can successfully enter their passwords, but the verification codes required afterward are not being delivered.",AC-005
+Application crashes on certain files,"Most records open normally, but selecting a few particular files causes the software to close immediately.",SW-001
+Network interruptions while encoding,"While I'm encoding information, the system occasionally stops responding because of the connection. I usually have to wait before I can continue.",NW-002
+Password reset needed for returning employee,One of our employees returned from leave and cannot remember the password for their existing account. They need a reset before they can begin work.,AC-001
+Multiple users lost application permissions,"Several employees can sign into the application, but they no longer have access to a module they normally use for processing transactions.",AC-006
+Access needed for new assignment,I was assigned to assist another department this month and need access to their work application to complete the tasks given to me.,AC-003
+Software stopped while preparing invoice,"The software stopped working while I was preparing an invoice. The window is still open, but I cannot type or click anything inside it.",SW-001
+Workstation unavailable,My workstation suddenly became unusable because the computer will no longer power on. I need assistance because I cannot continue my assigned work.,HW-001
+Online applications keep timing out,"I can access our online applications, but they keep timing out while I'm working. Refreshing usually lets me continue for a while.",NW-002
+Cannot open D drive,"Every time I click the D drive, Windows gives me an error instead of showing my folders. I was able to use the same drive yesterday.",HW-005
+Update requires restart but still fails,"The updater asks me to restart the computer, but after restarting it reports that the application could not be updated.",SW-003
+Workstation uncomfortable to touch,"The side of the desktop becomes much hotter than it used to, and I have noticed that programs become sluggish around the same time.",HW-003
+Application cannot finish starting,The software gets partway through startup but never becomes ready for use.,SW-001
+Several users reporting application crashes,"Employees can launch the program successfully, but it unexpectedly closes during normal use on several workstations.",SW-001
+Permission error when saving changes,"I can log in, open the record, and make edits, but the application refuses to save because my account does not have the required permission.",AC-006
+Computer worked yesterday,"My computer was working normally yesterday before I left the office. Today it won't turn on anymore. I tried another outlet and restarted the UPS, but it is still completely off.",HW-001
+Frequent interruptions during work,I keep getting short interruptions in my connection. They don't last very long but they're happening often enough to affect my work.,NW-002
+Account password fails repeatedly,Multiple attempts with the password I normally use have all resulted in authentication failure.,AC-002
+PC running unusually hot,"My PC is still working, but the system unit feels much hotter than usual. I haven't changed anything or installed any new applications recently.",HW-003
+License seems connected to old device,"I'm trying to activate the application on my new workstation, but it says the license is already associated with another computer.",SW-005
+Remote access not working for my account,"Another employee can connect to the VPN using the same internet connection. When I use my account, the connection is denied.",NW-003
+Login approval goes nowhere,"I press approve on the notification that appears on my phone, but the computer stays on the verification page and eventually times out.",AC-005
+Computer reset without being hot,"The machine restarted unexpectedly and I checked afterward, but it did not feel unusually warm.",HW-006
+Need system access for new hire,"We have a new team member starting today. Their company account is already set up, but they still need access to our department application.",AC-003
+Company network won't accept our accounts,"Our internet connection is working normally, but several members of the team are being rejected at the sign-in stage when trying to connect to the internal network.",NW-003
+Computer gets hot and starts lagging,"Performance is fine at the beginning of my shift, but the case gets noticeably warm later and applications start becoming sluggish.",HW-003
+Workstation shows connection problem,"The desktop is usable, but Windows indicates that it does not currently have a working network connection and nothing online loads.",NW-001
+PC hangs at preparing automatic repair,The workstation powers on and displays 'Preparing Automatic Repair' but remains stuck there.,HW-004
+Computer cannot reach normal desktop,The workstation starts but ends up on recovery screens or loading screens instead of the normal desktop.,HW-004
+PC loses power but can boot again,"The workstation randomly switches off, but when turned back on it usually reaches Windows without difficulty.",HW-006
+Company connection fails only on this laptop,"Other devices on the same internet connection work normally, but this workstation cannot establish its secure remote session.",NW-003
+Startup hangs with display still working,"The monitor continues showing the loading screen, but the computer never completes startup.",HW-004
+Company portal login failing,Good morning. I can reach the company portal but cannot sign in. The credentials I normally use are being rejected.,AC-002
+Cannot get network access,I logged in successfully but my computer doesn't have network access. I've been unable to open our company website or any external pages.,NW-001
+Program displaying incorrect layout,"The software is usable, but its panels and workspace are arranged differently from the standard layout needed for our workflow.",SW-004
+Unexpected shutdown while preparing report,My computer suddenly shut down while I was preparing today's report. I lost the document I was working on because I didn't have a chance to save it.,HW-006
+Software startup suddenly hangs,"The application previously opened normally, but it now becomes stuck whenever it starts.",SW-001
+Account automatically locked,I made a few unsuccessful login attempts and then received a message that my account had automatically been locked.,AC-004
+Program not remembering preferences,"I already changed the settings several times, but every time I restart the application it goes back to the old preferences.",SW-004
+Disabled account needs enabling,The application says this user is disabled and must be enabled before login can continue.,AC-004
+System shutdown happened with normal performance,The computer was responsive and working normally immediately before it unexpectedly turned off.,HW-006
+Cannot use software after license expired,"I need the application to prepare today's reports, but it says the license is no longer valid and won't let me continue.",SW-005
+Internet suddenly becomes slow,The internet works normally for a while and then suddenly becomes very slow. It has happened several times during my shift.,NW-002
+Application disappeared while encoding,I was entering transaction details when the application suddenly disappeared. My computer did not restart and all of my other programs stayed open.,SW-001
+Authenticator missing work account,I opened my authenticator app to approve my login but my company account is no longer listed there.,AC-005
+Black screen when starting computer,"I arrived at the office this morning and turned on my computer as usual, but nothing appeared on the monitor. I restarted the desktop and made sure the display cable was securely connected, but the screen is still completely black. I cannot access the purchasing system to continue my work.",HW-002
+Login suddenly stopped working,"My credentials worked yesterday and I have not changed them, but today the system refuses to let me sign in.",AC-002
+Installation keeps cancelling itself,"Every time I try to install the software, the setup suddenly ends before completion. I am not clicking cancel when this happens.",SW-002
+Screen does not wake up,The screen never wakes up even though the computer has already started.,HW-002
+Account suspended although password is correct,"My password appears to be accepted, but authentication stops because the account is marked suspended.",AC-004
+Desktop suddenly lost power,The system unit went off without warning while I was working. The monitor and nearby equipment stayed powered.,HW-006
+Power button does nothing,"I pressed the power button several times, but there is no response from the computer. I confirmed that the electrical outlet is working with another device.",HW-001
+Computer no longer sees storage drive,"My workstation is still usable, but the storage drive containing my department files has disappeared. Restarting the computer didn't bring it back.",HW-005
+Password no longer valid due to expiration,My existing account was not locked or disabled. The message specifically says that my password expired and needs to be changed.,AC-001
+Program cannot complete new update,"My program works normally on its current version, but it cannot complete the new update that became available today.",SW-003
+Need access after department transfer,I moved from Customer Service to Finance and need access to the applications and shared resources used by the Finance team.,AC-003
+Desktop overheating during data processing,I was processing a large amount of data when my desktop became extremely hot. The system started responding slowly and eventually I had to stop working for a while.,HW-003
+Windows recovery page this morning,"When I started my computer this morning, I got a blue recovery page instead of my normal login screen. I haven't selected anything because I'm not sure what to do.",HW-004
+Windows fails while loading,The computer begins loading the operating system but stops before the process completes.,HW-004
+Application configured for another role,"I can log in successfully, but the application's layout and default options appear to be set up for a different job function than mine.",SW-004
+Startup fails after power outage,"Electricity has returned and the computer powers on, but Windows does not finish loading anymore.",HW-004
+Need folder access for monthly reports,My supervisor asked me to help prepare the monthly reports. The source files are in a shared folder that I haven't been given access to yet.,AC-003
+PC restarts only during heavy workload,Normal office tasks do not cause a problem. The unexpected restart usually happens after demanding software has been running long enough for the machine to become very hot.,HW-003
+PC suddenly restarts during calls,My PC has restarted twice while I was on calls this week. It happens suddenly and Windows starts normally again afterward.,HW-006
+Cannot retrieve accounting files,"I need some accounting files that are saved on my other drive, but Windows won't let me open it today. The rest of the computer seems to be working fine.",HW-005
+Unable to register phone for MFA,"The system is asking me to register my mobile device for additional verification, but the registration process does not complete.",AC-005
+Monitor only shows black screen,"The monitor is powered on, but it never shows anything except a black screen.",HW-002
+Existing account not accepting credentials,"My account is already set up and I have used it many times before, but today it will not accept my login details.",AC-002
+Not receiving verification code,"I can enter my username and password, but the verification code never arrives on my phone. I cannot complete the sign-in process.",AC-005
+Display goes black intermittently,The image randomly disappears and returns while the workstation stays logged in and running.,HW-002
+Desktop power problem,"The computer assigned to my station has stopped powering up. There is no visible activity when I press the button, even though the monitor and other devices are operational.",HW-001
+Something wrong during startup,"Hi IT, my computer is turning on but it doesn't go to the normal login page anymore. It just keeps loading and I'm not sure what happened.",HW-004
+Application changed to limited version,"The program still starts, but it now behaves like a limited version and some important features are disabled because the license isn't being recognized.",SW-005
+Employee account disabled after return,One of our employees returned from extended leave today but their company account is disabled and needs to be restored.,AC-004
+Wi-Fi keeps disconnecting,"My workstation connects to the office Wi-Fi, but it keeps losing the connection and reconnecting a short time later.",NW-002
+Boot error after weekend,"I came back after the weekend and my computer is showing a boot error when I turn it on. It has power, but Windows won't start.",HW-004
+PC stays off despite active screen,"The monitor is on, but the system unit has no fan activity or indicator lights.",HW-001
+Cannot access payroll files,"I cannot open the drive where some of our payroll files are stored. The drive was available yesterday, but today Windows says the location cannot be accessed.",HW-005
+Login keeps getting rejected,"I know my username and password, but the application keeps rejecting my login. I was able to access the same account yesterday.",AC-002
+VPN account permission seems gone,"The VPN itself opens and reaches the server, but my user is no longer being allowed through even though I previously had remote access.",NW-003
+Desktop audio continues with dark screen,"The picture disappeared while I was watching a training video, but the audio continued playing normally.",HW-002
+Verification sent to old number,The login page is sending the code to my previous mobile number. I changed numbers recently and can't receive anything sent there.,AC-005
+Screen froze then went black,"My screen suddenly froze and then became completely black. The computer remained on, but after restarting it, the display never returned.",HW-002
+Desktop not opening after weekend,Desktop not opening after the weekend. Already restarted the UPS. Still no power.,HW-001
+Cannot open transaction records,"The transaction records I need are stored on another drive in my desktop. Today Windows can see the drive, but it won't let me access anything inside it.",HW-005
+Locked after typing old password,I accidentally entered my previous password several times and the account is now locked.,AC-004
+Desktop went silent during work,The system unit suddenly stopped while I was working. Its lights and fans went out even though the other equipment at my desk remained on.,HW-006
+Can't enter private network after login,"My normal company login works elsewhere, but the remote connection does not allow me into the internal network.",NW-003
+Desktop won't stay reliably on,"The computer starts normally, but on some days it suddenly shuts itself off while I am working.",HW-006
+Cannot find my usual toolbar,I may have clicked something by mistake because the toolbar I normally use is gone. The application itself is still working.,SW-004
+Cannot reach login screen,"My workstation starts, but the screen stays empty. I don't even reach the login screen.",HW-002
+Unable to authenticate after restart,"The workstation restarted normally, but afterward my usual credentials stopped being accepted by the company application.",AC-002
+Can't add reporting tool,"I need a reporting application for work. Its installer runs, but an error occurs before the program is successfully installed.",SW-002
+Internet slow during busy hours,"My connection becomes noticeably slower during parts of my shift. I can still access everything, but loading and submitting information takes much longer.",NW-002
+Download option unavailable,"I can open and view the documents in the portal, but I no longer have the option to download them even though I previously could.",AC-006
+Account blocked following failed attempts,"After several unsuccessful attempts, the system blocked the account and will not accept another login.",AC-004
+Application froze during report generation,I requested a report and the application became completely unresponsive while generating it. The report never finished.,SW-001
+Workstation becomes very warm underneath,The computer becomes noticeably hot during extended use and starts responding much slower than when it was first turned on.,HW-003
+Computer not opening,Computer not opening. Need help please.,HW-001
+PC restarts even after being recently turned on,The machine had only been running briefly when it suddenly restarted by itself.,HW-006
+Please create application account,I have never used this application before and need an account created so I can begin using it for work.,AC-003
+No display from assigned workstation,"I turned on my computer today, but the monitor only showed a black screen. I confirmed that the monitor itself works by connecting it to another desktop, so the problem appears to be with my assigned workstation.",HW-002
+Program no longer using saved template,"The software used to automatically load our department template when creating a report, but now it opens a blank template instead. I think the default template setting changed.",SW-004
+Pages sometimes fail then work again,"Some pages fail to load when I first open them, but if I wait or refresh they eventually work. My connection seems inconsistent today.",NW-002
+Desktop appears offline,"The system itself is responsive, but email cannot synchronize, websites cannot load, and company services cannot be reached.",NW-001
+Cannot sign in to existing account,"I've used this account for a long time, but today I cannot log into it even though I'm entering my normal credentials.",AC-002
+System lets me in but I can't do my work,"I can sign into the application normally and see my assigned records, but whenever I try to update them it says the action isn't available for my account.",AC-006
+PC loses power during normal tasks,The machine has switched itself off while I was doing simple tasks such as browsing documents and checking email.,HW-006
+PC stuck before login,"My computer starts and shows the Windows logo, but it doesn't continue to the login screen. I have already waited several minutes.",HW-004
+Several monitors not displaying correctly,"A few workstations are running, but their monitors are either blank or reporting that they cannot detect an input.",HW-002
+Screen flickers then disappears,The image repeatedly flashes off and back on while the computer itself continues working normally.,HW-002
+Cannot authenticate after returning from leave,"After being away from work for several days, my usual password is no longer accepted.",AC-002
+Connection lost during report upload,My connection disappeared while I was uploading a report. The upload stopped and my workstation has remained offline since then.,NW-001
+Windows taking forever to start,"Windows has been loading for almost fifteen minutes now. The computer is on and I can see the spinning circle, but it never continues to the login page.",HW-004
+Cannot use program on replacement laptop,"I moved to a replacement laptop today and the application is installed, but it won't recognize my existing license. It worked on my old workstation.",SW-005
+Screen disappears but call continues,"The display went completely black during my meeting, but I could still hear everyone speaking and they could still hear me.",HW-002
+Account rejects normal credentials,The username and password I use every day are suddenly failing at authentication.,AC-002
+License expired during project,The application says my license has expired and some of its tools are now disabled. I need those features to finish a project due today.,SW-005
+Sudden reboot during file editing,"The workstation unexpectedly restarted while I was editing a file, even though there had been no freezing or heat.",HW-006
+Account disabled after long inactivity,"I need to use an application that I haven't accessed for several months, but my old account is now showing as disabled.",AC-004
+System reset without update prompt,There was no update message or restart request. The workstation simply restarted while I was working.,HW-006
+Software setup failed after restart,"I restarted my computer because the installer wasn't working, but the software still fails to install after trying again.",SW-002
+Program does not appear after clicking,"I click the software normally, but no window becomes available for me to use.",SW-001
+No display this morning,I arrived this morning and my monitor wouldn't display anything after starting my desktop.,HW-002
+No picture from working desktop,"The computer appears to be operating, but nothing is being shown on the monitor.",HW-002
+Update unsuccessful on payroll program,The payroll program tried to update this morning but reported that the process was unsuccessful. It continues opening with the previous version.,SW-003
+Update repeatedly asks to try again,"The software detects that a newer version is available, but after starting the process it reports a failure and asks me to retry.",SW-003
+User disabled unexpectedly,I opened the application this morning but it says my user has been disabled. I don't know why because I still use this system regularly.,AC-004
+New analyst needs reporting system,Our new analyst needs an account for the reporting system. They already have their company email and workstation account set up.,AC-003
+Cannot activate after reinstalling,"The software was removed and installed again because of an earlier issue. The installation completed, but now I can't activate the new installation.",SW-005
+Internet is on but very slow,"My computer is connected to the internet, but pages are loading very slowly today. Sometimes I have to wait almost a minute for a page to open.",NW-002
+PC stuck on spinning dots,"The machine turns on and reaches the Windows loading screen, but the spinning dots continue for a very long time without reaching the desktop.",HW-004
+System restarts after getting very hot,"When I run our heavier applications for a long period, the computer gets unusually hot first and then occasionally restarts without me doing anything.",HW-003
+Nothing appears on monitor,I cannot use my workstation because the computer powers on but nothing appears on the monitor. Yesterday everything was working normally before I went home.,HW-002
+Authenticator app not working for company login,"My company account is asking for a code from the authenticator app, but the codes being generated are not accepted.",AC-005
+Activation code not working,"I was given an activation code for the software, but the program does not accept it. I checked the code several times and still cannot activate the application.",SW-005
+Employee account disabled,"My username is recognized, but the system says this account has been disabled and cannot be used.",AC-004
+Support staff unable to connect remotely,"One of our support employees has working internet and company email, but cannot establish the secure connection required to reach internal tools.",NW-003
+Company login says account disabled,"When I try to sign in, the message says this account has been disabled. I haven't requested for the account to be deactivated.",AC-004
+Black screen after unlocking computer,"My monitor stayed black after I tried to unlock my computer this morning. I restarted the desktop, but the screen never came back.",HW-002
+Cannot login after long leave,I recently returned from leave and the system now says my account is inactive.,AC-004
+Can't remember my password,I tried to log in this morning but I can't remember the password for my work account. Please help me reset it.,AC-001
+Need access after new assignment,"I was assigned additional responsibilities, but my account still cannot access the system section needed for them.",AC-006
+Need access after joining another team,I recently became part of another team and need initial access to their shared workspace and resources.,AC-003
+PC stuck loading after forced restart,"My computer froze earlier, so I had to restart it. Since then it turns on but stays on the Windows loading screen and doesn't reach the desktop.",HW-004
+Work application keeps signing me back out,"I enter my credentials and it looks like the application is signing me in, but a few seconds later I am returned to the login screen.",AC-002
+Desktop powers on but screen is empty,"My desktop powers on normally, but the monitor remains empty from start to finish.",HW-002
+Computer only has problems when warm,I noticed that the workstation works properly after being off overnight. The problems start again once it has been running long enough to become hot.,HW-003
+Installer unable to finish,The installer tells me that it was unable to complete the installation. I restarted the computer and tried again but received the same result.,SW-002
+Finance employee account disabled,"A Finance employee previously used the application normally, but their existing account is now marked as disabled.",AC-004
+Account disabled after long absence,I returned after an extended absence and found that my existing company account has been disabled.,AC-004
+Unable to approve purchase request,"The procurement system lets me sign in and review purchase requests, but I get a permission message whenever I try to approve one.",AC-006
+Permission denied on company file,"The file is visible to me, but when I try to open it the system says I do not have permission.",AC-006
+Software update unsuccessful,"I tried applying the new update that appeared this morning, but I received a message saying it could not be completed successfully.",SW-003
+Windows fails during startup,"Windows starts loading for a few seconds and then I get an error before the login screen. I tried restarting, but the error comes back every time.",HW-004
+PC keeps trying to start,"When I switch the workstation on, it begins loading normally but then starts the process over again before Windows becomes available.",HW-004
+Accounting files cannot be read,"The Accounting workstation is running and the application opens, but many of the locally stored records now fail when employees try to access them.",HW-005
+Lost access to verification phone,The phone I normally use to confirm my company login was lost. I know my account password but cannot complete the next step.,AC-005
+Need reset after not using system,I haven't used this application since my previous assignment and I've forgotten the password for my existing account.,AC-001
+Locked account preventing work,I cannot access any of the required systems because my company account has been locked and needs to be restored.,AC-004
+PC stable after cooling down,"The computer froze twice yesterday after hours of use. Both times it was very warm, and after letting it cool down it worked properly again.",HW-003
+Workstation slows while processing records,"My workstation started slowing down while I was processing records this morning. After a while, I noticed the computer was very hot and the fan was running constantly.",HW-003
+Online meeting keeps freezing,"My connection is working, but during our online meeting the audio keeps cutting out and the video freezes repeatedly. Other websites also feel slower than usual.",NW-002
+Unable to access server or internet,I cannot reach our department server or any internet pages from my computer. Both were working normally during my previous shift.,NW-001
+Second factor keeps failing,"The first login step works normally, but every attempt to complete the additional authentication step is unsuccessful.",AC-005
+Computer inactive after overnight shutdown,The machine was shut down last night and now it does not respond at all when I attempt to start it.,HW-001
+Shared drive no longer available,"I can access my workstation and other company resources normally, but the shared drive I use every day is no longer available to my account.",AC-006
+Drive showing format message,I tried opening my storage drive this morning and Windows asked me to format it before using it. I cancelled because there are important department files saved there.,HW-005
+PC shuts down after getting hot,My workstation suddenly shuts down after I use it for some time. I noticed that the system unit becomes extremely warm before this happens.,HW-003
+Workstation powered off during payroll,"My workstation suddenly powered off while I was processing payroll this morning. I was able to start it again, but I'm concerned it might happen while I'm processing more records.",HW-006
+Team login attempts failing,Several members of our department are receiving an invalid credentials message when trying to sign into the system. The accounts were working normally yesterday.,AC-002
+Desktop powered off during document review,The workstation suddenly shut down while I was reviewing files and had to be restarted manually.,HW-006
+Machine becomes sluggish when hot,The workstation's applications become difficult to use whenever the computer reaches a noticeably high temperature.,HW-003
+Code not coming through,I can enter my password but I'm still waiting for the security code on my phone. Nothing has arrived.,AC-005
+Cannot copy files anymore,"I can view some documents on the drive, but attempts to copy or move them repeatedly fail before the transfer finishes.",HW-005
+Connection dropping during work,The network keeps dropping for a short time while I'm working. It usually reconnects by itself but this has happened several times today.,NW-002
+Cannot access files after startup failure,My computer turns on but keeps going into recovery instead of Windows. I need some files stored on the workstation for a report due this afternoon.,HW-004
+Need system account for new assignment,I have been given a new assignment that requires the scheduling system. I currently don't have an account for that application.,AC-003
+Program suddenly stopped accepting input,I was typing information into the system when it suddenly stopped accepting anything from my keyboard. Other applications still accept input normally.,SW-001
+Software requesting product key,"The program is already installed on the workstation, but it will not let me proceed until a valid activation key is provided.",SW-005
+Can't recall my password,I haven't logged into this system in a while and I honestly can't remember the password anymore. I would like to reset it.,AC-001
+Installation rejected on company desktop,"The installation package opens, but the workstation prevents the setup from continuing and the application is never added.",SW-002
+Request access to client records,"My role now requires me to handle client requests, so I need initial access to the system where client records are stored.",AC-003
+Need access to payroll system,I recently joined the payroll team and need access to the payroll system so I can begin processing employee records.,AC-003
+Computer slows until I let it rest,After continuous use the workstation becomes sluggish and warm. Leaving it switched off during my break usually makes it perform better afterward.,HW-003
+Account inaccessible due to password,"The service loads correctly, but I cannot enter my account because my password is not accepted.",AC-002
+PC went off while almost idle,I only had email and a browser open when the workstation suddenly shut itself down. Nothing unusual was happening beforehand.,HW-006
+Installer closes before software is added,The setup window begins normally but unexpectedly disappears during the process. The program does not appear afterward.,SW-002
+Wrong settings after application reset,"My application was reset yesterday and now several of the defaults are incorrect. I can still use it, but I need to manually change them before processing anything.",SW-004
+Computer says select boot device,"When I powered on my workstation, it asked me to select a boot device instead of loading Windows. I'm not sure what I'm supposed to choose.",HW-004
+Screen black without power loss,"The display disappeared suddenly, but there was no indication that the workstation lost power.",HW-002
+Program keeps crashing after reopening,"The application crashed earlier, so I reopened it. It worked for about ten minutes and then crashed again while I was entering data.",SW-001
+Department login issue after maintenance,Several users started having login problems after last night's maintenance. Our existing credentials are being rejected by the application.,AC-002
+Workstation heating up quickly,"My workstation starts getting hot within about twenty minutes of turning it on. I am only using email and the browser, so I'm not sure why it is heating up so quickly.",HW-003
+Program configured for previous office,I recently moved to another office and the application is still using the printer and folder locations from my previous workstation.,SW-004
+PC stuck after automatic repair,"The machine powers on, attempts automatic repair, and never successfully continues into Windows.",HW-004
+Installer suddenly closes,"The setup window suddenly closes while the software is being installed. When I check afterward, the application is not installed.",SW-002
+Computer not opening,Computer not opening. Already checked the outlet.,HW-001
+Desktop has no power,Desktop no power. Already restarted the UPS. Still not working.,HW-001
+Office desktop stopped working,"The office desktop has completely stopped working. There are no indicator lights, and the system unit does not respond when I press the power button.",HW-001
+UPS restart did not help,"I restarted the UPS because I suspected it was causing the issue, but the desktop still would not start afterward.",HW-001
+PC responds behind black screen,"The monitor is blank, but pressing keyboard shortcuts still produces sounds from the workstation.",HW-002
+Working internet but no remote access,My Wi-Fi is fine and meetings are working. I just can't establish the company connection I need to open our internal resources.,NW-003
+Cannot access normal work queue,"I successfully logged into the application, but my usual work queue is showing an unauthorized message and I cannot open the assigned requests.",AC-006
+No response from power button,"I pressed the power button several times, but absolutely nothing happens. I don't see any indicator lights on the system unit.",HW-001
+Login works except for remote access,"I can use my account for email and the employee portal. When I use the same details for the remote connection, it doesn't let me continue.",NW-003
+Cannot complete installation after download,"The software downloaded successfully, but when I run the installer the setup fails. The download itself doesn't seem to be the problem.",SW-002
+Cannot see anything after booting,"The workstation appears to boot, but I am left with a completely blank screen.",HW-002
+Upgrade stuck preparing changes,"The existing application opens normally, but the version upgrade remains stuck while preparing the update and never proceeds.",SW-003
+Team folder became read only,"Our team can still open all the files in the shared folder, but none of us can edit or upload anything today.",AC-006
+Application uses wrong browser for links,"The program works, but links opened from inside it are being sent to the wrong browser because of the configured preference.",SW-004
+Account became inactive,The login page recognizes my username but says the account is currently inactive.,AC-004
+Need assistance resetting credentials,"I still have my existing company account, but I forgot its password and need help replacing it with a new one.",AC-001
+App closes when opening records,"I can start the application and sign in successfully, but sometimes when I open a record the program immediately closes.",SW-001
+Desktop still working behind blank monitor,The workstation produces normal sounds and responds to input even though nothing is visible on the screen.,HW-002
+Unable to upgrade work software,"I need the latest version of our work software, but the upgrade process won't complete. I am still using the older release.",SW-003
+Power issue getting worse,"The computer previously started after a few tries, but today pressing the button does absolutely nothing.",HW-001
+Lost access to client workspace,I normally use this client workspace every day. Today I can sign into the platform but the client's workspace says I am not authorized to enter.,AC-006
+Access denied after clicking link,"My coworker sent me a link to a file in our team workspace. The site opens, but when I click the file it says I don't have permission to view it.",AC-006
+Program stuck after clicking search,I clicked search to look for a customer account and the program has been sitting on the same screen ever since. Nothing inside the application responds.,SW-001
+Setup cannot create required files,The installer reports that it cannot create some of the files needed for the program and then cancels the installation.,SW-002
+System unit feels extremely hot,"The side of my system unit feels much hotter than usual today. The computer is still working, but the fans have been running continuously since this morning.",HW-003
+Machine stops after hardware information,"The workstation starts and shows its initial system information, but it does not continue into Windows after that point.",HW-004
+Operating system not loading,"The computer itself turns on and I can see information on the monitor, but the operating system does not load. It stays on the startup screen.",HW-004
+Network access disappeared without warning,I was already working when all connected services became unavailable. They have not returned even after waiting several minutes.,NW-001
+Ethernet connection not working,My computer is connected using Ethernet but I have no network access. I already removed and reconnected the cable but Windows still shows no connection.,NW-001
+Request account for new employee,Our new employee already has their company login but still needs an account for the department's inventory application.,AC-003
+Program default changed unexpectedly,"The application still functions, but one of its default settings changed and I now have to manually correct it every time I use the program.",SW-004
+Can't save anything to secondary drive,"I can open applications normally, but saving new documents to our local data drive fails with an error every time.",HW-005
+Workstation stuck after unexpected restart,The computer restarted earlier and now it powers on but remains on the loading screen instead of completing startup.,HW-004
+Restart happened before any slowdown,The computer was responding normally and then suddenly restarted. There was no lag or freezing before the restart.,HW-006
+Wrong paper size from one application,Documents printed from this program keep coming out using the wrong paper size. The same printer works correctly when I print from other applications.,SW-004
+Several users can't sign into VPN,"Multiple employees working from home can access regular websites, but the VPN is refusing their company credentials today.",NW-003
+No network access after login,"I logged into my computer normally, but it says there is no network connection. I cannot access email or any of our browser-based systems.",NW-001
+Software says activation limit reached,I'm unable to activate the program because it says the maximum number of activations has already been reached.,SW-005
+PC unavailable,I cannot continue my assigned work because the desktop will not start. I already checked the power connection and confirmed that the outlet is functioning.,HW-001
+Computer won't start this morning,"Good morning. I am unable to use my workstation because it does not turn on anymore. Yesterday before leaving the office, I shut it down normally without any issues. This morning when I pressed the power button, nothing happened. I checked that the monitor and extension cord have power and also reconnected the desktop's power cable, but the system unit still does not respond. I cannot continue processing today's purchase requests because I cannot log into the system.",HW-001
+Need to update expired sign-in password,"The password I previously used is no longer accepted because it reached its expiration date, and I need to create another one.",AC-001
+PC appears booted but screen is blank,"The machine seems to finish starting, but the monitor never displays Windows.",HW-002
+Display disappeared during spreadsheet work,"The display suddenly disappeared while I was reviewing spreadsheets. The computer was still running, but restarting it did not fix the issue and the monitor remains blank.",HW-002
+Account access stopped unexpectedly,"There was no problem with my account yesterday, but today my credentials are rejected at login.",AC-002
+Completely unable to work online,"The workstation reaches Windows normally, but there is currently no usable connection for websites, email, shared systems, or other online work.",NW-001
+Unable to install after downloading setup,The setup file downloaded without any issue. The problem happens when I run it because installation never completes.,SW-002
+Please unlock my login,Hi IT. I made several unsuccessful login attempts and now my account is locked. Please help me unlock it.,AC-004
+Computer cuts off during ordinary use,There does not seem to be a demanding task causing it. The workstation has suddenly stopped even when I was only reading documents.,HW-006
+Page says I do not have permission,"I can sign into my account normally, but one of the sections I need says I am not authorized to access it.",AC-006
+Computer does not come alive,"The desktop at my workstation appears to have no power. Nothing happens when I try to start it, although the other equipment connected nearby is working.",HW-001
+Display disappeared while updating records,"The display suddenly disappeared while I was updating records. The workstation was still running, but after restarting it the monitor still didn't display anything. I need assistance because I have deadlines to meet today.",HW-002
+Computer switched off while printing,I sent a document to the printer and shortly afterward the entire workstation unexpectedly went off. Other equipment in the area remained available.,HW-006
+Can't access manager dashboard,"I can sign into the application normally, but the dashboard I need for my current responsibilities says I am not authorized to view it.",AC-006
+Calls have severe delay,"I remain connected to meetings, but voices arrive late, video freezes frequently, and screen sharing takes a long time to update.",NW-002
+Computer unexpectedly powered off,My computer powered off by itself near the end of my shift yesterday. It had been running all day and was extremely warm when it happened.,HW-006
+Computer hot after short use,"I only turned on my computer a short while ago, but it already feels very hot. Normally it doesn't get this warm during regular work.",HW-003
+Desktop very warm and noisy,"My desktop has become unusually warm and noisy recently. The fan seems to be running at full speed most of the time, even during normal office work.",HW-003
+Missing access to application feature,"I can log into the application, but the approval feature that I normally use is no longer available to me.",AC-006
+Desktop gets hot when using Excel,"Whenever I'm working on our large Excel files, my desktop starts getting hot and eventually becomes slow. Closing some programs helps a little.",HW-003
+Password accepted but approval unavailable,"There is no password or account lock problem. My credentials are accepted, but I cannot provide the required second-factor approval.",AC-005
+Request access to department files,I recently transferred to this department and need access to the shared files used by the rest of the team.,AC-003
+Software crashes on attachment,The application works until I attach a document to a record. At that point it closes unexpectedly.,SW-001
+Stuck on company logo,"When I turn on my workstation, it gets stuck on the company logo before reaching the Windows login screen. Restarting it didn't help.",HW-004
+Account credentials rejected today,"I normally use these credentials every day, but today the system refuses them.",AC-002
+Cannot find feature after preferences changed,I was adjusting the application preferences and afterward one of the options we use for processing requests disappeared from the menu.,SW-004
+Can't authenticate on company gateway,"My internet connection is stable and the VPN reaches the company gateway, but my account fails when it tries to verify me.",NW-003
+Cannot use disabled account,My company account is showing as disabled this morning. I was using it normally during my shift yesterday.,AC-004
+Screen says input lost during work,"The monitor reported input lost while I was using the computer, but the system unit continued operating.",HW-002
+Internet gone after cable disconnected,"The network cable was accidentally unplugged earlier. I connected it again, but my computer still hasn't regained network access.",NW-001
+Software update keeps undoing itself,"The update looks like it's being installed, but near the end it starts undoing the changes and tells me the process wasn't successful.",SW-003
+Existing access became restricted,"I am not requesting access to a new system. I already use this application, but some of my existing permissions appear to have been removed.",AC-006
+No reaction from system unit,When I press the front button there is no usual startup sound and none of the indicators on the computer come on.,HW-001
+PC cannot finish loading after maintenance,"The system unit powers up and the display works following maintenance, but Windows no longer completes its startup process.",HW-004
+Workstation needs frequent cooling,"After several hours the computer becomes hot and unstable, and leaving it powered off temporarily resolves the problem.",HW-003
+Cannot edit document anymore,"I can open the shared document, but my account no longer has permission to make changes.",AC-006
+Cannot access part of application,"I can open the application and sign in without any problem, but one of the sections I normally use is now unavailable to my account.",AC-006
+Fan runs hard even after closing programs,"After the workstation becomes hot, the fan continues running loudly even when I close most applications.",HW-003
+Several users have expired passwords,A few employees returned after an extended break and their existing accounts are requiring password changes because the passwords expired.,AC-001
+Network keeps reconnecting,"The network icon keeps changing between connected and disconnected. It reconnects automatically, but the connection doesn't stay stable for very long.",NW-002
+Password refused after being changed,I changed my password earlier today and have not been able to sign in successfully since.,AC-002
+Installer requests access I don't have,"I downloaded the company software, but its setup asks for elevated permission that my workstation account cannot provide.",SW-002
+PC randomly starts over,"A few times this week the workstation has suddenly returned to the startup screen while I was working, without any warning beforehand.",HW-006
+Can't connect after account password reset,"IT helped me reset my password earlier. I can sign into my account again, but the VPN still won't accept the updated password.",NW-003
+PC keeps rebooting at random times,"There doesn't seem to be a pattern, but my PC keeps rebooting by itself. Sometimes it happens in the morning and sometimes near the end of my shift.",HW-006
+Locked account needs admin assistance,The login screen says my account has been locked and instructs me to contact IT. I cannot continue with my assigned work until it is restored.,AC-004
+Can't remember password after vacation,I was away for a couple of weeks and now I can't remember my login password. I need help setting a new one.,AC-001
+Setup stuck near completion,The installation progress is almost finished but hasn't moved for a long time. I don't receive a completion message and the software isn't available yet.,SW-002
+Cannot access client documents,"I have client documents saved on a separate drive, but I cannot open that drive today. Windows keeps telling me the location is unavailable.",HW-005
+Machine behaves normally when cold,"After being powered off for a long time the workstation works perfectly, but the problems return once it heats up again.",HW-003
+Cannot open restricted file,"I can enter the shared folder normally, but one specific file says I do not have permission to open it. I was able to access the same file before.",AC-006
+Account credentials no longer work,"I can open the login page, but the credentials I normally use will not authenticate my account.",AC-002
+Suspended profile prevents access,I cannot get past the login screen because the system says my profile is suspended.,AC-004
+Need access before taking over tasks,A coworker is transferring out of our department and I will be taking over some of their responsibilities. I need access to the system used for those tasks.,AC-003
+Workstation keeps losing the session,Several times I have been working normally and then suddenly everything closes because the whole computer starts again.,HW-006
+Used to have access to this folder,"I have been using this folder for months, but this morning I suddenly started getting a message saying I don't have permission to open it.",AC-006
+System keeps saying login failed,I enter the account details I normally use and receive a login failed message each time. I was able to use this account yesterday.,AC-002
+No response from workstation,"My computer is not responding when I attempt to turn it on. The monitor works normally, but the system unit has no lights, sound, or fan movement.",HW-001
+Need access to another department resource,I will be working with the Procurement team on an upcoming project and need access to their shared resource for the duration of the assignment.,AC-003
+System unit inactive but monitor works,The monitor powers up normally and says there is no input. The computer beside it does not show any activity when its button is pressed.,HW-001
+New password not working remotely,"My old password expired this morning. I already changed it and can sign into other company services, but remote access still won't accept it.",NW-003
+Desktop froze after getting hot,My desktop became extremely slow and eventually froze while I was preparing a spreadsheet. The case was very hot when I checked it.,HW-003
+Activation stopped working after account update,My work account details were updated recently and now the software will not activate under my account. It was licensed correctly before the account change.,SW-005
+Network icon says disconnected,The network symbol on my taskbar says I'm disconnected. I restarted my PC but it still doesn't connect.,NW-001
+Reporting page unavailable,"I can use the rest of the application without any issues, but I no longer have access to the reporting section.",AC-006
+Boot failure after outage,"The display shows startup normally after power returned, but the operating system fails before reaching login.",HW-004
+Internet delay while working,There seems to be a delay with everything online today. Websites open eventually but I have to wait much longer than I normally do.,NW-002
+Application repeatedly locks up,"Our work application keeps locking up during my shift. Sometimes I wait and it recovers, but other times I need to close it manually.",SW-001
+Application stuck generating statement,I tried generating a customer statement and the application has been loading it for several minutes. None of the buttons respond anymore.,SW-001
+Screen went black during meeting,The display suddenly became black while I was in a call. I could still hear the meeting audio and the computer did not appear to shut down.,HW-002
+External drive not detected,"My external drive is not appearing when I connect it to my workstation. I tried another USB port, but the computer still doesn't detect the drive.",HW-005
+Employee profile has been disabled,"The employee still needs access to the system, but their existing profile has somehow become disabled.",AC-004
+Connection completely gone,This is not just slow loading. Nothing that requires the network is working from the workstation right now.,NW-001

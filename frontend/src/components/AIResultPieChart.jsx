@@ -55,7 +55,7 @@ export default function AIOverviewPieChart() {
             <div className="flex items-center justify-between mb-6">
                 <div>
                     <h2 className="text-xl font-semibold">
-                        AI Classification Results
+                        Automated Classification Results
                     </h2>
                     <p className="text-sm text-gray-500">
                         Overall ticket classification performance

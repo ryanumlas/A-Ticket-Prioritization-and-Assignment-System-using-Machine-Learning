@@ -1,5 +1,61 @@
-cleaned_text,expected
-"Good morning. My desktop won't turn on anymore.",HW-001
-"My monitor is completely black after startup.",HW-002
-"I cannot see the Windows login screen.",HW-002
-"The system unit has no lights when I press the power button.",HW-001
+subject,description,expected
+"Workstation never wakes up","The monitor and phone charger at my desk have power, but pressing the button on the computer itself produces no lights or sound.",HW-001
+"Tower stopped responding","I shut the PC down before moving some papers around my desk. Now the system unit will not react when I try to start it.",HW-001
+"PC died and stayed dead","The workstation suddenly went off yesterday and has shown no signs of power since, even though the outlet is working.",HW-001
+"Screen disappeared but call stayed connected","The monitor went dark during a meeting, but I could still hear the conversation and the computer itself remained on.",HW-002
+"No image from active workstation","The fans are spinning and I hear Windows notifications, but nothing is visible on the monitor.",HW-002
+"Display stopped showing anything","I was already working when the picture disappeared. The PC did not restart and my keyboard lights are still active.",HW-002
+"Gets worse near end of shift","The computer is fine when first turned on, but after several hours it gets very warm and begins freezing for a few seconds at a time.",HW-003
+"Performance returns after cooling","The workstation becomes sluggish and the fan gets loud after long use, but it works normally again after being left off for a while.",HW-003
+"Warm machine becomes unstable","The PC gradually heats up during the day and applications start hanging more often as the temperature rises.",HW-003
+"Never gets beyond startup","The display works and shows the Windows logo, but the loading process stays there and the login page never appears.",HW-004
+"Recovery instead of desktop","Every time the workstation starts, I can see the normal boot screens before it enters repair mode rather than Windows.",HW-004
+"Boot keeps repeating","The PC shows the manufacturer logo, starts loading Windows, and then begins the same startup process again.",HW-004
+"Second drive suddenly missing","Windows opens normally, but the drive where I keep project files is no longer shown on the computer.",HW-005
+"Local files throwing errors","The workstation and applications work, but documents stored on one local disk cannot be opened anymore.",HW-005
+"External storage invisible","I plugged in the external drive I use every week, but Windows does not detect it even after trying another USB port.",HW-005
+"Restarted during simple work","The workstation rebooted while I was reading email. It had only been running for a short time and was not warm.",HW-006
+"Random shutdown with normal temperature","The PC suddenly switched off during data entry even though the fan sounded normal and the machine did not feel hot.",HW-006
+"Back at login unexpectedly","I was already working in Windows, then everything disappeared and a short time later the sign-in screen appeared again.",HW-006
+"Completely offline at one desk","The computer itself works, but no website, email service, or online company application can be reached.",NW-001
+"Network never came back","The connection disappeared earlier today and the workstation has remained unable to reach anything online since.",NW-001
+"No connected services available","Local programs open normally, but anything requiring the network fails completely.",NW-001
+"Connected but painfully slow","Websites still open and email works, but everything online takes much longer than usual to respond.",NW-002
+"Connection drops for a few seconds","The workstation keeps losing network access briefly and then reconnecting without me doing anything.",NW-002
+"Internet works inconsistently","Sometimes pages load normally and other times they pause for a long time before eventually finishing.",NW-002
+"Only corporate access is failing","Public websites and email work normally, but I cannot connect to the private company environment.",NW-003
+"Remote access rejects updated password","I changed my expired password and it works for email, but the secure company connection still refuses it.",NW-003
+"Internet fine but VPN unavailable","My home connection is stable and websites work, but the remote connection required for internal systems will not establish.",NW-003
+"Program freezes after opening record","The application starts normally, but once I search for a customer and open the result it stops responding.",SW-001
+"Software dies during normal use","The program launches successfully, but it unexpectedly closes when I try to complete an ordinary task.",SW-001
+"Application stuck processing request","The software is already open, but after submitting a request it stays on a loading screen indefinitely.",SW-001
+"Installer never completes","The application is not currently installed. Setup begins normally but stops with an error before finishing.",SW-002
+"Cannot get software installed","I downloaded the approved installer, but the process fails halfway and the program never appears on the workstation.",SW-002
+"Setup closes before completion","The installation wizard starts copying files and then exits unexpectedly before the software is installed.",SW-002
+"Upgrade keeps failing","The existing software still opens, but every attempt to install the newer version ends before the update finishes.",SW-003
+"Old version remains after patch attempt","The program works, but the required update will not apply and the workstation stays on the previous release.",SW-003
+"Cannot move to latest version","The application is already installed and usable, but installation of the new release repeatedly fails.",SW-003
+"Wrong default folder after transfer","The application opens normally, but it still saves files to the location used by my previous team.",SW-004
+"Toolbar disappeared after setting change","The software itself works, but the toolbar I normally use is gone after I changed some settings.",SW-004
+"Program pointing to old environment","The application launches without errors, but it is still configured to connect to the server used by our previous department.",SW-004
+"Product says not activated","The application opens successfully, but several features are disabled because the software says activation is required.",SW-005
+"License vanished after reinstall","The program was installed again without errors and now opens normally, but it no longer recognizes our company license.",SW-005
+"Serial key suddenly requested","The software is already installed and starts correctly, but it now asks for a product key before allowing full use.",SW-005
+"Forgot password after vacation","I returned from leave and cannot remember my work password, so I need to create a new one.",AC-001
+"Password reached expiration","The account is still active, but the system says my password has expired and must be changed.",AC-001
+"Need to replace forgotten credentials","I know my username but cannot remember the password I used previously and need to reset it.",AC-001
+"Known password keeps getting rejected","My account is not locked and I know the current password, but the application repeatedly says the credentials are invalid.",AC-002
+"New password rejected at login","The password change completed successfully, but the replacement password still fails when I try to authenticate.",AC-002
+"Credentials work nowhere on login","The sign-in page loads normally, but my usual username and password combination is being refused.",AC-002
+"Need first-time access to project tool","My normal company account works, but I have never been given access to the application required for my new project.",AC-003
+"New employee needs system account","I can sign into the company portal, but an account for the department's separate system has not been created for me.",AC-003
+"Never had access to this service","This is my first time being assigned work in the system and I do not yet have an account for it.",AC-003
+"Correct password but account locked","I now know the right password, but the login page says the account itself is locked because of earlier failed attempts.",AC-004
+"Profile inactive after leave","I returned to work and the system recognizes my username but says the account is inactive.",AC-004
+"User disabled at sign in","The login screen reports that my account has been disabled and will not allow authentication to continue.",AC-004
+"Verification goes to old device","My password is accepted, but the second login approval is being sent to a phone I no longer use.",AC-005
+"Authenticator enrollment fails","The account credentials work, but I cannot complete setup of the required two-step verification.",AC-005
+"No code arriving for second step","The first login step succeeds, but I never receive the verification code required to finish signing in.",AC-005
+"Can view but cannot edit","I can sign into the application and open the records, but my account is not permitted to make changes.",AC-006
+"New role missing required permission","My existing account works normally, but after changing responsibilities I still cannot access the section needed for my new duties.",AC-006
+"Approval button blocked","I can open and review the request, but submitting approval is unavailable because my account lacks the required permission.",AC-006
