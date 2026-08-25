@@ -21,7 +21,7 @@ export default function TicketTableServiceDesk({ ticketList, loading = false, ma
             }`}
         >
             <table className="w-full table-fixed text-sm">
-                <thead className="sticky top-0 bg-white">
+                <thead className="sticky top-0 bg-gray-50">
                     <tr className="text-left">
                         <th className="w-[15%] px-6 py-3 font-semibold">Ticket ID</th>
                         <th className="w-[40%] px-6 font-semibold">Subject</th>

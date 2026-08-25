@@ -2,7 +2,7 @@ from django.urls import path
 from .views import (TicketListEmployeeView, CreateTicketView, ListTicketView, DetailTicketView, UpdateSymptomCodeView, 
 UpdateTicketView, DeleteTicketView, CreateCategoryView, KeywordUpdateView ,KeywordCreateView, 
 UpdateCategoryView, CreateSymptomCodeView, SLARulesCreateView, SLARulesUpdateView, TicketDetailEmployeeView, TicketListServiceDeskView, UpdateTicketStatusView, ManualOverrideTicketView,
-ServiceDeskOverviewView, ServiceDeskClassifiedResultsView)
+ServiceDeskOverviewView, ServiceDeskClassifiedResultsView, FlaggedTicketsListView, FlaggedTicketDetailView)
 
 urlpatterns = [
     # --- Ticket URLs ---
@@ -18,6 +18,8 @@ urlpatterns = [
     path('service-desk/list/', TicketListServiceDeskView.as_view(), name="ticket-list-service-desk"),
     path('service-desk/overview/', ServiceDeskOverviewView.as_view(), name="service-desk-overview"),
     path('service-desk/classified-results/', ServiceDeskClassifiedResultsView.as_view(), name="service-desk-classified-results"),
+    path('flagged/list/', FlaggedTicketsListView.as_view(), name='flagged-tickets'),
+    path('flagged-detail/<int:pk>/', FlaggedTicketDetailView.as_view(), name='flagged-ticket-detail'),
     # --- Category URLs ---
     path('categories/create/', CreateCategoryView.as_view(), name='create-category'),
     path('categories/update/<int:pk>/', UpdateCategoryView.as_view(), name='update-category'),

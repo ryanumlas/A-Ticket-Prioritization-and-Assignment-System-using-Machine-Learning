@@ -201,19 +201,41 @@ class TicketSerializer(serializers.ModelSerializer):
 
         # return f"{days}d {hours}h {minutes}m"
 
+class FlaggedTicketsListSerializer(serializers.ModelSerializer):
+    ticket_code = serializers.CharField(source="ticket.ticket_code", read_only=True)
+    subject = serializers.CharField(source="ticket.subject", read_only=True)
+    reason = serializers.CharField(source="get_reason_display", read_only=True)
+    status = serializers.CharField(source="get_status_display", read_only=True)
+    class Meta:
+        model = ReviewFlags
+        fields = ["id", "ticket_code", "subject", "reason", "status", "created_at"]
 
-
+class FlaggedTicketDetailSerializer(serializers.ModelSerializer):
+    ticket_code = serializers.CharField(source="ticket.ticket_code", read_only=True)
+    subject = serializers.CharField(source="ticket.subject", read_only=True)
+    description = serializers.CharField(source="ticket.description", read_only=True)
+    business_impact = serializers.CharField(source="ticket.business_impact", read_only=True)
+    affected_scope = serializers.CharField(source="ticket.get_affected_scope_display", read_only=True)
+    reason = serializers.CharField(source="get_reason_display", read_only=True)
+    status = serializers.CharField(source="get_status_display", read_only=True)
+    predicted_symptom_code = serializers.CharField(source="prediction.predicted_symptom_code.code", read_only=True, allow_null=True)
+    second_predicted_symptom_code = serializers.CharField(source="prediction.second_predicted_symptom_code.code", read_only=True, allow_null=True)
+    confidence = serializers.FloatField(source="prediction.confidence", read_only=True, allow_null=True)
+    second_confidence = serializers.FloatField(source="prediction.second_confidence", read_only=True, allow_null=True)
+    confidence_margin = serializers.FloatField(source="prediction.confidence_margin", read_only=True, allow_null=True)
+    summary = serializers.CharField(source="ticket.ai_analysis.summary", read_only=True, allow_null=True)
+    business_critical = serializers.BooleanField(source="ticket.ai_analysis.business_critical", read_only=True)
+    is_unclear = serializers.BooleanField(source="ticket.ai_analysis.is_unclear", read_only=True)
+    class Meta:
+        model = ReviewFlags
+        fields = ["id", "ticket_code", "subject", "description", "business_impact", "affected_scope", 
+                  "reason", "status", "predicted_symptom_code", "second_predicted_symptom_code", "confidence", "second_confidence", 
+                  "confidence_margin", "summary", "business_critical", "is_unclear", "created_at"]
 
 class TicketCreateSerializer(serializers.ModelSerializer):
     class Meta:
         model = Ticket
-        fields = [
-            "workstation",
-            "subject",
-            "description",
-            "business_impact",
-            "affected_scope",
-        ]
+        fields = ["workstation", "subject", "description" ,"business_impact", "affected_scope"]
 
     def validate_subject(self, value):
         value = value.strip()

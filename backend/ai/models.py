@@ -10,9 +10,12 @@ class TicketAnalysis(models.Model):
 
     ticket = models.OneToOneField('tickets.Ticket', on_delete=models.CASCADE, related_name='ai_prediction')
     predicted_symptom_code = models.ForeignKey('tickets.SymptomCode', on_delete=models.SET_NULL, null=True, blank=True, related_name='ai_predictions') 
+    second_predicted_symptom_code = models.ForeignKey('tickets.SymptomCode', on_delete=models.SET_NULL, null=True, blank=True, related_name='second_ai_predictions')
     model_type = models.CharField(max_length=30, choices=ModelType.choices, null=True, blank=True)
     model_used = models.CharField(max_length=255, blank=True, null=True)
-    overall_confidence = models.FloatField(null=True, blank=True)
+    confidence = models.FloatField(null=True, blank=True)
+    second_confidence = models.FloatField(null=True, blank=True)
+    confidence_margin = models.FloatField(null=True, blank=True)
     was_overridden = models.BooleanField(default=False)
     created_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='created_ai_predictions')
     updated_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='updated_ai_predictions')

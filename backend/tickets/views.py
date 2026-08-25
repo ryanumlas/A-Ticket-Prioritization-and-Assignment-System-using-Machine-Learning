@@ -9,8 +9,9 @@ from .models import Ticket, Category, SymptomCode, TicketComments, SLARules, Rev
 from .serializers import (SymptomCodeSerializer, TicketSerializer, CategorySerializer, 
 TicketAssistanceSerializer, TicketCommentSerializer, TicketStatusHistory, SLARulesSerializer, 
 SLARulesUpdateSerializer, KeywordSerializer, KeywordUpdateSerializer, UpdateSymptomCodeSerializer, CreateSymptomCodeSerializer,
-TicketCreateSerializer, TicketUpdateSerializer, TicketDetailEmployeeSerializer, CategoryUpdateSerializer)
+TicketCreateSerializer, TicketUpdateSerializer, TicketDetailEmployeeSerializer, CategoryUpdateSerializer, FlaggedTicketsListSerializer, FlaggedTicketDetailSerializer)
 from users.models import User
+from .services import predict_ticket
 from ai.models import TicketAnalysis, TicketAIAnalysis
 from ai.services import analyze_ticket
 from tickets.services import classify_ticket, calculate_priority, update_sla
@@ -81,6 +82,8 @@ class CreateTicketView(generics.CreateAPIView):
 
             return
 
+        used_ml = False
+
         result = classify_ticket(ticket)
 
         print(result)
@@ -89,28 +92,50 @@ class CreateTicketView(generics.CreateAPIView):
             code=result.get("symptom_code")
         ).first()
 
-        category = symptom.category if symptom else None
-        department = (
-            category.it_department
-            if category
-            else None
-        )
-
-
         if not symptom:
+            used_ml = True
 
-            ReviewFlags.objects.create(
-                ticket=ticket,
-                reason=ReviewFlags.Reasons.SYMPTOM_NOT_DETECTED,
-                status=ReviewFlags.Status.PENDING,
-                source_type=ReviewFlags.SourceType.SYSTEM_GENERATED
-            )
+            ml_result = predict_ticket(ticket)
 
-            ticket.is_under_review = True
-            ticket.status = Ticket.TicketStatus.UNDER_REVIEW
-            ticket.save()
+            symptom = SymptomCode.objects.filter(
+                code=ml_result["predicted_code"]
+            ).first()
 
-            return
+            if not symptom:
+                ReviewFlags.objects.create(
+                    ticket=ticket,
+                    reason=ReviewFlags.Reasons.SYMPTOM_NOT_DETECTED,
+                    status=ReviewFlags.Status.PENDING,
+                    source_type=ReviewFlags.SourceType.SYSTEM_GENERATED,
+                )
+
+                ticket.is_under_review = True
+                ticket.status = Ticket.TicketStatus.UNDER_REVIEW
+
+                ticket.save(
+                    update_fields=[
+                        "is_under_review",
+                        "status",
+                    ]
+                )
+
+                return
+
+            if ml_result["requires_review"]:
+                ticket.is_under_review = True
+                ticket.status = Ticket.TicketStatus.UNDER_REVIEW
+
+                ticket.save(
+                    update_fields=[
+                        "is_under_review",
+                        "status",
+                    ]
+                )
+
+                return
+
+        category = symptom.category if symptom else None
+        department = category.it_department if category else None
 
         if not department:
 
@@ -131,15 +156,16 @@ class CreateTicketView(generics.CreateAPIView):
         ticket.category = category
         ticket.it_department = department
 
-        TicketAnalysis.objects.update_or_create(
-            ticket=ticket,
-            defaults={
-                "model_type": TicketAnalysis.ModelType.RULE_BASED,
-                "model_used": "Rule-Based Classifier",
-                "predicted_symptom_code": symptom,
-                "created_by": self.request.user,
-            }
-        )
+        if not used_ml:
+            TicketAnalysis.objects.update_or_create(
+                ticket=ticket,
+                defaults={
+                    "model_type": TicketAnalysis.ModelType.RULE_BASED,
+                    "model_used": "Rule-Based Classifier",
+                    "predicted_symptom_code": symptom,
+                    "created_by": self.request.user,
+                }
+            )
 
         final_priority = calculate_priority(
             symptom.based_priority,
@@ -405,6 +431,16 @@ class UpdateTicketView(APIView):
             status=status.HTTP_200_OK
         )
 
+
+class FlaggedTicketsListView(generics.ListAPIView):
+    queryset = ReviewFlags.objects.filter(status=ReviewFlags.Status.PENDING).select_related("ticket","ticket__priority",).order_by("-created_at")
+    serializer_class = FlaggedTicketsListSerializer
+    permission_classes = [IsAuthenticated]
+
+class FlaggedTicketDetailView(generics.RetrieveAPIView):
+    queryset = ReviewFlags.objects.all()
+    serializer_class = FlaggedTicketDetailSerializer
+    permission_classes = [IsAuthenticated]
 
 class DeleteTicketView(generics.DestroyAPIView):
     queryset = Ticket.objects.all()

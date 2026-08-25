@@ -6,9 +6,11 @@ import Sidebar from './components/Sidebar'
 import Dashboard from "./pages/Dashboard";
 import Tickets from "./pages/Tickets";
 import TicketSuccess from './components/TicketSuccess'
+import FlaggedTicketDetails from "./pages/FlaggedTicketDetails"
 import SubmitTicket from './pages/SubmitTicket'
 import NotFound from './pages/NotFound'
 import ProtectedRoute from './components/ProtectedRoute'
+import FlaggedTickets from './pages/FlaggedTickets'
 import ActiveTicketSLA from './components/ActiveTicketSLA'
 import TicketDetails from './pages/TicketDetails'
 
@@ -35,11 +37,21 @@ function App() {
           <SubmitTicket />
         </ProtectedRoute>
       } />
-        <Route path="/ticket/:ticketId" element={
-          <ProtectedRoute>
-            <TicketDetails />
-          </ProtectedRoute>
-        } />
+      <Route path="/ticket/:ticketId" element={
+        <ProtectedRoute>
+          <TicketDetails />
+        </ProtectedRoute>
+      } />
+      <Route path="/flagged-ticket/:id" element={
+        <ProtectedRoute>
+          <FlaggedTicketDetails />
+        </ProtectedRoute>
+      } />
+      <Route path="/flagged-tickets" element={
+        <ProtectedRoute>
+          <FlaggedTickets />
+        </ProtectedRoute>
+      } />
       <Route path="/ticket-success" element={<TicketSuccess />} />
       <Route path="/sidebar" element={<Sidebar />} />
       <Route path="/login" element={<Login />} />

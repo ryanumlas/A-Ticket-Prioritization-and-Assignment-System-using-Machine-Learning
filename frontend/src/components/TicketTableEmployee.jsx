@@ -24,7 +24,7 @@ export default function TicketTableEmployee({ loading = false, ticketList = [], 
             }`}
         >
             <table className="w-full text-sm">
-                <thead className="sticky top-0 z-20 bg-white">
+                <thead className="sticky top-0 z-20 bg-gray-50">
                     <tr className="text-left ">
                         <th className="px-6 py-4 font-semibold">Ticket ID</th>
                         <th className="px-4 font-semibold">Subject</th>

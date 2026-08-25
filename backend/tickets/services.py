@@ -1,6 +1,6 @@
 from h11 import Response
 from .models import Keyword, SymptomCode, Ticket, ReviewFlags, Category
-from ai.models import TicketAIAnalysis
+from ai.models import TicketAIAnalysis, TicketAnalysis
 from machine_learning.predictor import predict_symptom_code
 from django.utils import timezone
 
@@ -39,8 +39,9 @@ def phrase_matches(keyword, text):
 
 
 def classify_ticket(ticket):
-    analysis = TicketAIAnalysis.objects.get(ticket=ticket)
+    MIN_RULE_SCORE = 15
 
+    analysis = TicketAIAnalysis.objects.get(ticket=ticket)
     keywords = analysis.keywords or []
 
     subject_text = normalize_text(ticket.subject or "")
@@ -49,7 +50,6 @@ def classify_ticket(ticket):
     scores = {}
 
     for gemini_kw in keywords:
-
         gemini_kw = normalize_text(gemini_kw)
 
         if not gemini_kw:
@@ -57,17 +57,13 @@ def classify_ticket(ticket):
 
         print(f"\nGemini Keyword: {gemini_kw}")
 
-        # Find database keywords that can match this
         db_keywords = Keyword.objects.all()
-
         keyword_found = False
 
         for match in db_keywords:
-
             db_kw = normalize_text(match.keyword)
 
-            # Check if database keyword is contained
-            # as a complete phrase in Gemini's extracted keyword
+            # Check if DB keyword matches as a complete phrase
             if not phrase_matches(db_kw, gemini_kw):
                 continue
 
@@ -77,17 +73,14 @@ def classify_ticket(ticket):
             base_weight = match.weight or 0
 
             # Longer keywords are more specific
-            keyword_length = len(db_kw.split())
-
-            specificity_bonus = keyword_length
-
+            specificity_bonus = len(db_kw.split())
             weight = base_weight + specificity_bonus
 
-            # Check subject
+            # Stronger weight if keyword appears in subject
             if phrase_matches(db_kw, subject_text):
                 weight *= 3
 
-            # Check description
+            # Normal weight if found in description
             elif phrase_matches(db_kw, description_text):
                 weight *= 1
 
@@ -101,17 +94,46 @@ def classify_ticket(ticket):
         if not keyword_found:
             print("No database keyword match")
 
+    # No rule-based matches at all
     if not scores:
         return {
             "symptom_code": None,
             "category": None,
-            "scores": scores,
-            "status": "No matching keywords found"
+            "scores": {},
+            "best_score": 0,
+            "status": "No matching keywords found",
         }
 
+    # Get highest scoring symptom
     best_code = max(scores, key=scores.get)
+    best_score = scores[best_code]
 
-    best_symptom = SymptomCode.objects.get(code=best_code)
+    print("\nRule-Based Scores:", scores)
+    print("Best Code:", best_code)
+    print("Best Score:", best_score)
+
+    # Weak rule-based result → let ML handle it
+    if best_score < MIN_RULE_SCORE:
+        return {
+            "symptom_code": None,
+            "category": None,
+            "scores": scores,
+            "best_score": best_score,
+            "status": "Rule-based confidence insufficient - ML fallback required"
+        }
+
+    best_symptom = SymptomCode.objects.filter(
+        code=best_code
+    ).select_related("category").first()
+
+    if not best_symptom:
+        return {
+            "symptom_code": None,
+            "category": None,
+            "scores": scores,
+            "best_score": best_score,
+            "status": "Matched symptom code does not exist",
+        }
 
     category = best_symptom.category
 
@@ -119,7 +141,8 @@ def classify_ticket(ticket):
         "symptom_code": best_code,
         "category": category.name if category else None,
         "scores": scores,
-        "status": "Classification successful"
+        "best_score": best_score,
+        "status": "Classification successful",
     }
 
 
@@ -323,7 +346,47 @@ def update_sla(ticket):
     )
 
 def predict_ticket(ticket):
+    result = predict_symptom_code(
+        ticket.subject,
+        ticket.description
+    )
 
+    code_predicted = result["predicted_code"]
+    second_code_predicted = result["second_predicted_code"]
+
+    symptom = SymptomCode.objects.get(
+        code=code_predicted
+    )
+
+    second_symptom = SymptomCode.objects.get(
+        code=second_code_predicted
+    )
+
+    prediction, created = TicketAnalysis.objects.update_or_create(
+        ticket=ticket,
+        defaults={
+            "predicted_symptom_code": symptom,
+            "second_predicted_symptom_code": second_symptom,
+            "model_type": TicketAnalysis.ModelType.MACHINE_LEARNING,
+            "model_used": "TF-IDF and Logistic Regression",
+            "confidence": result["confidence"],
+            "second_confidence": result["second_confidence"],
+            "confidence_margin": result["margin"],
+        }
+    )
+
+    if result["requires_review"]:
+        ReviewFlags.objects.get_or_create(
+            ticket=ticket,
+            prediction=prediction,
+            reason=ReviewFlags.Reasons.LOW_CONFIDENCE,
+            source_type=ReviewFlags.SourceType.AI_PREDICTION,
+            defaults={
+                "status": ReviewFlags.Status.PENDING,
+            }
+        )
+
+    return result
 
 # WAG NA TO PANGET PAG SCORING
 
