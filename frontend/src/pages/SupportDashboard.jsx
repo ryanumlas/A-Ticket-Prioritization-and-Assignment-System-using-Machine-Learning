@@ -1,5 +1,10 @@
+import SupportOverview from "../components/SupportOverview";
+import TicketTableSupport from "../components/TicketTableSupport";
+
 export default function SupportDashboard() {
     return(
-        <h1>IT Support Specialist</h1>
+        <div>
+            <SupportOverview/>
+        </div>
     );
 }

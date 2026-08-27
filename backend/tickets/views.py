@@ -14,7 +14,7 @@ from users.models import User
 from .services import predict_ticket
 from ai.models import TicketAnalysis, TicketAIAnalysis
 from ai.services import analyze_ticket
-from tickets.services import classify_ticket, calculate_priority, update_sla
+from tickets.services import classify_ticket, calculate_priority, update_sla, finalize_ticket_classification
 
 # Create your views here.
 
@@ -442,6 +442,309 @@ class FlaggedTicketDetailView(generics.RetrieveAPIView):
     serializer_class = FlaggedTicketDetailSerializer
     permission_classes = [IsAuthenticated]
 
+class ApproveOverrideView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    @transaction.atomic
+    def post(self, request, pk):
+        try:
+            flag = ReviewFlags.objects.select_related(
+                "ticket",
+                "prediction",
+                "prediction__predicted_symptom_code",
+                "ticket__ai_analysis",
+            ).get(
+                pk=pk,
+                status=ReviewFlags.Status.PENDING,
+                reason=ReviewFlags.Reasons.LOW_CONFIDENCE,
+            )
+
+        except ReviewFlags.DoesNotExist:
+            return Response(
+                {
+                    "success": False,
+                    "message": "Pending Low Confidence review flag not found.",
+                },
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+
+        selected_code = request.data.get("symptom_code")
+
+        if not selected_code:
+            return Response(
+                {
+                    "success": False,
+                    "message": "A symptom code must be selected.",
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        try:
+            selected_symptom = SymptomCode.objects.get(
+                code=selected_code
+            )
+
+        except SymptomCode.DoesNotExist:
+            return Response(
+                {
+                    "success": False,
+                    "message": "Selected symptom code does not exist.",
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+
+        prediction = flag.prediction
+
+        if not prediction:
+            return Response(
+                {
+                    "success": False,
+                    "message": "Model recommendation not found.",
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        recommended_symptom = (
+            prediction.predicted_symptom_code
+        )
+
+        if (
+            recommended_symptom
+            and selected_symptom.id == recommended_symptom.id
+        ):
+            return Response(
+                {
+                    "success": False,
+                    "message": (
+                        "The selected symptom code is already "
+                        "the model's primary recommendation."
+                    ),
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        reviewed_at = timezone.now()
+
+        ticket = finalize_ticket_classification(
+            flag.ticket,
+            selected_symptom,
+            response_start=reviewed_at,
+        )
+
+        prediction.was_overridden = True
+
+        prediction.save(
+            update_fields=[
+                "was_overridden",
+                "updated_at",
+            ]
+        )
+
+
+        flag.status = ReviewFlags.Status.APPROVED
+        flag.reviewed_by = request.user
+        flag.reviewed_at = reviewed_at
+
+        flag.save(
+            update_fields=[
+                "status",
+                "reviewed_by",
+                "reviewed_at",
+                "updated_at",
+            ]
+        )
+
+        return Response(
+            {
+                "success": True,
+                "message": "Classification override approved successfully.",
+                "ticket": {
+                    "id": ticket.id,
+                    "ticket_code": ticket.ticket_code,
+                    "symptom_code": ticket.symptom_code.code,
+                    "priority": ticket.priority.priority_level,
+                    "status": ticket.status,
+                    "response_deadline": ticket.response_deadline,
+                    "resolution_deadline": ticket.resolution_deadline,
+                },
+            },
+            status=status.HTTP_200_OK,
+        )
+
+class AcceptRecommendationView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    @transaction.atomic
+    def post(self, request, pk):
+        try:
+            flag = ReviewFlags.objects.select_related(
+                "ticket",
+                "prediction",
+                "prediction__predicted_symptom_code",
+                "ticket__ai_analysis",
+            ).get(
+                pk=pk,
+                status=ReviewFlags.Status.PENDING,
+                reason=ReviewFlags.Reasons.LOW_CONFIDENCE,
+            )
+
+        except ReviewFlags.DoesNotExist:
+            return Response(
+                {
+                    "success": False,
+                    "message": "Pending review flag not found.",
+                },
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        prediction = flag.prediction
+
+        if not prediction:
+            return Response(
+                {
+                    "success": False,
+                    "message": "Model recommendation not found.",
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        recommended_symptom = (
+            prediction.predicted_symptom_code
+        )
+
+        if not recommended_symptom:
+            return Response(
+                {
+                    "success": False,
+                    "message": "Primary recommendation not found.",
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        reviewed_at = timezone.now()
+
+        ticket = finalize_ticket_classification(
+            flag.ticket,
+            recommended_symptom,
+            response_start=reviewed_at,
+        )
+
+        flag.status = ReviewFlags.Status.APPROVED
+        flag.reviewed_by = request.user
+        flag.reviewed_at = reviewed_at
+
+        flag.save(
+            update_fields=[
+                "status",
+                "reviewed_by",
+                "reviewed_at",
+                "updated_at",
+            ]
+        )
+
+        return Response(
+            {
+                "success": True,
+                "message": "Recommendation accepted successfully.",
+                "ticket": {
+                    "id": ticket.id,
+                    "ticket_code": ticket.ticket_code,
+                    "symptom_code": ticket.symptom_code.code,
+                    "priority": ticket.priority.priority_level,
+                    "status": ticket.status,
+                    "response_deadline": ticket.response_deadline,
+                    "resolution_deadline": ticket.resolution_deadline,
+                },
+            },
+            status=status.HTTP_200_OK,
+        )
+
+class ManuallyClassifyView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    @transaction.atomic
+    def post(self, request, pk):
+
+        try:
+            flag = ReviewFlags.objects.select_related(
+                "ticket",
+                "ticket__ai_analysis",
+            ).get(
+                pk=pk,
+                status=ReviewFlags.Status.PENDING,
+                reason=ReviewFlags.Reasons.UNCLEAR_DESCRIPTION,
+            )
+
+        except ReviewFlags.DoesNotExist:
+            return Response(
+                {
+                    "success": False,
+                    "message": "Pending Unclear Description review flag not found.",
+                },
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        selected_code = request.data.get("symptom_code")
+
+        if not selected_code:
+            return Response(
+                {
+                    "success": False,
+                    "message": "A symptom code must be selected.",
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        try:
+            selected_symptom = SymptomCode.objects.get(
+                code=selected_code
+            )
+
+        except SymptomCode.DoesNotExist:
+            return Response(
+                {
+                    "success": False,
+                    "message": "Selected symptom code does not exist.",
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        reviewed_at = timezone.now()
+
+        ticket = finalize_ticket_classification(
+            flag.ticket,
+            selected_symptom,
+            response_start=reviewed_at,
+        )
+
+        flag.status = ReviewFlags.Status.APPROVED
+        flag.reviewed_by = request.user
+        flag.reviewed_at = reviewed_at
+
+        flag.save(
+            update_fields=[
+                "status",
+                "reviewed_by",
+                "reviewed_at",
+                "updated_at",
+            ]
+        )
+
+        return Response(
+            {
+                "success": True,
+                "message": "Ticket manually classified successfully.",
+                "ticket": {
+                    "id": ticket.id,
+                    "ticket_code": ticket.ticket_code,
+                    "symptom_code": ticket.symptom_code.code,
+                    "priority": ticket.priority.priority_level,
+                    "status": ticket.status,
+                    "response_deadline": ticket.response_deadline,
+                    "resolution_deadline": ticket.resolution_deadline,
+                },
+            },
+            status=status.HTTP_200_OK,
+        )
 class DeleteTicketView(generics.DestroyAPIView):
     queryset = Ticket.objects.all()
     serializer_class = TicketSerializer
@@ -501,62 +804,117 @@ class ServiceDeskOverviewView(APIView):
     def get(self, request):
         user = request.user
 
-        assigned_tickets = Ticket.objects.filter(assigned_to=user)
+        assigned_tickets = Ticket.objects.filter(
+            assigned_to=user
+        )
+
         count_assigned_tickets = assigned_tickets.count()
 
+        # Rule-based automated classifications
         rule_based_tickets = TicketAnalysis.objects.filter(
             model_type=TicketAnalysis.ModelType.RULE_BASED,
         ).values("ticket").distinct().count()
 
-        manual_override_tickets = TicketAnalysis.objects.filter(
-            model_type=TicketAnalysis.ModelType.MANUAL_OVERRIDE,
+        # ML classifications that were accepted/not overridden
+        machine_learning_tickets = TicketAnalysis.objects.filter(
+            model_type=TicketAnalysis.ModelType.MACHINE_LEARNING,
+            was_overridden=False,
         ).values("ticket").distinct().count()
 
+        # Automated = Rule-Based + accepted ML classifications
+        automated_tickets = (
+            rule_based_tickets
+            + machine_learning_tickets
+        )
+
+        # Human overrides
+        manual_override_tickets = TicketAnalysis.objects.filter(
+            was_overridden=True,
+        ).values("ticket").distinct().count()
+
+        # Pending review tickets
         flagged_tickets = ReviewFlags.objects.filter(
             status=ReviewFlags.Status.PENDING
-        ).values('ticket').distinct().count()
+        ).values("ticket").distinct().count()
 
-        total_tickets = rule_based_tickets + manual_override_tickets
+        total_classified_tickets = (
+            automated_tickets
+            + manual_override_tickets
+        )
 
-        if total_tickets > 0:
-            auto_classified_percentage = (rule_based_tickets / total_tickets) * 100
+        if total_classified_tickets > 0:
+            auto_classified_percentage = (
+                automated_tickets
+                / total_classified_tickets
+            ) * 100
         else:
             auto_classified_percentage = 0
 
         return Response({
             "assigned_tickets": count_assigned_tickets,
-            "auto_classified_tickets": round(auto_classified_percentage, 1),
-            "flagged_tickets": flagged_tickets
+            "auto_classified_tickets": round(
+                auto_classified_percentage,
+                1
+            ),
+            "flagged_tickets": flagged_tickets,
         })
 
 class ServiceDeskClassifiedResultsView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
+
         rule_based_tickets = TicketAnalysis.objects.filter(
             model_type=TicketAnalysis.ModelType.RULE_BASED,
+        ).values("ticket").distinct().count()
+
+        machine_learning_tickets = TicketAnalysis.objects.filter(
+            model_type=TicketAnalysis.ModelType.MACHINE_LEARNING,
         ).values("ticket").distinct().count()
 
         manual_override_tickets = TicketAnalysis.objects.filter(
             model_type=TicketAnalysis.ModelType.MANUAL_OVERRIDE,
         ).values("ticket").distinct().count()
 
-        total_tickets = rule_based_tickets + manual_override_tickets
+        automated_tickets = (
+            rule_based_tickets +
+            machine_learning_tickets
+        )
+
+        total_tickets = (
+            automated_tickets +
+            manual_override_tickets
+        )
 
         if total_tickets > 0:
-            auto_classified_percentage = (rule_based_tickets / total_tickets) * 100
+            auto_classified_percentage = (
+                automated_tickets / total_tickets
+            ) * 100
 
-            manual_override_percentage = (manual_override_tickets / total_tickets) * 100
+            manual_override_percentage = (
+                manual_override_tickets / total_tickets
+            ) * 100
         else:
             auto_classified_percentage = 0
             manual_override_percentage = 0
 
         return Response({
-            "auto_classified_percentage": round(auto_classified_percentage, 1),
+            "auto_classified_percentage": round(
+                auto_classified_percentage,
+                1
+            ),
+            "automated_tickets": automated_tickets,
+
             "rule_based_tickets": rule_based_tickets,
+            "machine_learning_tickets": machine_learning_tickets,
+
+            "manual_override_percentage": round(
+                manual_override_percentage,
+                1
+            ),
+            "manual_override_tickets": manual_override_tickets,
+
             "total_tickets": total_tickets,
-            "manual_override_percentage": round(manual_override_percentage, 1),
-            "manual_override_tickets": manual_override_tickets
         })
 
 # --- End ---
@@ -583,6 +941,11 @@ class UpdateSymptomCodeView(generics.UpdateAPIView):
     queryset = SymptomCode.objects.all()
     serializer_class = UpdateSymptomCodeSerializer
     permission_classes = [AllowAny]
+
+class SymptomCodeListView(generics.ListAPIView):
+    queryset = SymptomCode.objects.all()
+    serializer_class = SymptomCodeSerializer
+    permission_classes = [IsAuthenticated]
 # --- End ---
 
 # --- SLA Rules Views ---

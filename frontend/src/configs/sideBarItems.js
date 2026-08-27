@@ -58,7 +58,7 @@ export const sidebarItems = {
         {
             type: "link",
             name: "Assigned Tickets",
-            path: "/",
+            path: "/tickets",
             icon: ClipboardCheck
         },
         {
@@ -87,7 +87,7 @@ export const sidebarItems = {
         },
         {
             type: "link",
-            name: "My Tickets",
+            name: "Assigned Tickets",
             path: "/tickets",
             icon: Ticket
         },

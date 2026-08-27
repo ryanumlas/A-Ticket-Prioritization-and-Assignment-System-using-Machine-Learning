@@ -2,7 +2,7 @@ from django.urls import path
 from .views import (TicketListEmployeeView, CreateTicketView, ListTicketView, DetailTicketView, UpdateSymptomCodeView, 
 UpdateTicketView, DeleteTicketView, CreateCategoryView, KeywordUpdateView ,KeywordCreateView, 
 UpdateCategoryView, CreateSymptomCodeView, SLARulesCreateView, SLARulesUpdateView, TicketDetailEmployeeView, TicketListServiceDeskView, UpdateTicketStatusView, ManualOverrideTicketView,
-ServiceDeskOverviewView, ServiceDeskClassifiedResultsView, FlaggedTicketsListView, FlaggedTicketDetailView)
+ServiceDeskOverviewView, ServiceDeskClassifiedResultsView, FlaggedTicketsListView, FlaggedTicketDetailView, SymptomCodeListView, AcceptRecommendationView, ApproveOverrideView, ManuallyClassifyView)
 
 urlpatterns = [
     # --- Ticket URLs ---
@@ -20,12 +20,16 @@ urlpatterns = [
     path('service-desk/classified-results/', ServiceDeskClassifiedResultsView.as_view(), name="service-desk-classified-results"),
     path('flagged/list/', FlaggedTicketsListView.as_view(), name='flagged-tickets'),
     path('flagged-detail/<int:pk>/', FlaggedTicketDetailView.as_view(), name='flagged-ticket-detail'),
+    path("flagged/<int:pk>/accept-recommendation/", AcceptRecommendationView.as_view(), name="accept-recommendation"),
+    path('flagged/<int:pk>/approve-override/', ApproveOverrideView.as_view(), name='approve-override'),
+    path('flagged/<int:pk>/manual-classify/', ManuallyClassifyView.as_view(), name='manual-classify'),
     # --- Category URLs ---
     path('categories/create/', CreateCategoryView.as_view(), name='create-category'),
     path('categories/update/<int:pk>/', UpdateCategoryView.as_view(), name='update-category'),
 
     # --- Symptom Code URLs ---
-    path('symptom-codes/create/', CreateSymptomCodeView.as_view(), name='create-symptom-code'),
+    path('symptom-code/create/', CreateSymptomCodeView.as_view(), name='create-symptom-code'),
+    path('symptom-code/list/', SymptomCodeListView.as_view(), name='symptom-code-list'),
 
     # --- SLA Rules URLs ---
     path('sla-rules/create/', SLARulesCreateView.as_view(), name='create-sla-rules'),

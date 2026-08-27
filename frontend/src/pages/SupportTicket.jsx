@@ -1,5 +1,9 @@
+import TicketTableSupport from '../components/TicketTableSupport';
+
 export default function SupportTicket() {
     return(
-        <h1>aasdsad</h1>
+        <div>
+            <TicketTableSupport/>
+        </div>
     );
 }

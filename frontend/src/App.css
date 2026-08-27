@@ -1,0 +1,37 @@
+/* Success toast icon */
+[data-sonner-toast][data-type="success"] [data-icon] {
+    color: #16a34a;
+}
+
+/* Error toast icon */
+[data-sonner-toast][data-type="error"] [data-icon] {
+    color: #dc2626;
+}
+
+/* Toast title */
+[data-sonner-toast] [data-title] {
+    color: #000000;
+    font-size: 14px;
+    font-weight: 600;
+}
+
+/* Toast description */
+[data-sonner-toast] [data-description] {
+    color: #6b7280;
+    font-size: 13px;
+    line-height: 1.5;
+    margin-top: 3px;
+}
+
+/* Close button */
+[data-sonner-toast] [data-close-button] {
+    background: #ffffff;
+    color: #6b7280;
+    border: 1px solid #e5e7eb;
+}
+
+/* Close button hover */
+[data-sonner-toast] [data-close-button]:hover {
+    background: #f9fafb;
+    color: #000000;
+}

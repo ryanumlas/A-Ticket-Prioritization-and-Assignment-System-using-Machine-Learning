@@ -1,84 +1,124 @@
+import {
+    Gauge,
+    MessageSquareReply,
+    CircleCheckBig,
+} from "lucide-react";
+
 export default function SLAOverview() {
-    const responseSLA = 88;
-    const resolutionSLA = 74;
+    const responseSLA = 94;
+    const resolutionSLA = 88;
+
+    const overallSLA = Math.round(
+        (responseSLA + resolutionSLA) / 2
+    );
 
     return (
-        <div className="bg-white border border-gray-300 rounded-xl p-6 h-full">
-            <div className="mb-6">
-                <h2 className="text-xl font-semibold">SLA Overview</h2>
-                <p className="text-sm text-gray-500">
-                    Monitor service level agreement performance
-                </p>
-            </div>
+        <div className="h-full rounded-xl border border-gray-300 bg-white p-6">
 
-            <div className="space-y-6">
+            {/* HEADER */}
+            <div className="mb-6 flex items-start justify-between">
 
                 <div>
-                    <div className="flex justify-between items-center mb-2">
-                        <p className="font-medium text-gray-700">
+                    <h2 className="text-xl font-semibold text-black">
+                        Overall SLA Performance
+                    </h2>
+
+                    <p className="mt-1 text-sm text-gray-500">
+                        SLA compliance across your assigned tickets
+                    </p>
+                </div>
+
+                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-gray-100">
+                    <Gauge
+                        size={20}
+                        className="text-black"
+                    />
+                </div>
+
+            </div>
+
+            {/* MAIN COMPLIANCE */}
+            <div className="rounded-lg border border-gray-300 bg-gray-50 px-5 py-6">
+
+                <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">
+                    Overall Compliance
+                </p>
+
+                <div className="mt-3 flex items-end gap-2">
+
+                    <h3 className="text-4xl font-semibold text-black">
+                        {overallSLA}%
+                    </h3>
+
+                    <span className="mb-1 rounded-md bg-green-50 px-2 py-1 text-xs font-semibold text-green-700">
+                        Within SLA
+                    </span>
+
+                </div>
+
+                <p className="mt-2 text-xs leading-5 text-gray-500">
+                    Overall response and resolution SLA performance.
+                </p>
+
+            </div>
+
+            {/* SLA BREAKDOWN */}
+            <div className="mt-4 grid grid-cols-2 gap-4">
+
+                {/* RESPONSE SLA */}
+                <div className="rounded-lg border border-gray-300 p-4">
+
+                    <div className="flex items-center gap-2">
+                        <div className="flex h-8 w-8 items-center justify-center rounded-md bg-gray-100">
+                            <MessageSquareReply
+                                size={16}
+                                className="text-black"
+                            />
+                        </div>
+
+                        <p className="text-sm font-medium text-black">
                             Response SLA
                         </p>
-                        <span className="font-semibold text-black">
-                            {responseSLA}%
-                        </span>
                     </div>
 
-                    <div className="w-full h-3 bg-gray-200 rounded-full overflow-hidden">
-                        <div
-                            className="h-full bg-[#4C4CF9] rounded-full"
-                            style={{ width: `${responseSLA}%` }}
-                        />
-                    </div>
-
-                    <p className="text-xs text-gray-500 mt-2">
-                        Tickets responded to within SLA
+                    <p className="mt-4 text-2xl font-semibold text-[#4C4CF9]">
+                        {responseSLA}%
                     </p>
+
+                    <p className="mt-1 text-xs leading-5 text-gray-500">
+                        Tickets responded to within the required time.
+                    </p>
+
                 </div>
 
-                <div>
-                    <div className="flex justify-between items-center mb-2">
-                        <p className="font-medium text-gray-700">
+                {/* RESOLUTION SLA */}
+                <div className="rounded-lg border border-gray-300 p-4">
+
+                    <div className="flex items-center gap-2">
+                        <div className="flex h-8 w-8 items-center justify-center rounded-md bg-gray-100">
+                            <CircleCheckBig
+                                size={16}
+                                className="text-black"
+                            />
+                        </div>
+
+                        <p className="text-sm font-medium text-black">
                             Resolution SLA
                         </p>
-                        <span className="font-semibold text-black">
-                            {resolutionSLA}%
-                        </span>
                     </div>
 
-                    <div className="w-full h-3 bg-gray-200 rounded-full overflow-hidden">
-                        <div
-                            className="h-full bg-[#4C4CF9] rounded-full"
-                            style={{ width: `${resolutionSLA}%` }}
-                        />
-                    </div>
-
-                    <p className="text-xs text-gray-500 mt-2">
-                        Tickets resolved within SLA
+                    <p className="mt-4 text-2xl font-semibold text-[#4C4CF9]">
+                        {resolutionSLA}%
                     </p>
-                </div>
 
-                <div className="grid grid-cols-2 gap-4 pt-2">
-
-                    <div className="border border-red-200 bg-red-50 rounded-lg p-4">
-                        <p className="text-sm text-gray-600">
-                            Breached
-                        </p>
-                        <h3 className="text-2xl font-bold text-red-600">
-                            3
-                        </h3>
-                    </div>
-
-                    <div className="border border-orange-200 bg-orange-50 rounded-lg p-4">
-                        <p className="text-sm text-gray-600">
-                            At Risk
-                        </p>
-                        <h3 className="text-2xl font-bold text-orange-600">
-                            6
-                        </h3>
-                    </div>
+                    <p className="mt-1 text-xs leading-5 text-gray-500">
+                        Tickets resolved within the required time.
+                    </p>
 
                 </div>
+
             </div>
+
         </div>
     );
 }

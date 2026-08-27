@@ -12,6 +12,7 @@ import NotFound from './pages/NotFound'
 import ProtectedRoute from './components/ProtectedRoute'
 import FlaggedTickets from './pages/FlaggedTickets'
 import ActiveTicketSLA from './components/ActiveTicketSLA'
+import { Toaster } from "sonner";
 import TicketDetails from './pages/TicketDetails'
 
 function Logout() {
@@ -21,44 +22,112 @@ function Logout() {
 
 function App() {
   return (
-    <Routes>
-      <Route path="/dashboard" element={
-        <ProtectedRoute>
-          <Dashboard />
-        </ProtectedRoute>
-      } />
-      <Route path="/tickets" element={
-        <ProtectedRoute>
-          <Tickets />
-        </ProtectedRoute>
-      } />
-      <Route path="/submit/ticket" element={
-        <ProtectedRoute>
-          <SubmitTicket />
-        </ProtectedRoute>
-      } />
-      <Route path="/ticket/:ticketId" element={
-        <ProtectedRoute>
-          <TicketDetails />
-        </ProtectedRoute>
-      } />
-      <Route path="/flagged-ticket/:id" element={
-        <ProtectedRoute>
-          <FlaggedTicketDetails />
-        </ProtectedRoute>
-      } />
-      <Route path="/flagged-tickets" element={
-        <ProtectedRoute>
-          <FlaggedTickets />
-        </ProtectedRoute>
-      } />
-      <Route path="/ticket-success" element={<TicketSuccess />} />
-      <Route path="/sidebar" element={<Sidebar />} />
-      <Route path="/login" element={<Login />} />
-      <Route path="/logout" element={<Logout />} />
-      <Route path="/" element={<Navigate to="/login" replace />} />
-      <Route path="*" element={<NotFound />} />
-    </Routes>
+    <>
+        <Toaster
+            position="top-right"
+            richColors
+            closeButton
+        />
+
+        <Routes>
+
+            <Route
+                path="/dashboard"
+                element={
+                    <ProtectedRoute>
+                        <Dashboard />
+                    </ProtectedRoute>
+                }
+            />
+
+            <Route
+                path="/tickets"
+                element={
+                    <ProtectedRoute>
+                        <Tickets />
+                    </ProtectedRoute>
+                }
+            />
+
+            <Route
+                path="/submit/ticket"
+                element={
+                    <ProtectedRoute allowedRoles={["Employee"]}>
+                        <SubmitTicket />
+                    </ProtectedRoute>
+                }
+            />
+
+            <Route
+                path="/ticket/:ticketId"
+                element={
+                    <ProtectedRoute>
+                        <TicketDetails />
+                    </ProtectedRoute>
+                }
+            />
+
+            {/* IT SERVICE DESK ONLY */}
+            <Route
+                path="/flagged-ticket/:id"
+                element={
+                    <ProtectedRoute
+                        allowedRoles={["IT Service Desk"]}
+                    >
+                        <FlaggedTicketDetails />
+                    </ProtectedRoute>
+                }
+            />
+
+            {/* IT SERVICE DESK ONLY */}
+            <Route
+                path="/flagged-tickets"
+                element={
+                    <ProtectedRoute
+                        allowedRoles={["IT Service Desk"]}
+                    >
+                        <FlaggedTickets />
+                    </ProtectedRoute>
+                }
+            />
+
+            <Route
+                path="/ticket-success"
+                element={<TicketSuccess />}
+            />
+            {/* IT SUPPORT ONLY */}
+            <Route
+                path="/sidebar"
+                element={<Sidebar />}
+            />
+
+            <Route
+                path="/login"
+                element={<Login />}
+            />
+
+            <Route
+                path="/logout"
+                element={<Logout />}
+            />
+
+            <Route
+                path="/"
+                element={
+                    <Navigate
+                        to="/login"
+                        replace
+                    />
+                }
+            />
+
+            <Route
+                path="*"
+                element={<NotFound />}
+            />
+
+        </Routes>
+    </>
   )
 }
 

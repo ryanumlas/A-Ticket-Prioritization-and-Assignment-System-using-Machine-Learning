@@ -8,11 +8,6 @@ import { Bot, TriangleAlert } from "lucide-react";
 import api from "../api";
 import { useEffect, useState } from "react";
 
-const data = [
-    { name: "Auto Classified", value: 92 },
-    { name: "Manual Review", value: 8 },
-];
-
 const COLORS = ["#4C4CF9", "#F59E0B"];
 
 export default function AIOverviewPieChart() {
@@ -32,21 +27,23 @@ export default function AIOverviewPieChart() {
     }, [])
 
     const {
-        auto_classified_percentage,
-        manual_override_percentage,
-        rule_based_tickets,
-        manual_override_tickets,
-        total_tickets,
+        auto_classified_percentage = 0,
+        automated_tickets = 0,
+        rule_based_tickets = 0,
+        machine_learning_tickets = 0,
+        manual_override_percentage = 0,
+        manual_override_tickets = 0,
+        total_tickets = 0,
     } = classifiedResults || {};
 
     const data = [
         {
             name: "Auto Classified",
-            value: classifiedResults?.auto_classified_percentage || 0,
+            value: auto_classified_percentage,
         },
         {
             name: "Manual Override",
-            value: classifiedResults?.manual_override_percentage || 0,
+            value: manual_override_percentage,
         }
     ]
 
@@ -101,7 +98,7 @@ export default function AIOverviewPieChart() {
                                     Auto Classified
                                 </p>
                                 <h3 className="font-semibold">
-                                    {rule_based_tickets || 0} Tickets
+                                    {automated_tickets || 0} Tickets
                                 </h3>
                             </div>
                         </div>
@@ -147,7 +144,7 @@ export default function AIOverviewPieChart() {
 
                         <div className="text-right">
                             <p className="text-sm text-gray-500">
-                                AI Success Rate
+                                System Success Rate
                             </p>
                             <h3 className="text-2xl font-bold text-green-600">
                                 {auto_classified_percentage || 0}%

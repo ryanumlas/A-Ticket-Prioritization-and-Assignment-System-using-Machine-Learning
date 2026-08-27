@@ -1,5 +1,6 @@
 import { ACCESS_TOKEN, REFRESH_TOKEN } from "../constant";
 import foundever_logo from "../assets/foundever_logo.png";
+import { jwtDecode } from "jwt-decode";
 import api from "../api";
 import {
     CircleX,
@@ -7,7 +8,7 @@ import {
     Eye,
     EyeOff,
 } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Navigate } from "react-router-dom";
 import { useState } from "react";
 
 export default function Login() {
@@ -22,6 +23,20 @@ export default function Login() {
     const [showPassword, setShowPassword] = useState(false);
 
     const navigate = useNavigate();
+    const token = localStorage.getItem(ACCESS_TOKEN);
+
+    if (token) {
+        try {
+            const decoded = jwtDecode(token);
+            const currentTime = Date.now() / 1000;
+
+            if (decoded.exp > currentTime) {
+                return <Navigate to="/dashboard" replace />;
+            }
+        } catch (error) {
+            console.error("Invalid access token:", error);
+        }
+    }
 
     const handleSubmit = async (e) => {
         e.preventDefault();

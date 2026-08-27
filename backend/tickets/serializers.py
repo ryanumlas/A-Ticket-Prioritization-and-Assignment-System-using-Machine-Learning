@@ -226,11 +226,20 @@ class FlaggedTicketDetailSerializer(serializers.ModelSerializer):
     summary = serializers.CharField(source="ticket.ai_analysis.summary", read_only=True, allow_null=True)
     business_critical = serializers.BooleanField(source="ticket.ai_analysis.business_critical", read_only=True)
     is_unclear = serializers.BooleanField(source="ticket.ai_analysis.is_unclear", read_only=True)
+    first_name = serializers.CharField(source="ticket.submitted_by.first_name", read_only=True)
+    last_name = serializers.CharField(source="ticket.submitted_by.last_name", read_only=True)
+    user_code = serializers.CharField(source='ticket.submitted_by.user_code', read_only=True)
+    employee_department = serializers.CharField(source='ticket.employee_department.name', read_only=True)
+    office_location = serializers.CharField(source='ticket.office_location.name', read_only=True)
+    workstation = serializers.CharField(source="ticket.workstation", read_only=True)
+    cleaned_text = serializers.CharField(source="ticket.ai_analysis.cleaned_text", read_only=True, allow_null=True)
+    summary = serializers.CharField(source="ticket.ai_analysis.summary", read_only=True, allow_null=True)
     class Meta:
         model = ReviewFlags
         fields = ["id", "ticket_code", "subject", "description", "business_impact", "affected_scope", 
                   "reason", "status", "predicted_symptom_code", "second_predicted_symptom_code", "confidence", "second_confidence", 
-                  "confidence_margin", "summary", "business_critical", "is_unclear", "created_at"]
+                  "confidence_margin", "summary", "business_critical", "is_unclear", "created_at", "first_name", "last_name", "user_code", 
+                  "employee_department", "office_location", "workstation", "cleaned_text", "summary"]
 
 class TicketCreateSerializer(serializers.ModelSerializer):
     class Meta:
@@ -364,6 +373,10 @@ class KeywordUpdateSerializer(serializers.ModelSerializer):
         model = Keyword
         fields = ['weight']
 class SymptomCodeSerializer(serializers.ModelSerializer):
+    category = serializers.CharField(
+        source="category.name",
+        read_only=True
+    )
     class Meta:
         model = SymptomCode
         fields = ['id', 'code', 'category', 'description', 'created_by', 'updated_by', 'created_at', 'updated_at', 'based_priority']

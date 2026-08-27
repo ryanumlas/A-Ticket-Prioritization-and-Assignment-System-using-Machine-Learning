@@ -1,5 +1,5 @@
 from h11 import Response
-from .models import Keyword, SymptomCode, Ticket, ReviewFlags, Category
+from .models import Keyword, SymptomCode, Ticket, ReviewFlags, Category, SLARules
 from ai.models import TicketAIAnalysis, TicketAnalysis
 from machine_learning.predictor import predict_symptom_code
 from django.utils import timezone
@@ -274,19 +274,25 @@ def calculate_status(remaining, total_duration):
     return Ticket.SLAStatus.SAFE
 
 
-def update_sla(ticket):
+def update_sla(ticket, response_start=None):
     if not ticket.priority:
         return
+
     now = timezone.now()
+
+    if not response_start:
+        response_start = ticket.created_at
 
     if not ticket.response_deadline:
         ticket.response_deadline = (
-            ticket.created_at + ticket.priority.response_time
+            response_start
+            + ticket.priority.response_time
         )
 
     if not ticket.resolution_deadline:
         ticket.resolution_deadline = (
-            ticket.created_at + ticket.priority.resolution_time
+            ticket.created_at
+            + ticket.priority.resolution_time
         )
 
     if ticket.status in [
@@ -331,10 +337,39 @@ def update_sla(ticket):
             resolution_remaining,
             ticket.priority.resolution_time,
         )
-    print(ticket.ticket_code)
-    print(ticket.response_deadline)
-    print(ticket.resolution_deadline)
+    print("\n========== SLA DEBUG ==========")
+    print("Ticket:", ticket.ticket_code)
 
+    print("Created at:", ticket.created_at)
+    print("Response started at:", response_start)
+
+    print("Response SLA duration:", ticket.priority.response_time)
+    print("Resolution SLA duration:", ticket.priority.resolution_time)
+
+    print("Response deadline:", ticket.response_deadline)
+    print("Resolution deadline:", ticket.resolution_deadline)
+
+    print(
+        "Response time remaining:",
+        ticket.response_deadline - now
+    )
+
+    print(
+        "Resolution time remaining:",
+        ticket.resolution_deadline - now
+    )
+
+    print(
+        "Response SLA status:",
+        ticket.response_sla_status
+    )
+
+    print(
+        "Resolution SLA status:",
+        ticket.resolution_sla_status
+    )
+
+    print("===============================\n")
     ticket.save(
         update_fields=[
             "response_deadline",
@@ -388,6 +423,40 @@ def predict_ticket(ticket):
 
     return result
 
+def finalize_ticket_classification(ticket, symptom_code, response_start=None,):
+    ticket.symptom_code = symptom_code
+    ticket.category = symptom_code.category
+
+    priority_level = calculate_priority(
+        based_priority=symptom_code.based_priority,
+        affected_scope=ticket.affected_scope,
+        business_critical=ticket.ai_analysis.business_critical,
+    )
+
+    sla_rule = SLARules.objects.get(
+        priority_level=priority_level
+    )
+
+    ticket.priority = sla_rule
+    ticket.status = Ticket.TicketStatus.OPEN
+    ticket.is_under_review = False
+
+    ticket.save(
+        update_fields=[
+            "symptom_code",
+            "category",
+            "priority",
+            "status",
+            "is_under_review",
+        ]
+    )
+
+    update_sla(
+        ticket,
+        response_start=response_start,
+    )
+
+    return ticket
 # WAG NA TO PANGET PAG SCORING
 
 # def calculate_priority(based_priority, affected_scope, urgency_detected):

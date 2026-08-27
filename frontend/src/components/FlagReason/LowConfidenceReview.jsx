@@ -1,46 +1,141 @@
-    import { useState } from "react";
-    import {
-        Contact,
-        CircleAlert,
-        ClipboardCheck,
-        Ticket,
-        TrendingUp,
-        CheckCircle2,
-        Pencil,
+import { useState } from "react";
+import {
+    Contact,
+    CircleAlert,
+    ClipboardCheck,
+    Ticket,
+    TrendingUp,
+    CheckCircle2,
+    Pencil,
+    Search
     } from "lucide-react";
+import SymptomCodeSheet from "./SymptomCodeSheet";
+import { toast } from "sonner";
+import { useNavigate } from "react-router-dom";
+import api from "/src/api"
 
-    export default function LowConfidenceReview({ flag }) {
-        const [selectedSymptom, setSelectedSymptom] = useState("");
+export default function LowConfidenceReview({ flag }) {
+    const [selectedSymptom, setSelectedSymptom] = useState("");
+    const [sheetOpen, setSheetOpen] = useState(false);
+    const [accepting, setAccepting] = useState(false);
+    const [approving, setApproving] = useState(false);
 
-        const confidence =
-            flag.confidence != null
-                ? (flag.confidence * 100).toFixed(2)
-                : "0.00";
+    const navigate = useNavigate();
 
-        const secondConfidence =
-            flag.second_confidence != null
-                ? (flag.second_confidence * 100).toFixed(2)
-                : "0.00";
+    const handleAcceptRecommendation = async () => {
+        try {
+            setAccepting(true);
+            const response = await api.post(`/tickets/flagged/${flag.id}/accept-recommendation/`);
+            console.log(response.data);
+            navigate("/dashboard");
+            toast.success("Recommendation accepted", {
+                description: `${response.data.ticket.ticket_code} was classified as ${response.data.ticket.symptom_code}.`,
+                duration: 6000,
 
-        const confidenceMargin =
-            flag.confidence_margin != null
-                ? (flag.confidence_margin * 100).toFixed(2)
-                : "0.00";
+                style: {
+                    background: "#ffffff",
+                    color: "#000000",
+                    border: "1px solid #e5e7eb",
+                    borderRadius: "10px",
+                    padding: "16px",
+                    boxShadow: "0 8px 24px rgba(0, 0, 0, 0.08)",
+                },
+            });
+        } catch (error) {
+            console.error(error);
+            toast.error("Unable to accept recommendation", {
+                description:
+                    error.response?.data?.message ||
+                    "Something went wrong while completing the review.",
 
-        // Static for now
-        // Later we can fetch these from the backend
-        const symptomCodes = [
-            { code: "AC-001", name: "Password Reset" },
-            { code: "AC-002", name: "Account Locked" },
-            { code: "AC-003", name: "System Access" },
-            { code: "AC-004", name: "Account Issue" },
-            { code: "AC-005", name: "Authentication Issue" },
-            { code: "AC-006", name: "Permission / Access Issue" },
-        ];
+                duration: 6000,
 
-        const canOverride =
-            selectedSymptom &&
-            selectedSymptom !== flag.predicted_symptom_code;
+                style: {
+                    background: "#ffffff",
+                    color: "#000000",
+                    border: "1px solid #e5e7eb",
+                    borderRadius: "8px",
+                    padding: "16px 18px",
+                    boxShadow: "0 10px 30px rgba(0, 0, 0, 0.08)",
+                },
+            });
+        } finally {
+            setAccepting(false);
+        }
+    }
+    const handleApproveOverride = async () => {
+        if (!selectedSymptom) {
+            return;
+        }
+
+        try {
+            setApproving(true);
+
+            const response = await api.post(
+                `/tickets/flagged/${flag.id}/approve-override/`,
+                {
+                    symptom_code: selectedSymptom,
+                }
+            );
+
+            navigate("/dashboard");
+
+            toast.success("Classification updated", {
+                description: `${response.data.ticket.ticket_code} was classified as ${response.data.ticket.symptom_code}.`,
+                duration: 6000,
+
+                style: {
+                    background: "#ffffff",
+                    color: "#000000",
+                    border: "1px solid #e5e7eb",
+                    borderRadius: "10px",
+                    padding: "16px",
+                    boxShadow: "0 8px 24px rgba(0, 0, 0, 0.08)",
+                },
+            });
+
+        } catch (error) {
+            console.error(error);
+            toast.error("Unable to accept recommendation", {
+                description:
+                    error.response?.data?.message ||
+                    "Something went wrong while completing the review.",
+
+                duration: 5000,
+
+                style: {
+                    background: "#ffffff",
+                    color: "#000000",
+                    border: "1px solid #e5e7eb",
+                    borderRadius: "8px",
+                    padding: "16px 18px",
+                    boxShadow: "0 10px 30px rgba(0, 0, 0, 0.08)",
+                },
+            });
+
+        } finally {
+            setApproving(false);
+        }
+    };
+    
+    const confidence =
+        flag.confidence != null
+            ? (flag.confidence * 100).toFixed(2)
+            : "0.00";
+
+    const secondConfidence =
+        flag.second_confidence != null
+            ? (flag.second_confidence * 100).toFixed(2)
+            : "0.00";
+
+    const confidenceMargin =
+        flag.confidence_margin != null
+            ? (flag.confidence_margin * 100).toFixed(2)
+            : "0.00";
+
+    const canOverride =
+        selectedSymptom &&
+        selectedSymptom !== flag.predicted_symptom_code;
 
         return (
             <div className="space-y-5">
@@ -141,7 +236,7 @@
                                     </p>
 
                                     <p className="text-sm font-medium text-black">
-                                        Bryan Roxas
+                                        {flag.first_name} {flag.last_name}
                                     </p>
                                 </div>
 
@@ -151,7 +246,7 @@
                                     </p>
 
                                     <p className="text-sm font-medium text-black">
-                                        EMP-0005
+                                        {flag.user_code}
                                     </p>
                                 </div>
 
@@ -161,7 +256,7 @@
                                     </p>
 
                                     <p className="text-sm font-medium text-black">
-                                        Human Resources
+                                        {flag.employee_department || '-'} 
                                     </p>
                                 </div>
 
@@ -172,7 +267,7 @@
                                     </p>
 
                                     <p className="text-sm font-medium text-black">
-                                        3rd Floor
+                                        {flag.office_location || '-'}
                                     </p>
                                 </div>
 
@@ -182,7 +277,7 @@
                                     </p>
 
                                     <p className="text-sm font-medium text-black">
-                                        HR-024
+                                        {flag.workstation || '-'}
                                     </p>
                                 </div>
                             </div>
@@ -252,36 +347,21 @@
                             </div>
 
                             <div className="mt-6">
-                                <label
-                                    htmlFor="symptom-code"
-                                    className="mb-2 block text-xs font-semibold uppercase text-gray-500"
-                                >
+                                <p className="mb-2 text-xs font-semibold uppercase text-gray-500">
                                     Override Symptom Code
-                                </label>
+                                </p>
 
-                                <select
-                                    id="symptom-code"
-                                    value={selectedSymptom}
-                                    onChange={(e) =>
-                                        setSelectedSymptom(e.target.value)
-                                    }
-                                    className="w-full rounded-md border border-gray-300 bg-white px-4 py-3 text-sm text-black outline-none transition focus:border-[#4C4CF9]"
+                                <button
+                                    type="button"
+                                    onClick={() => setSheetOpen(true)}
+                                    className="flex w-full items-center justify-between rounded-md border border-gray-300 bg-white px-4 py-3 text-left text-sm text-black transition hover:bg-gray-50"
                                 >
-                                    <option value="">
-                                        Select a different symptom code
-                                    </option>
+                                    <span>
+                                        {selectedSymptom || "Search and select symptom code"}
+                                    </span>
 
-                                    {symptomCodes.map((symptom) => (
-                                        <option
-                                            key={symptom.code}
-                                            value={symptom.code}
-                                        >
-                                            {symptom.code} - {symptom.name}
-                                        </option>
-                                    ))}
-
-                                </select>
-
+                                    <Search size={17} className="text-gray-500" />
+                                </button>
                             </div>
 
                             {selectedSymptom && (
@@ -324,27 +404,33 @@
 
                                 <button
                                     type="button"
-                                    disabled={!canOverride}
-                                    className={`flex items-center justify-center gap-2 rounded-md border px-4 py-3 text-sm font-semibold transition ${
-                                        canOverride
-                                            ? "cursor-pointer border-[#4C4CF9] bg-white text-[#4C4CF9] hover:bg-gray-50"
-                                            : "cursor-not-allowed border-gray-300 bg-gray-100 text-gray-400"
+                                    onClick={handleApproveOverride}
+                                    disabled={!selectedSymptom || approving || accepting}
+                                    className={`rounded-md px-4 py-3 text-sm font-semibold transition ${
+                                        selectedSymptom && !approving && !accepting
+                                            ? "bg-[#4C4CF9] text-white hover:bg-[#4242e8]"
+                                            : "cursor-not-allowed bg-gray-100 text-gray-400"
                                     }`}
                                 >
-                                    <Pencil size={16} />
-
-                                    Approve Override
+                                    {approving
+                                        ? "Approving..."
+                                        : "Approve Override"}
                                 </button>
 
                                 <button
                                     type="button"
-                                    className="flex cursor-pointer items-center justify-center gap-2 rounded-md border border-[#4C4CF9] bg-[#4C4CF9] px-4 py-3 text-sm font-semibold text-white transition hover:bg-[#4242e8]"
+                                    onClick={handleAcceptRecommendation}
+                                    disabled={accepting}
+                                    className={`rounded-md px-4 py-3 text-sm font-semibold text-white transition ${
+                                        accepting
+                                            ? "cursor-not-allowed bg-gray-400"
+                                            : "bg-[#4C4CF9] hover:bg-[#4242e8]"
+                                    }`}
                                 >
-                                    <CheckCircle2 size={17} />
-
-                                    Accept Recommended
+                                    {accepting
+                                        ? "Accepting..."
+                                        : "Accept Recommendation"}
                                 </button>
-
                             </div>
                         </div>
                     </div>
@@ -449,6 +535,12 @@
                         </p>
                     </div>
                 </div>
+                <SymptomCodeSheet
+                    open={sheetOpen}
+                    onClose={() => setSheetOpen(false)}
+                    onSelect={setSelectedSymptom}
+                    excludeCode={flag.predicted_symptom_code}
+                />
             </div>
         );
     }

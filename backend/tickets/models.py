@@ -200,12 +200,12 @@ class ReviewFlags(models.Model):
     reason = models.CharField(max_length=20, choices=Reasons.choices)
     source_type = models.CharField(max_length=20, choices=SourceType.choices)
     status = models.CharField(max_length=20, choices=Status.choices, default=Status.PENDING)
-    created_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='created_review_flags')
-    updated_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='updated_review_flags')
+    reviewed_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='reviewed_flags')
+    reviewed_at = models.DateTimeField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
-    class Meta:
+    class Meta: 
         db_table = 'review_flags'
 
 
