@@ -12,8 +12,8 @@ class ITDepartment(models.Model):
     class Meta:
         db_table = 'it_departments'
 
-        def __str__(self):
-            return self.name
+    def __str__(self):
+        return self.name
 
 class EmployeeDepartment(models.Model):
     name = models.CharField(max_length=100, unique=True)

@@ -131,6 +131,10 @@ class ITSupportProfileCreateSerializer(serializers.ModelSerializer):
     def get_created_at_formatted(self, obj):
         return timezone.localtime(obj.created_at).strftime("%B %d, %Y %I:%M %p")
 
+class ITSupportProfileUpdateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ITSupportProfile
+        fields = ['it_department']
 
 class ITSupportSpecializationCreateSerializer(serializers.ModelSerializer):
     created_at_formatted = serializers.SerializerMethodField()

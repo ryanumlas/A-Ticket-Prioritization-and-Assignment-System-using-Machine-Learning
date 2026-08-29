@@ -2,7 +2,8 @@ from django.urls import path
 from .views import (TicketListEmployeeView, CreateTicketView, ListTicketView, DetailTicketView, UpdateSymptomCodeView, 
 UpdateTicketView, DeleteTicketView, CreateCategoryView, KeywordUpdateView ,KeywordCreateView, 
 UpdateCategoryView, CreateSymptomCodeView, SLARulesCreateView, SLARulesUpdateView, TicketDetailEmployeeView, TicketListServiceDeskView, UpdateTicketStatusView, ManualOverrideTicketView,
-ServiceDeskOverviewView, ServiceDeskClassifiedResultsView, FlaggedTicketsListView, FlaggedTicketDetailView, SymptomCodeListView, AcceptRecommendationView, ApproveOverrideView, ManuallyClassifyView)
+ServiceDeskOverviewView, ServiceDeskClassifiedResultsView, FlaggedTicketsListView, FlaggedTicketDetailView, SymptomCodeListView, 
+AcceptRecommendationView, ApproveOverrideView, ManuallyClassifyView, SupportOverviewView)
 
 urlpatterns = [
     # --- Ticket URLs ---
@@ -13,8 +14,10 @@ urlpatterns = [
     path('update-status/<int:pk>/', UpdateTicketStatusView.as_view(), name='update-ticket-status'),
     path('manual-override/<int:pk>/', ManualOverrideTicketView.as_view(), name='manual-override-ticket'),
     path('delete/<int:pk>/', DeleteTicketView.as_view(), name='delete-ticket'),
+
     path('employee/list/', TicketListEmployeeView.as_view(), name="ticket-list"),
     path('employee/detail/<int:ticket_id>/', TicketDetailEmployeeView.as_view(), name="ticket-detail"),
+
     path('service-desk/list/', TicketListServiceDeskView.as_view(), name="ticket-list-service-desk"),
     path('service-desk/overview/', ServiceDeskOverviewView.as_view(), name="service-desk-overview"),
     path('service-desk/classified-results/', ServiceDeskClassifiedResultsView.as_view(), name="service-desk-classified-results"),
@@ -23,6 +26,8 @@ urlpatterns = [
     path("flagged/<int:pk>/accept-recommendation/", AcceptRecommendationView.as_view(), name="accept-recommendation"),
     path('flagged/<int:pk>/approve-override/', ApproveOverrideView.as_view(), name='approve-override'),
     path('flagged/<int:pk>/manual-classify/', ManuallyClassifyView.as_view(), name='manual-classify'),
+
+    path('support-specialist/overview/', SupportOverviewView.as_view(), name='support-overview'),
     # --- Category URLs ---
     path('categories/create/', CreateCategoryView.as_view(), name='create-category'),
     path('categories/update/<int:pk>/', UpdateCategoryView.as_view(), name='update-category'),

@@ -88,7 +88,7 @@ class ITSupportProfile(models.Model):
         db_table = 'it_support_profiles'
     
     def __str__(self):
-        return f"{self.user.username} - {self.department.name if self.department else 'No Department'}"
+        return f"{self.user.username} - {self.it_department.name if self.it_department else 'No Department'}"
 
 class Specializations(models.Model):
     name = models.CharField(max_length=100, unique=True)

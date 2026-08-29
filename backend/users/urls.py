@@ -1,6 +1,6 @@
 from django.urls import path
 from .views import (CreateITSupportProfileView, RegisterView, UserListView, CreateITSupportProfileView, UserUpdateView, UserRoleCreateView, UserRoleDeleteView, 
-UserRoleListView, EmployeeOverviewAPIView, UserProfileUpdateView, SpecializationCreateView, ITSupportProfileCreateView, ITSupportSpecializationCreateView)
+UserRoleListView, EmployeeOverviewAPIView, UserProfileUpdateView, SpecializationCreateView, ITSupportProfileCreateView, ITSupportSpecializationCreateView, ITSupportProfileUpdateView)
 
 urlpatterns = [
     path('list/', UserListView.as_view(), name='user-list'),
@@ -14,4 +14,5 @@ urlpatterns = [
     path('specializations/create/', SpecializationCreateView.as_view(), name='specialization-create'),
     path('it-support-profile/create/', ITSupportProfileCreateView.as_view(), name='it-support-profile-create'),
     path('it-support-specializations/create/', ITSupportSpecializationCreateView.as_view(), name='it-support-specialization-create'),
+    path('it-support-profile/update/<int:pk>/', ITSupportProfileUpdateView.as_view(), name='it-support-profile-update'),
 ]

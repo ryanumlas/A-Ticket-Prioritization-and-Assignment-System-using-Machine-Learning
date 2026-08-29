@@ -1,5 +1,6 @@
 from django.utils import timezone
 from django.shortcuts import render
+from django.db.models import Q
 from django.db import transaction
 from rest_framework.response import Response
 from rest_framework import viewsets, generics, status
@@ -917,6 +918,84 @@ class ServiceDeskClassifiedResultsView(APIView):
             "total_tickets": total_tickets,
         })
 
+
+# --- Support View --- 
+class SupportOverviewView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        user = request.user
+
+        try:
+            support_profile = user.it_support_profile
+        except user._meta.model.it_support_profile.RelatedObjectDoesNotExist:
+            return Response(
+                {"detail": "IT Support profile not found."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        it_department = support_profile.it_department
+
+        if not it_department:
+            return Response(
+                {"detail": "IT Support user has no assigned IT Department."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        assigned_tickets = Ticket.objects.filter(assigned_to=user).exclude(
+            status__in=[
+                Ticket.TicketStatus.RESOLVED,
+                Ticket.TicketStatus.CLOSED
+            ]
+        ).count()
+
+        open_tickets = Ticket.objects.filter(
+            it_department=it_department,
+            status=Ticket.TicketStatus.OPEN,
+        ).count()
+
+        in_progress = Ticket.objects.filter(
+            it_department=it_department,
+            status=Ticket.TicketStatus.IN_PROGRESS,
+        ).count()
+
+        sla_at_risk = (
+            Ticket.objects
+            .filter(
+                it_department=it_department,
+            )
+            .exclude(
+                status__in=[
+                    Ticket.TicketStatus.RESOLVED,
+                    Ticket.TicketStatus.CLOSED,
+                ]
+            )
+            .filter(
+                Q(
+                    response_sla_status__in=[
+                        Ticket.SLAStatus.WARNING,
+                        Ticket.SLAStatus.CRITICAL,
+                        Ticket.SLAStatus.BREACHED,
+                    ]
+                )
+                |
+                Q(
+                    resolution_sla_status__in=[
+                        Ticket.SLAStatus.WARNING,
+                        Ticket.SLAStatus.CRITICAL,
+                        Ticket.SLAStatus.BREACHED,
+                    ]
+                )
+            )
+            .distinct()
+            .count()
+        )
+
+        return Response({
+            "assigned_tickets": assigned_tickets,
+            "open_tickets": open_tickets,
+            "in_progress": in_progress,
+            "sla_at_risk": sla_at_risk,
+        })
 # --- End ---
 
 # --- Category Views ---

@@ -1,6 +1,7 @@
 import SupportOverview from "../components/SupportOverview";
 import TicketTableSupport from "../components/TicketTableSupport";
 import SLAOverviewSupport from "../components/SLAOverviewSupport";
+import TicketNeedingAttention from "../components/TicketNeedingAttention";
 
 import { Link } from "react-router-dom";
 import { ArrowRight } from "lucide-react";
@@ -9,9 +10,12 @@ export default function SupportDashboard() {
     return (
         <div className="space-y-4">
 
+            {/* OVERVIEW CARDS */}
             <SupportOverview />
 
             <div className="grid grid-cols-12 gap-4">
+
+                {/* MY ACTIVE TICKETS */}
                 <div className="col-span-7">
                     <div className="overflow-hidden rounded-xl border border-gray-300 bg-white">
 
@@ -34,16 +38,25 @@ export default function SupportDashboard() {
                                 View All
                                 <ArrowRight size={16} />
                             </Link>
+
                         </div>
+
                         <TicketTableSupport
                             dashboard={true}
                             maxRows={5}
                         />
+
                     </div>
                 </div>
 
+                {/* SLA OVERVIEW */}
                 <div className="col-span-5">
                     <SLAOverviewSupport />
+                </div>
+
+                {/* TICKETS NEEDING ATTENTION */}
+                <div className="col-span-12">
+                    <TicketNeedingAttention />
                 </div>
 
             </div>

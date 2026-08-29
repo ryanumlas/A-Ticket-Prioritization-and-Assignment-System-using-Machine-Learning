@@ -8,7 +8,7 @@ from rest_framework.permissions import AllowAny, IsAuthenticated
 
 from .models import Specializations, User, ITSupportProfile, UserRoles, UserProfile, ITSupportSpecialization
 from tickets.models import Ticket
-from .serializers import UserSerializer, ITSupportSpecializationCreateSerializer, ITSupportProfileSerializer,ITSupportProfileCreateSerializer, UserListSerializer, UserRolesSerializer, CustomTokenObtainPairSerializer, UserProfileUpdateSerializer, SpecializationSerializer
+from .serializers import UserSerializer, ITSupportSpecializationCreateSerializer, ITSupportProfileSerializer,ITSupportProfileCreateSerializer, UserListSerializer, UserRolesSerializer, CustomTokenObtainPairSerializer, UserProfileUpdateSerializer, SpecializationSerializer, ITSupportProfileUpdateSerializer
 
 class RegisterView(generics.CreateAPIView):
     queryset = User.objects.all()
@@ -38,6 +38,10 @@ class UserListView(generics.ListAPIView):
     serializer_class = UserListSerializer   
     permission_classes = [AllowAny]
 
+class ITSupportProfileUpdateView(generics.UpdateAPIView):
+    queryset = ITSupportProfile.objects.all()
+    serializer_class = ITSupportProfileUpdateSerializer
+    permission_classes = [IsAuthenticated]
 class UserUpdateView(generics.UpdateAPIView):
     queryset = User.objects.all()
     serializer_class = UserSerializer
