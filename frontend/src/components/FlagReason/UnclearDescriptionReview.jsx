@@ -85,10 +85,10 @@ export default function UnclearDescriptionReview({ flag }) {
         <div className="space-y-5">
 
             {/* TOP SECTION */}
-            <div className="grid grid-cols-1 gap-5 xl:grid-cols-[1.35fr_1fr]">
+            <div className="grid grid-cols-1 items-start gap-5 xl:grid-cols-[1.35fr_1fr]">
 
                 {/* TICKET INFORMATION */}
-                <div className="overflow-hidden rounded-md border border-gray-300 bg-white">
+                <div className="max-h-[720px] overflow-y-auto rounded-md border border-gray-300 bg-white ticket-detail-scroll">
 
                     <div className="flex items-center gap-3 border-b border-gray-300 px-6 py-4">
                         <div className="flex h-9 w-9 items-center justify-center rounded-md bg-gray-100">
@@ -151,7 +151,7 @@ export default function UnclearDescriptionReview({ flag }) {
                             Description
                         </p>
 
-                        <p className="mt-2 text-sm leading-6 text-black">
+                        <p className="mt-2 min-w-0 [overflow-wrap:anywhere] text-sm leading-6 text-black">
                             {flag.description || "-"}
                         </p>
                     </div>
@@ -162,7 +162,7 @@ export default function UnclearDescriptionReview({ flag }) {
                             Business Impact
                         </p>
 
-                        <p className="mt-2 text-sm leading-6 text-black">
+                        <p className="mt-2 min-w-0 [overflow-wrap:anywhere] text-sm leading-6 text-black">
                             {flag.business_impact || "-"}
                         </p>
                     </div>

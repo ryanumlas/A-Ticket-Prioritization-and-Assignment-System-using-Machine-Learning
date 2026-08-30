@@ -1,5 +1,6 @@
 from django.utils import timezone
 from django.shortcuts import render
+from .pagination import TicketPagination
 from django.db.models import Q
 from django.db import transaction
 from rest_framework.response import Response
@@ -751,15 +752,64 @@ class DeleteTicketView(generics.DestroyAPIView):
     serializer_class = TicketSerializer
     permission_classes = [IsAuthenticated]
 
+# --- Employee View ---
 class TicketListEmployeeView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
         user = request.user
 
-        tickets = Ticket.objects.filter(submitted_by=user)
-        serializer = TicketSerializer(tickets, many=True)
-        return Response(serializer.data)
+        tickets = (
+            Ticket.objects
+            .filter(submitted_by=user)
+            .select_related(
+                "symptom_code",
+                "priority",
+                "assigned_to",
+            )
+            .order_by("-created_at")
+        )
+
+        # SEARCH
+        search = request.query_params.get("search", "").strip()
+
+        if search:
+            tickets = tickets.filter(
+                Q(ticket_code__icontains=search) |
+                Q(subject__icontains=search)
+            )
+
+        # STATUS FILTER
+        status_filter = request.query_params.get("status")
+
+        if status_filter:
+            tickets = tickets.filter(status=status_filter)
+
+        # PRIORITY FILTER
+        priority = request.query_params.get("priority")
+
+        if priority:
+            tickets = tickets.filter(
+                priority__priority_level=priority
+            )
+
+        # PAGINATION
+        paginator = TicketPagination()
+
+        page = paginator.paginate_queryset(
+            tickets,
+            request,
+            view=self,
+        )
+
+        serializer = TicketSerializer(
+            page,
+            many=True,
+        )
+
+        return paginator.get_paginated_response(
+            serializer.data
+        )
 
 class TicketListServiceDeskView(APIView):
     permission_classes = [IsAuthenticated]
@@ -767,9 +817,69 @@ class TicketListServiceDeskView(APIView):
     def get(self, request):
         user = request.user
 
-        tickets = Ticket.objects.filter(assigned_to=user)
-        serializer = TicketSerializer(tickets, many=True)
-        return Response(serializer.data)
+        tickets = (
+            Ticket.objects
+            .filter(assigned_to=user)
+            .select_related(
+                "symptom_code",
+                "priority",
+                "assigned_to",
+            )
+            .order_by("-created_at")
+        )
+
+        # SEARCH
+        search = request.query_params.get("search", "").strip()
+
+        if search:
+            tickets = tickets.filter(
+                Q(ticket_code__icontains=search) |
+                Q(subject__icontains=search)
+            )
+
+        # STATUS FILTER
+        status_filter = request.query_params.get("status")
+
+        if status_filter:
+            tickets = tickets.filter(
+                status=status_filter
+            )
+
+        # PRIORITY FILTER
+        priority = request.query_params.get("priority")
+
+        if priority:
+            tickets = tickets.filter(
+                priority__priority_level=priority
+            )
+
+        # SYMPTOM CODE FILTER
+        symptom_code = request.query_params.get(
+            "symptom_code"
+        )
+
+        if symptom_code:
+            tickets = tickets.filter(
+                symptom_code__code=symptom_code
+            )
+
+        # PAGINATION
+        paginator = TicketPagination()
+
+        page = paginator.paginate_queryset(
+            tickets,
+            request,
+            view=self,
+        )
+
+        serializer = TicketSerializer(
+            page,
+            many=True,
+        )
+
+        return paginator.get_paginated_response(
+            serializer.data
+        )
 
 class TicketDetailEmployeeView(APIView):
     permission_classes = [IsAuthenticated]
@@ -785,6 +895,7 @@ class TicketDetailEmployeeView(APIView):
         serializer = TicketDetailEmployeeSerializer(ticket)
         return Response(serializer.data)        
 
+# --- End --- 
 class TicketDetailServiceDeskView(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -996,6 +1107,176 @@ class SupportOverviewView(APIView):
             "in_progress": in_progress,
             "sla_at_risk": sla_at_risk,
         })
+
+class TicketListSupportView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        tickets = (
+            Ticket.objects
+            .filter(assigned_to=request.user)
+            .select_related(
+                "symptom_code",
+                "priority",
+                "assigned_to",
+            )
+            .order_by("-created_at")
+        )
+
+        # SEARCH
+        search = request.query_params.get("search", "").strip()
+
+        if search:
+            tickets = tickets.filter(
+                Q(ticket_code__icontains=search) |
+                Q(subject__icontains=search)
+            )
+
+        # STATUS FILTER
+        status_filter = request.query_params.get("status")
+
+        if status_filter:
+            tickets = tickets.filter(
+                status=status_filter
+            )
+
+        # PRIORITY FILTER
+        priority = request.query_params.get("priority")
+
+        if priority:
+            tickets = tickets.filter(
+                priority__priority_level=priority
+            )
+
+        # SYMPTOM CODE FILTER
+        symptom_code = request.query_params.get(
+            "symptom_code"
+        )
+
+        if symptom_code:
+            tickets = tickets.filter(
+                symptom_code__code=symptom_code
+            )
+
+        # PAGINATION
+        paginator = TicketPagination()
+
+        page = paginator.paginate_queryset(
+            tickets,
+            request,
+            view=self,
+        )
+
+        serializer = TicketSerializer(
+            page,
+            many=True,
+        )
+
+        return paginator.get_paginated_response(
+            serializer.data
+        )
+
+class SupportTicketQueueView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        support_profile = getattr(
+            request.user,
+            "it_support_profile",
+            None
+        )
+
+        if not support_profile:
+            return Response(
+                {
+                    "detail":
+                    "IT Support profile not found."
+                },
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        if not support_profile.it_department:
+            return Response(
+                {
+                    "detail":
+                    "IT Support user has no assigned IT department."
+                },
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        tickets = (
+            Ticket.objects
+            .filter(
+                it_department=
+                support_profile.it_department
+            )
+            .select_related(
+                "symptom_code",
+                "priority",
+                "assigned_to",
+            )
+            .order_by("-created_at")
+        )
+
+        # SEARCH
+        search = request.query_params.get(
+            "search",
+            ""
+        ).strip()
+
+        if search:
+            tickets = tickets.filter(
+                Q(ticket_code__icontains=search) |
+                Q(subject__icontains=search)
+            )
+
+        # STATUS
+        status_filter = request.query_params.get(
+            "status"
+        )
+
+        if status_filter:
+            tickets = tickets.filter(
+                status=status_filter
+            )
+
+        # PRIORITY
+        priority = request.query_params.get(
+            "priority"
+        )
+
+        if priority:
+            tickets = tickets.filter(
+                priority__priority_level=priority
+            )
+
+        # SYMPTOM CODE
+        symptom_code = request.query_params.get(
+            "symptom_code"
+        )
+
+        if symptom_code:
+            tickets = tickets.filter(
+                symptom_code__code=symptom_code
+            )
+
+        # PAGINATION
+        paginator = TicketPagination()
+
+        page = paginator.paginate_queryset(
+            tickets,
+            request,
+            view=self
+        )
+
+        serializer = TicketSerializer(
+            page,
+            many=True
+        )
+
+        return paginator.get_paginated_response(
+            serializer.data
+        )
 # --- End ---
 
 # --- Category Views ---

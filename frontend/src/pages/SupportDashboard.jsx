@@ -2,11 +2,33 @@ import SupportOverview from "../components/SupportOverview";
 import TicketTableSupport from "../components/TicketTableSupport";
 import SLAOverviewSupport from "../components/SLAOverviewSupport";
 import TicketNeedingAttention from "../components/TicketNeedingAttention";
-
+import api from "../api";
+import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { ArrowRight } from "lucide-react";
 
 export default function SupportDashboard() {
+    const [ticketList, setTicketList] = useState([]);
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        const fetchTicketList = async () => {
+            try {
+                setLoading(true);
+                const response = await api.get("/tickets/support-specialist/list/");
+                setTicketList(response.data.results);
+            } catch (error) {
+                console.error(error);
+            } finally {
+                setLoading(false);
+            }
+        };
+        fetchTicketList()
+    }, []);
+
+    if (!ticketList) {
+        return <div>Loading...</div>;
+    }
     return (
         <div className="space-y-4">
 
@@ -42,6 +64,7 @@ export default function SupportDashboard() {
                         </div>
 
                         <TicketTableSupport
+                            ticketList={ticketList}
                             dashboard={true}
                             maxRows={5}
                         />

@@ -1,9 +1,12 @@
 import api from "../api";
 import { formatDate } from "../utils/formatDate";
 import { getCurrentUser } from "../utils/auth";
+import { statusColor } from "../utils/statusColor";
 
 export default function TicketTableServiceDesk({ ticketList, loading = false, maxRows = 15, dashboard = false }) {
-    const limitedTickets = ticketList.slice(0, maxRows);
+    const displayedTickets = dashboard
+        ? ticketList.slice(0, maxRows)
+        : ticketList;
 
     if (loading) {
         return (
@@ -12,6 +15,27 @@ export default function TicketTableServiceDesk({ ticketList, loading = false, ma
             </div>
         );
     }
+    const priorityStyle = (priority) => {
+        switch (priority) {
+            case "P1":
+                return "bg-red-50 text-red-600 border-red-200";
+
+            case "P2":
+                return "bg-orange-50 text-orange-600 border-orange-200";
+
+            case "P3":
+                return "bg-amber-50 text-amber-600 border-amber-200";
+
+            case "P4":
+                return "bg-blue-50 text-blue-600 border-blue-200";
+
+            case "P5":
+                return "bg-gray-100 text-gray-600 border-gray-300";
+
+            default:
+                return "bg-gray-100 text-gray-600 border-gray-300";
+        }
+    };
     return(
         <div
             className={`bg-white ${
@@ -32,8 +56,8 @@ export default function TicketTableServiceDesk({ ticketList, loading = false, ma
                 </thead>
 
                 <tbody>
-                    {limitedTickets.length > 0 ? (
-                        limitedTickets.map((ticket) => (
+                    {displayedTickets.length > 0 ? (
+                        displayedTickets.map((ticket) => (
                             <tr
                                 key={ticket.id}
                                 className="border-t border-gray-300 hover:bg-gray-100 transition cursor-pointer"
@@ -47,11 +71,24 @@ export default function TicketTableServiceDesk({ ticketList, loading = false, ma
                                 </td>
 
                                 <td className="px-6 py-4">
-                                    {ticket.priority || "-"}
+                                    <span
+                                        className={`inline-flex min-w-[38px] items-center justify-center rounded-md border px-2.5 py-1 text-xs font-semibold ${
+                                            priorityStyle(ticket.priority)
+                                        }`}
+                                    >
+                                        {ticket.priority || "-"}
+                                    </span>
                                 </td>
 
                                 <td className="px-4 py-4">
-                                    {ticket.status || "-"}
+                                    <span
+                                        className={`inline-flex whitespace-nowrap rounded-md px-2.5 py-1 text-xs font-medium ${
+                                            statusColor[ticket.status] ||
+                                            "border border-gray-300 bg-gray-100 text-gray-700"
+                                        }`}
+                                    >
+                                        {ticket.status || "-"}
+                                    </span>
                                 </td>
 
                                 <td className="px-6 py-4 font-semibold">

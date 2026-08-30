@@ -13,6 +13,7 @@ import ProtectedRoute from './components/ProtectedRoute'
 import FlaggedTickets from './pages/FlaggedTickets'
 import ActiveTicketSLA from './components/ActiveTicketSLA'
 import { Toaster } from "sonner";
+import TicketQueue from './pages/TicketQueue'
 import TicketDetails from './pages/TicketDetails'
 
 function Logout() {
@@ -67,6 +68,16 @@ function App() {
                 }
             />
 
+                
+            {/* FOR IT SUPPORT AND SERVICE */}
+            <Route path="/ticket-queue" 
+                element={
+                    <ProtectedRoute>
+                        <TicketQueue/>
+                    </ProtectedRoute>
+            }
+            />
+
             {/* IT SERVICE DESK ONLY */}
             <Route
                 path="/flagged-ticket/:id"
@@ -79,7 +90,6 @@ function App() {
                 }
             />
 
-            {/* IT SERVICE DESK ONLY */}
             <Route
                 path="/flagged-tickets"
                 element={

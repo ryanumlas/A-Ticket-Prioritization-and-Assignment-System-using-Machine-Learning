@@ -25,7 +25,7 @@ export default function EmployeeDashboard() {
                     api.get("/tickets/employee/list/")
                 ]);
                 setOverview(overviewRes.data);
-                setTicketList(ticketsRes.data);
+                setTicketList(ticketsRes.data.results);
             } catch (error) {
                 console.error(error);
                 setError("Unable to load dashboard data right now.");

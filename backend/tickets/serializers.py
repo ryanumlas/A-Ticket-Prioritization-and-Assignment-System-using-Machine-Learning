@@ -12,7 +12,10 @@ class TicketSerializer(serializers.ModelSerializer):
     assigned_to = serializers.SerializerMethodField()   
     resolution_time_remaining = serializers.SerializerMethodField()
     response_time_remaining = serializers.SerializerMethodField()
-    
+    symptom_code = serializers.CharField(
+        source='symptom_code.code',
+        read_only=True
+    )
     priority = serializers.CharField(
         source='priority.priority_level',
         read_only=True

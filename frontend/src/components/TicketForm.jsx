@@ -164,12 +164,12 @@ export default function TicketForm() {
                 <div>
                     <label className="block mb-2 font-medium">Description</label>
                     <textarea
-                        rows={6} value={formData.description} maxLength={1000} onChange={handleChange} name="description"
+                        rows={6} value={formData.description} maxLength={750} onChange={handleChange} name="description"
                         placeholder="Describe your issue..."
                         className="w-full border border-gray-300 rounded-md p-3 resize-none"
                     />
                     <p className="text-xs text-gray-500">
-                        {formData.description.length}/1000
+                        {formData.description.length}/750
                     </p>
                 </div>
 

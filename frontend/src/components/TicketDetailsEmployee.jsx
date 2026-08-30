@@ -1,4 +1,16 @@
-import { CircleDot, Info, Flag, CircleAlert, Users, CalendarDays, User, History, Ticket, TriangleAlert, Clock, Wrench, SquareUserRound} from "lucide-react"
+import {
+    CircleDot,
+    CircleAlert,
+    Users,
+    CalendarDays,
+    User,
+    History,
+    Ticket,
+    Clock,
+    Wrench,
+    SquareUserRound,
+} from "lucide-react";
+
 import { statusColor } from "../utils/statusColor";
 import { priorityColor, priorityLabel } from "../utils/priority";
 import { formatDate } from "../utils/formatDate";
@@ -6,152 +18,268 @@ import { formatDate } from "../utils/formatDate";
 export default function TicketDetailsEmployee({ ticketDetails }) {
     const priority = ticketDetails.priority;
 
-    return(
-        <div className="w-full h-full border border-gray-300 rounded-xl flex flex-col">
-            <div className="h-12 border-b border-gray-300 w-full px-4 flex items-center gap-2">
-                <Ticket size={18} className="text-gray-500"/>
-                <p className="text-sm font-medium text-gray-500">#{ticketDetails.ticket_code}</p>
+    return (
+        <div className="flex h-[830px] w-full flex-col overflow-hidden rounded-xl border border-gray-300 bg-white">
+            <div className="flex h-12 shrink-0 items-center gap-2 border-b border-gray-300 px-5">
+                <Ticket
+                    size={18}
+                    className="text-gray-500"
+                />
+
+                <p className="text-sm font-medium text-gray-500">
+                    #{ticketDetails.ticket_code}
+                </p>
             </div>
 
-            <div className="border-r border-gray-300 w-[30%] h-full">
-                <div className="p-4">
-                    <h1 className="font-semibold text-xl mb-2">{ticketDetails.subject}</h1>
-                    <p className="text-sm mb-2 text-gray-600">{ticketDetails.description}</p>
+            <div className="flex min-h-0 flex-1">
+                {/* LEFT PANEL */}
+                <div className="w-full max-w-[560px] shrink-0 overflow-y-auto border-r border-gray-300 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent hover:scrollbar-thumb-gray-400">
 
-                    <p className="text-sm text-gray-600">{ticketDetails.business_impact}</p>
-                </div>
-                <div className="flex flex-col gap-2 w-full px-4">
-                    <div className="flex items-center">
-                        <div className="flex items-center gap-2 w-44">
-                            <CircleDot size={18} className="text-gray-600" />
-                            <p className="text-gray-600 text-sm">Status</p>
-                        </div>
+                    <div className="border-b border-gray-200 p-5">
+                        <h1 className="break-words text-xl font-semibold leading-7 text-black">
+                            {ticketDetails.subject}
+                        </h1>
 
-                        <p className={`px-2 py-1 rounded-md font-semibold text-sm ${statusColor[ticketDetails.status]}`}>
-                            {ticketDetails.status}
+                        <p className="mt-2 break-words whitespace-pre-wrap text-sm leading-6 text-gray-600">
+                            {ticketDetails.description}
                         </p>
+
+                        {ticketDetails.business_impact && (
+                            <div className="mt-4">
+                                <p className="mb-1 text-xs font-medium uppercase tracking-wide text-gray-500">
+                                    Business Impact
+                                </p>
+
+                                <p className="break-words whitespace-pre-wrap text-sm leading-6 text-gray-600">
+                                    {ticketDetails.business_impact}
+                                </p>
+                            </div>
+                        )}
+
                     </div>
 
-                    <div className="flex items-center">
-                        <div className="flex items-center gap-2 w-44">
-                            <CircleAlert size={18} className="text-gray-600" />
-                            <p className="text-gray-600 text-sm">Priority</p>
+                    {/* TICKET INFORMATION */}
+                    <div className="border-b border-gray-200 p-5">
+                        <div className="space-y-3">
+
+                            {/* STATUS */}
+                            <DetailRow
+                                icon={CircleDot}
+                                label="Status"
+                            >
+                                <span
+                                    className={`inline-flex whitespace-nowrap rounded-md px-2.5 py-1 text-xs font-medium ${
+                                        statusColor[ticketDetails.status] ||
+                                        "border border-gray-300 bg-gray-100 text-gray-700"
+                                    }`}
+                                >
+                                    {ticketDetails.status || "-"}
+                                </span>
+                            </DetailRow>
+
+                            {/* PRIORITY */}
+                            <DetailRow
+                                icon={CircleAlert}
+                                label="Priority"
+                            >
+                                <span
+                                    className={`inline-flex whitespace-nowrap rounded-md border px-2.5 py-1 text-xs font-semibold ${
+                                        priorityColor[priority] ||
+                                        "border-gray-300 bg-gray-100 text-gray-600"
+                                    }`}
+                                >
+                                    {priorityLabel[priority] || priority || "-"}
+                                </span>
+                            </DetailRow>
+
+                            {/* AFFECTED SCOPE */}
+                            <DetailRow
+                                icon={Users}
+                                label="Affected Scope"
+                            >
+                                <span className="text-sm font-medium capitalize text-black">
+                                    {ticketDetails.affected_scope || "-"}
+                                </span>
+                            </DetailRow>
+
+                            {/* UPDATED */}
+                            <DetailRow
+                                icon={History}
+                                label="Last Updated"
+                            >
+                                <span className="text-sm font-medium text-black">
+                                    {formatDate(ticketDetails.updated_at)}
+                                </span>
+                            </DetailRow>
+
+                            {/* CREATED */}
+                            <DetailRow
+                                icon={CalendarDays}
+                                label="Created at"
+                            >
+                                <span className="text-sm font-medium text-black">
+                                    {formatDate(ticketDetails.created_at)}
+                                </span>
+                            </DetailRow>
+
+                            {/* ASSIGNED TO */}
+                            <DetailRow
+                                icon={User}
+                                label="Assigned to"
+                            >
+                                <span className="inline-flex max-w-full items-center break-words rounded-md border border-gray-300 bg-gray-100 px-2.5 py-1 text-sm font-medium text-black">
+                                    {ticketDetails.assigned_to || "Unassigned"}
+                                </span>
+                            </DetailRow>
+
+                            {/* RESPONSE */}
+                            <DetailRow
+                                icon={Clock}
+                                label="Expected Response"
+                            >
+                                <span className="text-sm font-medium text-black">
+                                    {formatDate(
+                                        ticketDetails.response_deadline
+                                    )}
+                                </span>
+                            </DetailRow>
+
+                            {/* RESOLUTION */}
+                            <DetailRow
+                                icon={Wrench}
+                                label="Expected Resolution"
+                            >
+                                <span className="text-sm font-medium text-black">
+                                    {formatDate(
+                                        ticketDetails.resolution_deadline
+                                    )}
+                                </span>
+                            </DetailRow>
+
                         </div>
-
-                        <p className={`px-2 py-1 rounded-md text-sm font-semibold ${priorityColor[priority]}`}>{priorityLabel[priority]}</p>
                     </div>
 
-                    <div className="flex items-center">
-                        <div className="flex items-center gap-2 w-44">
-                            <Users size={18} className="text-gray-600" />
-                            <p className="text-gray-600 text-sm">Affected Scope</p>
-                        </div>
+                    {/* REQUESTER INFORMATION */}
+                    <div className="p-5">
+                        <div className="mb-4 flex items-center gap-2">
+                            <SquareUserRound
+                                size={20}
+                                className="text-gray-500"
+                            />
 
-                        <p className="px-2 py-1 rounded-md text-sm font-medium">{ticketDetails.affected_scope}</p>
-                    </div>
-
-                    <div className="flex items-center">
-                        <div className="flex items-center gap-2 w-44">
-                            <History size={18} className="text-gray-600" />
-                            <p className="text-gray-600 text-sm">Last Updated</p>
-                        </div>
-
-                        <p className="px-2 py-1 rounded-md text-sm font-medium">{formatDate(ticketDetails.updated_at)}</p>
-                    </div>
-
-                    <div className="flex items-center">
-                        <div className="flex items-center gap-2 w-44">
-                            <CalendarDays size={18} className="text-gray-600" />
-                            <p className="text-gray-600 text-sm">Created at</p>
-                        </div>
-
-                        <p className="px-2 py-1 rounded-md text-sm font-medium">{formatDate(ticketDetails.created_at)}</p>
-                    </div>
-                    <div className="flex items-center">
-                        <div className="flex items-center gap-2 w-44 shrink-0">
-                            <User size={18} className="text-gray-500" />
-                            <p className="text-sm text-gray-500">Assigned to</p>
-                        </div>
-
-                        <span className="inline-flex items-center px-2.5 py-1 rounded-md bg-gray-100 border border-gray-300 text-sm font-medium">
-                            {ticketDetails.assigned_to || "Unassigned"}
-                        </span>
-                    </div>
-                    <div className="flex items-center">
-                        <div className="flex items-center gap-2 w-44">
-                            <Clock size={18} className="text-gray-600" />
-                            <p className="text-gray-600 text-sm">Expected Response</p>
-                        </div>
-                        <p className="px-2 py-1 rounded-md text-sm font-medium">{formatDate(ticketDetails.response_deadline)}</p>
-                    </div>
-                    <div className="flex items-center">
-                        <div className="flex items-center gap-2 w-44">
-                            <Wrench size={18} className="text-gray-600" />
-                            <p className="text-gray-600 text-sm">Expected Resolution</p>
-                        </div>
-                        <p className="px-2 py-1 rounded-md text-sm font-medium">{formatDate(ticketDetails.resolution_deadline)}</p>
-                    </div>
-                </div>
-                <div className="border-t border-gray-300 my-4"></div>
-                    <div className="flex flex-col gap-3 w-full px-4">
-                        <div className="flex items-center gap-2">
-                            <SquareUserRound size={24} className="text-gray-600" />
-                            <p className="text-gray-600 font-medium">
+                            <p className="font-semibold text-black">
                                 Requester Information
                             </p>
                         </div>
 
-                        <div className="flex items-center">
-                            <p className="text-gray-600 text-sm w-32">
-                                Name
-                            </p>
+                        <div className="grid grid-cols-2 gap-x-8 gap-y-4">
 
-                            <p className="text-sm font-medium">
-                                {ticketDetails.first_name} {ticketDetails.last_name}
-                            </p>
-                        </div>
+                            <div>
+                                <p className="mb-1 text-xs text-gray-500">
+                                    Name
+                                </p>
+                                <p className="break-words text-sm font-medium text-black">
+                                    {`${ticketDetails.first_name || ""} ${
+                                        ticketDetails.last_name || ""
+                                    }`.trim() || "-"}
+                                </p>
+                            </div>
 
-                        <div className="flex items-center">
-                            <p className="text-gray-600 text-sm w-32">
-                                Employee ID
-                            </p>
+                            <div>
+                                <p className="mb-1 text-xs text-gray-500">
+                                    Employee ID
+                                </p>
+                                <p className="break-words text-sm font-medium text-black">
+                                    {ticketDetails.user_code || "-"}
+                                </p>
+                            </div>
 
-                            <p className="text-sm font-medium">
-                                {ticketDetails.user_code || "-"}
-                            </p>
-                        </div>
+                            <div>
+                                <p className="mb-1 text-xs text-gray-500">
+                                    Department
+                                </p>
+                                <p className="break-words text-sm font-medium text-black">
+                                    {ticketDetails.employee_department || "-"}
+                                </p>
+                            </div>
 
-                        <div className="flex items-center">
-                            <p className="text-gray-600 text-sm w-32">
-                                Department
-                            </p>
+                            <div>
+                                <p className="mb-1 text-xs text-gray-500">
+                                    Office Location
+                                </p>
+                                <p className="break-words text-sm font-medium text-black">
+                                    {ticketDetails.office_location || "-"}
+                                </p>
+                            </div>
 
-                            <p className="text-sm font-medium">
-                                {ticketDetails.employee_department || "-"}
-                            </p>
-                        </div>
-
-                        <div className="flex items-center">
-                            <p className="text-gray-600 text-sm w-32">
-                                Office Location
-                            </p>
-
-                            <p className="text-sm font-medium">
-                                {ticketDetails.office_location || "-"}
-                            </p>
-                        </div>
-
-                        <div className="flex items-center">
-                            <p className="text-gray-600 text-sm w-32">
-                                Workstation
-                            </p>
-
-                            <p className="text-sm font-medium">
-                                {ticketDetails.workstation || "-"}
-                            </p>
+                            <div>
+                                <p className="mb-1 text-xs text-gray-500">
+                                    Workstation
+                                </p>
+                                <p className="break-words text-sm font-medium text-black">
+                                    {ticketDetails.workstation || "-"}
+                                </p>
+                            </div>
                         </div>
                     </div>
+                </div>
+                {/* RIGHT CONTENT AREA */}
+                <div className="min-w-0 flex-1 bg-white">
+                    {/* 
+                        We'll use this area later for:
+                        comments / activity / conversation
+                    */}
+                </div>
+
             </div>
+        </div>
+    );
+}
+
+
+function DetailRow({
+    icon: Icon,
+    label,
+    children,
+}) {
+    return (
+        <div className="grid grid-cols-[170px_minmax(0,1fr)] items-start gap-3">
+
+            <div className="flex min-w-0 items-center gap-2 text-gray-500">
+                <Icon
+                    size={17}
+                    className="shrink-0"
+                />
+
+                <span className="text-sm">
+                    {label}
+                </span>
+            </div>
+
+            <div className="min-w-0 break-words">
+                {children}
+            </div>
+
+        </div>
+    );
+}
+
+
+function InfoRow({
+    label,
+    value,
+}) {
+    return (
+        <div className="grid grid-cols-[115px_minmax(0,1fr)] gap-3">
+
+            <p className="text-sm text-gray-500">
+                {label}
+            </p>
+
+            <p className="min-w-0 break-words text-sm font-medium text-black">
+                {value}
+            </p>
+
         </div>
     );
 }

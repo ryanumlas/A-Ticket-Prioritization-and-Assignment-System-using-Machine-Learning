@@ -3,7 +3,7 @@ from .views import (TicketListEmployeeView, CreateTicketView, ListTicketView, De
 UpdateTicketView, DeleteTicketView, CreateCategoryView, KeywordUpdateView ,KeywordCreateView, 
 UpdateCategoryView, CreateSymptomCodeView, SLARulesCreateView, SLARulesUpdateView, TicketDetailEmployeeView, TicketListServiceDeskView, UpdateTicketStatusView, ManualOverrideTicketView,
 ServiceDeskOverviewView, ServiceDeskClassifiedResultsView, FlaggedTicketsListView, FlaggedTicketDetailView, SymptomCodeListView, 
-AcceptRecommendationView, ApproveOverrideView, ManuallyClassifyView, SupportOverviewView)
+AcceptRecommendationView, ApproveOverrideView, ManuallyClassifyView, SupportOverviewView, SupportTicketQueueView, TicketListSupportView)
 
 urlpatterns = [
     # --- Ticket URLs ---
@@ -28,6 +28,8 @@ urlpatterns = [
     path('flagged/<int:pk>/manual-classify/', ManuallyClassifyView.as_view(), name='manual-classify'),
 
     path('support-specialist/overview/', SupportOverviewView.as_view(), name='support-overview'),
+    path('support-specialist/list/', TicketListSupportView.as_view(), name='support-list'),
+    path('support-specialist/ticket-queue/', SupportTicketQueueView.as_view(), name='support-ticket-queue'),
     # --- Category URLs ---
     path('categories/create/', CreateCategoryView.as_view(), name='create-category'),
     path('categories/update/<int:pk>/', UpdateCategoryView.as_view(), name='update-category'),

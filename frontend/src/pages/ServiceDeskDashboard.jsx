@@ -19,7 +19,7 @@ export default function ServiceDeskDashboard() {
             try {
                 setLoading(true);
                 const response = await api.get("/tickets/service-desk/list/");
-                setTicketList(response.data);
+                setTicketList(response.data.results);
                 console.log("Service Desk Tickets:", response.data);
             } catch (error) {
                 console.error("Error fetching ticket list:", error);
