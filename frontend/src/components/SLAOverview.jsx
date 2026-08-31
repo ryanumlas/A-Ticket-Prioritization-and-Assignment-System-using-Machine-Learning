@@ -1,3 +1,5 @@
+import { useEffect, useState } from "react";
+import api from "../api";
 import {
     Gauge,
     MessageSquareReply,
@@ -5,12 +7,41 @@ import {
 } from "lucide-react";
 
 export default function SLAOverview() {
-    const responseSLA = 94;
-    const resolutionSLA = 88;
+    const [slaData, setSlaData] = useState({
+        overall_compliance: 0,
+        response_sla: 0,
+        resolution_sla: 0,
+    });
 
-    const overallSLA = Math.round(
-        (responseSLA + resolutionSLA) / 2
-    );
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        const fetchSLAPerformance = async () => {
+            try {
+                setLoading(true);
+
+                const response = await api.get(
+                    "/tickets/sla-performance/"
+                );
+
+                setSlaData(response.data);
+
+            } catch (error) {
+                console.error(
+                    "Failed to fetch SLA performance:",
+                    error.response?.data || error
+                );
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchSLAPerformance();
+    }, []);
+
+    const overallSLA = slaData.overall_compliance;
+    const responseSLA = slaData.response_sla;
+    const resolutionSLA = slaData.resolution_sla;
 
     return (
         <div className="h-full rounded-xl border border-gray-300 bg-white p-6">
@@ -24,7 +55,7 @@ export default function SLAOverview() {
                     </h2>
 
                     <p className="mt-1 text-sm text-gray-500">
-                        SLA compliance across your assigned tickets
+                        SLA performance across your department's tickets.
                     </p>
                 </div>
 
@@ -47,12 +78,14 @@ export default function SLAOverview() {
                 <div className="mt-3 flex items-end gap-2">
 
                     <h3 className="text-4xl font-semibold text-black">
-                        {overallSLA}%
+                        {loading ? "..." : `${overallSLA}%`}
                     </h3>
 
-                    <span className="mb-1 rounded-md bg-green-50 px-2 py-1 text-xs font-semibold text-green-700">
-                        Within SLA
-                    </span>
+                    {!loading && (
+                        <span className="mb-1 rounded-md bg-green-50 px-2 py-1 text-xs font-semibold text-green-700">
+                            Within SLA
+                        </span>
+                    )}
 
                 </div>
 
@@ -82,7 +115,7 @@ export default function SLAOverview() {
                     </div>
 
                     <p className="mt-4 text-2xl font-semibold text-[#4C4CF9]">
-                        {responseSLA}%
+                        {loading ? "..." : `${responseSLA}%`}
                     </p>
 
                     <p className="mt-1 text-xs leading-5 text-gray-500">
@@ -108,7 +141,7 @@ export default function SLAOverview() {
                     </div>
 
                     <p className="mt-4 text-2xl font-semibold text-[#4C4CF9]">
-                        {resolutionSLA}%
+                        {loading ? "..." : `${resolutionSLA}%`}
                     </p>
 
                     <p className="mt-1 text-xs leading-5 text-gray-500">

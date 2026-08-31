@@ -148,33 +148,13 @@ export default function EmployeeTicket() {
                             }}
                             className="h-10 min-w-[140px] cursor-pointer rounded-md border border-gray-300 bg-white px-3 text-sm text-black outline-none transition-colors focus:border-[#4C4CF9]"
                         >
-                            <option value="All">
-                                All statuses
-                            </option>
-
-                            <option value="Open">
-                                Open
-                            </option>
-
-                            <option value="In Progress">
-                                In Progress
-                            </option>
-
-                            <option value="Under Review">
-                                Under Review
-                            </option>
-
-                            <option value="Returned">
-                                Returned
-                            </option>
-
-                            <option value="Resolved">
-                                Resolved
-                            </option>
-
-                            <option value="Closed">
-                                Closed
-                            </option>
+                                <option value="All">All statuses</option>
+                                <option value="open">Open</option>
+                                <option value="in_progress">In Progress</option>
+                                <option value="under_review">Under Review</option>
+                                <option value="returned">Returned</option>
+                                <option value="resolved">Resolved</option>
+                                <option value="closed">Closed</option>
                         </select>
 
                         {/* PRIORITY */}
@@ -246,7 +226,7 @@ export default function EmployeeTicket() {
                                 onClick={() =>
                                     changePage(currentPage - 1)
                                 }
-                                className="flex h-9 w-9 items-center justify-center rounded-md border border-gray-300 bg-white text-black transition-colors hover:bg-gray-50 disabled:cursor-not-allowed disabled:text-gray-300 disabled:hover:bg-white"
+                                className="flex h-9 w-9 cursor-pointer items-center justify-center rounded-md border border-gray-300 bg-white text-black transition-colors hover:bg-gray-50 disabled:cursor-not-allowed disabled:text-gray-300 disabled:hover:bg-white"
                             >
                                 <ChevronLeft size={16} />
                             </button>
@@ -262,7 +242,7 @@ export default function EmployeeTicket() {
                                     onClick={() =>
                                         changePage(page)
                                     }
-                                    className={`h-9 min-w-9 rounded-md border px-2 text-sm font-medium transition-colors ${
+                                    className={`h-9 min-w-9 cursor-pointer rounded-md border px-2 text-sm font-medium transition-colors ${
                                         currentPage === page
                                             ? "border-[#4C4CF9] bg-[#4C4CF9] text-white"
                                             : "border-gray-300 bg-white text-black hover:bg-gray-50"
@@ -282,7 +262,7 @@ export default function EmployeeTicket() {
                                 onClick={() =>
                                     changePage(currentPage + 1)
                                 }
-                                className="flex h-9 w-9 items-center justify-center rounded-md border border-gray-300 bg-white text-black transition-colors hover:bg-gray-50 disabled:cursor-not-allowed disabled:text-gray-300 disabled:hover:bg-white"
+                                className="flex h-9 w-9 items-center cursor-pointer justify-center rounded-md border border-gray-300 bg-white text-black transition-colors hover:bg-gray-50 disabled:cursor-not-allowed disabled:text-gray-300 disabled:hover:bg-white"
                             >
                                 <ChevronRight size={16} />
                             </button>

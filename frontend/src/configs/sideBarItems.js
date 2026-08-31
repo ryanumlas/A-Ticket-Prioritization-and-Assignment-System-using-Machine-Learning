@@ -87,9 +87,15 @@ export const sidebarItems = {
         },
         {
             type: "link",
+            name: "Ticket Queue",
+            path: "/ticket-queue",
+            icon: ListTodo
+        },
+        {
+            type: "link",
             name: "Assigned Tickets",
             path: "/tickets",
-            icon: Ticket
+            icon: ClipboardCheck
         },
         {
             type: "link",

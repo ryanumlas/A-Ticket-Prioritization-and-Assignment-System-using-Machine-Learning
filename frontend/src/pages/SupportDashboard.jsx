@@ -1,6 +1,6 @@
 import SupportOverview from "../components/SupportOverview";
 import TicketTableSupport from "../components/TicketTableSupport";
-import SLAOverviewSupport from "../components/SLAOverviewSupport";
+import SLAOverview from "../components/SLAOverview";
 import TicketNeedingAttention from "../components/TicketNeedingAttention";
 import api from "../api";
 import { useState, useEffect } from "react";
@@ -74,7 +74,7 @@ export default function SupportDashboard() {
 
                 {/* SLA OVERVIEW */}
                 <div className="col-span-5">
-                    <SLAOverviewSupport />
+                    <SLAOverview />
                 </div>
 
                 {/* TICKETS NEEDING ATTENTION */}

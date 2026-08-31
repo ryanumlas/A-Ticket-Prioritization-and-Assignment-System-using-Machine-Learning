@@ -16,7 +16,12 @@ export default function ServiceDeskTicket() {
     const [search, setSearch] = useState("");
     const [status, setStatus] = useState("All");
     const [priority, setPriority] = useState("All");
+
+    // Selected symptom code
     const [symptomCode, setSymptomCode] = useState("All");
+
+    // Available symptom codes for user's department
+    const [symptomCodes, setSymptomCodes] = useState([]);
 
     // PAGINATION
     const [currentPage, setCurrentPage] = useState(1);
@@ -24,6 +29,7 @@ export default function ServiceDeskTicket() {
 
     const pageSize = 15;
 
+    // FETCH TICKET LIST
     useEffect(() => {
         const fetchTicketList = async () => {
             try {
@@ -64,14 +70,19 @@ export default function ServiceDeskTicket() {
             } catch (error) {
                 console.error(
                     "Error fetching Service Desk tickets:",
-                    error
+                    error.response?.data || error
                 );
+
+                setTicketList([]);
+                setTotalTickets(0);
+
             } finally {
                 setLoading(false);
             }
         };
 
         fetchTicketList();
+
     }, [
         currentPage,
         search,
@@ -79,6 +90,29 @@ export default function ServiceDeskTicket() {
         priority,
         symptomCode,
     ]);
+
+    // FETCH SYMPTOM CODES FOR USER'S DEPARTMENT
+    useEffect(() => {
+        const fetchSymptomCodes = async () => {
+            try {
+                const response = await api.get(
+                    "/tickets/symptom-codes/ticket-queue/"
+                );
+
+                setSymptomCodes(response.data);
+
+            } catch (error) {
+                console.error(
+                    "Failed to fetch symptom codes:",
+                    error.response?.data || error
+                );
+
+                setSymptomCodes([]);
+            }
+        };
+
+        fetchSymptomCodes();
+    }, []);
 
     // TOTAL PAGES
     const totalPages = Math.max(
@@ -97,18 +131,21 @@ export default function ServiceDeskTicket() {
         totalTickets
     );
 
+    // CHANGE PAGE
     const changePage = (page) => {
         if (page < 1 || page > totalPages) return;
 
         setCurrentPage(page);
     };
 
+    // CHECK ACTIVE FILTERS
     const hasActiveFilters =
         search ||
         status !== "All" ||
         priority !== "All" ||
         symptomCode !== "All";
 
+    // CLEAR FILTERS
     const clearFilters = () => {
         setSearch("");
         setStatus("All");
@@ -162,27 +199,27 @@ export default function ServiceDeskTicket() {
                                 All statuses
                             </option>
 
-                            <option value="Open">
+                            <option value="open">
                                 Open
                             </option>
 
-                            <option value="In Progress">
+                            <option value="in_progress">
                                 In Progress
                             </option>
 
-                            <option value="Under Review">
+                            <option value="under_review">
                                 Under Review
                             </option>
 
-                            <option value="Returned">
+                            <option value="returned">
                                 Returned
                             </option>
 
-                            <option value="Resolved">
+                            <option value="resolved">
                                 Resolved
                             </option>
 
-                            <option value="Closed">
+                            <option value="closed">
                                 Closed
                             </option>
                         </select>
@@ -200,11 +237,25 @@ export default function ServiceDeskTicket() {
                                 All priorities
                             </option>
 
-                            <option value="P1">P1</option>
-                            <option value="P2">P2</option>
-                            <option value="P3">P3</option>
-                            <option value="P4">P4</option>
-                            <option value="P5">P5</option>
+                            <option value="P1">
+                                P1
+                            </option>
+
+                            <option value="P2">
+                                P2
+                            </option>
+
+                            <option value="P3">
+                                P3
+                            </option>
+
+                            <option value="P4">
+                                P4
+                            </option>
+
+                            <option value="P5">
+                                P5
+                            </option>
                         </select>
 
                         {/* SYMPTOM CODE */}
@@ -220,29 +271,14 @@ export default function ServiceDeskTicket() {
                                 All symptom codes
                             </option>
 
-                            <option value="HW-001">HW-001</option>
-                            <option value="HW-002">HW-002</option>
-                            <option value="HW-003">HW-003</option>
-                            <option value="HW-004">HW-004</option>
-                            <option value="HW-005">HW-005</option>
-                            <option value="HW-006">HW-006</option>
-
-                            <option value="NW-001">NW-001</option>
-                            <option value="NW-002">NW-002</option>
-                            <option value="NW-003">NW-003</option>
-
-                            <option value="SW-001">SW-001</option>
-                            <option value="SW-002">SW-002</option>
-                            <option value="SW-003">SW-003</option>
-                            <option value="SW-004">SW-004</option>
-                            <option value="SW-005">SW-005</option>
-
-                            <option value="AC-001">AC-001</option>
-                            <option value="AC-002">AC-002</option>
-                            <option value="AC-003">AC-003</option>
-                            <option value="AC-004">AC-004</option>
-                            <option value="AC-005">AC-005</option>
-                            <option value="AC-006">AC-006</option>
+                            {symptomCodes.map((symptom) => (
+                                <option
+                                    key={symptom.id}
+                                    value={symptom.code}
+                                >
+                                    {symptom.code}
+                                </option>
+                            ))}
                         </select>
 
                         {/* CLEAR FILTERS */}
@@ -251,7 +287,7 @@ export default function ServiceDeskTicket() {
                                 type="button"
                                 onClick={clearFilters}
                                 title="Clear filters"
-                                className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md border border-gray-300 bg-white text-gray-500 transition-colors hover:bg-gray-50 hover:text-black"
+                                className="flex h-10 w-10 shrink-0 cursor-pointer items-center justify-center rounded-md border border-gray-300 bg-white text-gray-500 transition-colors hover:bg-gray-50 hover:text-black"
                             >
                                 <X size={16} />
                             </button>
@@ -294,7 +330,7 @@ export default function ServiceDeskTicket() {
                                 onClick={() =>
                                     changePage(currentPage - 1)
                                 }
-                                className="flex h-9 w-9 items-center justify-center rounded-md border border-gray-300 bg-white text-black transition-colors hover:bg-gray-50 disabled:cursor-not-allowed disabled:text-gray-300 disabled:hover:bg-white"
+                                className="flex h-9 w-9 cursor-pointer items-center justify-center rounded-md border border-gray-300 bg-white text-black transition-colors hover:bg-gray-50 disabled:cursor-not-allowed disabled:text-gray-300 disabled:hover:bg-white"
                             >
                                 <ChevronLeft size={16} />
                             </button>
@@ -310,7 +346,7 @@ export default function ServiceDeskTicket() {
                                     onClick={() =>
                                         changePage(page)
                                     }
-                                    className={`h-9 min-w-9 rounded-md border px-2 text-sm font-medium transition-colors ${
+                                    className={`h-9 min-w-9 cursor-pointer rounded-md border px-2 text-sm font-medium transition-colors ${
                                         currentPage === page
                                             ? "border-[#4C4CF9] bg-[#4C4CF9] text-white"
                                             : "border-gray-300 bg-white text-black hover:bg-gray-50"
@@ -330,7 +366,7 @@ export default function ServiceDeskTicket() {
                                 onClick={() =>
                                     changePage(currentPage + 1)
                                 }
-                                className="flex h-9 w-9 items-center justify-center rounded-md border border-gray-300 bg-white text-black transition-colors hover:bg-gray-50 disabled:cursor-not-allowed disabled:text-gray-300 disabled:hover:bg-white"
+                                className="flex h-9 w-9 cursor-pointer items-center justify-center rounded-md border border-gray-300 bg-white text-black transition-colors hover:bg-gray-50 disabled:cursor-not-allowed disabled:text-gray-300 disabled:hover:bg-white"
                             >
                                 <ChevronRight size={16} />
                             </button>

@@ -3,7 +3,7 @@ from .views import (TicketListEmployeeView, CreateTicketView, ListTicketView, De
 UpdateTicketView, DeleteTicketView, CreateCategoryView, KeywordUpdateView ,KeywordCreateView, 
 UpdateCategoryView, CreateSymptomCodeView, SLARulesCreateView, SLARulesUpdateView, TicketDetailEmployeeView, TicketListServiceDeskView, UpdateTicketStatusView, ManualOverrideTicketView,
 ServiceDeskOverviewView, ServiceDeskClassifiedResultsView, FlaggedTicketsListView, FlaggedTicketDetailView, SymptomCodeListView, 
-AcceptRecommendationView, ApproveOverrideView, ManuallyClassifyView, SupportOverviewView, SupportTicketQueueView, TicketListSupportView)
+AcceptRecommendationView, ApproveOverrideView, ManuallyClassifyView, SupportOverviewView, TicketQueueView, TicketListSupportView, DepartmentSymptomCodesView, SLAPerformanceView)
 
 urlpatterns = [
     # --- Ticket URLs ---
@@ -14,6 +14,7 @@ urlpatterns = [
     path('update-status/<int:pk>/', UpdateTicketStatusView.as_view(), name='update-ticket-status'),
     path('manual-override/<int:pk>/', ManualOverrideTicketView.as_view(), name='manual-override-ticket'),
     path('delete/<int:pk>/', DeleteTicketView.as_view(), name='delete-ticket'),
+    path("sla-performance/",SLAPerformanceView.as_view(),name="support-sla-performance",),
 
     path('employee/list/', TicketListEmployeeView.as_view(), name="ticket-list"),
     path('employee/detail/<int:ticket_id>/', TicketDetailEmployeeView.as_view(), name="ticket-detail"),
@@ -29,7 +30,7 @@ urlpatterns = [
 
     path('support-specialist/overview/', SupportOverviewView.as_view(), name='support-overview'),
     path('support-specialist/list/', TicketListSupportView.as_view(), name='support-list'),
-    path('support-specialist/ticket-queue/', SupportTicketQueueView.as_view(), name='support-ticket-queue'),
+    path('ticket-queue/list/', TicketQueueView.as_view(), name='support-ticket-queue'),
     # --- Category URLs ---
     path('categories/create/', CreateCategoryView.as_view(), name='create-category'),
     path('categories/update/<int:pk>/', UpdateCategoryView.as_view(), name='update-category'),
@@ -37,6 +38,7 @@ urlpatterns = [
     # --- Symptom Code URLs ---
     path('symptom-code/create/', CreateSymptomCodeView.as_view(), name='create-symptom-code'),
     path('symptom-code/list/', SymptomCodeListView.as_view(), name='symptom-code-list'),
+    path("symptom-codes/ticket-queue/", DepartmentSymptomCodesView.as_view(), name="ticket-queue-symptom-codes",),
 
     # --- SLA Rules URLs ---
     path('sla-rules/create/', SLARulesCreateView.as_view(), name='create-sla-rules'),

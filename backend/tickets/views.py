@@ -434,6 +434,7 @@ class UpdateTicketView(APIView):
         )
 
 
+# --- Service Desk ---
 class FlaggedTicketsListView(generics.ListAPIView):
     queryset = ReviewFlags.objects.filter(status=ReviewFlags.Status.PENDING).select_related("ticket","ticket__priority",).order_by("-created_at")
     serializer_class = FlaggedTicketsListSerializer
@@ -896,6 +897,8 @@ class TicketDetailEmployeeView(APIView):
         return Response(serializer.data)        
 
 # --- End --- 
+
+#
 class TicketDetailServiceDeskView(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -1031,6 +1034,114 @@ class ServiceDeskClassifiedResultsView(APIView):
 
 
 # --- Support View --- 
+class SLAPerformanceView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        support_profile = getattr(
+            request.user,
+            "it_support_profile",
+            None
+        )
+
+        if not support_profile:
+            return Response(
+                {
+                    "detail": "IT Support profile not found."
+                },
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        if not support_profile.it_department:
+            return Response(
+                {
+                    "detail": "IT Support user has no assigned IT department."
+                },
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        department_tickets = Ticket.objects.filter(
+            it_department=support_profile.it_department
+        )
+
+
+        response_met = department_tickets.filter(
+            response_sla_status=Ticket.SLAStatus.MET
+        ).count()
+
+        response_breached = department_tickets.filter(
+            response_sla_status=Ticket.SLAStatus.BREACHED
+        ).count()
+
+        response_evaluated = (
+            response_met + response_breached
+        )
+
+        if response_evaluated > 0:
+            response_sla = round(
+                (response_met / response_evaluated) * 100,
+                1
+            )
+        else:
+            response_sla = 0.0
+
+        resolution_met = department_tickets.filter(
+            resolution_sla_status=Ticket.SLAStatus.MET
+        ).count()
+
+        resolution_breached = department_tickets.filter(
+            resolution_sla_status=Ticket.SLAStatus.BREACHED
+        ).count()
+
+        resolution_evaluated = (
+            resolution_met + resolution_breached
+        )
+
+        if resolution_evaluated > 0:
+            resolution_sla = round(
+                (resolution_met / resolution_evaluated) * 100,
+                1
+            )
+        else:
+            resolution_sla = 0.0
+
+
+        total_met = (
+            response_met +
+            resolution_met
+        )
+
+        total_evaluated = (
+            response_evaluated +
+            resolution_evaluated
+        )
+
+        if total_evaluated > 0:
+            overall_compliance = round(
+                (total_met / total_evaluated) * 100,
+                1
+            )
+        else:
+            overall_compliance = 0.0
+
+        return Response({
+            "overall_compliance": overall_compliance,
+            "response_sla": response_sla,
+            "resolution_sla": resolution_sla,
+
+            "response": {
+                "met": response_met,
+                "breached": response_breached,
+                "evaluated": response_evaluated,
+            },
+
+            "resolution": {
+                "met": resolution_met,
+                "breached": resolution_breached,
+                "evaluated": resolution_evaluated,
+            },
+        })
+
 class SupportOverviewView(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -1176,7 +1287,7 @@ class TicketListSupportView(APIView):
             serializer.data
         )
 
-class SupportTicketQueueView(APIView):
+class TicketQueueView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
@@ -1217,7 +1328,6 @@ class SupportTicketQueueView(APIView):
             )
             .order_by("-created_at")
         )
-
         # SEARCH
         search = request.query_params.get(
             "search",
@@ -1292,6 +1402,49 @@ class UpdateCategoryView(generics.UpdateAPIView):
 # --- End ---
 
 # --- Symptom Code Views ---
+
+class DepartmentSymptomCodesView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        support_profile = getattr(
+            request.user,
+            "it_support_profile",
+            None
+        )
+
+        if not support_profile:
+            return Response(
+                {"detail": "IT Support profile not found."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        if not support_profile.it_department:
+            return Response(
+                {"detail": "User has no assigned IT department."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        symptom_codes = (
+            SymptomCode.objects
+            .filter(
+                category__it_department=support_profile.it_department
+            )
+            .select_related("category")
+            .order_by("code")
+        )
+
+        data = [
+            {
+                "id": symptom.id,
+                "code": symptom.code,
+                "description": symptom.description,
+                "category": symptom.category.name if symptom.category else None,
+            }
+            for symptom in symptom_codes
+        ]
+
+        return Response(data)
 class CreateSymptomCodeView(generics.CreateAPIView):
     queryset = SymptomCode.objects.all()
     serializer_class = CreateSymptomCodeSerializer
