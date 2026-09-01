@@ -8,6 +8,32 @@ import { useEffect, useState } from "react";
 import SLAOverview from "../components/SLAOverview";
 import TicketsByCategoryChart from "../components/TicketsByCategoryChart";
 import AIResultPieChart from "../components/AIResultPieChart";
+import { motion } from "motion/react";
+
+const containerVariants = {
+    hidden: {},
+    show: {
+        transition: {
+            delayChildren: 0.20,
+            staggerChildren: 0.20,
+        },
+    },
+};
+
+const itemVariants = {
+    hidden: {
+        opacity: 0,
+        y: 12,
+    },
+    show: {
+        opacity: 1,
+        y: 0,
+        transition: {
+            duration: 0.7,
+            ease: "easeOut",
+        },
+    },
+};
 
 export default function ServiceDeskDashboard() {
     const user = getCurrentUser();
@@ -18,11 +44,22 @@ export default function ServiceDeskDashboard() {
         const fetchTicketList = async () => {
             try {
                 setLoading(true);
-                const response = await api.get("/tickets/service-desk/list/");
+
+                const response = await api.get(
+                    "/tickets/service-desk/list/"
+                );
+
                 setTicketList(response.data.results);
-                console.log("Service Desk Tickets:", response.data);
+
+                console.log(
+                    "Service Desk Tickets:",
+                    response.data
+                );
             } catch (error) {
-                console.error("Error fetching ticket list:", error);
+                console.error(
+                    "Error fetching ticket list:",
+                    error
+                );
             } finally {
                 setLoading(false);
             }
@@ -35,37 +72,78 @@ export default function ServiceDeskDashboard() {
         return <div>Loading...</div>;
     }
 
-    const displayName = user?.first_name || user?.username || "there";
-    return(
-        <div className="space-y-4">
-            {/* <h1 className="text-2xl font-semibold">IT Service Desk</h1> */}
-            <ServiceDeskOverview/>
+    const displayName =
+        user?.first_name ||
+        user?.username ||
+        "there";
+
+    return (
+        <motion.div
+            variants={containerVariants}
+            initial="hidden"
+            animate="show"
+            className="space-y-4"
+        >
+            <motion.div variants={itemVariants}>
+                <ServiceDeskOverview />
+            </motion.div>
+
             <div className="grid grid-cols-12 gap-4">
-                <div className="col-span-7">
+                <motion.div
+                    variants={itemVariants}
+                    className="col-span-7"
+                >
                     <div className="bg-white border border-gray-300 rounded-xl overflow-hidden">
                         <div className="px-4 py-4 border-b border-gray-300 flex items-center justify-between">
                             <div>
-                                <h1 className="text-xl font-semibold">My Tickets</h1>
-                                <p className="text-sm text-gray-500">Recently assigned tickets</p>
+                                <h1 className="text-xl font-semibold">
+                                    My Tickets
+                                </h1>
+
+                                <p className="text-sm text-gray-500">
+                                    Recently assigned tickets
+                                </p>
                             </div>
-                            <Link to="/tickets" className="group flex items-center gap-2 bg-[#4C4CF9] px-6 py-2 text-white text-sm rounded-md hover:bg-[#3f3fe6] cursor-pointer">View All <ArrowRight size={16}/></Link>
+
+                            <Link
+                                to="/tickets"
+                                className="group flex items-center gap-2 bg-[#4C4CF9] px-6 py-2 text-white text-sm rounded-md hover:bg-[#3f3fe6] cursor-pointer"
+                            >
+                                View All
+                                <ArrowRight size={16} />
+                            </Link>
                         </div>
-                        <TicketTableServiceDesk ticketList={ticketList} dashboard={true} loading={loading} maxRows={5}/>
+
+                        <TicketTableServiceDesk
+                            ticketList={ticketList}
+                            dashboard={true}
+                            loading={loading}
+                            maxRows={5}
+                        />
                     </div>
-                </div>
+                </motion.div>
 
-                <div className="col-span-5">
+                <motion.div
+                    variants={itemVariants}
+                    className="col-span-5"
+                >
                     <AIResultPieChart />
-                </div>
+                </motion.div>
 
-                <div className="col-span-5">
-                    <SLAOverview/>
-                </div>
+                <motion.div
+                    variants={itemVariants}
+                    className="col-span-5"
+                >
+                    <SLAOverview />
+                </motion.div>
 
-                <div className="col-span-7">
-                    <TicketsByCategoryChart/>
-                </div>
+                <motion.div
+                    variants={itemVariants}
+                    className="col-span-7"
+                >
+                    <TicketsByCategoryChart />
+                </motion.div>
             </div>
-        </div>
+        </motion.div>
     );
 }
