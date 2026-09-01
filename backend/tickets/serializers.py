@@ -207,11 +207,15 @@ class TicketSerializer(serializers.ModelSerializer):
 class FlaggedTicketsListSerializer(serializers.ModelSerializer):
     ticket_code = serializers.CharField(source="ticket.ticket_code", read_only=True)
     subject = serializers.CharField(source="ticket.subject", read_only=True)
+    description = serializers.CharField(source="ticket.description", read_only=True)
     reason = serializers.CharField(source="get_reason_display", read_only=True)
     status = serializers.CharField(source="get_status_display", read_only=True)
+    first_name = serializers.CharField(source="ticket.submitted_by.first_name", read_only=True)
+    last_name = serializers.CharField(source="ticket.submitted_by.last_name", read_only=True)
+    employee_department = serializers.CharField(source='ticket.employee_department.name', read_only=True)
     class Meta:
         model = ReviewFlags
-        fields = ["id", "ticket_code", "subject", "reason", "status", "created_at"]
+        fields = ["id", "ticket_code", "subject", "description", "reason", "status", "created_at", "first_name", "last_name", "employee_department"]
 
 class FlaggedTicketDetailSerializer(serializers.ModelSerializer):
     ticket_code = serializers.CharField(source="ticket.ticket_code", read_only=True)

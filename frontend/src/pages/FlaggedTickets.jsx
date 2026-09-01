@@ -21,7 +21,7 @@ export default function FlaggedTickets() {
                 <div className="h-14 border-b border-gray-300 bg-white mb-20 shrink-0">
                 </div>
 
-                <main className="flex-1 h-full">
+                <main className="flex-1 h-full p-10">
                     {MainContent}
                 </main>
 

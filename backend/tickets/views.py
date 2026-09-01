@@ -1,6 +1,7 @@
 from django.utils import timezone
 from django.shortcuts import render
 from .pagination import TicketPagination
+from django.db.models import Count
 from django.db.models import Q
 from django.db import transaction
 from rest_framework.response import Response
@@ -1485,6 +1486,29 @@ class KeywordUpdateView(generics.UpdateAPIView):
     permission_classes = [AllowAny]
 
 # --- End ---
+
+# --- Category Views ---
+class TicketsByCategoryView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        categories = (
+            Ticket.objects
+            .exclude(category__isnull=True)
+            .values("category__name")
+            .annotate(tickets=Count("id"))
+            .order_by("-tickets")
+        )
+
+        data = [
+            {
+                "category": item["category__name"],
+                "tickets": item["tickets"],
+            }
+            for item in categories
+        ]
+
+        return Response(data)
 
 # class AddTicketAssigneeView(generics.CreateAPIView):
 #     permission_classes = [IsAuthenticated]

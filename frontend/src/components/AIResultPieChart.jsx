@@ -61,7 +61,7 @@ export default function AIOverviewPieChart() {
             </div>
 
             <div className="flex items-center justify-between">
-                <div className="w-[45%] h-71">
+                <div className="w-[45%] h-79">
                     <ResponsiveContainer width="100%" height="100%">
                         <PieChart>
                             <Pie
