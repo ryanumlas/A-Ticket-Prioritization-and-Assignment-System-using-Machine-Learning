@@ -88,8 +88,16 @@ export default function UnclearDescriptionReview({ flag }) {
             <div className="grid grid-cols-1 items-start gap-5 xl:grid-cols-[1.35fr_1fr]">
 
                 {/* TICKET INFORMATION */}
-                <div className="max-h-[720px] overflow-y-auto rounded-md border border-gray-300 bg-white ticket-detail-scroll">
+                <div className="
+                        max-h-[720px] overflow-y-auto
+                        rounded-md border border-gray-300 bg-white
 
+                        [&::-webkit-scrollbar]:w-1
+                        [&::-webkit-scrollbar-track]:bg-transparent
+                        [&::-webkit-scrollbar-thumb]:rounded-full
+                        [&::-webkit-scrollbar-thumb]:bg-transparent
+                        hover:[&::-webkit-scrollbar-thumb]:bg-gray-300
+                    ">
                     <div className="flex items-center gap-3 border-b border-gray-300 px-6 py-4">
                         <div className="flex h-9 w-9 items-center justify-center rounded-md bg-gray-100">
                             <Ticket
@@ -173,7 +181,7 @@ export default function UnclearDescriptionReview({ flag }) {
                         <div className="mb-5 flex items-center gap-2">
                             <Contact
                                 size={18}
-                                className="text-black"
+                                className="text-gray-500"
                             />
 
                             <h3 className="font-semibold text-black">

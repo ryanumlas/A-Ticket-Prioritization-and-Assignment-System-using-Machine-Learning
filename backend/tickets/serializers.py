@@ -269,9 +269,9 @@ class TicketCreateSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError(
                 "Description must be at least 50 characters."
             )
-        if len(value) > 1000:
+        if len(value) > 750:
             raise serializers.ValidationError(
-                "Description cannot exceed 1000 characters."
+                "Description cannot exceed 750 characters."
             )
 
         return value
