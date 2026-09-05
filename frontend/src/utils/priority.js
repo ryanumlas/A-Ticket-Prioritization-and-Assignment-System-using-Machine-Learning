@@ -1,9 +1,9 @@
 export const priorityLabel = {
-    P1: "Critical",
-    P2: "High",
-    P3: "Medium",
-    P4: "Low",
-    P5: "Very Low",
+    P1: "Critical (P1)",
+    P2: "High (P2)",
+    P3: "Medium (P3)",
+    P4: "Low (P4)",
+    P5: "Very Low (P5)",
 };
 
 export const priorityColor = {

@@ -1,4 +1,5 @@
 import { statusColor } from "../utils/statusColor";
+import { useNavigate } from "react-router-dom";
 
 export default function TicketTableSupport({
     ticketList = [],
@@ -6,6 +7,9 @@ export default function TicketTableSupport({
     maxRows = 15,
     dashboard = false,
 }) {
+
+    const navigate = useNavigate();
+
     const displayedTickets = dashboard
         ? ticketList.slice(0, maxRows)
         : ticketList;
@@ -92,9 +96,11 @@ export default function TicketTableSupport({
                             displayedTickets.map((ticket) => (
                                 <tr
                                     key={ticket.id}
+                                    onClick={() =>
+                                        navigate(`/ticket/${ticket.id}`)
+                                    }
                                     className="cursor-pointer border-b border-gray-200 transition-colors hover:bg-gray-50 last:border-b-0"
                                 >
-
                                     {/* TICKET ID */}
                                     <td className="px-6 py-4">
                                         <span className="font-semibold text-black">

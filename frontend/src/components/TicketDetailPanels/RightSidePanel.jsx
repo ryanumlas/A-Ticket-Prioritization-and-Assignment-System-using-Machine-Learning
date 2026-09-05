@@ -3,13 +3,17 @@ import {
     CircleCheck,
     UserCheck,
     Clock3,
+    ChevronDown,
 } from "lucide-react";
 
+import { useState } from "react";
+
 export default function RightSidePanel() {
+    const [status, setStatus] = useState("Resolved");
+
     return (
         <div className="flex h-full w-[350px] shrink-0 flex-col border-l border-gray-300 bg-white">
 
-            {/* HEADER */}
             <div className="shrink-0 border-b border-gray-200 p-5">
                 <div className="flex items-center gap-2">
                     <History
@@ -23,20 +27,54 @@ export default function RightSidePanel() {
                 </div>
 
                 <p className="mt-1 text-xs text-gray-500">
-                    Track the progress of your ticket.
+                    Track and manage the progress of this ticket.
                 </p>
             </div>
 
-            {/* CURRENT STATUS */}
             <div className="shrink-0 border-b border-gray-200 p-5">
                 <p className="text-xs font-medium uppercase text-gray-500">
                     Current Status
                 </p>
 
-                <div className="mt-2">
-                    <span className="inline-flex rounded-md border border-green-300 bg-green-100 px-2.5 py-1 text-xs font-medium text-green-700">
-                        Resolved
-                    </span>
+                <div className="relative mt-2">
+                    <select
+                        value={status}
+                        onChange={(e) => setStatus(e.target.value)}
+                        className="
+                            w-full appearance-none rounded-lg
+                            border border-gray-300 bg-white
+                            px-3 py-2.5 pr-10
+                            text-sm font-medium text-black
+                            outline-none transition-colors
+                            focus:border-[#4C4CF9]
+                            focus:ring-2 focus:ring-[#4C4CF9]/10
+                        "
+                    >
+                        <option value="Open">
+                            Open
+                        </option>
+
+                        <option value="In Progress">
+                            In Progress
+                        </option>
+
+                        <option value="Resolved">
+                            Resolved
+                        </option>
+
+                        <option value="Closed">
+                            Closed
+                        </option>
+                    </select>
+
+                    <ChevronDown
+                        size={16}
+                        className="
+                            pointer-events-none absolute
+                            right-3 top-1/2
+                            -translate-y-1/2 text-gray-400
+                        "
+                    />
                 </div>
 
                 <p className="mt-2 text-xs text-gray-500">
@@ -44,7 +82,6 @@ export default function RightSidePanel() {
                 </p>
             </div>
 
-            {/* TIMELINE */}
             <div
                 className="
                     min-h-0 flex-1 overflow-y-auto p-5
@@ -57,10 +94,8 @@ export default function RightSidePanel() {
             >
                 <div className="relative">
 
-                    {/* CONNECTING LINE */}
-                    <div className="absolute bottom-5 left-[15px] top-5 w-px bg-gray-200" />
+                    <div className="absolute bottom-5 left-[15px] top-5 w-px bg-[#4C4CF9]" />
 
-                    {/* SUBMITTED */}
                     <TimelineItem
                         icon={CircleCheck}
                         title="Ticket Submitted"
@@ -70,7 +105,6 @@ export default function RightSidePanel() {
                         active
                     />
 
-                    {/* ASSIGNED */}
                     <TimelineItem
                         icon={UserCheck}
                         title="Assigned to IT Support"
@@ -80,7 +114,6 @@ export default function RightSidePanel() {
                         active
                     />
 
-                    {/* IN PROGRESS */}
                     <TimelineItem
                         icon={Clock3}
                         title="In Progress"
@@ -90,7 +123,6 @@ export default function RightSidePanel() {
                         active
                     />
 
-                    {/* RESOLVED */}
                     <TimelineItem
                         icon={CircleCheck}
                         title="Resolved"
@@ -98,6 +130,7 @@ export default function RightSidePanel() {
                         date="Sep 1, 2026"
                         time="11:08 AM"
                         active
+                        current
                     />
 
                 </div>
@@ -107,7 +140,6 @@ export default function RightSidePanel() {
     );
 }
 
-
 function TimelineItem({
     icon: Icon,
     title,
@@ -115,33 +147,49 @@ function TimelineItem({
     date,
     time,
     active = false,
+    current = false,
 }) {
     return (
         <div className="relative flex gap-3 pb-7 last:pb-0">
 
-            {/* TIMELINE ICON */}
             <div
-                className={`relative z-10 flex h-[31px] w-[31px] shrink-0 items-center justify-center rounded-full border ${
-                    active
-                        ? "border-gray-300 bg-white text-black"
-                        : "border-gray-200 bg-gray-50 text-gray-400"
-                }`}
+                className={`
+                    relative z-10 flex h-[31px] w-[31px] shrink-0
+                    items-center justify-center rounded-full border
+                    ${
+                        active
+                            ? "border-[#4C4CF9] bg-[#4C4CF9] text-white"
+                            : "border-gray-200 bg-white text-gray-400"
+                    }
+                    ${
+                        current
+                            ? "ring-4 ring-[#4C4CF9]/15"
+                            : ""
+                    }
+                `}
             >
-                <Icon size={15} />
+                <Icon size={15} strokeWidth={2.2} />
             </div>
 
-            {/* CONTENT */}
             <div className="min-w-0 pt-0.5">
 
-                <p
-                    className={`text-sm font-semibold ${
-                        active
-                            ? "text-black"
-                            : "text-gray-400"
-                    }`}
-                >
-                    {title}
-                </p>
+                <div className="flex items-center gap-2">
+                    <p
+                        className={`text-sm font-semibold ${
+                            active
+                                ? "text-black"
+                                : "text-gray-400"
+                        }`}
+                    >
+                        {title}
+                    </p>
+
+                    {current && (
+                        <span className="rounded-full bg-[#4C4CF9]/10 px-2 py-0.5 text-[10px] font-medium text-[#4C4CF9]">
+                            Current
+                        </span>
+                    )}
+                </div>
 
                 <p
                     className={`mt-1 text-xs leading-5 ${

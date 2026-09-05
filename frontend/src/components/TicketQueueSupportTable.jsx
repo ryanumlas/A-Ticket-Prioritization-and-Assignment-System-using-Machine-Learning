@@ -1,9 +1,12 @@
 import { statusColor } from "../utils/statusColor";
+import { useNavigate } from "react-router-dom";
 
 export default function TicketQueueSupportTable({
     ticketList = [],
     loading = false,
 }) {
+    const navigate = useNavigate();
+    
     const priorityStyle = (priority) => {
         switch (priority) {
             case "P1":
@@ -78,6 +81,7 @@ export default function TicketQueueSupportTable({
                         ticketList.map((ticket) => (
                             <tr
                                 key={ticket.id}
+                                onClick={() => navigate(`/ticket/${ticket.id}`)}
                                 className="cursor-pointer border-b border-gray-200 transition-colors hover:bg-gray-50 last:border-b-0"
                             >
 

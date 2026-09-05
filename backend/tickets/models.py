@@ -109,17 +109,28 @@ class TicketComments(models.Model):
         db_table = 'ticket_comments'
 
 class TicketStatusHistory(models.Model):
+    class EventType(models.TextChoices):
+        CREATED = "CREATED", "Ticket Created"
+        STATUS_CHANGED = "STATUS_CHANGED", "Status Changed"
+        ASSIGNED = "ASSIGNED", "Assigned"
+        REASSIGNED = "REASSIGNED", "Reassigned"
+        PRIORITY_CHANGED = "PRIORITY_CHANGED", "Priority Changed"
+        ESCALATED = "ESCALATED", "Escalated"
+        RESOLVED = "RESOLVED", "Resolved"
+        CLOSED = "CLOSED", "Closed"
+
     ticket = models.ForeignKey(Ticket, on_delete=models.CASCADE, related_name='status_history')
-    previous_status = models.CharField(max_length=20)
-    new_status = models.CharField(max_length=20)
+    event_type = models.CharField(max_length=20, choices=EventType.choices)
+    old_value = models.CharField(max_length=255, null=True, blank=True)
+    new_value = models.CharField(max_length=255, null=True, blank=True)
     remarks = models.TextField(blank=True)
     created_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='created_tickets_status_history')
-    updated_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='updated_tickets_status_history')
+    changed_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='changed_tickets_status_history')
     created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
         db_table = 'ticket_status_history'
+        ordering = ['-created_at']
 
 class SLARules(models.Model):
     priority_level = models.CharField(max_length=20, unique=True)

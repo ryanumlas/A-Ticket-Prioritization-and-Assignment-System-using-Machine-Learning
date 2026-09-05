@@ -8,12 +8,13 @@ from rest_framework.response import Response
 from rest_framework import viewsets, generics, status
 from rest_framework.views import APIView
 from rest_framework.permissions import IsAuthenticated, AllowAny
-from .models import Ticket, Category, SymptomCode, TicketComments, SLARules, ReviewFlags, TicketAssistance, Keyword
+from .models import Ticket, Category, SymptomCode, TicketComments, SLARules, ReviewFlags, TicketAssistance, Keyword, TicketStatusHistory
 from .serializers import (SymptomCodeSerializer, TicketSerializer, CategorySerializer, 
 TicketAssistanceSerializer, TicketCommentSerializer, TicketStatusHistory, SLARulesSerializer, 
 SLARulesUpdateSerializer, KeywordSerializer, KeywordUpdateSerializer, UpdateSymptomCodeSerializer, CreateSymptomCodeSerializer,
-TicketCreateSerializer, TicketUpdateSerializer, TicketDetailEmployeeSerializer, CategoryUpdateSerializer, FlaggedTicketsListSerializer, FlaggedTicketDetailSerializer)
-from users.models import User
+TicketCreateSerializer, TicketUpdateSerializer, TicketDetailEmployeeSerializer, CategoryUpdateSerializer, FlaggedTicketsListSerializer, 
+FlaggedTicketDetailSerializer, TicketDetailSupportSerializer)
+from users.models import User, ITSupportProfile
 from .services import predict_ticket
 from ai.models import TicketAnalysis, TicketAIAnalysis
 from ai.services import analyze_ticket
@@ -332,14 +333,15 @@ class UpdateTicketStatusView(APIView):
     def patch(self, request, pk):
         ticket = Ticket.objects.get(pk=pk)
 
-        new_status = request.data.get('status')
+        old_status = ticket.status
+        new_status = request.data.get("status")
 
         if new_status == Ticket.TicketStatus.OPEN:
             ticket.status = Ticket.TicketStatus.OPEN
-        
+
         elif new_status == Ticket.TicketStatus.IN_PROGRESS:
             ticket.status = Ticket.TicketStatus.IN_PROGRESS
-        
+
         elif new_status == Ticket.TicketStatus.RESOLVED:
             now = timezone.now()
 
@@ -352,7 +354,7 @@ class UpdateTicketStatusView(APIView):
                     ticket.resolution_sla_status = Ticket.SLAStatus.MET
                 else:
                     ticket.resolution_sla_status = Ticket.SLAStatus.BREACHED
-        
+
         elif new_status == Ticket.TicketStatus.CLOSED:
             ticket.status = Ticket.TicketStatus.CLOSED
 
@@ -360,7 +362,7 @@ class UpdateTicketStatusView(APIView):
             ticket.status = Ticket.TicketStatus.REOPENED
             ticket.resolved_at = None
             ticket.resolved_by = None
-        
+
         elif new_status == Ticket.TicketStatus.PENDING:
             ticket.status = Ticket.TicketStatus.PENDING
 
@@ -368,11 +370,30 @@ class UpdateTicketStatusView(APIView):
             ticket.status = Ticket.TicketStatus.CANCELLED
 
         else:
-            return Response({"error": "Invalid status"}, status=status.HTTP_400_BAD_REQUEST)
+            return Response(
+                {"error": "Invalid status"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
         
+        if old_status == ticket.status:
+            return Response(
+                {"message": "Ticket status is already set to this status"},
+                status=status.HTTP_200_OK
+            )
         ticket.save()
 
-        return Response({"message": f"Ticket status updated to {ticket.status}"}, status=status.HTTP_200_OK)
+        TicketStatusHistory.objects.create(
+            ticket=ticket,
+            event_type=TicketStatusHistory.EventType.STATUS_CHANGED,
+            old_value=old_status,
+            new_value=ticket.status,
+            changed_by=request.user,
+        )
+
+        return Response(
+            {"message": f"Ticket status updated to {ticket.status}"},
+            status=status.HTTP_200_OK
+        )
 class ListTicketView(generics.ListAPIView):
     queryset = Ticket.objects.all()
     serializer_class = TicketSerializer
@@ -897,6 +918,39 @@ class TicketDetailEmployeeView(APIView):
         serializer = TicketDetailEmployeeSerializer(ticket)
         return Response(serializer.data)        
 
+class TicketDetailSupportView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, ticket_id):
+        user = request.user
+
+        try:
+            support_profile = user.it_support_profile
+        except ITSupportProfile.DoesNotExist:
+            return Response(
+                {"error": "You do not have an IT Support profile."},
+                status=status.HTTP_403_FORBIDDEN
+            )
+
+        try:
+            ticket = Ticket.objects.get(
+                id=ticket_id,
+                it_department=support_profile.it_department
+            )
+        except Ticket.DoesNotExist:
+            return Response(
+                {
+                    "error": "Ticket not found or you do not have permission to view this ticket."
+                },
+                status=status.HTTP_404_NOT_FOUND
+            )
+
+        serializer = TicketDetailSupportSerializer(
+            ticket,
+            context={"request": request}
+        )
+
+        return Response(serializer.data)
 # --- End --- 
 
 #

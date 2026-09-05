@@ -3,16 +3,22 @@ import { getCurrentUser } from "../utils/auth";
 import api from "../api";
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { ArrowLeft } from "lucide-react";
+import {
+    ArrowLeft,
+    ChevronDown,
+    SlidersHorizontal
+} from "lucide-react";
 
 import TicketDetailsEmployee from "../components/TicketDetailsEmployee";
 import TicketDetailsServiceDesk from "../components/TicketDetailsServiceDesk";
-// import TicketDetailsSupport from "../components/TicketDetailsSupport";
+import TicketDetailsSupport from "../components/TicketDetailsSupport";
 
 export default function TicketDetails() {
     const user = getCurrentUser();
 
     const [ticketDetails, setTicketDetails] = useState(null);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState("");
 
     const { ticketId } = useParams();
     const navigate = useNavigate();
@@ -20,9 +26,26 @@ export default function TicketDetails() {
     useEffect(() => {
         const fetchTicketDetails = async () => {
             try {
-                const response = await api.get(
-                    `/tickets/employee/detail/${ticketId}/`
-                );
+                setLoading(true);
+                setError("");
+
+                let endpoint;
+
+                if (user?.role === "Employee") {
+                    endpoint = `/tickets/employee/detail/${ticketId}/`;
+                }
+                else if (user?.role === "IT Service Desk") {
+                    endpoint = `/tickets/service-desk/detail/${ticketId}/`;
+                }
+                else if (user?.role === "IT Support Specialist") {
+                    endpoint = `/tickets/support/detail/${ticketId}/`;
+                }
+                else {
+                    setError("Access Denied / Invalid Role");
+                    return;
+                }
+
+                const response = await api.get(endpoint);
 
                 setTicketDetails(response.data);
 
@@ -30,20 +53,75 @@ export default function TicketDetails() {
                     "Fetched ticket details:",
                     response.data
                 );
-            } catch (error) {
+            }
+            catch (error) {
                 console.error(
                     "Error fetching ticket details:",
-                    error
+                    error.response?.data || error
                 );
+
+                setError(
+                    error.response?.data?.error ||
+                    "Failed to load ticket details."
+                );
+            }
+            finally {
+                setLoading(false);
             }
         };
 
-        fetchTicketDetails();
-    }, [ticketId]);
+        if (user?.role && ticketId) {
+            fetchTicketDetails();
+        }
+    }, [ticketId, user?.role]);
 
-    if (!ticketDetails) {
-        return <p>Loading...</p>;
+    if (loading) {
+        return (
+            <div className="flex h-screen w-screen items-center justify-center bg-gray-50">
+                <p className="text-sm text-gray-500">
+                    Loading ticket details...
+                </p>
+            </div>
+        );
     }
+
+    if (error) {
+        return (
+            <div className="flex h-screen w-screen overflow-hidden bg-gray-50">
+                <Sidebar />
+
+                <div className="flex h-screen flex-1 flex-col">
+
+                    <div className="h-14 shrink-0 border-b border-gray-300 bg-white" />
+
+                    <main className="flex min-h-0 flex-1 flex-col p-4">
+
+                        <button
+                            type="button"
+                            onClick={() => navigate(-1)}
+                            className="mb-3 flex w-fit items-center gap-1.5 text-sm font-medium text-gray-500 transition-colors hover:text-black"
+                        >
+                            <ArrowLeft size={16} />
+                            Back to Tickets
+                        </button>
+
+                        <div className="flex flex-1 items-center justify-center">
+                            <p className="text-sm text-gray-500">
+                                {error}
+                            </p>
+                        </div>
+
+                    </main>
+
+                </div>
+            </div>
+        );
+    }
+
+    const isAssignedSupport =
+        user?.role === "IT Support Specialist" &&
+        Number(ticketDetails?.assigned_to?.id) ===
+            Number(user?.user_id);
 
     let MainContent;
 
@@ -61,13 +139,13 @@ export default function TicketDetails() {
             />
         );
     }
-    // else if (user?.role === "IT Support Specialist") {
-    //     MainContent = (
-    //         <TicketDetailsSupport
-    //             ticketDetails={ticketDetails}
-    //         />
-    //     );
-    // }
+    else if (user?.role === "IT Support Specialist") {
+        MainContent = (
+            <TicketDetailsSupport
+                ticketDetails={ticketDetails}
+            />
+        );
+    }
     else {
         MainContent = (
             <div className="p-6">
@@ -83,23 +161,33 @@ export default function TicketDetails() {
 
             <div className="flex h-screen flex-1 flex-col">
 
-                {/* TOP BAR */}
                 <div className="h-14 shrink-0 border-b border-gray-300 bg-white" />
 
-                {/* PAGE */}
                 <main className="flex min-h-0 flex-1 flex-col p-4">
 
-                    {/* BACK */}
-                    <button
-                        type="button"
-                        onClick={() => navigate(-1)}
-                        className="mb-3 flex w-fit items-center gap-1.5 text-sm font-medium text-gray-500 transition-colors hover:text-black"
-                    >
-                        <ArrowLeft size={16} />
-                        Back to Tickets
-                    </button>
+                    <div className="mb-3 flex h-9 shrink-0 items-center justify-between">
 
-                    {/* DETAILS */}
+                        <button
+                            type="button"
+                            onClick={() => navigate(-1)}
+                            className="flex items-center gap-1.5 text-sm font-medium text-gray-500 transition-colors hover:text-black"
+                        >
+                            <ArrowLeft size={16} />
+                            Back to Tickets
+                        </button>
+
+                        {isAssignedSupport && (
+                            <button
+                                type="button"
+                                className="flex h-9 items-center gap-2 rounded-lg border border-gray-300 bg-[#4C4CF9] px-3.5 text-sm font-medium text-white transition-colors hover:bg-[#3a3ae0] cursor-pointer focus:outline-none focus:ring-2 focus:ring-[#4C4CF9]/50"
+                            >
+                                Manage Tickets
+                                <SlidersHorizontal size={16} />
+                            </button>
+                        )}
+
+                    </div>
+
                     <div className="min-h-0 flex-1">
                         {MainContent}
                     </div>
@@ -107,6 +195,7 @@ export default function TicketDetails() {
                 </main>
 
             </div>
+
         </div>
     );
 }

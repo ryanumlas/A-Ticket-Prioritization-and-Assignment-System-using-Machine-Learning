@@ -344,6 +344,75 @@ class TicketDetailEmployeeSerializer(serializers.ModelSerializer):
         if not obj.assigned_to:
             return None
         return f"{obj.assigned_to.first_name} {obj.assigned_to.last_name}".strip()
+
+class TicketDetailSupportSerializer(serializers.ModelSerializer):
+    status = serializers.CharField(source='get_status_display', read_only=True)
+    priority = serializers.CharField(source='priority.priority_level', read_only=True)
+    affected_scope = serializers.CharField(source='get_affected_scope_display', read_only=True)
+    assigned_to = serializers.SerializerMethodField()
+    first_name = serializers.CharField(source='submitted_by.first_name', read_only=True)
+    last_name = serializers.CharField(source='submitted_by.last_name', read_only=True)
+    user_code = serializers.CharField(source='submitted_by.user_code', read_only=True)
+    employee_department = serializers.CharField(source='employee_department.name', read_only=True)
+    office_location = serializers.CharField(source='office_location.name', read_only=True)
+    category = serializers.CharField(
+        source="category.name",
+        read_only=True
+    )
+
+    symptom_code = serializers.CharField(
+        source="symptom_code.code",
+        read_only=True
+    )
+
+    required_specialization = serializers.CharField(
+        source="symptom_code.required_specialization.name",
+        read_only=True
+    )
+    classification_source = serializers.SerializerMethodField()
+    classification_confidence = serializers.SerializerMethodField()
+    it_department = serializers.CharField(
+        source="it_department.name",
+        read_only=True
+    )
+    class Meta:
+        model = Ticket
+
+        fields = ['id','ticket_code', 'status', 'priority', 'subject', 'description', 'assigned_to', 'business_impact', 
+                  'affected_scope', 'updated_at', 'created_at', 'response_deadline', 'resolution_deadline', 'office_location', 
+                  'workstation','employee_department', 'first_name', 'last_name', 'user_code', 'is_escalated', 'resolved_at', 
+                  'resolved_by', 'category', 'symptom_code', 'required_specialization', 'classification_source', 'classification_confidence', 'it_department']
+
+
+    def get_assigned_to(self, obj):
+        if not obj.assigned_to:
+            return None
+
+        return {
+            "id": obj.assigned_to.id,
+            "first_name": obj.assigned_to.first_name,
+            "last_name": obj.assigned_to.last_name,
+            "full_name": f"{obj.assigned_to.first_name} {obj.assigned_to.last_name}".strip(),
+        }
+    def get_classification_source(self, obj):
+        analysis = getattr(obj, "ticket_analysis", None)
+
+        if not analysis:
+            return None
+
+        if analysis.was_overridden:
+            return "Service Desk Reviewed"
+
+        return "System Classified"
+
+
+    def get_classification_confidence(self, obj):
+        analysis = getattr(obj, "ticket_analysis", None)
+
+        if not analysis:
+            return None
+
+        return analysis.confidence
 # --- SLA Rules Serializer ---
 class SLARulesSerializer(serializers.ModelSerializer):
     class Meta:
@@ -392,7 +461,7 @@ class SymptomCodeSerializer(serializers.ModelSerializer):
 class UpdateSymptomCodeSerializer(serializers.ModelSerializer):
     class Meta:
         model = SymptomCode
-        fields = ['required_specialization']
+        fields = ['description']
 
 class CreateSymptomCodeSerializer(serializers.ModelSerializer):
     class Meta:

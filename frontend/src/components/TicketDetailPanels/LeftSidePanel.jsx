@@ -9,14 +9,28 @@ import {
     Clock,
     Wrench,
     SquareUserRound,
+    Tags,
+    Stethoscope,
+    Pencil,
 } from "lucide-react";
 
 import { statusColor } from "/src/utils/statusColor";
 import { priorityColor, priorityLabel } from "/src/utils/priority";
 import { formatDate } from "/src/utils/formatDate";
+import { getCurrentUser } from "/src/utils/auth";
 
 export default function LeftSidePanel({ ticketDetails }) {
+    const user = getCurrentUser();
+
     const priority = ticketDetails.priority;
+
+    const canViewClassification =
+        user?.role === "IT Service Desk" ||
+        user?.role === "IT Support Specialist";
+
+    const canEditTicket =
+        user?.role === "IT Service Desk" ||
+        user?.role === "IT Support Specialist";
 
     return (
         <div
@@ -70,7 +84,6 @@ export default function LeftSidePanel({ ticketDetails }) {
                     </p>
                 </div>
 
-                {/* DESCRIPTION */}
                 <div className="mt-4">
                     <p className="mb-1 text-xs font-medium uppercase text-gray-500">
                         Description
@@ -81,7 +94,6 @@ export default function LeftSidePanel({ ticketDetails }) {
                     </p>
                 </div>
 
-                {/* BUSINESS IMPACT */}
                 {ticketDetails.business_impact && (
                     <div className="mt-4">
                         <p className="mb-1 text-xs font-medium uppercase text-gray-500">
@@ -96,7 +108,6 @@ export default function LeftSidePanel({ ticketDetails }) {
 
             </div>
 
-            {/* TICKET INFORMATION */}
             <div className="px-5 pb-5">
                 <div className="space-y-3">
 
@@ -118,15 +129,59 @@ export default function LeftSidePanel({ ticketDetails }) {
                         icon={CircleAlert}
                         label="Priority"
                     >
-                        <span
-                            className={`inline-flex whitespace-nowrap rounded-md border px-2.5 py-1 text-xs font-semibold ${
-                                priorityColor[priority] ||
-                                "border-gray-300 bg-gray-100 text-gray-600"
-                            }`}
-                        >
-                            {priorityLabel[priority] || priority || "-"}
-                        </span>
+                        <div className="flex min-w-0 items-center justify-between gap-2">
+
+                            <span
+                                className={`inline-flex whitespace-nowrap rounded-md border px-2.5 py-1 text-xs font-semibold ${
+                                    priorityColor[priority] ||
+                                    "border-gray-300 bg-gray-100 text-gray-600"
+                                }`}
+                            >
+                                {priorityLabel[priority] || priority || "-"}
+                            </span>
+
+                            {canEditTicket && (
+                                <EditButton
+                                    label="Edit priority"
+                                    onClick={() => {}}
+                                />
+                            )}
+
+                        </div>
                     </DetailRow>
+
+                    {canViewClassification && (
+                        <>
+                            <DetailRow
+                                icon={Stethoscope}
+                                label="Symptom Code"
+                            >
+                                <div className="flex min-w-0 items-center justify-between gap-2">
+
+                                    <span className="min-w-0 break-words text-sm font-medium text-black">
+                                        {ticketDetails.symptom_code || "-"}
+                                    </span>
+
+                                    {canEditTicket && (
+                                        <EditButton
+                                            label="Edit symptom code"
+                                            onClick={() => {}}
+                                        />
+                                    )}
+
+                                </div>
+                            </DetailRow>
+
+                            <DetailRow
+                                icon={Tags}
+                                label="Category"
+                            >
+                                <span className="text-sm font-medium text-black">
+                                    {ticketDetails.category || "-"}
+                                </span>
+                            </DetailRow>
+                        </>
+                    )}
 
                     <DetailRow
                         icon={Users}
@@ -160,7 +215,7 @@ export default function LeftSidePanel({ ticketDetails }) {
                         label="Assigned to"
                     >
                         <span className="inline-flex max-w-full items-center break-words rounded-md border border-gray-300 bg-gray-100 px-2.5 py-1 text-sm font-medium text-black">
-                            {ticketDetails.assigned_to || "Unassigned"}
+                            {ticketDetails.assigned_to?.full_name || "Unassigned"}
                         </span>
                     </DetailRow>
 
@@ -185,7 +240,6 @@ export default function LeftSidePanel({ ticketDetails }) {
                 </div>
             </div>
 
-            {/* REQUESTER INFORMATION */}
             <div className="border-t border-gray-200 p-5">
 
                 <div className="mb-4 flex items-center gap-2">
@@ -260,24 +314,27 @@ export default function LeftSidePanel({ ticketDetails }) {
     );
 }
 
-
 function DetailRow({
     icon: Icon,
     label,
     children,
 }) {
     return (
-        <div className="grid grid-cols-[170px_minmax(0,1fr)] items-start gap-3">
+        <div className="grid grid-cols-[200px_minmax(0,1fr)] items-start gap-3">
 
-            <div className="flex min-w-0 items-center gap-2 text-gray-500">
-                <Icon
-                    size={17}
-                    className="shrink-0"
-                />
+            <div className="flex min-w-0 items-center gap-3">
 
-                <span className="text-sm">
+                <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-[#4C4CF9]">
+                    <Icon
+                        size={17}
+                        className="text-white"
+                    />
+                </div>
+
+                <span className="text-sm text-gray-500">
                     {label}
                 </span>
+
             </div>
 
             <div className="min-w-0 break-words">
@@ -285,5 +342,31 @@ function DetailRow({
             </div>
 
         </div>
+    );
+}
+
+function EditButton({
+    label,
+    onClick,
+}) {
+    return (
+        <button
+            type="button"
+            onClick={onClick}
+            aria-label={label}
+            title={label}
+            className="
+                flex h-8 w-8 shrink-0
+                items-center justify-center
+                rounded-md border border-gray-300
+                bg-white text-gray-600
+                transition-colors
+                hover:border-gray-400
+                hover:bg-gray-50
+                hover:text-black
+            "
+        >
+            <Pencil size={15} />
+        </button>
     );
 }
