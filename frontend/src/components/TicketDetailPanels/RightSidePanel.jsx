@@ -3,149 +3,624 @@ import {
     CircleCheck,
     UserCheck,
     Clock3,
+    Circle,
+    XCircle,
+    Eye,
+    Undo2,
+    Pause,
+    CheckCheck,
     ChevronDown,
+    RotateCcw,
+    AlertTriangle,
+    ArrowLeftRight,
 } from "lucide-react";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
-export default function RightSidePanel() {
-    const [status, setStatus] = useState("Resolved");
+import api from "/src/api";
+import { formatDate } from "/src/utils/formatDate";
+import { getCurrentUser } from "/src/utils/auth";
+
+
+export default function RightSidePanel({
+    ticketDetails,
+    onTicketUpdated,
+}) {
+    const user = getCurrentUser();
+
+    const canEditStatus =
+        user?.role === "IT Support Specialist";
+
+    const [status, setStatus] = useState(
+        normalizeStatus(ticketDetails?.status)
+    );
+
+    const [history, setHistory] = useState([]);
+
+    const [pendingStatus, setPendingStatus] =
+        useState(null);
+
+    const [showConfirm, setShowConfirm] =
+        useState(false);
+
+    const [isUpdating, setIsUpdating] =
+        useState(false);
+
+    const [isLoadingHistory, setIsLoadingHistory] =
+        useState(false);
+
+
+    useEffect(() => {
+        setStatus(
+            normalizeStatus(ticketDetails?.status)
+        );
+    }, [ticketDetails?.status]);
+
+
+    useEffect(() => {
+        if (!ticketDetails?.id) {
+            return;
+        }
+
+        fetchHistory();
+    }, [ticketDetails?.id]);
+
+
+    const fetchHistory = async () => {
+        if (!ticketDetails?.id) {
+            return;
+        }
+
+        try {
+            setIsLoadingHistory(true);
+
+            const response = await api.get(
+                `/tickets/${ticketDetails.id}/history/`
+            );
+
+            console.log(
+                "HISTORY RESPONSE:",
+                response.data
+            );
+
+            const historyData =
+                Array.isArray(response.data)
+                    ? response.data
+                    : response.data?.results ||
+                      response.data?.history ||
+                      [];
+
+            setHistory(historyData);
+        }
+        catch (error) {
+            console.error(
+                "Failed to fetch ticket history:",
+                error.response?.data || error
+            );
+
+            setHistory([]);
+        }
+        finally {
+            setIsLoadingHistory(false);
+        }
+    };
+
+
+    const handleStatusChange = (newStatus) => {
+        if (!canEditStatus) {
+            return;
+        }
+
+        if (newStatus === status) {
+            return;
+        }
+
+        setPendingStatus(newStatus);
+        setShowConfirm(true);
+    };
+
+
+    const cancelStatusChange = () => {
+        setPendingStatus(null);
+        setShowConfirm(false);
+    };
+
+
+    const confirmStatusChange = async () => {
+        if (!canEditStatus) {
+            return;
+        }
+
+        if (!pendingStatus) {
+            return;
+        }
+
+        const newStatus = pendingStatus;
+
+        try {
+            setIsUpdating(true);
+
+            await api.patch(
+                `/tickets/update-status/${ticketDetails.id}/`,
+                {
+                    status: newStatus,
+                }
+            );
+
+            setStatus(newStatus);
+
+            setShowConfirm(false);
+            setPendingStatus(null);
+
+            await onTicketUpdated?.();
+
+            await fetchHistory();
+        }
+        catch (error) {
+            console.error(
+                "Failed to update ticket status:",
+                error.response?.data || error
+            );
+        }
+        finally {
+            setIsUpdating(false);
+        }
+    };
+
+
+    const getHistoryIcon = (item) => {
+        if (item.event_type === "CREATED") {
+            return CircleCheck;
+        }
+
+        if (item.event_type === "ASSIGNED") {
+            return UserCheck;
+        }
+
+        if (item.event_type === "REASSIGNED") {
+            return ArrowLeftRight;
+        }
+
+        if (item.event_type === "RETURNED") {
+            return Undo2;
+        }
+
+        if (
+            item.event_type === "PRIORITY_REVIEW" ||
+            item.event_type === "PRIORITY_CHANGED" ||
+            item.event_type === "ESCALATED"
+        ) {
+            return AlertTriangle;
+        }
+
+        if (item.event_type === "STATUS_CHANGED") {
+            const newStatus =
+                normalizeStatus(item.new_value);
+
+            switch (newStatus) {
+                case "open":
+                    return Circle;
+
+                case "under_review":
+                    return Eye;
+
+                case "in_progress":
+                    return Clock3;
+
+                case "returned":
+                    return Undo2;
+
+                case "pending":
+                    return Pause;
+
+                case "resolved":
+                    return CircleCheck;
+
+                case "closed":
+                    return CheckCheck;
+
+                case "reopened":
+                    return RotateCcw;
+
+                case "cancelled":
+                    return XCircle;
+
+                default:
+                    return Clock3;
+            }
+        }
+
+        return Clock3;
+    };
+
+
+    const getHistoryTitle = (item) => {
+        if (item.title) {
+            return item.title;
+        }
+
+        if (item.event_type === "CREATED") {
+            return "Ticket Submitted";
+        }
+
+        if (item.event_type === "ASSIGNED") {
+            return "Assigned";
+        }
+
+        if (item.event_type === "REASSIGNED") {
+            return "Reassigned";
+        }
+
+        if (item.event_type === "RETURNED") {
+            return "Returned to Service Desk";
+        }
+
+        if (
+            item.event_type === "PRIORITY_REVIEW"
+        ) {
+            return "Priority Review Requested";
+        }
+
+        if (
+            item.event_type === "PRIORITY_CHANGED"
+        ) {
+            return "Priority Changed";
+        }
+
+        if (item.event_type === "ESCALATED") {
+            return "Escalated";
+        }
+
+        if (
+            item.event_type === "STATUS_CHANGED"
+        ) {
+            return formatStatus(
+                item.new_value
+            );
+        }
+
+        return formatStatus(
+            item.event_type
+        );
+    };
+
+
+    const latestHistoryId =
+        history.length > 0
+            ? history[0].id
+            : null;
+
 
     return (
-        <div className="flex h-full w-[350px] shrink-0 flex-col border-l border-gray-300 bg-white">
+        <>
+            <div className="flex h-full w-[350px] shrink-0 flex-col border-l border-gray-300 bg-white">
 
-            <div className="shrink-0 border-b border-gray-200 p-5">
-                <div className="flex items-center gap-2">
-                    <History
-                        size={20}
-                        className="text-gray-500"
-                    />
+                {/* Header */}
+                <div className="shrink-0 border-b border-gray-200 p-5">
 
-                    <p className="font-semibold text-black">
-                        Status History
+                    <div className="flex items-center gap-2">
+
+                        <History
+                            size={20}
+                            className="text-gray-500"
+                        />
+
+                        <p className="font-semibold text-black">
+                            Status History
+                        </p>
+
+                    </div>
+
+                    <p className="mt-1 text-xs text-gray-500">
+                        {canEditStatus
+                            ? "Track and manage the progress of this ticket."
+                            : "Track the progress of this ticket."
+                        }
                     </p>
-                </div>
-
-                <p className="mt-1 text-xs text-gray-500">
-                    Track and manage the progress of this ticket.
-                </p>
-            </div>
-
-            <div className="shrink-0 border-b border-gray-200 p-5">
-                <p className="text-xs font-medium uppercase text-gray-500">
-                    Current Status
-                </p>
-
-                <div className="relative mt-2">
-                    <select
-                        value={status}
-                        onChange={(e) => setStatus(e.target.value)}
-                        className="
-                            w-full appearance-none rounded-lg
-                            border border-gray-300 bg-white
-                            px-3 py-2.5 pr-10
-                            text-sm font-medium text-black
-                            outline-none transition-colors
-                            focus:border-[#4C4CF9]
-                            focus:ring-2 focus:ring-[#4C4CF9]/10
-                        "
-                    >
-                        <option value="Open">
-                            Open
-                        </option>
-
-                        <option value="In Progress">
-                            In Progress
-                        </option>
-
-                        <option value="Resolved">
-                            Resolved
-                        </option>
-
-                        <option value="Closed">
-                            Closed
-                        </option>
-                    </select>
-
-                    <ChevronDown
-                        size={16}
-                        className="
-                            pointer-events-none absolute
-                            right-3 top-1/2
-                            -translate-y-1/2 text-gray-400
-                        "
-                    />
-                </div>
-
-                <p className="mt-2 text-xs text-gray-500">
-                    Last updated Sep 1, 2026 • 10:45 AM
-                </p>
-            </div>
-
-            <div
-                className="
-                    min-h-0 flex-1 overflow-y-auto p-5
-                    [&::-webkit-scrollbar]:w-1
-                    [&::-webkit-scrollbar-track]:bg-transparent
-                    [&::-webkit-scrollbar-thumb]:rounded-full
-                    [&::-webkit-scrollbar-thumb]:bg-transparent
-                    hover:[&::-webkit-scrollbar-thumb]:bg-gray-300
-                "
-            >
-                <div className="relative">
-
-                    <div className="absolute bottom-5 left-[15px] top-5 w-px bg-[#4C4CF9]" />
-
-                    <TimelineItem
-                        icon={CircleCheck}
-                        title="Ticket Submitted"
-                        description="Your ticket was successfully submitted."
-                        date="Sep 1, 2026"
-                        time="10:24 AM"
-                        active
-                    />
-
-                    <TimelineItem
-                        icon={UserCheck}
-                        title="Assigned to IT Support"
-                        description="Your ticket was assigned to an IT support specialist."
-                        date="Sep 1, 2026"
-                        time="10:32 AM"
-                        active
-                    />
-
-                    <TimelineItem
-                        icon={Clock3}
-                        title="In Progress"
-                        description="IT Support started working on your ticket."
-                        date="Sep 1, 2026"
-                        time="10:45 AM"
-                        active
-                    />
-
-                    <TimelineItem
-                        icon={CircleCheck}
-                        title="Resolved"
-                        description="The issue has been resolved."
-                        date="Sep 1, 2026"
-                        time="11:08 AM"
-                        active
-                        current
-                    />
 
                 </div>
+
+
+                {/* Current Status */}
+                <div className="shrink-0 border-b border-gray-200 p-5">
+
+                    <p className="text-xs font-medium uppercase text-gray-500">
+                        Current Status
+                    </p>
+
+
+                    {canEditStatus ? (
+
+                        <div className="relative mt-2">
+
+                            <select
+                                value={status}
+                                disabled={isUpdating}
+                                onChange={(e) =>
+                                    handleStatusChange(
+                                        e.target.value
+                                    )
+                                }
+                                className="
+                                    w-full appearance-none
+                                    rounded-lg
+                                    border border-gray-300
+                                    bg-white
+                                    px-3 py-2.5 pr-10
+                                    text-sm font-medium
+                                    text-black
+                                    outline-none
+                                    transition-colors
+                                    focus:border-[#4C4CF9]
+                                    focus:ring-2
+                                    focus:ring-[#4C4CF9]/10
+                                    disabled:cursor-not-allowed
+                                    disabled:bg-gray-100
+                                    disabled:text-gray-400
+                                "
+                            >
+                                <option value="open">
+                                    Open
+                                </option>
+
+                                <option value="under_review">
+                                    Under Review
+                                </option>
+
+                                <option value="in_progress">
+                                    In Progress
+                                </option>
+
+                                <option value="returned">
+                                    Returned
+                                </option>
+
+                                <option value="pending">
+                                    Pending
+                                </option>
+
+                                <option value="resolved">
+                                    Resolved
+                                </option>
+
+                                <option value="closed">
+                                    Closed
+                                </option>
+
+                                <option value="reopened">
+                                    Reopened
+                                </option>
+
+                                <option value="cancelled">
+                                    Cancelled
+                                </option>
+                            </select>
+
+                            <ChevronDown
+                                size={16}
+                                className="
+                                    pointer-events-none
+                                    absolute
+                                    right-3
+                                    top-1/2
+                                    -translate-y-1/2
+                                    text-gray-400
+                                "
+                            />
+
+                        </div>
+
+                    ) : (
+
+                        <div className="mt-2">
+
+                            <div
+                                className="
+                                    flex w-full items-center
+                                    rounded-lg
+                                    border border-gray-300
+                                    bg-gray-50
+                                    px-3 py-2.5
+                                "
+                            >
+                                <span className="text-sm font-medium text-black">
+                                    {formatStatus(
+                                        ticketDetails?.status
+                                    ) || "-"}
+                                </span>
+                            </div>
+
+                        </div>
+
+                    )}
+
+
+                    <p className="mt-2 text-xs text-gray-500">
+                        {history.length > 0
+                            ? `Last updated ${formatDate(
+                                history[0].created_at
+                            )}`
+                            : "No status history yet."
+                        }
+                    </p>
+
+                </div>
+
+
+                {/* History Timeline */}
+                <div
+                    className="
+                        min-h-0 flex-1
+                        overflow-y-auto
+                        p-5
+                        [&::-webkit-scrollbar]:w-1
+                        [&::-webkit-scrollbar-track]:bg-transparent
+                        [&::-webkit-scrollbar-thumb]:rounded-full
+                        [&::-webkit-scrollbar-thumb]:bg-transparent
+                        hover:[&::-webkit-scrollbar-thumb]:bg-gray-300
+                    "
+                >
+
+                    {isLoadingHistory ? (
+
+                        <p className="text-sm text-gray-500">
+                            Loading ticket history...
+                        </p>
+
+                    ) : history.length === 0 ? (
+
+                        <p className="text-sm text-gray-500">
+                            No ticket history available.
+                        </p>
+
+                    ) : (
+
+                        <div className="relative">
+
+                            <div className="absolute bottom-5 left-[15px] top-5 w-px bg-[#4C4CF9]" />
+
+                            {history.map((item) => {
+                                const Icon =
+                                    getHistoryIcon(item);
+
+                                return (
+                                    <TimelineItem
+                                        key={item.id}
+                                        icon={Icon}
+                                        title={
+                                            getHistoryTitle(
+                                                item
+                                            )
+                                        }
+                                        description={
+                                            item.message ||
+                                            item.remarks ||
+                                            "Ticket was updated."
+                                        }
+                                        date={
+                                            formatDate(
+                                                item.created_at
+                                            )
+                                        }
+                                        active
+                                        current={
+                                            item.id ===
+                                            latestHistoryId
+                                        }
+                                    />
+                                );
+                            })}
+
+                        </div>
+
+                    )}
+
+                </div>
+
             </div>
 
-        </div>
+
+            {/* Confirmation Modal */}
+            {canEditStatus && showConfirm && (
+
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 px-4">
+
+                    <div className="w-full max-w-[400px] rounded-xl bg-white p-5 shadow-xl">
+
+                        <p className="text-base font-semibold text-black">
+                            Update Ticket Status
+                        </p>
+
+                        <p className="mt-2 text-sm leading-6 text-gray-500">
+
+                            Are you sure you want to change
+                            the ticket status from{" "}
+
+                            <span className="font-semibold text-black">
+                                {formatStatus(status)}
+                            </span>
+
+                            {" "}to{" "}
+
+                            <span className="font-semibold text-black">
+                                {formatStatus(
+                                    pendingStatus
+                                )}
+                            </span>
+
+                            ?
+
+                        </p>
+
+
+                        <div className="mt-5 flex justify-end gap-2">
+
+                            <button
+                                type="button"
+                                disabled={isUpdating}
+                                onClick={
+                                    cancelStatusChange
+                                }
+                                className="
+                                    rounded-lg
+                                    border border-gray-300
+                                    bg-white
+                                    px-4 py-2
+                                    text-sm font-medium
+                                    text-gray-700
+                                    transition-colors
+                                    hover:bg-gray-50
+                                    disabled:cursor-not-allowed
+                                    disabled:opacity-50
+                                "
+                            >
+                                Cancel
+                            </button>
+
+
+                            <button
+                                type="button"
+                                disabled={isUpdating}
+                                onClick={
+                                    confirmStatusChange
+                                }
+                                className="
+                                    rounded-lg
+                                    bg-[#4C4CF9]
+                                    px-4 py-2
+                                    text-sm font-medium
+                                    text-white
+                                    transition-colors
+                                    hover:bg-[#3f3fe0]
+                                    disabled:cursor-not-allowed
+                                    disabled:opacity-50
+                                "
+                            >
+                                {isUpdating
+                                    ? "Updating..."
+                                    : "Confirm"
+                                }
+                            </button>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+            )}
+
+        </>
     );
 }
+
+
 
 function TimelineItem({
     icon: Icon,
     title,
     description,
     date,
-    time,
     active = false,
     current = false,
 }) {
@@ -154,13 +629,20 @@ function TimelineItem({
 
             <div
                 className={`
-                    relative z-10 flex h-[31px] w-[31px] shrink-0
-                    items-center justify-center rounded-full border
+                    relative z-10
+                    flex h-[31px] w-[31px]
+                    shrink-0
+                    items-center
+                    justify-center
+                    rounded-full
+                    border
+
                     ${
                         active
                             ? "border-[#4C4CF9] bg-[#4C4CF9] text-white"
                             : "border-gray-200 bg-white text-gray-400"
                     }
+
                     ${
                         current
                             ? "ring-4 ring-[#4C4CF9]/15"
@@ -168,12 +650,17 @@ function TimelineItem({
                     }
                 `}
             >
-                <Icon size={15} strokeWidth={2.2} />
+                <Icon
+                    size={15}
+                    strokeWidth={2.2}
+                />
             </div>
+
 
             <div className="min-w-0 pt-0.5">
 
                 <div className="flex items-center gap-2">
+
                     <p
                         className={`text-sm font-semibold ${
                             active
@@ -184,12 +671,15 @@ function TimelineItem({
                         {title}
                     </p>
 
+
                     {current && (
                         <span className="rounded-full bg-[#4C4CF9]/10 px-2 py-0.5 text-[10px] font-medium text-[#4C4CF9]">
                             Current
                         </span>
                     )}
+
                 </div>
+
 
                 <p
                     className={`mt-1 text-xs leading-5 ${
@@ -201,19 +691,43 @@ function TimelineItem({
                     {description}
                 </p>
 
-                <div className="mt-2 flex flex-wrap items-center gap-x-1 text-[11px] text-gray-400">
-                    <span>{date}</span>
 
-                    {time && (
-                        <>
-                            <span>•</span>
-                            <span>{time}</span>
-                        </>
-                    )}
+                <div className="mt-2 text-[11px] text-gray-400">
+                    {date}
                 </div>
 
             </div>
 
         </div>
     );
+}
+
+
+
+function formatStatus(value) {
+    if (!value) {
+        return "";
+    }
+
+    return String(value)
+        .replaceAll("_", " ")
+        .toLowerCase()
+        .replace(
+            /\b\w/g,
+            (letter) =>
+                letter.toUpperCase()
+        );
+}
+
+
+
+function normalizeStatus(value) {
+    if (!value) {
+        return "";
+    }
+
+    return String(value)
+        .trim()
+        .toLowerCase()
+        .replaceAll(" ", "_");
 }

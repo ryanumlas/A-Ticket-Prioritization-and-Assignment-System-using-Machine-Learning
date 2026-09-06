@@ -5,7 +5,6 @@ import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import {
     ArrowLeft,
-    ChevronDown,
     SlidersHorizontal
 } from "lucide-react";
 
@@ -23,47 +22,54 @@ export default function TicketDetails() {
     const { ticketId } = useParams();
     const navigate = useNavigate();
 
+    const fetchTicketDetails = async () => {
+        try {
+            setError("");
+
+            let endpoint;
+
+            if (user?.role === "Employee") {
+                endpoint = `/tickets/employee/detail/${ticketId}/`;
+            }
+            else if (user?.role === "IT Service Desk") {
+                endpoint = `/tickets/service-desk/detail/${ticketId}/`;
+            }
+            else if (user?.role === "IT Support Specialist") {
+                endpoint = `/tickets/support/detail/${ticketId}/`;
+            }
+            else {
+                setError("Access Denied / Invalid Role");
+                return;
+            }
+
+            const response = await api.get(endpoint);
+
+            setTicketDetails(response.data);
+
+            console.log(
+                "Fetched ticket details:",
+                response.data
+            );
+        }
+        catch (error) {
+            console.error(
+                "Error fetching ticket details:",
+                error.response?.data || error
+            );
+
+            setError(
+                error.response?.data?.error ||
+                "Failed to load ticket details."
+            );
+        }
+    };
+
     useEffect(() => {
-        const fetchTicketDetails = async () => {
+        const loadTicketDetails = async () => {
             try {
                 setLoading(true);
-                setError("");
 
-                let endpoint;
-
-                if (user?.role === "Employee") {
-                    endpoint = `/tickets/employee/detail/${ticketId}/`;
-                }
-                else if (user?.role === "IT Service Desk") {
-                    endpoint = `/tickets/service-desk/detail/${ticketId}/`;
-                }
-                else if (user?.role === "IT Support Specialist") {
-                    endpoint = `/tickets/support/detail/${ticketId}/`;
-                }
-                else {
-                    setError("Access Denied / Invalid Role");
-                    return;
-                }
-
-                const response = await api.get(endpoint);
-
-                setTicketDetails(response.data);
-
-                console.log(
-                    "Fetched ticket details:",
-                    response.data
-                );
-            }
-            catch (error) {
-                console.error(
-                    "Error fetching ticket details:",
-                    error.response?.data || error
-                );
-
-                setError(
-                    error.response?.data?.error ||
-                    "Failed to load ticket details."
-                );
+                await fetchTicketDetails();
             }
             finally {
                 setLoading(false);
@@ -71,7 +77,7 @@ export default function TicketDetails() {
         };
 
         if (user?.role && ticketId) {
-            fetchTicketDetails();
+            loadTicketDetails();
         }
     }, [ticketId, user?.role]);
 
@@ -143,6 +149,7 @@ export default function TicketDetails() {
         MainContent = (
             <TicketDetailsSupport
                 ticketDetails={ticketDetails}
+                onTicketUpdated={fetchTicketDetails}
             />
         );
     }
@@ -179,7 +186,7 @@ export default function TicketDetails() {
                         {isAssignedSupport && (
                             <button
                                 type="button"
-                                className="flex h-9 items-center gap-2 rounded-lg border border-gray-300 bg-[#4C4CF9] px-3.5 text-sm font-medium text-white transition-colors hover:bg-[#3a3ae0] cursor-pointer focus:outline-none focus:ring-2 focus:ring-[#4C4CF9]/50"
+                                className="flex h-9 cursor-pointer items-center gap-2 rounded-lg border border-gray-300 bg-[#4C4CF9] px-3.5 text-sm font-medium text-white transition-colors hover:bg-[#3a3ae0] focus:outline-none focus:ring-2 focus:ring-[#4C4CF9]/50"
                             >
                                 Manage Tickets
                                 <SlidersHorizontal size={16} />

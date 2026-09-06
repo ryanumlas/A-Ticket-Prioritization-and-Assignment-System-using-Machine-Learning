@@ -320,7 +320,7 @@ function DetailRow({
     children,
 }) {
     return (
-        <div className="grid grid-cols-[200px_minmax(0,1fr)] items-start gap-3">
+        <div className="grid grid-cols-[180px_minmax(0,1fr)] items-start gap-3">
 
             <div className="flex min-w-0 items-center gap-3">
 

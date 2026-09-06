@@ -15,6 +15,7 @@ class Ticket(models.Model):
         RESOLVED = 'resolved', 'Resolved'
         CLOSED = 'closed', 'Closed'
         REOPENED = 'reopened', 'Reopened'   
+        CANCELLED = 'cancelled', 'Cancelled'
         # EXPIRED = 'expired', 'Expired'
         # ESCALATED = 'escalated', 'Escalated'
         # CLOSED = 'closed', 'Closed'
@@ -114,7 +115,11 @@ class TicketStatusHistory(models.Model):
         STATUS_CHANGED = "STATUS_CHANGED", "Status Changed"
         ASSIGNED = "ASSIGNED", "Assigned"
         REASSIGNED = "REASSIGNED", "Reassigned"
+        RETURNED = "RETURNED", "Returned to Service Desk"
+        SYMPTOM_CODE_CHANGED = "SYMPTOM_CHANGED", "Symptom Code Changed"
+        REVIEW_COMPLETED = "REVIEW_COMPLETED", "Review Completed"
         PRIORITY_CHANGED = "PRIORITY_CHANGED", "Priority Changed"
+        PRIORITY_REVIEW_REQUESTED = "PRIORITY_REVIEW", "Priority Review Requested"
         ESCALATED = "ESCALATED", "Escalated"
         RESOLVED = "RESOLVED", "Resolved"
         CLOSED = "CLOSED", "Closed"

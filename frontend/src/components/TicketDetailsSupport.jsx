@@ -2,9 +2,11 @@ import { getCurrentUser } from "../utils/auth";
 import AssignedTicketDetails from "../components/AssignedTicketDetails";
 import QueueTicketDetails from "../components/QueueTicketDetails";
 
-export default function TicketDetailsSupport({ ticketDetails }) {
+export default function TicketDetailsSupport({
+    ticketDetails,
+    onTicketUpdated,
+}) {
     const user = getCurrentUser();
-
 
     const isAssignedToMe =
         Number(ticketDetails?.assigned_to?.id) ===
@@ -14,6 +16,7 @@ export default function TicketDetailsSupport({ ticketDetails }) {
         return (
             <AssignedTicketDetails
                 ticketDetails={ticketDetails}
+                onTicketUpdated={onTicketUpdated}
             />
         );
     }

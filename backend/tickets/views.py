@@ -8,12 +8,12 @@ from rest_framework.response import Response
 from rest_framework import viewsets, generics, status
 from rest_framework.views import APIView
 from rest_framework.permissions import IsAuthenticated, AllowAny
-from .models import Ticket, Category, SymptomCode, TicketComments, SLARules, ReviewFlags, TicketAssistance, Keyword, TicketStatusHistory
+from .models import Ticket, Category, SymptomCode, TicketComments, SLARules, ReviewFlags, TicketAssistance, Keyword, TicketStatusHistory as TicketStatusHistoryModel
 from .serializers import (SymptomCodeSerializer, TicketSerializer, CategorySerializer, 
 TicketAssistanceSerializer, TicketCommentSerializer, TicketStatusHistory, SLARulesSerializer, 
 SLARulesUpdateSerializer, KeywordSerializer, KeywordUpdateSerializer, UpdateSymptomCodeSerializer, CreateSymptomCodeSerializer,
 TicketCreateSerializer, TicketUpdateSerializer, TicketDetailEmployeeSerializer, CategoryUpdateSerializer, FlaggedTicketsListSerializer, 
-FlaggedTicketDetailSerializer, TicketDetailSupportSerializer)
+FlaggedTicketDetailSerializer, TicketDetailSupportSerializer, TicketStatusHistorySerializer)
 from users.models import User, ITSupportProfile
 from .services import predict_ticket
 from ai.models import TicketAnalysis, TicketAIAnalysis
@@ -50,14 +50,32 @@ class CreateTicketView(generics.CreateAPIView):
             office_location=profile.office_location
         )
 
+        # Create initial ticket history
+        TicketStatusHistory.objects.create(
+            ticket=ticket,
+            event_type=TicketStatusHistory.EventType.CREATED,
+            new_value=ticket.status,
+            changed_by=self.request.user,
+            created_by=self.request.user,
+        )
+
         analysis = analyze_ticket(ticket)
 
         TicketAIAnalysis.objects.update_or_create(
             ticket=ticket,
             defaults={
-                "cleaned_text": analysis.get("cleaned_text", ""),
-                "summary": analysis.get("summary", ""),
-                "keywords": analysis.get("keywords", []),
+                "cleaned_text": analysis.get(
+                    "cleaned_text",
+                    ""
+                ),
+                "summary": analysis.get(
+                    "summary",
+                    ""
+                ),
+                "keywords": analysis.get(
+                    "keywords",
+                    []
+                ),
                 "model_version": "gemini-2.5-flash",
                 "business_critical": analysis.get(
                     "business_critical",
@@ -70,9 +88,7 @@ class CreateTicketView(generics.CreateAPIView):
             }
         )
 
-
         if analysis.get("is_unclear", False):
-
             ReviewFlags.objects.create(
                 ticket=ticket,
                 reason=ReviewFlags.Reasons.UNCLEAR_DESCRIPTION,
@@ -80,9 +96,21 @@ class CreateTicketView(generics.CreateAPIView):
                 source_type=ReviewFlags.SourceType.SYSTEM_GENERATED
             )
 
+            old_status = ticket.status
+
             ticket.is_under_review = True
             ticket.status = Ticket.TicketStatus.UNDER_REVIEW
             ticket.save()
+
+            if old_status != ticket.status:
+                TicketStatusHistory.objects.create(
+                    ticket=ticket,
+                    event_type=TicketStatusHistory.EventType.STATUS_CHANGED,
+                    old_value=old_status,
+                    new_value=ticket.status,
+                    changed_by=self.request.user,
+                    created_by=self.request.user,
+                )
 
             return
 
@@ -106,6 +134,7 @@ class CreateTicketView(generics.CreateAPIView):
             ).first()
 
             if not symptom:
+
                 ReviewFlags.objects.create(
                     ticket=ticket,
                     reason=ReviewFlags.Reasons.SYMPTOM_NOT_DETECTED,
@@ -126,6 +155,7 @@ class CreateTicketView(generics.CreateAPIView):
                 return
 
             if ml_result["requires_review"]:
+
                 ticket.is_under_review = True
                 ticket.status = Ticket.TicketStatus.UNDER_REVIEW
 
@@ -138,8 +168,17 @@ class CreateTicketView(generics.CreateAPIView):
 
                 return
 
-        category = symptom.category if symptom else None
-        department = category.it_department if category else None
+        category = (
+            symptom.category
+            if symptom
+            else None
+        )
+
+        department = (
+            category.it_department
+            if category
+            else None
+        )
 
         if not department:
 
@@ -155,34 +194,45 @@ class CreateTicketView(generics.CreateAPIView):
             ticket.save()
 
             return
-        
+
         ticket.symptom_code = symptom
         ticket.category = category
         ticket.it_department = department
 
         if not used_ml:
+
             TicketAnalysis.objects.update_or_create(
                 ticket=ticket,
                 defaults={
-                    "model_type": TicketAnalysis.ModelType.RULE_BASED,
-                    "model_used": "Rule-Based Classifier",
-                    "predicted_symptom_code": symptom,
-                    "created_by": self.request.user,
+                    "model_type":
+                        TicketAnalysis.ModelType.RULE_BASED,
+
+                    "model_used":
+                        "Rule-Based Classifier",
+
+                    "predicted_symptom_code":
+                        symptom,
+
+                    "created_by":
+                        self.request.user,
                 }
             )
 
         final_priority = calculate_priority(
             symptom.based_priority,
             ticket.affected_scope,
-            analysis.get("business_critical", False)
+            analysis.get(
+                "business_critical",
+                False
+            )
         )
-
 
         sla_rule = SLARules.objects.filter(
             priority_level=final_priority
         ).first()
 
         if sla_rule:
+
             ticket.priority = sla_rule
 
             ticket.response_deadline = (
@@ -326,7 +376,22 @@ class ManualOverrideTicketView(APIView):
             status=status.HTTP_200_OK
         )
 
-        
+class TicketStatusHistoryView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, pk):
+        history = TicketStatusHistoryModel.objects.filter(
+            ticket_id=pk
+        ).order_by("-created_at")
+
+        serializer = TicketStatusHistorySerializer(
+            history,
+            many=True
+        )
+
+        return Response(serializer.data)
+
+
 class UpdateTicketStatusView(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -336,8 +401,13 @@ class UpdateTicketStatusView(APIView):
         old_status = ticket.status
         new_status = request.data.get("status")
 
+        print("NEW STATUS:", new_status)
+
         if new_status == Ticket.TicketStatus.OPEN:
             ticket.status = Ticket.TicketStatus.OPEN
+
+        elif new_status == Ticket.TicketStatus.UNDER_REVIEW:
+            ticket.status = Ticket.TicketStatus.UNDER_REVIEW
 
         elif new_status == Ticket.TicketStatus.IN_PROGRESS:
             ticket.status = Ticket.TicketStatus.IN_PROGRESS
@@ -371,27 +441,36 @@ class UpdateTicketStatusView(APIView):
 
         else:
             return Response(
-                {"error": "Invalid status"},
+                {
+                    "error": "Invalid status",
+                    "received_status": new_status,
+                },
                 status=status.HTTP_400_BAD_REQUEST
             )
-        
+
         if old_status == ticket.status:
             return Response(
-                {"message": "Ticket status is already set to this status"},
+                {
+                    "message": "Ticket status is already set to this status"
+                },
                 status=status.HTTP_200_OK
             )
+
         ticket.save()
 
-        TicketStatusHistory.objects.create(
+        TicketStatusHistoryModel.objects.create(
             ticket=ticket,
-            event_type=TicketStatusHistory.EventType.STATUS_CHANGED,
+            event_type=TicketStatusHistoryModel.EventType.STATUS_CHANGED,
             old_value=old_status,
             new_value=ticket.status,
             changed_by=request.user,
         )
 
         return Response(
-            {"message": f"Ticket status updated to {ticket.status}"},
+            {
+                "message": f"Ticket status updated to {ticket.status}",
+                "status": ticket.status,
+            },
             status=status.HTTP_200_OK
         )
 class ListTicketView(generics.ListAPIView):
@@ -425,12 +504,55 @@ class UpdateTicketView(APIView):
                     status=status.HTTP_400_BAD_REQUEST
                 )
 
-            ticket.assigned_to = technician
+            old_assigned_to = ticket.assigned_to
+            old_status = ticket.status
 
+            ticket.assigned_to = technician
             ticket.status = Ticket.TicketStatus.IN_PROGRESS
 
+            ticket.save()
 
-        ticket.save()
+            new_name = (
+                f"{technician.first_name} "
+                f"{technician.last_name}"
+            ).strip()
+
+            # ASSIGNED or REASSIGNED history
+            if old_assigned_to:
+                old_name = (
+                    f"{old_assigned_to.first_name} "
+                    f"{old_assigned_to.last_name}"
+                ).strip()
+
+                TicketStatusHistory.objects.create(
+                    ticket=ticket,
+                    event_type=TicketStatusHistory.EventType.REASSIGNED,
+                    old_value=old_name,
+                    new_value=new_name,
+                    changed_by=request.user,
+                )
+
+            else:
+                TicketStatusHistory.objects.create(
+                    ticket=ticket,
+                    event_type=TicketStatusHistory.EventType.ASSIGNED,
+                    old_value=None,
+                    new_value=new_name,
+                    changed_by=request.user,
+                )
+
+            # STATUS_CHANGED history
+            if old_status != ticket.status:
+                TicketStatusHistory.objects.create(
+                    ticket=ticket,
+                    event_type=TicketStatusHistory.EventType.STATUS_CHANGED,
+                    old_value=old_status,
+                    new_value=ticket.status,
+                    changed_by=request.user,
+                )
+
+        else:
+            ticket.save()
 
         update_sla(ticket)
 
@@ -441,16 +563,14 @@ class UpdateTicketView(APIView):
                 "ticket": ticket.ticket_code,
                 "status": ticket.status,
                 "assigned_to": (
-                    ticket.assigned_to.username
-                    if ticket.assigned_to
-                    else None
-                ),
-                "response_sla_status": (
-                    ticket.response_sla_status
-                ),
-                "resolution_sla_status": (
-                    ticket.resolution_sla_status
-                ),
+                    f"{ticket.assigned_to.first_name} "
+                    f"{ticket.assigned_to.last_name}"
+                ).strip()
+                if ticket.assigned_to
+                else None
+                ,
+                "response_sla_status": ticket.response_sla_status,
+                "resolution_sla_status": ticket.resolution_sla_status,
             },
             status=status.HTTP_200_OK
         )

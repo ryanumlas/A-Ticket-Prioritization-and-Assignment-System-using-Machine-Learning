@@ -1,10 +1,8 @@
 from rest_framework import serializers
-from .models import Ticket, Category, SymptomCode, TicketComments, SLARules, ReviewFlags, TicketAssistance, Keyword
+from .models import Ticket, Category, SymptomCode, TicketComments, SLARules, ReviewFlags, TicketAssistance, Keyword, TicketStatusHistory
 from django.utils import timezone
 from datetime import timedelta
-
 from rest_framework import serializers
-from tickets.models import Ticket
 
 
 class TicketSerializer(serializers.ModelSerializer):
@@ -319,31 +317,94 @@ class TicketCommentSerializer(serializers.ModelSerializer):
         fields = ['id', 'ticket', 'commented_by', 'message', 'created_at', 'comment_type']
         read_only_fields = ['created_at', 'updated_at', 'updated_by']
         
-class TicketStatusHistory(serializers.ModelSerializer):
+class TicketStatusHistorySerializer(serializers.ModelSerializer):
     class Meta:
-        model = Ticket
+        model = TicketStatusHistory
         fields = ['id', 'ticket', 'previous_status', 'new_status', 'remarks', 'created_by', 'created_at']
         read_only_fields = ['created_at', 'created_by', 'updated_at', 'updated_by']
 
 class TicketDetailEmployeeSerializer(serializers.ModelSerializer):
-    status = serializers.CharField(source='get_status_display', read_only=True)
-    priority = serializers.CharField(source='priority.priority_level', read_only=True)
-    affected_scope = serializers.CharField(source='get_affected_scope_display', read_only=True)
+    status = serializers.CharField(
+        source='get_status_display',
+        read_only=True
+    )
+
+    priority = serializers.CharField(
+        source='priority.priority_level',
+        read_only=True
+    )
+
+    affected_scope = serializers.CharField(
+        source='get_affected_scope_display',
+        read_only=True
+    )
+
     assigned_to = serializers.SerializerMethodField()
-    first_name = serializers.CharField(source='submitted_by.first_name', read_only=True)
-    last_name = serializers.CharField(source='submitted_by.last_name', read_only=True)
-    user_code = serializers.CharField(source='submitted_by.user_code', read_only=True)
-    employee_department = serializers.CharField(source='employee_department.name', read_only=True)
-    office_location = serializers.CharField(source='office_location.name', read_only=True)
+
+    first_name = serializers.CharField(
+        source='submitted_by.first_name',
+        read_only=True
+    )
+
+    last_name = serializers.CharField(
+        source='submitted_by.last_name',
+        read_only=True
+    )
+
+    user_code = serializers.CharField(
+        source='submitted_by.user_code',
+        read_only=True
+    )
+
+    employee_department = serializers.CharField(
+        source='employee_department.name',
+        read_only=True
+    )
+
+    office_location = serializers.CharField(
+        source='office_location.name',
+        read_only=True
+    )
+
     class Meta:
         model = Ticket
 
-        fields = ['id','ticket_code', 'status', 'priority', 'subject', 'description', 'assigned_to', 'business_impact', 'affected_scope', 'updated_at', 'created_at', 'response_deadline', 'resolution_deadline', 'office_location', 'workstation','employee_department', 'first_name', 'last_name', 'user_code', 'is_escalated', 'resolved_at', 'resolved_by']
+        fields = [
+            'id',
+            'ticket_code',
+            'status',
+            'priority',
+            'subject',
+            'description',
+            'assigned_to',
+            'business_impact',
+            'affected_scope',
+            'updated_at',
+            'created_at',
+            'response_deadline',
+            'resolution_deadline',
+            'office_location',
+            'workstation',
+            'employee_department',
+            'first_name',
+            'last_name',
+            'user_code',
+            'is_escalated',
+            'resolved_at',
+            'resolved_by',
+        ]
 
     def get_assigned_to(self, obj):
         if not obj.assigned_to:
             return None
-        return f"{obj.assigned_to.first_name} {obj.assigned_to.last_name}".strip()
+
+        return {
+            "id": obj.assigned_to.id,
+            "full_name": (
+                f"{obj.assigned_to.first_name} "
+                f"{obj.assigned_to.last_name}"
+            ).strip(),
+        }
 
 class TicketDetailSupportSerializer(serializers.ModelSerializer):
     status = serializers.CharField(source='get_status_display', read_only=True)
@@ -413,6 +474,82 @@ class TicketDetailSupportSerializer(serializers.ModelSerializer):
             return None
 
         return analysis.confidence
+
+class TicketStatusHistorySerializer(serializers.ModelSerializer):
+    message = serializers.SerializerMethodField()
+
+    class Meta:
+        model = TicketStatusHistory
+        fields = [
+            "id",
+            "event_type",
+            "old_value",
+            "new_value",
+            "remarks",
+            "changed_by",
+            "created_at",
+            "message",
+        ]
+
+    def get_message(self, obj):
+        if obj.event_type == TicketStatusHistory.EventType.CREATED:
+            return "Ticket was submitted."
+
+        elif obj.event_type == TicketStatusHistory.EventType.ASSIGNED:
+            return f"Ticket was assigned to {obj.new_value}."
+
+        elif obj.event_type == TicketStatusHistory.EventType.REASSIGNED:
+            return f"Ticket was reassigned to {obj.new_value}."
+
+        elif obj.event_type == TicketStatusHistory.EventType.RETURNED:
+            return "Ticket was returned to the Service Desk for rerouting."
+
+        elif obj.event_type == TicketStatusHistory.EventType.PRIORITY_REVIEW_REQUESTED:
+            return "A priority level review was requested."
+
+        elif obj.event_type == TicketStatusHistory.EventType.STATUS_CHANGED:
+            if obj.new_value == Ticket.TicketStatus.UNDER_REVIEW:
+                return "Ticket is now under review."
+
+            elif obj.new_value == Ticket.TicketStatus.IN_PROGRESS:
+                return "Ticket is now in progress."
+
+            elif obj.new_value == Ticket.TicketStatus.PENDING:
+                return "Ticket is now pending."
+
+            elif obj.new_value == Ticket.TicketStatus.REOPENED:
+                return "Ticket was reopened."
+
+            elif obj.new_value == Ticket.TicketStatus.CANCELLED:
+                return "Ticket was cancelled."
+
+            elif obj.new_value == Ticket.TicketStatus.RESOLVED:
+                return "The issue has been resolved."
+
+            elif obj.new_value == Ticket.TicketStatus.CLOSED:
+                return "Ticket was closed."
+
+            elif obj.new_value == Ticket.TicketStatus.OPEN:
+                return "Ticket is now open."
+
+            return f"Ticket status changed to {obj.new_value}."
+
+        elif obj.event_type == TicketStatusHistory.EventType.RESOLVED:
+            return "The issue has been resolved."
+
+        elif obj.event_type == TicketStatusHistory.EventType.CLOSED:
+            return "Ticket was closed."
+
+        elif obj.event_type == TicketStatusHistory.EventType.PRIORITY_CHANGED:
+            return (
+                f"Ticket priority changed from "
+                f"{obj.old_value} to {obj.new_value}."
+            )
+
+        elif obj.event_type == TicketStatusHistory.EventType.ESCALATED:
+            return "Ticket was escalated."
+
+        return obj.remarks or "Ticket was updated."
 # --- SLA Rules Serializer ---
 class SLARulesSerializer(serializers.ModelSerializer):
     class Meta:

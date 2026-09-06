@@ -4,7 +4,7 @@ UpdateTicketView, DeleteTicketView, CreateCategoryView, KeywordUpdateView ,Keywo
 UpdateCategoryView, CreateSymptomCodeView, SLARulesCreateView, SLARulesUpdateView, TicketDetailEmployeeView, TicketListServiceDeskView, UpdateTicketStatusView, ManualOverrideTicketView,
 ServiceDeskOverviewView, ServiceDeskClassifiedResultsView, FlaggedTicketsListView, FlaggedTicketDetailView, SymptomCodeListView, 
 AcceptRecommendationView, ApproveOverrideView, ManuallyClassifyView, SupportOverviewView, TicketQueueView, TicketListSupportView, DepartmentSymptomCodesView, 
-SLAPerformanceView, TicketsByCategoryView, TicketDetailSupportView)
+SLAPerformanceView, TicketsByCategoryView, TicketDetailSupportView, TicketStatusHistoryView)
 
 urlpatterns = [
     # --- Ticket URLs ---
@@ -33,6 +33,8 @@ urlpatterns = [
     path('support-specialist/overview/', SupportOverviewView.as_view(), name='support-overview'),
     path('support-specialist/list/', TicketListSupportView.as_view(), name='support-list'),
     path('ticket-queue/list/', TicketQueueView.as_view(), name='support-ticket-queue'),
+
+    path("<int:pk>/history/", TicketStatusHistoryView.as_view(), name="ticket-history"),
     # --- Category URLs ---
     path('categories/create/', CreateCategoryView.as_view(), name='create-category'),
     path('categories/update/<int:pk>/', UpdateCategoryView.as_view(), name='update-category'),

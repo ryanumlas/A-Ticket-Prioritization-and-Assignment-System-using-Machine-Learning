@@ -1,14 +1,14 @@
-import {
-    ChevronDown,
-} from "lucide-react";
-
 import LeftSidePanel from "./TicketDetailPanels/LeftSidePanel";
 import RightSidePanel from "./TicketDetailPanels/RightSidePanel";
 
-export default function AssignedTicketDetails({ ticketDetails }) {
+export default function AssignedTicketDetails({
+    ticketDetails,
+    onTicketUpdated,
+}) {
     return (
         <div className="relative h-full min-h-0">
             <div className="flex h-full w-full overflow-hidden rounded-xl border border-gray-300 bg-white">
+
                 <LeftSidePanel
                     ticketDetails={ticketDetails}
                 />
@@ -20,11 +20,11 @@ export default function AssignedTicketDetails({ ticketDetails }) {
                 <div className="w-[350px] shrink-0 border-l border-gray-300 bg-white">
                     <RightSidePanel
                         ticketDetails={ticketDetails}
+                        onTicketUpdated={onTicketUpdated}
                     />
                 </div>
 
             </div>
-
         </div>
     );
 }
