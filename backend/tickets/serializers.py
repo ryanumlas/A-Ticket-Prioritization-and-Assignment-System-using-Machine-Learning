@@ -477,7 +477,6 @@ class TicketDetailSupportSerializer(serializers.ModelSerializer):
 
 class TicketStatusHistorySerializer(serializers.ModelSerializer):
     message = serializers.SerializerMethodField()
-
     class Meta:
         model = TicketStatusHistory
         fields = [
@@ -504,7 +503,23 @@ class TicketStatusHistorySerializer(serializers.ModelSerializer):
         elif obj.event_type == TicketStatusHistory.EventType.RETURNED:
             return "Ticket was returned to the Service Desk for rerouting."
 
-        elif obj.event_type == TicketStatusHistory.EventType.PRIORITY_REVIEW_REQUESTED:
+        elif obj.event_type == TicketStatusHistory.EventType.REVIEW_COMPLETED:
+            if (
+                obj.old_value
+                and obj.new_value
+                and obj.old_value != obj.new_value
+            ):
+                return (
+                    "The ticket review was completed "
+                    "and the model recommendation was overridden."
+                )
+
+            return "The ticket review was completed successfully."
+
+        elif (
+            obj.event_type
+            == TicketStatusHistory.EventType.PRIORITY_REVIEW_REQUESTED
+        ):
             return "A priority level review was requested."
 
         elif obj.event_type == TicketStatusHistory.EventType.STATUS_CHANGED:
@@ -514,8 +529,8 @@ class TicketStatusHistorySerializer(serializers.ModelSerializer):
             elif obj.new_value == Ticket.TicketStatus.IN_PROGRESS:
                 return "Ticket is now in progress."
 
-            elif obj.new_value == Ticket.TicketStatus.PENDING:
-                return "Ticket is now pending."
+            elif obj.new_value == Ticket.TicketStatus.RETURNED:
+                return "Ticket was returned."
 
             elif obj.new_value == Ticket.TicketStatus.REOPENED:
                 return "Ticket was reopened."
@@ -534,12 +549,6 @@ class TicketStatusHistorySerializer(serializers.ModelSerializer):
 
             return f"Ticket status changed to {obj.new_value}."
 
-        elif obj.event_type == TicketStatusHistory.EventType.RESOLVED:
-            return "The issue has been resolved."
-
-        elif obj.event_type == TicketStatusHistory.EventType.CLOSED:
-            return "Ticket was closed."
-
         elif obj.event_type == TicketStatusHistory.EventType.PRIORITY_CHANGED:
             return (
                 f"Ticket priority changed from "
@@ -549,7 +558,7 @@ class TicketStatusHistorySerializer(serializers.ModelSerializer):
         elif obj.event_type == TicketStatusHistory.EventType.ESCALATED:
             return "Ticket was escalated."
 
-        return obj.remarks or "Ticket was updated."
+        return "Ticket was updated."
 # --- SLA Rules Serializer ---
 class SLARulesSerializer(serializers.ModelSerializer):
     class Meta:

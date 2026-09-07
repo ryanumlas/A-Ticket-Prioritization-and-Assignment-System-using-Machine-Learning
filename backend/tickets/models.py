@@ -11,7 +11,6 @@ class Ticket(models.Model):
         IN_PROGRESS = 'in_progress', 'In Progress'
         UNDER_REVIEW = 'under_review', 'Under Review'
         RETURNED = 'returned', 'Returned'
-        PENDING = 'pending', 'Pending'
         RESOLVED = 'resolved', 'Resolved'
         CLOSED = 'closed', 'Closed'
         REOPENED = 'reopened', 'Reopened'   
