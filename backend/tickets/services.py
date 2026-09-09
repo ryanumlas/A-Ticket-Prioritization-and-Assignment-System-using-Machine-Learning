@@ -1,5 +1,7 @@
+from datetime import datetime, timezone as dt_timezone
 from h11 import Response
-from .models import Keyword, SymptomCode, Ticket, ReviewFlags, Category, SLARules
+from .models import Keyword, SymptomCode, Ticket, ReviewFlags, Category, SLARules, TicketStatusHistory
+from users.models import ITSupportProfile
 from ai.models import TicketAIAnalysis, TicketAnalysis
 from machine_learning.predictor import predict_symptom_code
 from django.utils import timezone
@@ -457,6 +459,120 @@ def finalize_ticket_classification(ticket, symptom_code, response_start=None,):
     )
 
     return ticket
+
+
+
+WORKLOAD_STATUSES = [
+    Ticket.TicketStatus.IN_PROGRESS,
+    Ticket.TicketStatus.REOPENED,
+]
+
+
+def get_current_workload(profile):
+    return Ticket.objects.filter(
+        assigned_to=profile.user,
+        status__in=WORKLOAD_STATUSES,
+    ).count()
+
+
+def get_last_assigned_at(profile):
+    return profile.last_assigned_at or datetime.min.replace(tzinfo=dt_timezone.utc)
+
+
+def get_eligible_technicians(ticket):
+    required_specialization = ticket.symptom_code.required_specialization
+
+    profiles = ITSupportProfile.objects.filter(
+        it_department=ticket.it_department,
+        availability_status=ITSupportProfile.AvailabilityStatus.available,
+        specializations__specialization=required_specialization,
+    ).distinct()
+
+    eligible = []
+
+    for profile in profiles:
+        workload = get_current_workload(profile)
+
+        if profile.workload_limit <= 0:
+            continue
+
+        if workload >= profile.workload_limit:
+            continue
+
+        eligible.append({
+            "profile": profile,
+            "current_workload": workload,
+            "workload_ratio": workload / profile.workload_limit,
+            "last_assigned_at": get_last_assigned_at(profile),
+        })
+
+    return eligible
+
+
+def find_best_technician(ticket):
+    eligible = get_eligible_technicians(ticket)
+
+    if not eligible:
+        return None
+
+    eligible.sort(key=lambda tech: (
+        tech["workload_ratio"],
+        tech["current_workload"],
+        tech["last_assigned_at"],
+        tech["profile"].id,
+    ))
+
+    return eligible[0]
+
+def assign_ticket_automatically(ticket):
+    if ticket.assigned_to:
+        return None
+
+    if ticket.status in [
+        Ticket.TicketStatus.RESOLVED,
+        Ticket.TicketStatus.CLOSED,
+        Ticket.TicketStatus.CANCELLED,
+        Ticket.TicketStatus.RETURNED,
+    ]:
+        return None
+
+    best = find_best_technician(ticket)
+
+    if not best:
+        return None
+
+    profile = best["profile"]
+    old_status = ticket.status
+
+    ticket.assigned_to = profile.user
+    ticket.status = Ticket.TicketStatus.IN_PROGRESS
+    ticket.save(update_fields=["assigned_to", "status", "updated_at"])
+
+    profile.last_assigned_at = timezone.now()
+    profile.save(update_fields=["last_assigned_at"])
+
+    full_name = f"{profile.user.first_name} {profile.user.last_name}".strip() or profile.user.username
+
+    TicketStatusHistory.objects.create(
+        ticket=ticket,
+        event_type=TicketStatusHistory.EventType.ASSIGNED,
+        old_value=None,
+        new_value=full_name,
+        changed_by=None,
+        created_by=None,
+    )
+
+    if old_status != ticket.status:
+        TicketStatusHistory.objects.create(
+            ticket=ticket,
+            event_type=TicketStatusHistory.EventType.STATUS_CHANGED,
+            old_value=old_status,
+            new_value=ticket.status,
+            changed_by=None,
+            created_by=None,
+        )
+
+    return profile
 # WAG NA TO PANGET PAG SCORING
 
 # def calculate_priority(based_priority, affected_scope, urgency_detected):

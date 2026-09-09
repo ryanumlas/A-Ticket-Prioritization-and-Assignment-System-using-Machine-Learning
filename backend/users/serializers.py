@@ -106,7 +106,7 @@ class UserListSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = User
-        fields = ['id', 'username', 'password', 'first_name', 'last_name', 'role', 'current_workload', 'expertise', 'availability_status']
+        fields = ['id', 'username', 'password', 'first_name', 'last_name', 'role', 'expertise', 'availability_status', 'last_assigned_at']
 
 class UserProfileUpdateSerializer(serializers.ModelSerializer):
     class Meta:
@@ -126,7 +126,7 @@ class ITSupportProfileCreateSerializer(serializers.ModelSerializer):
     created_at_formatted = serializers.SerializerMethodField()
     class Meta:
         model = ITSupportProfile
-        fields = ['user', 'availability_status', 'current_workload', 'workload_limit', 'it_department', 'created_at_formatted']
+        fields = ['user', 'availability_status', 'workload_limit', 'it_department', 'created_at_formatted']
 
     def get_created_at_formatted(self, obj):
         return timezone.localtime(obj.created_at).strftime("%B %d, %Y %I:%M %p")

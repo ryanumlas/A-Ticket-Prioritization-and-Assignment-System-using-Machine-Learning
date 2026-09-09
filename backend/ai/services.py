@@ -137,23 +137,27 @@ def analyze_ticket(ticket):
 
     Analyze BOTH the Issue Description and Business Impact.
 
-    Set "business_critical" to true ONLY if the user explicitly describes one or more of the following:
-    - A business deadline.
-    - Inability to continue working.
-    - Business operations are interrupted.
-    - Production or critical services are unavailable.
-    - Customer or client impact.
-    - A meeting, presentation, payroll, deployment, or other time-sensitive business activity that cannot proceed.
+    Set "business_critical" to true ONLY if the user explicitly describes a serious or time-sensitive business impact, such as:
+
+    - A business-critical deadline that cannot be met.
+    - Multiple users, a department, or the organization being unable to work.
+    - Business operations being significantly interrupted.
+    - Production systems or critical business services being unavailable.
+    - Customer or client operations being affected.
+    - Payroll, deployment, meeting, presentation, transaction processing, or another time-sensitive business activity that cannot proceed.
+    - A single user being blocked ONLY when their work is explicitly time-critical or essential to an ongoing business operation.
 
     Set "business_critical" to false if:
 
+    - Only one user is unable to work and no critical deadline, customer impact, production impact, or major business interruption is described.
     - The user only says "urgent", "ASAP", "immediately", or similar emotional language.
     - The user requests faster service without describing a concrete business impact.
+    - The issue causes inconvenience, reduced productivity, or routine work interruption without serious business consequences.
     - Business criticality must be inferred or assumed.
 
     Do NOT infer business criticality.
 
-    Only detect business criticality when it is explicitly supported by the information provided.
+    Only set "business_critical" to true when the business impact is explicitly serious, time-sensitive, or operationally critical.
 
     DO NOT
 
