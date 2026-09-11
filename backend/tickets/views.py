@@ -15,7 +15,7 @@ SLARulesUpdateSerializer, KeywordSerializer, KeywordUpdateSerializer, UpdateSymp
 TicketCreateSerializer, TicketUpdateSerializer, TicketDetailEmployeeSerializer, CategoryUpdateSerializer, FlaggedTicketsListSerializer, 
 FlaggedTicketDetailSerializer, TicketDetailSupportSerializer, TicketStatusHistorySerializer)
 from users.models import User, ITSupportProfile
-from .services import predict_ticket
+from .services import predict_ticket, assign_ticket_automatically
 from ai.models import TicketAnalysis, TicketAIAnalysis
 from ai.services import analyze_ticket
 from tickets.services import classify_ticket, calculate_priority, update_sla, finalize_ticket_classification
@@ -34,23 +34,21 @@ class CreateTicketView(generics.CreateAPIView):
         return Response(
             {
                 "success": True,
-                "message": "Ticket submitted successfully!"
+                "message": "Ticket submitted successfully!",
             },
-            status=status.HTTP_201_CREATED
+            status=status.HTTP_201_CREATED,
         )
 
     @transaction.atomic
     def perform_create(self, serializer):
-
         profile = self.request.user.profile
 
         ticket = serializer.save(
             submitted_by=self.request.user,
             employee_department=profile.employee_department,
-            office_location=profile.office_location
+            office_location=profile.office_location,
         )
 
-        # Create initial ticket history
         TicketStatusHistory.objects.create(
             ticket=ticket,
             event_type=TicketStatusHistory.EventType.CREATED,
@@ -64,28 +62,13 @@ class CreateTicketView(generics.CreateAPIView):
         TicketAIAnalysis.objects.update_or_create(
             ticket=ticket,
             defaults={
-                "cleaned_text": analysis.get(
-                    "cleaned_text",
-                    ""
-                ),
-                "summary": analysis.get(
-                    "summary",
-                    ""
-                ),
-                "keywords": analysis.get(
-                    "keywords",
-                    []
-                ),
+                "cleaned_text": analysis.get("cleaned_text", ""),
+                "summary": analysis.get("summary", ""),
+                "keywords": analysis.get("keywords", []),
                 "model_version": "gemini-2.5-flash",
-                "business_critical": analysis.get(
-                    "business_critical",
-                    False
-                ),
-                "is_unclear": analysis.get(
-                    "is_unclear",
-                    False
-                ),
-            }
+                "business_critical": analysis.get("business_critical", False),
+                "is_unclear": analysis.get("is_unclear", False),
+            },
         )
 
         if analysis.get("is_unclear", False):
@@ -93,7 +76,7 @@ class CreateTicketView(generics.CreateAPIView):
                 ticket=ticket,
                 reason=ReviewFlags.Reasons.UNCLEAR_DESCRIPTION,
                 status=ReviewFlags.Status.PENDING,
-                source_type=ReviewFlags.SourceType.SYSTEM_GENERATED
+                source_type=ReviewFlags.SourceType.SYSTEM_GENERATED,
             )
 
             old_status = ticket.status
@@ -134,7 +117,6 @@ class CreateTicketView(generics.CreateAPIView):
             ).first()
 
             if not symptom:
-
                 ReviewFlags.objects.create(
                     ticket=ticket,
                     reason=ReviewFlags.Reasons.SYMPTOM_NOT_DETECTED,
@@ -142,6 +124,8 @@ class CreateTicketView(generics.CreateAPIView):
                     source_type=ReviewFlags.SourceType.SYSTEM_GENERATED,
                 )
 
+                old_status = ticket.status
+
                 ticket.is_under_review = True
                 ticket.status = Ticket.TicketStatus.UNDER_REVIEW
 
@@ -151,47 +135,64 @@ class CreateTicketView(generics.CreateAPIView):
                         "status",
                     ]
                 )
+
+                if old_status != ticket.status:
+                    TicketStatusHistory.objects.create(
+                        ticket=ticket,
+                        event_type=TicketStatusHistory.EventType.STATUS_CHANGED,
+                        old_value=old_status,
+                        new_value=ticket.status,
+                        changed_by=self.request.user,
+                        created_by=self.request.user,
+                    )
 
                 return
 
             if ml_result["requires_review"]:
+                old_status = ticket.status
 
                 ticket.is_under_review = True
                 ticket.status = Ticket.TicketStatus.UNDER_REVIEW
+                ticket.save(update_fields=["is_under_review", "status"])
 
-                ticket.save(
-                    update_fields=[
-                        "is_under_review",
-                        "status",
-                    ]
-                )
+                if old_status != ticket.status:
+                    TicketStatusHistory.objects.create(
+                        ticket=ticket,
+                        event_type=TicketStatusHistory.EventType.STATUS_CHANGED,
+                        old_value=old_status,
+                        new_value=ticket.status,
+                        changed_by=self.request.user,
+                        created_by=self.request.user,
+                    )
 
                 return
 
-        category = (
-            symptom.category
-            if symptom
-            else None
-        )
-
-        department = (
-            category.it_department
-            if category
-            else None
-        )
+        category = symptom.category if symptom else None
+        department = category.it_department if category else None
 
         if not department:
-
             ReviewFlags.objects.create(
                 ticket=ticket,
                 reason=ReviewFlags.Reasons.MISSING_DEPARTMENT,
                 status=ReviewFlags.Status.PENDING,
-                source_type=ReviewFlags.SourceType.SYSTEM_GENERATED
+                source_type=ReviewFlags.SourceType.SYSTEM_GENERATED,
             )
+
+            old_status = ticket.status
 
             ticket.is_under_review = True
             ticket.status = Ticket.TicketStatus.UNDER_REVIEW
             ticket.save()
+
+            if old_status != ticket.status:
+                TicketStatusHistory.objects.create(
+                    ticket=ticket,
+                    event_type=TicketStatusHistory.EventType.STATUS_CHANGED,
+                    old_value=old_status,
+                    new_value=ticket.status,
+                    changed_by=self.request.user,
+                    created_by=self.request.user,
+                )
 
             return
 
@@ -200,31 +201,20 @@ class CreateTicketView(generics.CreateAPIView):
         ticket.it_department = department
 
         if not used_ml:
-
             TicketAnalysis.objects.update_or_create(
                 ticket=ticket,
                 defaults={
-                    "model_type":
-                        TicketAnalysis.ModelType.RULE_BASED,
-
-                    "model_used":
-                        "Rule-Based Classifier",
-
-                    "predicted_symptom_code":
-                        symptom,
-
-                    "created_by":
-                        self.request.user,
-                }
+                    "model_type": TicketAnalysis.ModelType.RULE_BASED,
+                    "model_used": "Rule-Based Classifier",
+                    "predicted_symptom_code": symptom,
+                    "created_by": self.request.user,
+                },
             )
 
         final_priority = calculate_priority(
             symptom.based_priority,
             ticket.affected_scope,
-            analysis.get(
-                "business_critical",
-                False
-            )
+            analysis.get("business_critical", False),
         )
 
         sla_rule = SLARules.objects.filter(
@@ -232,7 +222,6 @@ class CreateTicketView(generics.CreateAPIView):
         ).first()
 
         if sla_rule:
-
             ticket.priority = sla_rule
 
             ticket.response_deadline = (
@@ -245,11 +234,13 @@ class CreateTicketView(generics.CreateAPIView):
                 + sla_rule.resolution_time
             )
 
+        ticket.is_under_review = False
         ticket.status = Ticket.TicketStatus.OPEN
-
         ticket.save()
 
         update_sla(ticket)
+
+        assign_ticket_automatically(ticket)
 
 class ManualOverrideTicketView(APIView):
     permission_classes = [IsAuthenticated]
@@ -396,7 +387,13 @@ class UpdateTicketStatusView(APIView):
     permission_classes = [IsAuthenticated]
 
     def patch(self, request, pk):
-        ticket = Ticket.objects.get(pk=pk)
+        try:
+            ticket = Ticket.objects.get(pk=pk)
+        except Ticket.DoesNotExist:
+            return Response(
+                {"error": "Ticket not found"},
+                status=status.HTTP_404_NOT_FOUND,
+            )
 
         old_status = ticket.status
         new_status = request.data.get("status")
@@ -417,17 +414,9 @@ class UpdateTicketStatusView(APIView):
             ticket.status = Ticket.TicketStatus.IN_PROGRESS
 
         elif new_status == Ticket.TicketStatus.RESOLVED:
-            now = timezone.now()
-
             ticket.status = Ticket.TicketStatus.RESOLVED
-            ticket.resolved_at = now
+            ticket.resolved_at = timezone.now()
             ticket.resolved_by = request.user
-
-            if ticket.resolution_deadline:
-                if now <= ticket.resolution_deadline:
-                    ticket.resolution_sla_status = Ticket.SLAStatus.MET
-                else:
-                    ticket.resolution_sla_status = Ticket.SLAStatus.BREACHED
 
         elif new_status == Ticket.TicketStatus.CLOSED:
             ticket.status = Ticket.TicketStatus.CLOSED
@@ -436,9 +425,6 @@ class UpdateTicketStatusView(APIView):
             ticket.status = Ticket.TicketStatus.REOPENED
             ticket.resolved_at = None
             ticket.resolved_by = None
-
-        elif new_status == Ticket.TicketStatus.PENDING:
-            ticket.status = Ticket.TicketStatus.PENDING
 
         elif new_status == Ticket.TicketStatus.CANCELLED:
             ticket.status = Ticket.TicketStatus.CANCELLED
@@ -449,34 +435,38 @@ class UpdateTicketStatusView(APIView):
                     "error": "Invalid status",
                     "received_status": new_status,
                 },
-                status=status.HTTP_400_BAD_REQUEST
+                status=status.HTTP_400_BAD_REQUEST,
             )
 
         if old_status == ticket.status:
             return Response(
-                {
-                    "message": "Ticket status is already set to this status"
-                },
-                status=status.HTTP_200_OK
+                {"message": "Ticket status is already set to this status"},
+                status=status.HTTP_200_OK,
             )
 
         ticket.save()
 
+        update_sla(ticket)
+
         TicketStatusHistoryModel.objects.create(
             ticket=ticket,
             event_type=TicketStatusHistoryModel.EventType.STATUS_CHANGED,
-            remarks=remarks,
             old_value=old_status,
             new_value=ticket.status,
+            remarks=remarks,
             changed_by=request.user,
+            created_by=request.user,
         )
 
         return Response(
             {
                 "message": f"Ticket status updated to {ticket.status}",
                 "status": ticket.status,
+                "remarks": remarks,
+                "response_sla_status": ticket.response_sla_status,
+                "resolution_sla_status": ticket.resolution_sla_status,
             },
-            status=status.HTTP_200_OK
+            status=status.HTTP_200_OK,
         )
 class ListTicketView(generics.ListAPIView):
     queryset = Ticket.objects.all()
@@ -608,49 +598,33 @@ class ApproveOverrideView(APIView):
                 status=ReviewFlags.Status.PENDING,
                 reason=ReviewFlags.Reasons.LOW_CONFIDENCE,
             )
-
         except ReviewFlags.DoesNotExist:
             return Response(
                 {
                     "success": False,
-                    "message": (
-                        "Pending Low Confidence "
-                        "review flag not found."
-                    ),
+                    "message": "Pending Low Confidence review flag not found.",
                 },
                 status=status.HTTP_404_NOT_FOUND,
             )
 
-        selected_code = request.data.get(
-            "symptom_code"
-        )
+        selected_code = request.data.get("symptom_code")
 
         if not selected_code:
             return Response(
                 {
                     "success": False,
-                    "message": (
-                        "A symptom code must be selected."
-                    ),
+                    "message": "A symptom code must be selected.",
                 },
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
         try:
-            selected_symptom = (
-                SymptomCode.objects.get(
-                    code=selected_code
-                )
-            )
-
+            selected_symptom = SymptomCode.objects.get(code=selected_code)
         except SymptomCode.DoesNotExist:
             return Response(
                 {
                     "success": False,
-                    "message": (
-                        "Selected symptom code "
-                        "does not exist."
-                    ),
+                    "message": "Selected symptom code does not exist.",
                 },
                 status=status.HTTP_400_BAD_REQUEST,
             )
@@ -661,40 +635,25 @@ class ApproveOverrideView(APIView):
             return Response(
                 {
                     "success": False,
-                    "message": (
-                        "Model recommendation not found."
-                    ),
+                    "message": "Model recommendation not found.",
                 },
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        recommended_symptom = (
-            prediction.predicted_symptom_code
-        )
+        recommended_symptom = prediction.predicted_symptom_code
 
-        if (
-            recommended_symptom
-            and selected_symptom.id
-            == recommended_symptom.id
-        ):
+        if recommended_symptom and selected_symptom.id == recommended_symptom.id:
             return Response(
                 {
                     "success": False,
-                    "message": (
-                        "The selected symptom code "
-                        "is already the model's "
-                        "primary recommendation."
-                    ),
+                    "message": "The selected symptom code is already the model's primary recommendation.",
                 },
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
         reviewed_at = timezone.now()
-
-        # Save status before finalizing
         old_status = flag.ticket.status
 
-        # Finalize classification
         ticket = finalize_ticket_classification(
             flag.ticket,
             selected_symptom,
@@ -703,22 +662,10 @@ class ApproveOverrideView(APIView):
 
         TicketStatusHistory.objects.create(
             ticket=ticket,
-            event_type=(
-                TicketStatusHistory
-                .EventType
-                .REVIEW_COMPLETED
-            ),
-            old_value=(
-                recommended_symptom.code
-                if recommended_symptom
-                else None
-            ),
+            event_type=TicketStatusHistory.EventType.REVIEW_COMPLETED,
+            old_value=recommended_symptom.code if recommended_symptom else None,
             new_value=selected_symptom.code,
-            remarks=(
-                "The flagged ticket was reviewed "
-                "and the model recommendation "
-                "was overridden."
-            ),
+            remarks="The flagged ticket was reviewed and the model recommendation was overridden.",
             changed_by=request.user,
             created_by=request.user,
         )
@@ -726,62 +673,36 @@ class ApproveOverrideView(APIView):
         if old_status != ticket.status:
             TicketStatusHistory.objects.create(
                 ticket=ticket,
-                event_type=(
-                    TicketStatusHistory
-                    .EventType
-                    .STATUS_CHANGED
-                ),
+                event_type=TicketStatusHistory.EventType.STATUS_CHANGED,
                 old_value=old_status,
                 new_value=ticket.status,
                 changed_by=request.user,
                 created_by=request.user,
             )
 
-        # Mark prediction as overridden
         prediction.was_overridden = True
+        prediction.save(update_fields=["was_overridden", "updated_at"])
 
-        prediction.save(
-            update_fields=[
-                "was_overridden",
-                "updated_at",
-            ]
-        )
-
-        # Complete review flag
         flag.status = ReviewFlags.Status.APPROVED
         flag.reviewed_by = request.user
         flag.reviewed_at = reviewed_at
+        flag.save(update_fields=["status", "reviewed_by", "reviewed_at", "updated_at"])
 
-        flag.save(
-            update_fields=[
-                "status",
-                "reviewed_by",
-                "reviewed_at",
-                "updated_at",
-            ]
-        )
+        assigned_profile = assign_ticket_automatically(ticket)
 
         return Response(
             {
                 "success": True,
-                "message": (
-                    "Classification override "
-                    "approved successfully."
-                ),
+                "message": "Classification override approved successfully.",
                 "ticket": {
                     "id": ticket.id,
-                    "ticket_code":
-                        ticket.ticket_code,
-                    "symptom_code":
-                        ticket.symptom_code.code,
-                    "priority":
-                        ticket.priority.priority_level,
-                    "status":
-                        ticket.status,
-                    "response_deadline":
-                        ticket.response_deadline,
-                    "resolution_deadline":
-                        ticket.resolution_deadline,
+                    "ticket_code": ticket.ticket_code,
+                    "symptom_code": ticket.symptom_code.code,
+                    "priority": ticket.priority.priority_level,
+                    "status": ticket.status,
+                    "assigned_to": assigned_profile.user.get_full_name() if assigned_profile else None,
+                    "response_deadline": ticket.response_deadline,
+                    "resolution_deadline": ticket.resolution_deadline,
                 },
             },
             status=status.HTTP_200_OK,
@@ -803,15 +724,11 @@ class AcceptRecommendationView(APIView):
                 status=ReviewFlags.Status.PENDING,
                 reason=ReviewFlags.Reasons.LOW_CONFIDENCE,
             )
-
         except ReviewFlags.DoesNotExist:
             return Response(
                 {
                     "success": False,
-                    "message": (
-                        "Pending review flag "
-                        "not found."
-                    ),
+                    "message": "Pending review flag not found.",
                 },
                 status=status.HTTP_404_NOT_FOUND,
             )
@@ -822,55 +739,37 @@ class AcceptRecommendationView(APIView):
             return Response(
                 {
                     "success": False,
-                    "message": (
-                        "Model recommendation "
-                        "not found."
-                    ),
+                    "message": "Model recommendation not found.",
                 },
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        recommended_symptom = (
-            prediction.predicted_symptom_code
-        )
+        recommended_symptom = prediction.predicted_symptom_code
 
         if not recommended_symptom:
             return Response(
                 {
                     "success": False,
-                    "message": (
-                        "Primary recommendation "
-                        "not found."
-                    ),
+                    "message": "Primary recommendation not found.",
                 },
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
         reviewed_at = timezone.now()
-
-        # Save status before finalizing
         old_status = flag.ticket.status
 
-        # Finalize classification
         ticket = finalize_ticket_classification(
             flag.ticket,
             recommended_symptom,
             response_start=reviewed_at,
         )
+
         TicketStatusHistory.objects.create(
             ticket=ticket,
-            event_type=(
-                TicketStatusHistory
-                .EventType
-                .REVIEW_COMPLETED
-            ),
+            event_type=TicketStatusHistory.EventType.REVIEW_COMPLETED,
             old_value=None,
             new_value=recommended_symptom.code,
-            remarks=(
-                "The flagged ticket was reviewed "
-                "and the model recommendation "
-                "was accepted."
-            ),
+            remarks="The flagged ticket was reviewed and the model recommendation was accepted.",
             changed_by=request.user,
             created_by=request.user,
         )
@@ -878,59 +777,42 @@ class AcceptRecommendationView(APIView):
         if old_status != ticket.status:
             TicketStatusHistory.objects.create(
                 ticket=ticket,
-                event_type=(
-                    TicketStatusHistory
-                    .EventType
-                    .STATUS_CHANGED
-                ),
+                event_type=TicketStatusHistory.EventType.STATUS_CHANGED,
                 old_value=old_status,
                 new_value=ticket.status,
                 changed_by=request.user,
                 created_by=request.user,
             )
 
-        # Complete review flag
         flag.status = ReviewFlags.Status.APPROVED
         flag.reviewed_by = request.user
         flag.reviewed_at = reviewed_at
+        flag.save(update_fields=["status", "reviewed_by", "reviewed_at", "updated_at"])
 
-        flag.save(
-            update_fields=[
-                "status",
-                "reviewed_by",
-                "reviewed_at",
-                "updated_at",
-            ]
-        )
+
+        print("===== ASSIGNMENT DEBUG =====")
+        print("Ticket:", ticket.ticket_code)
+        print("Status:", ticket.status)
+        print("Under review:", ticket.is_under_review)
+        print("Symptom:", ticket.symptom_code)
+        print("Department:", ticket.it_department)
+        print("Required specialization:", ticket.symptom_code.required_specialization if ticket.symptom_code else None)
+        print("============================")
+        assigned_profile = assign_ticket_automatically(ticket)
 
         return Response(
             {
                 "success": True,
-                "message": (
-                    "Recommendation accepted "
-                    "successfully."
-                ),
+                "message": "Recommendation accepted successfully.",
                 "ticket": {
-                    "id":
-                        ticket.id,
-
-                    "ticket_code":
-                        ticket.ticket_code,
-
-                    "symptom_code":
-                        ticket.symptom_code.code,
-
-                    "priority":
-                        ticket.priority.priority_level,
-
-                    "status":
-                        ticket.status,
-
-                    "response_deadline":
-                        ticket.response_deadline,
-
-                    "resolution_deadline":
-                        ticket.resolution_deadline,
+                    "id": ticket.id,
+                    "ticket_code": ticket.ticket_code,
+                    "symptom_code": ticket.symptom_code.code,
+                    "priority": ticket.priority.priority_level,
+                    "status": ticket.status,
+                    "assigned_to": assigned_profile.user.get_full_name() if assigned_profile else None,
+                    "response_deadline": ticket.response_deadline,
+                    "resolution_deadline": ticket.resolution_deadline,
                 },
             },
             status=status.HTTP_200_OK,
@@ -941,7 +823,6 @@ class ManuallyClassifyView(APIView):
 
     @transaction.atomic
     def post(self, request, pk):
-
         try:
             flag = ReviewFlags.objects.select_related(
                 "ticket",
@@ -951,7 +832,6 @@ class ManuallyClassifyView(APIView):
                 status=ReviewFlags.Status.PENDING,
                 reason=ReviewFlags.Reasons.UNCLEAR_DESCRIPTION,
             )
-
         except ReviewFlags.DoesNotExist:
             return Response(
                 {
@@ -962,7 +842,6 @@ class ManuallyClassifyView(APIView):
             )
 
         selected_code = request.data.get("symptom_code")
-
         remarks = request.data.get("remarks", "")
 
         if remarks is None:
@@ -980,10 +859,7 @@ class ManuallyClassifyView(APIView):
             )
 
         try:
-            selected_symptom = SymptomCode.objects.get(
-                code=selected_code
-            )
-
+            selected_symptom = SymptomCode.objects.get(code=selected_code)
         except SymptomCode.DoesNotExist:
             return Response(
                 {
@@ -994,7 +870,6 @@ class ManuallyClassifyView(APIView):
             )
 
         reviewed_at = timezone.now()
-
         old_status = flag.ticket.status
 
         ticket = finalize_ticket_classification(
@@ -1026,15 +901,9 @@ class ManuallyClassifyView(APIView):
         flag.status = ReviewFlags.Status.APPROVED
         flag.reviewed_by = request.user
         flag.reviewed_at = reviewed_at
+        flag.save(update_fields=["status", "reviewed_by", "reviewed_at", "updated_at"])
 
-        flag.save(
-            update_fields=[
-                "status",
-                "reviewed_by",
-                "reviewed_at",
-                "updated_at",
-            ]
-        )
+        assigned_profile = assign_ticket_automatically(ticket)
 
         return Response(
             {
@@ -1046,6 +915,7 @@ class ManuallyClassifyView(APIView):
                     "symptom_code": ticket.symptom_code.code,
                     "priority": ticket.priority.priority_level,
                     "status": ticket.status,
+                    "assigned_to": assigned_profile.user.get_full_name() if assigned_profile else None,
                     "response_deadline": ticket.response_deadline,
                     "resolution_deadline": ticket.resolution_deadline,
                 },

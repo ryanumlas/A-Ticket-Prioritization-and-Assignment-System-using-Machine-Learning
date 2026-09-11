@@ -286,17 +286,12 @@ def update_sla(ticket, response_start=None):
         response_start = ticket.created_at
 
     if not ticket.response_deadline:
-        ticket.response_deadline = (
-            response_start
-            + ticket.priority.response_time
-        )
+        ticket.response_deadline = response_start + ticket.priority.response_time
 
     if not ticket.resolution_deadline:
-        ticket.resolution_deadline = (
-            ticket.created_at
-            + ticket.priority.resolution_time
-        )
+        ticket.resolution_deadline = ticket.created_at + ticket.priority.resolution_time
 
+    # Response SLA
     if ticket.status in [
         Ticket.TicketStatus.IN_PROGRESS,
         Ticket.TicketStatus.RESOLVED,
@@ -305,10 +300,11 @@ def update_sla(ticket, response_start=None):
         if not ticket.response_at:
             ticket.response_at = now
 
-        if ticket.response_at <= ticket.response_deadline:
-            ticket.response_sla_status = Ticket.SLAStatus.MET
-        else:
-            ticket.response_sla_status = Ticket.SLAStatus.BREACHED
+        ticket.response_sla_status = (
+            Ticket.SLAStatus.MET
+            if ticket.response_at <= ticket.response_deadline
+            else Ticket.SLAStatus.BREACHED
+        )
 
     else:
         response_remaining = ticket.response_deadline - now
@@ -318,19 +314,17 @@ def update_sla(ticket, response_start=None):
             ticket.priority.response_time,
         )
 
+    # Resolution SLA
     if ticket.status in [
         Ticket.TicketStatus.RESOLVED,
         Ticket.TicketStatus.CLOSED,
     ]:
         if ticket.resolved_at:
-            if ticket.resolved_at <= ticket.resolution_deadline:
-                ticket.resolution_sla_status = (
-                    Ticket.SLAStatus.MET
-                )
-            else:
-                ticket.resolution_sla_status = (
-                    Ticket.SLAStatus.BREACHED
-                )
+            ticket.resolution_sla_status = (
+                Ticket.SLAStatus.MET
+                if ticket.resolved_at <= ticket.resolution_deadline
+                else Ticket.SLAStatus.BREACHED
+            )
 
     else:
         resolution_remaining = ticket.resolution_deadline - now
@@ -339,39 +333,7 @@ def update_sla(ticket, response_start=None):
             resolution_remaining,
             ticket.priority.resolution_time,
         )
-    print("\n========== SLA DEBUG ==========")
-    print("Ticket:", ticket.ticket_code)
 
-    print("Created at:", ticket.created_at)
-    print("Response started at:", response_start)
-
-    print("Response SLA duration:", ticket.priority.response_time)
-    print("Resolution SLA duration:", ticket.priority.resolution_time)
-
-    print("Response deadline:", ticket.response_deadline)
-    print("Resolution deadline:", ticket.resolution_deadline)
-
-    print(
-        "Response time remaining:",
-        ticket.response_deadline - now
-    )
-
-    print(
-        "Resolution time remaining:",
-        ticket.resolution_deadline - now
-    )
-
-    print(
-        "Response SLA status:",
-        ticket.response_sla_status
-    )
-
-    print(
-        "Resolution SLA status:",
-        ticket.resolution_sla_status
-    )
-
-    print("===============================\n")
     ticket.save(
         update_fields=[
             "response_deadline",
@@ -425,9 +387,10 @@ def predict_ticket(ticket):
 
     return result
 
-def finalize_ticket_classification(ticket, symptom_code, response_start=None,):
+def finalize_ticket_classification(ticket, symptom_code, response_start=None):
     ticket.symptom_code = symptom_code
     ticket.category = symptom_code.category
+    ticket.it_department = symptom_code.category.it_department if symptom_code.category else None
 
     priority_level = calculate_priority(
         based_priority=symptom_code.based_priority,
@@ -447,6 +410,7 @@ def finalize_ticket_classification(ticket, symptom_code, response_start=None,):
         update_fields=[
             "symptom_code",
             "category",
+            "it_department",
             "priority",
             "status",
             "is_under_review",
@@ -525,6 +489,12 @@ def find_best_technician(ticket):
     return eligible[0]
 
 def assign_ticket_automatically(ticket):
+    if ticket.is_under_review:
+        return None
+
+    if ticket.status == Ticket.TicketStatus.UNDER_REVIEW:
+        return None
+
     if ticket.assigned_to:
         return None
 
