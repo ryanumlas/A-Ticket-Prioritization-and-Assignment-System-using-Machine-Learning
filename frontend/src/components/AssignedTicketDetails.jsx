@@ -1,20 +1,15 @@
 import LeftSidePanel from "./TicketDetailPanels/LeftSidePanel";
 import RightSidePanel from "./TicketDetailPanels/RightSidePanel";
+import CenterPanel from "./TicketDetailPanels/CenterPanel";
 
-export default function AssignedTicketDetails({
-    ticketDetails,
-    onTicketUpdated,
-}) {
+export default function AssignedTicketDetails({ ticketDetails, onTicketUpdated }) {
     return (
         <div className="relative h-full min-h-0">
             <div className="flex h-full w-full overflow-hidden rounded-xl border border-gray-300 bg-white">
-
-                <LeftSidePanel
-                    ticketDetails={ticketDetails}
-                />
+                <LeftSidePanel ticketDetails={ticketDetails} />
 
                 <div className="min-w-0 flex-1 bg-white">
-                    {/* Conversation panel goes here */}
+                    <CenterPanel ticketId={ticketDetails?.id} canSend />
                 </div>
 
                 <div className="w-[350px] shrink-0 border-l border-gray-300 bg-white">
@@ -23,7 +18,6 @@ export default function AssignedTicketDetails({
                         onTicketUpdated={onTicketUpdated}
                     />
                 </div>
-
             </div>
         </div>
     );

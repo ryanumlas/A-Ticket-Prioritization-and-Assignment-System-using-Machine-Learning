@@ -1,6 +1,8 @@
+import { MessageCircle } from "lucide-react";
 import { formatDate } from "../utils/formatDate";
 import { useNavigate } from "react-router-dom";
 import { statusColor } from "../utils/statusColor";
+import { priorityColor, priorityLabel } from "../utils/priority";
 
 export default function TicketTableEmployee({
     loading = false,
@@ -10,168 +12,118 @@ export default function TicketTableEmployee({
 }) {
     const navigate = useNavigate();
 
-    // Only limit tickets when used on the dashboard.
-    // Full ticket page already handles pagination.
-    const displayedTickets = dashboard
-        ? ticketList.slice(0, maxRows)
-        : ticketList;
+    const displayedTickets = dashboard ? ticketList.slice(0, maxRows) : ticketList;
 
-    const priorityStyle = (priority) => {
-        switch (priority) {
-            case "P1":
-                return "bg-red-50 text-red-600 border-red-200";
-
-            case "P2":
-                return "bg-orange-50 text-orange-600 border-orange-200";
-
-            case "P3":
-                return "bg-amber-50 text-amber-600 border-amber-200";
-
-            case "P4":
-                return "bg-blue-50 text-blue-600 border-blue-200";
-
-            case "P5":
-                return "bg-gray-100 text-gray-600 border-gray-300";
-
-            default:
-                return "bg-gray-100 text-gray-600 border-gray-300";
-        }
+    const staticUnread = {
+        "TKT-000009": 2,
+        "TKT-000006": 1,
+        "TKT-000004": 3,
+        "TKT-000005": 1,
     };
 
     if (loading) {
         return (
             <div className="flex min-h-[240px] items-center justify-center bg-white">
-                <p className="text-sm text-gray-500">
-                    Loading tickets...
-                </p>
+                <p className="text-sm text-gray-500">Loading tickets...</p>
             </div>
         );
     }
 
     return (
-        <div
-            className={
-                dashboard
-                    ? "h-[380px] overflow-y-auto bg-white"
-                    : "max-h-[637px] overflow-y-auto bg-white"
-            }
-        >
+        <div className={dashboard ? "h-[380px] overflow-y-auto bg-white" : "max-h-[637px] overflow-y-auto bg-white"}>
             <table className="w-full table-fixed text-sm">
-
-                {/* HEADER */}
                 <thead className="sticky top-0 z-20 bg-gray-50">
                     <tr className="border-b border-gray-300 text-left">
-
-                        <th className="w-[16%] px-6 py-3.5 font-semibold text-black">
-                            Ticket ID
-                        </th>
-
-                        <th className="w-[38%] px-6 py-3.5 font-semibold text-black">
-                            Subject
-                        </th>
-
-                        <th className="w-[12%] px-6 py-3.5 font-semibold text-black">
-                            Priority
-                        </th>
-
-                        <th className="w-[16%] px-4 py-3.5 font-semibold text-black">
-                            Status
-                        </th>
-
-                        <th className="w-[18%] px-6 py-3.5 font-semibold text-black">
-                            Created
-                        </th>
-
+                        <th className="w-[16%] px-6 py-3.5 font-semibold text-black">Ticket ID</th>
+                        <th className="w-[38%] px-6 py-3.5 font-semibold text-black">Subject</th>
+                        <th className="w-[12%] px-6 py-3.5 font-semibold text-black">Priority</th>
+                        <th className="w-[16%] px-4 py-3.5 font-semibold text-black">Status</th>
+                        <th className="w-[18%] px-6 py-3.5 font-semibold text-black">Created</th>
                     </tr>
                 </thead>
 
-                {/* BODY */}
                 <tbody>
                     {displayedTickets.length > 0 ? (
-                        displayedTickets.map((ticket) => (
-                            <tr
-                                key={ticket.id}
-                                onClick={() =>
-                                    navigate(`/ticket/${ticket.id}`)
-                                }
-                                className="cursor-pointer border-b border-gray-200 transition-colors hover:bg-gray-50 last:border-b-0"
-                            >
+                        displayedTickets.map((ticket) => {
+                            const unreadCount = staticUnread[ticket.ticket_code] || 0;
+                            const hasUnread = unreadCount > 0;
 
-                                {/* TICKET ID */}
-                                <td className="px-6 py-4">
-                                    <span className="whitespace-nowrap font-semibold text-black">
-                                        {ticket.ticket_code || "-"}
-                                    </span>
-                                </td>
+                            return (
+                                <tr
+                                    key={ticket.id}
+                                    onClick={() => navigate(`/ticket/${ticket.id}`)}
+                                    className={`cursor-pointer border-b border-gray-200 transition-colors last:border-b-0 ${
+                                        hasUnread
+                                            ? "bg-[#4C4CF9]/[0.035] hover:bg-[#4C4CF9]/[0.06]"
+                                            : "hover:bg-gray-50"
+                                    }`}
+                                >
+                                    <td className="px-6 py-4">
+                                        <span className="whitespace-nowrap font-semibold text-black">
+                                            {ticket.ticket_code || "-"}
+                                        </span>
+                                    </td>
 
-                                {/* SUBJECT */}
-                                <td className="px-6 py-4">
-                                    <p
-                                        className="truncate font-medium text-black"
-                                        title={ticket.subject}
-                                    >
-                                        {ticket.subject || "-"}
-                                    </p>
-                                </td>
+                                    <td className="px-6 py-4">
+                                        <div className="flex min-w-0 items-center gap-3">
+                                            <p
+                                                className={`truncate text-black ${hasUnread ? "font-semibold" : "font-medium"}`}
+                                                title={ticket.subject}
+                                            >
+                                                {ticket.subject || "-"}
+                                            </p>
 
-                                {/* PRIORITY */}
-                                <td className="px-6 py-4">
-                                    <span
-                                        className={`inline-flex min-w-[38px] items-center justify-center rounded-md border px-2.5 py-1 text-xs font-semibold ${
-                                            priorityStyle(
-                                                ticket.priority
-                                            )
-                                        }`}
-                                    >
-                                        {ticket.priority || "-"}
-                                    </span>
-                                </td>
+                                            {hasUnread && (
+                                                <div className="relative shrink-0">
+                                                    <MessageCircle size={20} className="text-[#4C4CF9]" />
 
-                                {/* STATUS */}
-                                <td className="px-4 py-4">
-                                    <span
-                                        className={`inline-flex whitespace-nowrap rounded-md px-2.5 py-1 text-xs font-medium ${
-                                            statusColor[
-                                                ticket.status
-                                            ] ||
-                                            "border border-gray-300 bg-gray-100 text-gray-700"
-                                        }`}
-                                    >
-                                        {ticket.status || "-"}
-                                    </span>
-                                </td>
+                                                    <span className="absolute -right-2 -top-2 flex h-4 min-w-4 items-center justify-center rounded-full bg-red-500 px-1 text-[9px] font-semibold leading-none text-white">
+                                                        {unreadCount > 99 ? "99+" : unreadCount}
+                                                    </span>
+                                                </div>
+                                            )}
+                                        </div>
+                                    </td>
 
-                                {/* CREATED */}
-                                <td className="px-6 py-4">
-                                    <span className="whitespace-nowrap font-medium text-black">
-                                        {ticket.created_at
-                                            ? formatDate(
-                                                  ticket.created_at
-                                              )
-                                            : "-"}
-                                    </span>
-                                </td>
+                                    <td className="px-6 py-4">
+                                        <span
+                                            className={`inline-flex whitespace-nowrap rounded-md border px-2.5 py-1 text-xs font-semibold ${
+                                                priorityColor[ticket.priority] ||
+                                                "border-gray-300 bg-gray-100 text-gray-600"
+                                            }`}
+                                        >
+                                            {priorityLabel[ticket.priority] || ticket.priority || "-"}
+                                        </span>
+                                    </td>
 
-                            </tr>
-                        ))
+                                    <td className="px-4 py-4">
+                                        <span
+                                            className={`inline-flex whitespace-nowrap rounded-md px-2.5 py-1 text-xs font-medium ${
+                                                statusColor[ticket.status] ||
+                                                "border border-gray-300 bg-gray-100 text-gray-700"
+                                            }`}
+                                        >
+                                            {ticket.status || "-"}
+                                        </span>
+                                    </td>
+
+                                    <td className="px-6 py-4">
+                                        <span className="whitespace-nowrap font-medium text-black">
+                                            {ticket.created_at ? formatDate(ticket.created_at) : "-"}
+                                        </span>
+                                    </td>
+                                </tr>
+                            );
+                        })
                     ) : (
                         <tr>
-                            <td
-                                colSpan="5"
-                                className="px-6 py-16 text-center"
-                            >
-                                <p className="font-medium text-black">
-                                    No tickets found
-                                </p>
-
-                                <p className="mt-1 text-sm text-gray-500">
-                                    There are currently no tickets to display.
-                                </p>
+                            <td colSpan="5" className="px-6 py-16 text-center">
+                                <p className="font-medium text-black">No tickets found</p>
+                                <p className="mt-1 text-sm text-gray-500">There are currently no tickets to display.</p>
                             </td>
                         </tr>
                     )}
                 </tbody>
-
             </table>
         </div>
     );

@@ -9,7 +9,6 @@ import {
 } from "lucide-react";
 
 import TicketDetailsEmployee from "../components/TicketDetailsEmployee";
-import TicketDetailsServiceDesk from "../components/TicketDetailsServiceDesk";
 import TicketDetailsSupport from "../components/TicketDetailsSupport";
 
 export default function TicketDetails() {

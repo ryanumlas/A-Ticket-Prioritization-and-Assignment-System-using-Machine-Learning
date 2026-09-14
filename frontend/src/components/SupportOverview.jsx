@@ -75,7 +75,7 @@ export default function SupportOverview() {
         },
         {
             title: "SLA At Risk",
-            value: overviewData?.sla_at_risk,
+            value: overviewData? ncy..sla_at_risk,
             description: "Requires immediate attention",
             badge: "Attention",
             icon: TriangleAlert,

@@ -148,7 +148,12 @@ def classify_ticket(ticket):
     }
 
 
-def calculate_priority(based_priority, affected_scope, business_critical):
+def calculate_priority(
+    based_priority,
+    affected_scope,
+    business_critical,
+    time_critical,
+):
     PRIORITY_ORDER = {
         "P5": 5,
         "P4": 4,
@@ -169,88 +174,211 @@ def calculate_priority(based_priority, affected_scope, business_critical):
 
     if priority_number is None:
         return "P5"
-    
+
+
+    # BASE PRIORITY P5
     if based_priority == "P5":
+
         if affected_scope == Ticket.AffectedScope.INDIVIDUAL:
-            if business_critical:
-                priority_number = 3
-            else: 
-                priority_number = 5
-        
-        elif affected_scope == Ticket.AffectedScope.GROUP:
-            if business_critical:
+
+            if business_critical and time_critical:
                 priority_number = 2
+
+            elif business_critical:
+                priority_number = 3
+
+            elif time_critical:
+                priority_number = 4
+
             else:
                 priority_number = 5
 
-        elif affected_scope == Ticket.AffectedScope.DEPARTMENT:
-            if business_critical:
+
+        elif affected_scope == Ticket.AffectedScope.GROUP:
+
+            if business_critical and time_critical:
+                priority_number = 1
+
+            elif business_critical:
                 priority_number = 2
+
+            elif time_critical:
+                priority_number = 4
+
+            else:
+                priority_number = 5
+
+
+        elif affected_scope == Ticket.AffectedScope.DEPARTMENT:
+
+            if business_critical and time_critical:
+                priority_number = 1
+
+            elif business_critical:
+                priority_number = 2
+
+            elif time_critical:
+                priority_number = 3
+
             else:
                 priority_number = 4
-        
+
+
         elif affected_scope == Ticket.AffectedScope.ORGANIZATION_WIDE:
-            if business_critical:
+
+            if business_critical and time_critical:
                 priority_number = 1
+
+            elif business_critical:
+                priority_number = 1
+
+            elif time_critical:
+                priority_number = 1
+
             else:
                 priority_number = 2
+
         else:
-            raise ValueError(f"Invalid affected_scope: {affected_scope}")
-        
+            raise ValueError(
+                f"Invalid affected_scope: {affected_scope}"
+            )
+
+
+    # BASE PRIORITY P4
     if based_priority == "P4":
+
         if affected_scope == Ticket.AffectedScope.INDIVIDUAL:
-            if business_critical:
-                priority_number = 3
-            else: 
-                priority_number = 4
-        
-        elif affected_scope == Ticket.AffectedScope.GROUP:
-            if business_critical:
+
+            if business_critical and time_critical:
                 priority_number = 2
+
+            elif business_critical:
+                priority_number = 3
+
+            elif time_critical:
+                priority_number = 3
+
             else:
                 priority_number = 4
+
+
+        elif affected_scope == Ticket.AffectedScope.GROUP:
+
+            if business_critical and time_critical:
+                priority_number = 1
+
+            elif business_critical:
+                priority_number = 2
+
+            elif time_critical:
+                priority_number = 3
+
+            else:
+                priority_number = 4
+
 
         elif affected_scope == Ticket.AffectedScope.DEPARTMENT:
-            if business_critical:
+
+            if business_critical and time_critical:
                 priority_number = 1
+
+            elif business_critical:
+                priority_number = 1
+
+            elif time_critical:
+                priority_number = 2
+
             else:
                 priority_number = 3
-        
+
+
         elif affected_scope == Ticket.AffectedScope.ORGANIZATION_WIDE:
-            if business_critical:
+
+            if business_critical and time_critical:
                 priority_number = 1
+
+            elif business_critical:
+                priority_number = 1
+
+            elif time_critical:
+                priority_number = 1
+
             else:
                 priority_number = 2
-        else:
-            raise ValueError(f"Invalid affected_scope: {affected_scope}")
 
+        else:
+            raise ValueError(
+                f"Invalid affected_scope: {affected_scope}"
+            )
+
+
+    # BASE PRIORITY P3
     if based_priority == "P3":
+
         if affected_scope == Ticket.AffectedScope.INDIVIDUAL:
-            if business_critical:
+
+            if business_critical and time_critical:
+                priority_number = 1
+
+            elif business_critical:
                 priority_number = 2
-            else: 
-                priority_number = 3
-        
-        elif affected_scope == Ticket.AffectedScope.GROUP:
-            if business_critical:
+
+            elif time_critical:
                 priority_number = 2
+
             else:
                 priority_number = 3
 
-        elif affected_scope == Ticket.AffectedScope.DEPARTMENT:
-            if business_critical:
+
+        elif affected_scope == Ticket.AffectedScope.GROUP:
+
+            if business_critical and time_critical:
                 priority_number = 1
+
+            elif business_critical:
+                priority_number = 2
+
+            elif time_critical:
+                priority_number = 2
+
             else:
                 priority_number = 3
-        
-        elif affected_scope == Ticket.AffectedScope.ORGANIZATION_WIDE:
-            if business_critical:
+
+
+        elif affected_scope == Ticket.AffectedScope.DEPARTMENT:
+
+            if business_critical and time_critical:
                 priority_number = 1
+
+            elif business_critical:
+                priority_number = 1
+
+            elif time_critical:
+                priority_number = 2
+
+            else:
+                priority_number = 3
+
+
+        elif affected_scope == Ticket.AffectedScope.ORGANIZATION_WIDE:
+
+            if business_critical and time_critical:
+                priority_number = 1
+
+            elif business_critical:
+                priority_number = 1
+
+            elif time_critical:
+                priority_number = 1
+
             else:
                 priority_number = 2
+
         else:
-            raise ValueError(f"Invalid affected_scope: {affected_scope}")
-        
+            raise ValueError(
+                f"Invalid affected_scope: {affected_scope}"
+            )
+
     priority_number = max(1, priority_number)
 
     return PRIORITY_LABELS[priority_number]

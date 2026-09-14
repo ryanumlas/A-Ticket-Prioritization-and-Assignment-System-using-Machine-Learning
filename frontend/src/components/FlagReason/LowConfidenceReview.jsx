@@ -5,33 +5,61 @@ import {
     ClipboardCheck,
     Ticket,
     TrendingUp,
-    CheckCircle2,
     Pencil,
-    Search
-    } from "lucide-react";
+    Search,
+} from "lucide-react";
 import SymptomCodeSheet from "./SymptomCodeSheet";
+import RemarksModal from "../RemarksModal";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
-import api from "/src/api"
+import api from "/src/api";
 
 export default function LowConfidenceReview({ flag }) {
     const [selectedSymptom, setSelectedSymptom] = useState("");
     const [sheetOpen, setSheetOpen] = useState(false);
     const [accepting, setAccepting] = useState(false);
     const [approving, setApproving] = useState(false);
+    const [remarks, setRemarks] = useState("");
+    const [reviewAction, setReviewAction] = useState(null);
 
     const navigate = useNavigate();
+
+    const openAcceptModal = () => {
+        setRemarks("");
+        setReviewAction("accept");
+    };
+
+    const openOverrideModal = () => {
+        if (!selectedSymptom) return;
+        setRemarks("");
+        setReviewAction("override");
+    };
+
+    const closeReviewModal = () => {
+        if (accepting || approving) return;
+        setReviewAction(null);
+        setRemarks("");
+    };
 
     const handleAcceptRecommendation = async () => {
         try {
             setAccepting(true);
-            const response = await api.post(`/tickets/flagged/${flag.id}/accept-recommendation/`);
-            console.log(response.data);
+
+            const response = await api.post(
+                `/tickets/flagged/${flag.id}/accept-recommendation/`,
+                {
+                    remarks: remarks.trim(),
+                }
+            );
+
+            setReviewAction(null);
+            setRemarks("");
+
             navigate("/dashboard");
+
             toast.success("Recommendation accepted", {
                 description: `${response.data.ticket.ticket_code} was classified as ${response.data.ticket.symptom_code}.`,
                 duration: 6000,
-
                 style: {
                     background: "#ffffff",
                     color: "#000000",
@@ -43,13 +71,12 @@ export default function LowConfidenceReview({ flag }) {
             });
         } catch (error) {
             console.error(error);
+
             toast.error("Unable to accept recommendation", {
                 description:
                     error.response?.data?.message ||
                     "Something went wrong while completing the review.",
-
                 duration: 6000,
-
                 style: {
                     background: "#ffffff",
                     color: "#000000",
@@ -62,11 +89,10 @@ export default function LowConfidenceReview({ flag }) {
         } finally {
             setAccepting(false);
         }
-    }
+    };
+
     const handleApproveOverride = async () => {
-        if (!selectedSymptom) {
-            return;
-        }
+        if (!selectedSymptom) return;
 
         try {
             setApproving(true);
@@ -75,15 +101,18 @@ export default function LowConfidenceReview({ flag }) {
                 `/tickets/flagged/${flag.id}/approve-override/`,
                 {
                     symptom_code: selectedSymptom,
+                    remarks: remarks.trim(),
                 }
             );
+
+            setReviewAction(null);
+            setRemarks("");
 
             navigate("/dashboard");
 
             toast.success("Classification updated", {
                 description: `${response.data.ticket.ticket_code} was classified as ${response.data.ticket.symptom_code}.`,
                 duration: 6000,
-
                 style: {
                     background: "#ffffff",
                     color: "#000000",
@@ -93,16 +122,14 @@ export default function LowConfidenceReview({ flag }) {
                     boxShadow: "0 8px 24px rgba(0, 0, 0, 0.08)",
                 },
             });
-
         } catch (error) {
             console.error(error);
-            toast.error("Unable to accept recommendation", {
+
+            toast.error("Unable to approve override", {
                 description:
                     error.response?.data?.message ||
                     "Something went wrong while completing the review.",
-
                 duration: 5000,
-
                 style: {
                     background: "#ffffff",
                     color: "#000000",
@@ -112,12 +139,22 @@ export default function LowConfidenceReview({ flag }) {
                     boxShadow: "0 10px 30px rgba(0, 0, 0, 0.08)",
                 },
             });
-
         } finally {
             setApproving(false);
         }
     };
-    
+
+    const handleConfirmReview = () => {
+        if (reviewAction === "accept") {
+            handleAcceptRecommendation();
+            return;
+        }
+
+        if (reviewAction === "override") {
+            handleApproveOverride();
+        }
+    };
+
     const confidence =
         flag.confidence != null
             ? (flag.confidence * 100).toFixed(2)
@@ -137,26 +174,45 @@ export default function LowConfidenceReview({ flag }) {
         selectedSymptom &&
         selectedSymptom !== flag.predicted_symptom_code;
 
-        return (
+    const reviewModalTitle =
+        reviewAction === "override"
+            ? "Confirm Classification Override"
+            : "Accept Model Recommendation";
+
+    const reviewModalDescription =
+        reviewAction === "override" ? (
+            <>
+                You are changing the symptom classification from{" "}
+                <span className="font-semibold">
+                    {flag.predicted_symptom_code || "-"}
+                </span>{" "}
+                to{" "}
+                <span className="font-semibold">
+                    {selectedSymptom || "-"}
+                </span>.
+            </>
+        ) : (
+            <>
+                You are accepting the model&apos;s recommended symptom code{" "}
+                <span className="font-semibold">
+                    {flag.predicted_symptom_code || "-"}
+                </span>.
+            </>
+        );
+
+    const reviewModalConfirmText =
+        reviewAction === "override"
+            ? "Confirm Override"
+            : "Confirm Review";
+
+    return (
+        <>
             <div className="space-y-5">
                 <div className="grid grid-cols-1 items-start gap-5 xl:grid-cols-[1.35fr_1fr]">
-                    <div className="
-                            max-h-[720px] overflow-y-auto
-                            rounded-md border border-gray-300 bg-white
-
-                            [&::-webkit-scrollbar]:w-1
-                            [&::-webkit-scrollbar-track]:bg-transparent
-                            [&::-webkit-scrollbar-thumb]:rounded-full
-                            [&::-webkit-scrollbar-thumb]:bg-transparent
-                            hover:[&::-webkit-scrollbar-thumb]:bg-gray-300
-                        ">
+                    <div className="max-h-[720px] overflow-y-auto rounded-md border border-gray-300 bg-white [&::-webkit-scrollbar]:w-1 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-transparent hover:[&::-webkit-scrollbar-thumb]:bg-gray-300">
                         <div className="flex items-center gap-3 border-b border-gray-300 px-6 py-4">
-
                             <div className="flex h-9 w-9 items-center justify-center rounded-md bg-gray-100">
-                                <Ticket
-                                    size={19}
-                                    className="text-black"
-                                />
+                                <Ticket size={19} className="text-black" />
                             </div>
 
                             <div>
@@ -168,11 +224,9 @@ export default function LowConfidenceReview({ flag }) {
                                     Information submitted by the employee.
                                 </p>
                             </div>
-
                         </div>
 
                         <div className="grid grid-cols-1 border-b border-gray-300 sm:grid-cols-2">
-
                             <div className="border-b border-gray-300 px-6 py-4 sm:border-b-0 sm:border-r">
                                 <p className="text-xs font-semibold uppercase text-gray-500">
                                     Ticket Code
@@ -192,7 +246,6 @@ export default function LowConfidenceReview({ flag }) {
                                     {flag.affected_scope || "-"}
                                 </p>
                             </div>
-
                         </div>
 
                         <div className="border-b border-gray-300 px-6 py-4">
@@ -224,13 +277,10 @@ export default function LowConfidenceReview({ flag }) {
                                 {flag.business_impact || "-"}
                             </p>
                         </div>
-                        <div className="border-t border-gray-300 px-6 py-5">
 
+                        <div className="border-t border-gray-300 px-6 py-5">
                             <div className="mb-5 flex items-center gap-2">
-                                <Contact
-                                    size={18}
-                                    className="text-black"
-                                />
+                                <Contact size={18} className="text-black" />
 
                                 <h3 className="font-semibold text-black">
                                     Requester Information
@@ -238,9 +288,8 @@ export default function LowConfidenceReview({ flag }) {
                             </div>
 
                             <div className="grid grid-cols-1 gap-x-10 gap-y-4 sm:grid-cols-2">
-
                                 <div className="flex items-center">
-                                    <p className="w-32 shrink-0 text-xs text-gray-500 uppercase font-semibold">
+                                    <p className="w-32 shrink-0 text-xs font-semibold uppercase text-gray-500">
                                         Name
                                     </p>
 
@@ -250,7 +299,7 @@ export default function LowConfidenceReview({ flag }) {
                                 </div>
 
                                 <div className="flex items-center">
-                                    <p className="w-32 shrink-0 text-xs text-gray-500 uppercase font-semibold">
+                                    <p className="w-32 shrink-0 text-xs font-semibold uppercase text-gray-500">
                                         Employee ID
                                     </p>
 
@@ -260,48 +309,42 @@ export default function LowConfidenceReview({ flag }) {
                                 </div>
 
                                 <div className="flex items-center">
-                                    <p className="w-32 shrink-0 text-xs text-gray-500 uppercase font-semibold">
+                                    <p className="w-32 shrink-0 text-xs font-semibold uppercase text-gray-500">
                                         Department
                                     </p>
 
                                     <p className="text-sm font-medium text-black">
-                                        {flag.employee_department || '-'} 
+                                        {flag.employee_department || "-"}
                                     </p>
                                 </div>
 
-
                                 <div className="flex items-center">
-                                    <p className="w-32 shrink-0 text-xs text-gray-500 uppercase font-semibold">
+                                    <p className="w-32 shrink-0 text-xs font-semibold uppercase text-gray-500">
                                         Office Location
                                     </p>
 
                                     <p className="text-sm font-medium text-black">
-                                        {flag.office_location || '-'}
+                                        {flag.office_location || "-"}
                                     </p>
                                 </div>
 
                                 <div className="flex items-center">
-                                    <p className="w-32 shrink-0 text-xs text-gray-500 uppercase font-semibold">
+                                    <p className="w-32 shrink-0 text-xs font-semibold uppercase text-gray-500">
                                         Workstation
                                     </p>
 
                                     <p className="text-sm font-medium text-black">
-                                        {flag.workstation || '-'}
+                                        {flag.workstation || "-"}
                                     </p>
                                 </div>
                             </div>
                         </div>
                     </div>
-                    
 
                     <div className="overflow-hidden rounded-md border border-gray-300 bg-white">
                         <div className="flex items-start gap-3 border-b border-gray-300 px-6 py-4">
-
                             <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-gray-100">
-                                <ClipboardCheck
-                                    size={19}
-                                    className="text-gray-500"
-                                />
+                                <ClipboardCheck size={19} className="text-gray-500" />
                             </div>
 
                             <div>
@@ -310,23 +353,19 @@ export default function LowConfidenceReview({ flag }) {
                                 </h2>
 
                                 <p className="mt-0.5 text-xs text-gray-500">
-                                    Review the Model recommendation and decide the
-                                    final symptom classification.
+                                    Review the model recommendation and decide the final symptom classification.
                                 </p>
                             </div>
                         </div>
 
                         <div className="p-6">
-
                             <div className="mb-5 rounded-md border border-gray-300 bg-gray-50 px-4 py-3">
                                 <p className="text-xs font-semibold uppercase text-gray-500">
                                     Review Reason
                                 </p>
+
                                 <div className="mt-2 flex items-center gap-2">
-                                    <CircleAlert
-                                        size={17}
-                                        className="shrink-0 text-red-700"
-                                    />
+                                    <CircleAlert size={17} className="shrink-0 text-red-700" />
 
                                     <p className="text-sm font-semibold text-black">
                                         {flag.reason || "Low Confidence"}
@@ -343,7 +382,6 @@ export default function LowConfidenceReview({ flag }) {
                                     <span className="rounded-md bg-[#4C4CF9] px-2.5 py-1 text-xs font-semibold text-white">
                                         {confidence}%
                                     </span>
-
                                 </div>
 
                                 <p className="mt-3 text-2xl font-semibold text-black">
@@ -375,13 +413,11 @@ export default function LowConfidenceReview({ flag }) {
 
                             {selectedSymptom && (
                                 <div className="mt-4 rounded-md border border-gray-300 px-4 py-3">
-
                                     <p className="text-xs font-semibold uppercase text-gray-500">
                                         Selected Classification
                                     </p>
 
                                     <div className="mt-2 flex items-center gap-2">
-
                                         <Pencil
                                             size={15}
                                             className={
@@ -394,65 +430,51 @@ export default function LowConfidenceReview({ flag }) {
                                         <p className="text-sm font-semibold text-black">
                                             {selectedSymptom}
                                         </p>
-
                                     </div>
 
                                     {!canOverride && (
                                         <p className="mt-2 text-xs text-gray-500">
-                                            This is already the AI recommended
-                                            symptom code. Use Accept Predicted
-                                            instead.
+                                            This is already the AI recommended symptom code. Use Accept Recommendation instead.
                                         </p>
                                     )}
-
                                 </div>
                             )}
 
-
                             <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
-
                                 <button
                                     type="button"
-                                    onClick={handleApproveOverride}
-                                    disabled={!selectedSymptom || approving || accepting}
+                                    onClick={openOverrideModal}
+                                    disabled={!canOverride || approving || accepting}
                                     className={`rounded-md px-4 py-3 text-sm font-semibold transition ${
-                                        selectedSymptom && !approving && !accepting
+                                        canOverride && !approving && !accepting
                                             ? "bg-[#4C4CF9] text-white hover:bg-[#4242e8]"
                                             : "cursor-not-allowed bg-gray-100 text-gray-400"
                                     }`}
                                 >
-                                    {approving
-                                        ? "Approving..."
-                                        : "Approve Override"}
+                                    {approving ? "Approving..." : "Approve Override"}
                                 </button>
 
                                 <button
                                     type="button"
-                                    onClick={handleAcceptRecommendation}
-                                    disabled={accepting}
+                                    onClick={openAcceptModal}
+                                    disabled={accepting || approving}
                                     className={`rounded-md px-4 py-3 text-sm font-semibold text-white transition ${
-                                        accepting
+                                        accepting || approving
                                             ? "cursor-not-allowed bg-gray-400"
                                             : "bg-[#4C4CF9] hover:bg-[#4242e8]"
                                     }`}
                                 >
-                                    {accepting
-                                        ? "Accepting..."
-                                        : "Accept Recommendation"}
+                                    {accepting ? "Accepting..." : "Accept Recommendation"}
                                 </button>
                             </div>
                         </div>
                     </div>
                 </div>
 
-
                 <div className="overflow-hidden rounded-md border border-gray-300 bg-white">
                     <div className="flex items-start gap-3 border-b border-gray-300 px-6 py-4">
                         <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-gray-100">
-                            <TrendingUp
-                                size={19}
-                                className="text-black"
-                            />
+                            <TrendingUp size={19} className="text-black" />
                         </div>
 
                         <div>
@@ -461,14 +483,12 @@ export default function LowConfidenceReview({ flag }) {
                             </h2>
 
                             <p className="mt-0.5 text-xs text-gray-500">
-                                The model returned a low-confidence recommendation and
-                                requires manual verification.
+                                The model returned a low-confidence recommendation and requires manual verification.
                             </p>
                         </div>
                     </div>
 
                     <div className="grid grid-cols-1 gap-4 p-6 md:grid-cols-3">
-
                         <div className="rounded-md border border-gray-300 p-5">
                             <div className="flex items-center justify-between gap-3">
                                 <p className="text-xs font-semibold uppercase text-gray-500">
@@ -525,25 +545,20 @@ export default function LowConfidenceReview({ flag }) {
                             </p>
 
                             <p className="mt-3 text-xs leading-5 text-gray-500">
-                                Difference between the primary and secondary
-                                recommendation confidence.
+                                Difference between the primary and secondary recommendation confidence.
                             </p>
                         </div>
                     </div>
 
                     <div className="mx-6 mb-6 flex items-center gap-3 rounded-md border border-gray-300 bg-gray-50 px-4 py-3">
-                        <CircleAlert
-                            size={18}
-                            className="shrink-0 text-red-600"
-                        />
+                        <CircleAlert size={18} className="shrink-0 text-red-600" />
 
                         <p className="text-xs leading-5 text-black">
-                            This ticket was flagged because the Model recommendation did
-                            not meet the required confidence threshold. Manual
-                            verification is required before the ticket can continue.
+                            This ticket was flagged because the model recommendation did not meet the required confidence threshold. Manual verification is required before the ticket can continue.
                         </p>
                     </div>
                 </div>
+
                 <SymptomCodeSheet
                     open={sheetOpen}
                     onClose={() => setSheetOpen(false)}
@@ -551,5 +566,18 @@ export default function LowConfidenceReview({ flag }) {
                     excludeCode={flag.predicted_symptom_code}
                 />
             </div>
-        );
-    }
+
+            <RemarksModal
+                open={Boolean(reviewAction)}
+                title={reviewModalTitle}
+                description={reviewModalDescription}
+                remarks={remarks}
+                setRemarks={setRemarks}
+                onCancel={closeReviewModal}
+                onConfirm={handleConfirmReview}
+                loading={accepting || approving}
+                confirmText={reviewModalConfirmText}
+            />
+        </>
+    );
+}

@@ -58,39 +58,38 @@ class TicketSerializer(serializers.ModelSerializer):
         ]   
     def get_response_time_remaining(self, obj):
 
-            # Response SLA is already completed
-            if obj.response_at:
-                return "MET"
+        if obj.response_at:
+            return obj.response_sla_status.upper() if obj.response_sla_status else None
 
-            if not obj.response_deadline:
-                return None
+        if not obj.response_deadline:
+            return None
 
-            remaining = obj.response_deadline - timezone.now()
+        remaining = obj.response_deadline - timezone.now()
 
-            if remaining.total_seconds() <= 0:
-                return "OVERDUE"
+        if remaining.total_seconds() <= 0:
+            return "OVERDUE"
 
-            total_seconds = int(remaining.total_seconds())
+        total_seconds = int(remaining.total_seconds())
 
-            days, remainder = divmod(total_seconds, 86400)
-            hours, remainder = divmod(remainder, 3600)
-            minutes, seconds = divmod(remainder, 60)
+        days, remainder = divmod(total_seconds, 86400)
+        hours, remainder = divmod(remainder, 3600)
+        minutes, seconds = divmod(remainder, 60)
 
-            if days > 0:
-                return f"{days}d {hours}h {minutes}m"
+        if days > 0:
+            return f"{days}d {hours}h {minutes}m"
 
-            if hours > 0:
-                return f"{hours}h {minutes}m"
+        if hours > 0:
+            return f"{hours}h {minutes}m"
 
-            if minutes > 0:
-                return f"{minutes}m {seconds}s"
+        if minutes > 0:
+            return f"{minutes}m {seconds}s"
 
-            return f"{seconds}s"
+        return f"{seconds}s"
 
     def get_resolution_time_remaining(self, obj):
 
         if obj.resolved_at:
-            return "MET"
+            return obj.resolution_sla_status.upper() if obj.resolution_sla_status else None
 
         if not obj.resolution_deadline:
             return None
@@ -312,10 +311,26 @@ class TicketAssistanceSerializer(serializers.ModelSerializer):
         read_only_fields = ['created_at', 'created_by', 'updated_at', 'updated_by']
 
 class TicketCommentSerializer(serializers.ModelSerializer):
+    commented_by_name = serializers.SerializerMethodField()
+    commented_by_role = serializers.SerializerMethodField()
+
     class Meta:
         model = TicketComments
-        fields = ['id', 'ticket', 'commented_by', 'message', 'created_at', 'comment_type']
-        read_only_fields = ['created_at', 'updated_at', 'updated_by']
+        fields = ["id","ticket","commented_by","commented_by_name","commented_by_role","message","comment_type","created_at","updated_at",]
+        read_only_fields = ["id","ticket","commented_by","commented_by_name","commented_by_role","created_at","updated_at",]
+
+    def get_commented_by_name(self, obj):
+        if not obj.commented_by:
+            return "System"
+
+        full_name = obj.commented_by.get_full_name().strip()
+        return full_name or obj.commented_by.username
+
+    def get_commented_by_role(self, obj):
+        if not obj.commented_by:
+            return "System"
+
+        return obj.commented_by.role.name if obj.commented_by.role else None
         
 class TicketStatusHistorySerializer(serializers.ModelSerializer):
     class Meta:
@@ -613,6 +628,8 @@ class CreateSymptomCodeSerializer(serializers.ModelSerializer):
     class Meta:
         model = SymptomCode
         fields = ['code', 'category', 'description', 'based_priority']
+
+
 
 # class TicketSLASerializer(serializers.ModelSerializer):
 #     class Meta:

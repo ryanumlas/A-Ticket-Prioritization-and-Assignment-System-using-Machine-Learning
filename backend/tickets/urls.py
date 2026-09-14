@@ -4,7 +4,7 @@ UpdateTicketView, DeleteTicketView, CreateCategoryView, KeywordUpdateView ,Keywo
 UpdateCategoryView, CreateSymptomCodeView, SLARulesCreateView, SLARulesUpdateView, TicketDetailEmployeeView, TicketListServiceDeskView, UpdateTicketStatusView, ManualOverrideTicketView,
 ServiceDeskOverviewView, ServiceDeskClassifiedResultsView, FlaggedTicketsListView, FlaggedTicketDetailView, SymptomCodeListView, 
 AcceptRecommendationView, ApproveOverrideView, ManuallyClassifyView, SupportOverviewView, TicketQueueView, TicketListSupportView, DepartmentSymptomCodesView, 
-SLAPerformanceView, TicketsByCategoryView, TicketDetailSupportView, TicketStatusHistoryView)
+SLAPerformanceView, TicketsByCategoryView, TicketDetailSupportView, TicketStatusHistoryView, TicketCommentListCreateView)
 
 urlpatterns = [
     # --- Ticket URLs ---
@@ -15,7 +15,8 @@ urlpatterns = [
     path('update-status/<int:pk>/', UpdateTicketStatusView.as_view(), name='update-ticket-status'),
     path('manual-override/<int:pk>/', ManualOverrideTicketView.as_view(), name='manual-override-ticket'),
     path('delete/<int:pk>/', DeleteTicketView.as_view(), name='delete-ticket'),
-    path("sla-performance/",SLAPerformanceView.as_view(),name="support-sla-performance",),
+    path("sla-performance/",SLAPerformanceView.as_view(),name="support-sla-performance"),
+    path("<int:pk>/comments/",TicketCommentListCreateView.as_view(),name="ticket-comments"),
 
     path('employee/list/', TicketListEmployeeView.as_view(), name="ticket-list"),
     path('employee/detail/<int:ticket_id>/', TicketDetailEmployeeView.as_view(), name="ticket-detail"),

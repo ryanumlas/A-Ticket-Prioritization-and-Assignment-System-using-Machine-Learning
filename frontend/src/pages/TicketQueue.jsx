@@ -14,9 +14,9 @@ export default function TicketQueue() {
     else if (user.role === "IT Support Specialist") {
         MainContent = <TicketQueueSupport/>;
     }
-    else if (user.role === "IT Service Desk") {
-        MainContent = <TicketQueueServiceDesk/>;
-    }
+    // else if (user.role === "IT Service Desk") {
+    //     MainContent = <TicketQueueServiceDesk/>;
+    // }
     else {
         MainContent = <div className="p-6">Access Denied / Invalid Role</div>;
     }

@@ -215,6 +215,7 @@ class CreateTicketView(generics.CreateAPIView):
             symptom.based_priority,
             ticket.affected_scope,
             analysis.get("business_critical", False),
+            analysis.get("is_time_critical", False),
         )
 
         sla_rule = SLARules.objects.filter(
@@ -285,10 +286,17 @@ class ManualOverrideTicketView(APIView):
             if ai_analysis
             else False
         )
+        time_critical = (
+            ai_analysis.is_time_critical
+            if ai_analysis
+            else False
+        )
+
         final_priority = calculate_priority(
             symptom.based_priority,
             ticket.affected_scope,
-            business_critical
+            business_critical,
+            time_critical
         )
 
 
@@ -608,6 +616,10 @@ class ApproveOverrideView(APIView):
             )
 
         selected_code = request.data.get("symptom_code")
+        remarks = request.data.get("remarks", "")
+        if remarks is None:
+            remarks = ""
+        remarks = str(remarks).strip()
 
         if not selected_code:
             return Response(
@@ -665,7 +677,7 @@ class ApproveOverrideView(APIView):
             event_type=TicketStatusHistory.EventType.REVIEW_COMPLETED,
             old_value=recommended_symptom.code if recommended_symptom else None,
             new_value=selected_symptom.code,
-            remarks="The flagged ticket was reviewed and the model recommendation was overridden.",
+            remarks=remarks,
             changed_by=request.user,
             created_by=request.user,
         )
@@ -713,6 +725,10 @@ class AcceptRecommendationView(APIView):
 
     @transaction.atomic
     def post(self, request, pk):
+        remarks = request.data.get("remarks", "")
+        if remarks is None:
+            remarks = ""
+        remarks = str(remarks).strip()
         try:
             flag = ReviewFlags.objects.select_related(
                 "ticket",
@@ -769,7 +785,7 @@ class AcceptRecommendationView(APIView):
             event_type=TicketStatusHistory.EventType.REVIEW_COMPLETED,
             old_value=None,
             new_value=recommended_symptom.code,
-            remarks="The flagged ticket was reviewed and the model recommendation was accepted.",
+            remarks=remarks,
             changed_by=request.user,
             created_by=request.user,
         )
@@ -789,15 +805,6 @@ class AcceptRecommendationView(APIView):
         flag.reviewed_at = reviewed_at
         flag.save(update_fields=["status", "reviewed_by", "reviewed_at", "updated_at"])
 
-
-        print("===== ASSIGNMENT DEBUG =====")
-        print("Ticket:", ticket.ticket_code)
-        print("Status:", ticket.status)
-        print("Under review:", ticket.is_under_review)
-        print("Symptom:", ticket.symptom_code)
-        print("Department:", ticket.it_department)
-        print("Required specialization:", ticket.symptom_code.required_specialization if ticket.symptom_code else None)
-        print("============================")
         assigned_profile = assign_ticket_automatically(ticket)
 
         return Response(
@@ -842,11 +849,10 @@ class ManuallyClassifyView(APIView):
             )
 
         selected_code = request.data.get("symptom_code")
+        
         remarks = request.data.get("remarks", "")
-
         if remarks is None:
             remarks = ""
-
         remarks = str(remarks).strip()
 
         if not selected_code:
@@ -927,6 +933,98 @@ class DeleteTicketView(generics.DestroyAPIView):
     serializer_class = TicketSerializer
     permission_classes = [IsAuthenticated]
 
+class TicketCommentListCreateView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get_ticket(self, request, pk):
+        try:
+            ticket = Ticket.objects.get(pk=pk)
+        except Ticket.DoesNotExist:
+            return None
+
+        if request.user.role and request.user.role.name == "Employee":
+            if ticket.submitted_by_id != request.user.id:
+                return None
+
+        return ticket
+
+    def get(self, request, pk):
+        ticket = self.get_ticket(request, pk)
+
+        if not ticket:
+            return Response(
+                {"detail": "Ticket not found or access denied."},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        comments = ticket.comments.select_related(
+            "commented_by",
+            "commented_by__role",
+        ).order_by("created_at")
+
+        if request.user.role and request.user.role.name == "Employee":
+            comments = comments.filter(
+                comment_type=TicketComments.CommentType.PUBLIC_REPLY
+            )
+        else:
+            comments = comments.exclude(
+                comment_type=TicketComments.CommentType.SYSTEM_LOG
+            )
+
+        serializer = TicketCommentSerializer(comments, many=True)
+
+        return Response(serializer.data)
+
+    def post(self, request, pk):
+        ticket = self.get_ticket(request, pk)
+
+        if not ticket:
+            return Response(
+                {"detail": "Ticket not found or access denied."},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        message = request.data.get("message", "")
+        comment_type = request.data.get(
+            "comment_type",
+            TicketComments.CommentType.PUBLIC_REPLY,
+        )
+
+        message = str(message).strip()
+
+        if not message:
+            return Response(
+                {"message": "Message cannot be empty."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        user_role = request.user.role.name if request.user.role else None
+
+        if user_role == "Employee":
+            comment_type = TicketComments.CommentType.PUBLIC_REPLY
+
+        elif comment_type not in [
+            TicketComments.CommentType.PUBLIC_REPLY,
+            TicketComments.CommentType.INTERNAL_NOTE,
+        ]:
+            return Response(
+                {"message": "Invalid comment type."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        comment = TicketComments.objects.create(
+            ticket=ticket,
+            commented_by=request.user,
+            message=message,
+            comment_type=comment_type,
+        )
+
+        serializer = TicketCommentSerializer(comment)
+
+        return Response(
+            serializer.data,
+            status=status.HTTP_201_CREATED,
+        )
 # --- Employee View ---
 class TicketListEmployeeView(APIView):
     permission_classes = [IsAuthenticated]

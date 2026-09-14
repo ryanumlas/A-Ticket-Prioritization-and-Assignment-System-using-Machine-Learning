@@ -15,9 +15,9 @@ export default function Ticket() {
     else if (user?.role === "IT Support Specialist") {
         MainContent = <SupportTicket/>;
     }
-    else if (user?.role === "IT Service Desk") {
-        MainContent = <ServiceDeskTicket/>;
-    }
+    // else if (user?.role === "IT Service Desk") {
+    //     MainContent = <ServiceDeskTicket/>;
+    // }
     else {
         MainContent = <div className="p-6">Access Denied / Invalid Role</div>;
     }

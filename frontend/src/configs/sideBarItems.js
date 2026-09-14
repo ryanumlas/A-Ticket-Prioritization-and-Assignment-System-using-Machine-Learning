@@ -85,18 +85,18 @@ export const sidebarItems = {
             type: "section",
             title: "Tickets",
         },
-        {
-            type: "link",
-            name: "Ticket Queue",
-            path: "/ticket-queue",
-            icon: ListTodo
-        },
-        {
-            type: "link",
-            name: "Assigned Tickets",
-            path: "/tickets",
-            icon: ClipboardCheck
-        },
+        // {
+        //     type: "link",
+        //     name: "Ticket Queue",
+        //     path: "/ticket-queue",
+        //     icon: ListTodo
+        // },
+        // {
+        //     type: "link",
+        //     name: "Assigned Tickets",
+        //     path: "/tickets",
+        //     icon: ClipboardCheck
+        // },
         {
             type: "link",
             name: "Flagged Tickets",
