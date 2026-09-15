@@ -5,15 +5,21 @@ import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import {
     ArrowLeft,
-    SlidersHorizontal
 } from "lucide-react";
 
 import TicketDetailsEmployee from "../components/TicketDetailsEmployee";
 import TicketDetailsSupport from "../components/TicketDetailsSupport";
+import ManageTicketDropdown from "../components/ManageTickets/ManageTicketDropdown";
+import RequestPriorityModal from "../components/ManageTickets/RequestPriorityModal";
+import ReturnTicketModal from "../components/ManageTickets/ReturnTicketModal";
+import RequestAssistanceModal from "../components/ManageTickets/RequestAssistanceModal";
 
 export default function TicketDetails() {
     const user = getCurrentUser();
 
+    const [assistanceModalOpen, setAssistanceModalOpen] = useState(false);
+    const [priorityModalOpen, setPriorityModalOpen] = useState(false);
+    const [returnModalOpen, setReturnModalOpen] = useState(false);
     const [ticketDetails, setTicketDetails] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState("");
@@ -183,13 +189,11 @@ export default function TicketDetails() {
                         </button>
 
                         {isAssignedSupport && (
-                            <button
-                                type="button"
-                                className="flex h-9 cursor-pointer items-center gap-2 rounded-lg border border-gray-300 bg-[#4C4CF9] px-3.5 text-sm font-medium text-white transition-colors hover:bg-[#3a3ae0] focus:outline-none focus:ring-2 focus:ring-[#4C4CF9]/50"
-                            >
-                                Manage Tickets
-                                <SlidersHorizontal size={16} />
-                            </button>
+                                <ManageTicketDropdown 
+                                onPriorityRequest={() => setPriorityModalOpen(true)} 
+                                onReturnTicket={() => setReturnModalOpen(true)}
+                                onRequestAssistance={() => setAssistanceModalOpen(true)}
+                            />
                         )}
 
                     </div>
@@ -202,6 +206,20 @@ export default function TicketDetails() {
 
             </div>
 
+            <RequestPriorityModal
+                open={priorityModalOpen}
+                onClose={() => setPriorityModalOpen(false)}
+                currentPriority={ticketDetails?.priority}
+            />
+            <ReturnTicketModal
+                open={returnModalOpen}
+                onClose={() => setReturnModalOpen(false)}
+            />
+            <RequestAssistanceModal
+                open={assistanceModalOpen}
+                onClose={() => setAssistanceModalOpen(false)}
+            />
         </div>
+        
     );
 }

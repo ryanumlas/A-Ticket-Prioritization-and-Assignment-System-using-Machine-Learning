@@ -1,0 +1,185 @@
+import {
+    ArrowUpDown,
+    X,
+    Info,
+} from "lucide-react";
+
+export default function RequestPriorityModal({
+    open,
+    onClose,
+    currentPriority = "P4",
+}) {
+    if (!open) return null;
+
+    const priorityLabel = {
+        P1: "Critical",
+        P2: "High",
+        P3: "Medium",
+        P4: "Low",
+        P5: "Very Low",
+    };
+
+    const priorityStyle = {
+        P1: "border-red-200 bg-red-50 text-red-600",
+        P2: "border-orange-200 bg-orange-50 text-orange-600",
+        P3: "border-amber-200 bg-amber-50 text-amber-600",
+        P4: "border-blue-200 bg-blue-50 text-blue-600",
+        P5: "border-gray-300 bg-gray-100 text-gray-600",
+    };
+
+    return (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/30 px-4">
+
+            {/* MODAL */}
+            <div className="w-full max-w-[500px] overflow-hidden rounded-xl border border-gray-200 bg-white shadow-xl">
+
+                {/* HEADER */}
+                <div className="flex items-start justify-between border-b border-gray-200 px-5 py-4">
+                    <div className="flex items-start gap-3">
+                        <div className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-gray-100">
+                            <ArrowUpDown
+                                size={18}
+                                className="text-gray-500"
+                            />
+                        </div>
+
+                        <div>
+                            <h2 className="text-base font-semibold text-black">
+                                Request Priority Change
+                            </h2>
+
+                            <p className="mt-0.5 text-sm text-gray-500">
+                                Submit a priority adjustment for Service Desk review.
+                            </p>
+                        </div>
+                    </div>
+
+                    <button
+                        type="button"
+                        onClick={onClose}
+                        className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-700"
+                    >
+                        <X size={18} />
+                    </button>
+                </div>
+
+                {/* BODY */}
+                <div className="space-y-5 px-5 py-5">
+
+                    {/* CURRENT PRIORITY */}
+                    <div>
+                        <label className="mb-2 block text-sm font-medium text-black">
+                            Current Priority
+                        </label>
+
+                        <div className="flex h-11 items-center rounded-lg border border-gray-200 bg-gray-50 px-3">
+                            <span
+                                className={`inline-flex rounded-md border px-2.5 py-1 text-xs font-semibold ${
+                                    priorityStyle[currentPriority] ||
+                                    priorityStyle.P5
+                                }`}
+                            >
+                                {priorityLabel[currentPriority]
+                                    ? `${priorityLabel[currentPriority]} (${currentPriority})`
+                                    : currentPriority}
+                            </span>
+                        </div>
+                    </div>
+
+                    {/* REQUESTED PRIORITY */}
+                    <div>
+                        <label
+                            htmlFor="requested-priority"
+                            className="mb-2 block text-sm font-medium text-black"
+                        >
+                            Requested Priority
+                            <span className="ml-1 text-red-500">*</span>
+                        </label>
+
+                        <select
+                            id="requested-priority"
+                            defaultValue=""
+                            className="h-11 w-full rounded-lg border border-gray-300 bg-white px-3 text-sm text-black outline-none transition focus:border-[#4C4CF9] focus:ring-2 focus:ring-[#4C4CF9]/10"
+                        >
+                            <option value="" disabled>
+                                Select requested priority
+                            </option>
+
+                            <option value="P1">
+                                Critical (P1)
+                            </option>
+
+                            <option value="P2">
+                                High (P2)
+                            </option>
+
+                            <option value="P3">
+                                Medium (P3)
+                            </option>
+
+                            <option value="P4">
+                                Low (P4)
+                            </option>
+
+                            <option value="P5">
+                                Very Low (P5)
+                            </option>
+                        </select>
+                    </div>
+
+                    {/* REASON */}
+                    <div>
+                        <label
+                            htmlFor="priority-reason"
+                            className="mb-2 block text-sm font-medium text-black"
+                        >
+                            Reason for Request
+                            <span className="ml-1 text-red-500">*</span>
+                        </label>
+
+                        <textarea
+                            id="priority-reason"
+                            rows={4}
+                            placeholder="Explain why the ticket priority should be changed..."
+                            className="w-full resize-none rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm text-black outline-none transition placeholder:text-gray-400 focus:border-[#4C4CF9] focus:ring-2 focus:ring-[#4C4CF9]/10"
+                        />
+                    </div>
+
+                    {/* INFORMATION */}
+                    <div className="flex items-start gap-2.5 rounded-lg border border-gray-200 bg-gray-50 px-3.5 py-3">
+                        <Info
+                            size={17}
+                            className="mt-0.5 shrink-0 text-gray-500"
+                        />
+
+                        <p className="text-xs leading-5 text-gray-500">
+                            This request will be sent to the IT Service Desk for
+                            review. The current priority will remain unchanged
+                            until the request is approved.
+                        </p>
+                    </div>
+
+                </div>
+
+                {/* FOOTER */}
+                <div className="flex items-center justify-end gap-2 border-t border-gray-200 bg-gray-50/50 px-5 py-4">
+                    <button
+                        type="button"
+                        onClick={onClose}
+                        className="h-9 rounded-lg border border-gray-300 bg-white px-4 text-sm font-medium  transition-colors hover:bg-gray-50 cursor-pointer"
+                    >
+                        Cancel
+                    </button>
+
+                    <button
+                        type="button"
+                        className="h-9 rounded-lg bg-[#4C4CF9] px-4 text-sm font-medium text-white transition-colors hover:bg-[#3a3ae0] cursor-pointer"
+                    >
+                        Submit Request
+                    </button>
+                </div>
+
+            </div>
+        </div>
+    );
+}
