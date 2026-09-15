@@ -12,7 +12,8 @@ import {
     Tickets,
     TicketX,
     Undo2,
-    Flag
+    Flag,
+    ArrowUpDown
 } from "lucide-react";
 
 export const sidebarItems = {
@@ -108,6 +109,12 @@ export const sidebarItems = {
             name: "Returned Tickets",
             path: "/returned-tickets",
             icon: Undo2
+        },
+        {
+            type: "link",
+            name: "Priority Requests",
+            path: "/priority-requests",
+            icon: ArrowUpDown
         },
         {
             name: "Network Team",

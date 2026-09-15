@@ -223,23 +223,39 @@ class ReviewFlags(models.Model):
     class Meta: 
         db_table = 'review_flags'
 
-class TicketReturnRequest(models.Model):
-    class ReturnStatus(models.TextChoices):
+class TicketRequest(models.Model):
+    class RequestType(models.TextChoices):
+        PRIORITY_CHANGE = 'priority_change', 'Priority Change'
+        RETURN_TO_SERVICE_DESK = 'return_to_service_desk', 'Return to Service Desk'
+        ASSISTANCE = 'assistance', 'Assistance'
+        ESCALATION = 'escalation', 'Escalation'
+
+    class RequestStatus(models.TextChoices):
         PENDING = 'pending', 'Pending'
         APPROVED = 'approved', 'Approved'
         REJECTED = 'rejected', 'Rejected'
+        ACCEPTED = 'accepted', 'Accepted'
+        ACKNOWLEDGED = 'acknowledged', 'Acknowledged'
+        COMPLETED = 'completed', 'Completed'
 
-    ticket = models.ForeignKey(Ticket, on_delete=models.CASCADE, related_name='return_requests')
-    requested_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='return_requests')
+    ticket = models.ForeignKey(Ticket, on_delete=models.CASCADE, related_name='requests')
+    request_type = models.CharField(max_length=30, choices=RequestType.choices)
+    requested_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='ticket_requests')
     reason = models.TextField()
-    status = models.CharField(max_length=20, choices=ReturnStatus.choices, default=ReturnStatus.PENDING)
-    reviewed_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='reviewed_return_requests')
-    reviewed_remakrs = models.TextField(null=True, blank=True)
+    status = models.CharField(max_length=20, choices=RequestStatus.choices, default=RequestStatus.PENDING)
+
+    requested_priority = models.ForeignKey(SLARules, on_delete=models.SET_NULL, null=True, blank=True, related_name='priority_change_requests')
+    assistance_department = models.ForeignKey(ITDepartment, on_delete=models.SET_NULL, null=True, blank=True, related_name='assistance_requests')
+
+    handled_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='handled_ticket_requests')
+    review_remarks = models.TextField(null=True, blank=True)
+
     requested_at = models.DateTimeField(auto_now_add=True)
-    reviewed_at = models.DateTimeField(null=True, blank=True)
+    handled_at = models.DateTimeField(null=True, blank=True)
+    completed_at = models.DateTimeField(null=True, blank=True)
 
     class Meta:
-        db_table = 'ticket_return_requests'
+        db_table = 'ticket_requests'
 
 
 
