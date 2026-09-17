@@ -15,6 +15,8 @@ import ActiveTicketSLA from './components/ActiveTicketSLA'
 import { Toaster } from "sonner";
 import TicketQueue from './pages/TicketQueue'
 import TicketDetails from './pages/TicketDetails'
+import PriorityRequest from './pages/PriorityRequest'
+import PriorityRequestDetails from './pages/PriorityRequestDetails'
 
 function Logout() {
   localStorage.clear()
@@ -105,6 +107,28 @@ function App() {
             <Route
                 path="/ticket-success"
                 element={<TicketSuccess />}
+            />
+
+            <Route 
+                path="/priority-request/:id"
+                element={
+                    <ProtectedRoute
+                        allowedRoles={["IT Service Desk"]}
+                    >
+                        <PriorityRequestDetails />
+                    </ProtectedRoute>
+                }
+            />
+
+            <Route
+                path="/priority-requests"
+                element={
+                    <ProtectedRoute
+                        allowedRoles={["IT Service Desk"]}
+                    >
+                        <PriorityRequest />
+                    </ProtectedRoute>
+                }
             />
             {/* IT SUPPORT ONLY */}
             <Route

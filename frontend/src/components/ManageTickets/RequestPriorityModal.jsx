@@ -1,3 +1,5 @@
+import { useState } from "react";
+import api from '/src/api'
 import {
     ArrowUpDown,
     X,
@@ -7,8 +9,15 @@ import {
 export default function RequestPriorityModal({
     open,
     onClose,
+    ticketId,
     currentPriority = "P4",
+    onRequestSubmitted,
 }) {
+    const [requestedPriority, setRequestedPriority] = useState("");
+    const [reason, setReason] = useState("");
+    const [submitting, setSubmitting] = useState(false);
+    const [error, setError] = useState("");
+
     if (!open) return null;
 
     const priorityLabel = {
@@ -27,6 +36,61 @@ export default function RequestPriorityModal({
         P5: "border-gray-300 bg-gray-100 text-gray-600",
     };
 
+    const handleSubmit = async () => {
+        if (!requestedPriority) {
+            setError("Please select a requested priority.");
+            return;
+        }
+
+        if (!reason.trim()) {
+            setError("Please provide a reason for the priority change.");
+            return;
+        }
+
+        try {
+            setSubmitting(true);
+            setError("");
+
+            const response = await api.post(
+                `/tickets/priority-change-request/${ticketId}/`,
+                {
+                    requested_priority: requestedPriority,
+                    reason: reason.trim(),
+                }
+            );
+
+            console.log(
+                "Priority change request:",
+                response.data
+            );
+
+            setRequestedPriority("");
+            setReason("");
+
+            if (onRequestSubmitted) {
+                await onRequestSubmitted();
+            }
+
+            onClose();
+        }
+        catch (error) {
+            console.error(
+                "Priority request error:",
+                error.response?.data || error
+            );
+
+            setError(
+                error.response?.data?.error ||
+                error.response?.data?.requested_priority?.[0] ||
+                error.response?.data?.reason?.[0] ||
+                "Failed to submit priority change request."
+            );
+        }
+        finally {
+            setSubmitting(false);
+        }
+    };
+
     return (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/30 px-4">
 
@@ -35,7 +99,9 @@ export default function RequestPriorityModal({
 
                 {/* HEADER */}
                 <div className="flex items-start justify-between border-b border-gray-200 px-5 py-4">
+
                     <div className="flex items-start gap-3">
+
                         <div className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-gray-100">
                             <ArrowUpDown
                                 size={18}
@@ -52,15 +118,18 @@ export default function RequestPriorityModal({
                                 Submit a priority adjustment for Service Desk review.
                             </p>
                         </div>
+
                     </div>
 
                     <button
                         type="button"
                         onClick={onClose}
-                        className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-700"
+                        disabled={submitting}
+                        className="flex h-8 w-8 shrink-0 cursor-pointer items-center justify-center rounded-md text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-700"
                     >
                         <X size={18} />
                     </button>
+
                 </div>
 
                 {/* BODY */}
@@ -73,6 +142,7 @@ export default function RequestPriorityModal({
                         </label>
 
                         <div className="flex h-11 items-center rounded-lg border border-gray-200 bg-gray-50 px-3">
+
                             <span
                                 className={`inline-flex rounded-md border px-2.5 py-1 text-xs font-semibold ${
                                     priorityStyle[currentPriority] ||
@@ -83,6 +153,7 @@ export default function RequestPriorityModal({
                                     ? `${priorityLabel[currentPriority]} (${currentPriority})`
                                     : currentPriority}
                             </span>
+
                         </div>
                     </div>
 
@@ -98,32 +169,39 @@ export default function RequestPriorityModal({
 
                         <select
                             id="requested-priority"
-                            defaultValue=""
+                            value={requestedPriority}
+                            onChange={(e) => {
+                                setRequestedPriority(e.target.value);
+                                setError("");
+                            }}
+                            disabled={submitting}
                             className="h-11 w-full rounded-lg border border-gray-300 bg-white px-3 text-sm text-black outline-none transition focus:border-[#4C4CF9] focus:ring-2 focus:ring-[#4C4CF9]/10"
                         >
                             <option value="" disabled>
                                 Select requested priority
                             </option>
 
-                            <option value="P1">
+                            <option
+                                value="P1"
+                                disabled={currentPriority === "P1"}
+                            >
                                 Critical (P1)
                             </option>
 
-                            <option value="P2">
+                            <option
+                                value="P2"
+                                disabled={currentPriority === "P2"}
+                            >
                                 High (P2)
                             </option>
 
-                            <option value="P3">
+                            <option
+                                value="P3"
+                                disabled={currentPriority === "P3"}
+                            >
                                 Medium (P3)
                             </option>
 
-                            <option value="P4">
-                                Low (P4)
-                            </option>
-
-                            <option value="P5">
-                                Very Low (P5)
-                            </option>
                         </select>
                     </div>
 
@@ -140,13 +218,29 @@ export default function RequestPriorityModal({
                         <textarea
                             id="priority-reason"
                             rows={4}
+                            value={reason}
+                            onChange={(e) => {
+                                setReason(e.target.value);
+                                setError("");
+                            }}
+                            disabled={submitting}
                             placeholder="Explain why the ticket priority should be changed..."
                             className="w-full resize-none rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm text-black outline-none transition placeholder:text-gray-400 focus:border-[#4C4CF9] focus:ring-2 focus:ring-[#4C4CF9]/10"
                         />
                     </div>
 
+                    {/* ERROR */}
+                    {error && (
+                        <div className="rounded-lg border border-red-200 bg-red-50 px-3.5 py-2.5">
+                            <p className="text-xs text-red-600">
+                                {error}
+                            </p>
+                        </div>
+                    )}
+
                     {/* INFORMATION */}
                     <div className="flex items-start gap-2.5 rounded-lg border border-gray-200 bg-gray-50 px-3.5 py-3">
+
                         <Info
                             size={17}
                             className="mt-0.5 shrink-0 text-gray-500"
@@ -157,26 +251,34 @@ export default function RequestPriorityModal({
                             review. The current priority will remain unchanged
                             until the request is approved.
                         </p>
+
                     </div>
 
                 </div>
 
                 {/* FOOTER */}
                 <div className="flex items-center justify-end gap-2 border-t border-gray-200 bg-gray-50/50 px-5 py-4">
+
                     <button
                         type="button"
                         onClick={onClose}
-                        className="h-9 rounded-lg border border-gray-300 bg-white px-4 text-sm font-medium  transition-colors hover:bg-gray-50 cursor-pointer"
+                        disabled={submitting}
+                        className="h-9 cursor-pointer rounded-lg border border-gray-300 bg-white px-4 text-sm font-medium transition-colors hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
                     >
                         Cancel
                     </button>
 
                     <button
                         type="button"
-                        className="h-9 rounded-lg bg-[#4C4CF9] px-4 text-sm font-medium text-white transition-colors hover:bg-[#3a3ae0] cursor-pointer"
+                        onClick={handleSubmit}
+                        disabled={submitting}
+                        className="h-9 cursor-pointer rounded-lg bg-[#4C4CF9] px-4 text-sm font-medium text-white transition-colors hover:bg-[#3a3ae0] disabled:cursor-not-allowed disabled:opacity-50"
                     >
-                        Submit Request
+                        {submitting
+                            ? "Submitting..."
+                            : "Submit Request"}
                     </button>
+
                 </div>
 
             </div>

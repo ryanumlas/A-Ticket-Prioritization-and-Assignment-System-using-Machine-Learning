@@ -524,6 +524,7 @@ def finalize_ticket_classification(ticket, symptom_code, response_start=None):
         based_priority=symptom_code.based_priority,
         affected_scope=ticket.affected_scope,
         business_critical=ticket.ai_analysis.business_critical,
+        time_critical=ticket.ai_analysis.is_time_critical
     )
 
     sla_rule = SLARules.objects.get(

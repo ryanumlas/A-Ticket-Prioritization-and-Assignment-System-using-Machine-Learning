@@ -8,12 +8,12 @@ from rest_framework.response import Response
 from rest_framework import viewsets, generics, status
 from rest_framework.views import APIView
 from rest_framework.permissions import IsAuthenticated, AllowAny
-from .models import Ticket, Category, SymptomCode, TicketComments, SLARules, ReviewFlags, TicketAssistance, Keyword, TicketStatusHistory as TicketStatusHistoryModel
+from .models import Ticket, Category, SymptomCode, TicketComments, SLARules, ReviewFlags, TicketAssistance, Keyword, TicketStatusHistory as TicketStatusHistoryModel, TicketRequest
 from .serializers import (SymptomCodeSerializer, TicketSerializer, CategorySerializer, 
 TicketAssistanceSerializer, TicketCommentSerializer, TicketStatusHistory, SLARulesSerializer, 
 SLARulesUpdateSerializer, KeywordSerializer, KeywordUpdateSerializer, UpdateSymptomCodeSerializer, CreateSymptomCodeSerializer,
 TicketCreateSerializer, TicketUpdateSerializer, TicketDetailEmployeeSerializer, CategoryUpdateSerializer, FlaggedTicketsListSerializer, 
-FlaggedTicketDetailSerializer, TicketDetailSupportSerializer, TicketStatusHistorySerializer)
+FlaggedTicketDetailSerializer, TicketDetailSupportSerializer, TicketStatusHistorySerializer, PriorityChangeRequestSerializer, PriorityRequestListSerializer)
 from users.models import User, ITSupportProfile
 from .services import predict_ticket, assign_ticket_automatically
 from ai.models import TicketAnalysis, TicketAIAnalysis
@@ -1814,6 +1814,164 @@ class TicketsByCategoryView(APIView):
 
         return Response(data)
 
+
+class PriorityChangeRequestView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    @transaction.atomic
+    def post(self, request, pk):
+        serializer = PriorityChangeRequestSerializer(
+            data=request.data
+        )
+
+        serializer.is_valid(raise_exception=True)
+
+        ticket = Ticket.objects.filter(
+            pk=pk
+        ).first()
+
+        if not ticket:
+            return Response(
+                {
+                    "error": "Ticket not found."
+                },
+                status=status.HTTP_404_NOT_FOUND
+            )
+
+        # Only the assigned IT Support Specialist
+        # can request a priority change.
+        if ticket.assigned_to_id != request.user.id:
+            return Response(
+                {
+                    "error": "You are not assigned to this ticket."
+                },
+                status=status.HTTP_403_FORBIDDEN
+            )
+
+        requested_priority = SLARules.objects.filter(
+            priority_level=serializer.validated_data["requested_priority"]
+        ).first()
+
+        if not requested_priority:
+            return Response(
+                {
+                    "error": "Invalid requested priority."
+                },
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # IT Support can only request P1-P3.
+        # P4-P5 do not require IT Service Desk approval.
+        if requested_priority.priority_level not in [
+            "P1",
+            "P2",
+            "P3",
+        ]:
+            return Response(
+                {
+                    "error": (
+                        "Priority change requests are only "
+                        "required for P1, P2, or P3."
+                    )
+                },
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # Cannot request the ticket's current priority.
+        if (
+            ticket.priority and
+            ticket.priority_id == requested_priority.id
+        ):
+            return Response(
+                {
+                    "error": (
+                        "The ticket already has this priority."
+                    )
+                },
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # Prevent multiple pending priority change requests
+        # for the same ticket.
+        existing_request = TicketRequest.objects.filter(
+            ticket=ticket,
+            request_type=(
+                TicketRequest.RequestType.PRIORITY_CHANGE
+            ),
+            status=TicketRequest.RequestStatus.PENDING
+        ).exists()
+
+        if existing_request:
+            return Response(
+                {
+                    "error": (
+                        "This ticket already has a pending "
+                        "priority change request."
+                    )
+                },
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        priority_request = TicketRequest.objects.create(
+            ticket=ticket,
+            request_type=(
+                TicketRequest.RequestType.PRIORITY_CHANGE
+            ),
+            requested_by=request.user,
+            requested_priority=requested_priority,
+            reason=serializer.validated_data["reason"],
+            status=TicketRequest.RequestStatus.PENDING
+        )
+
+        return Response(
+            {
+                "success": True,
+                "message": (
+                    "Priority change request submitted successfully."
+                ),
+                "request": {
+                    "id": priority_request.id,
+                    "ticket": ticket.ticket_code,
+                    "current_priority": (
+                        ticket.priority.priority_level
+                        if ticket.priority
+                        else None
+                    ),
+                    "requested_priority": (
+                        requested_priority.priority_level
+                    ),
+                    "reason": priority_request.reason,
+                    "status": priority_request.status,
+                    "requested_at": priority_request.requested_at,
+                }
+            },
+            status=status.HTTP_201_CREATED
+        )
+
+class PriorityChangeRequestListView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        priority_requests = TicketRequest.objects.filter(
+            request_type=TicketRequest.RequestType.PRIORITY_CHANGE
+        ).select_related(
+            "ticket",
+            "ticket__priority",
+            "requested_priority",
+            "requested_by",
+        ).order_by(
+            "-requested_at"
+        )
+
+        serializer = PriorityRequestListSerializer(
+            priority_requests,
+            many=True
+        )
+
+        return Response(
+            serializer.data,
+            status=status.HTTP_200_OK
+        )
 # class AddTicketAssigneeView(generics.CreateAPIView):
 #     permission_classes = [IsAuthenticated]
 

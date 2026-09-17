@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Ticket, Category, SymptomCode, TicketComments, SLARules, ReviewFlags, TicketAssistance, Keyword, TicketStatusHistory
+from .models import Ticket, Category, SymptomCode, TicketComments, SLARules, ReviewFlags, TicketAssistance, Keyword, TicketStatusHistory, TicketRequest
 from django.utils import timezone
 from datetime import timedelta
 from rest_framework import serializers
@@ -630,6 +630,33 @@ class CreateSymptomCodeSerializer(serializers.ModelSerializer):
         fields = ['code', 'category', 'description', 'based_priority']
 
 
+class PriorityChangeRequestSerializer(serializers.Serializer):
+    requested_priority = serializers.ChoiceField(
+        choices=["P1", "P2", "P3"]
+    )
+    reason = serializers.CharField()
+
+    def validate_reason(self, value):
+        if not value.strip():
+            raise serializers.ValidationError(
+                "Reason for priority change is required."
+            )
+
+        return value.strip()
+
+class PriorityRequestListSerializer(serializers.ModelSerializer):
+    ticket_id = serializers.IntegerField(source="ticket.id", read_only=True)
+    ticket_code = serializers.CharField(source="ticket.ticket_code", read_only=True)
+    subject = serializers.CharField(source="ticket.subject", read_only=True)
+    current_priority = serializers.CharField(source="ticket.priority.priority_level", read_only=True)
+    requested_priority = serializers.CharField(source="requested_priority.priority_level", read_only=True)
+    requested_by_first_name = serializers.CharField(source="requested_by.first_name", read_only=True)
+    requested_by_last_name = serializers.CharField(source="requested_by.last_name", read_only=True)
+    it_department = serializers.CharField(source="requested_by.it_support_profile.it_department.name", read_only=True)
+
+    class Meta:
+        model = TicketRequest
+        fields = ["id", "ticket_id", "ticket_code", "subject", "current_priority", "requested_priority", "it_department", "requested_by_first_name", "requested_by_last_name", "reason", "status", "requested_at"]
 
 # class TicketSLASerializer(serializers.ModelSerializer):
 #     class Meta:

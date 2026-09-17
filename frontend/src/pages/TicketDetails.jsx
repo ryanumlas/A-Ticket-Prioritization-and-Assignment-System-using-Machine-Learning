@@ -209,8 +209,11 @@ export default function TicketDetails() {
             <RequestPriorityModal
                 open={priorityModalOpen}
                 onClose={() => setPriorityModalOpen(false)}
-                currentPriority={ticketDetails?.priority}
+                ticketId={ticketDetails.id}
+                currentPriority={ticketDetails.priority}
+                onRequestSubmitted={fetchTicketDetails}
             />
+
             <ReturnTicketModal
                 open={returnModalOpen}
                 onClose={() => setReturnModalOpen(false)}

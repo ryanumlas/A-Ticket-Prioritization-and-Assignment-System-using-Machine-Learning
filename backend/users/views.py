@@ -88,3 +88,4 @@ class ITSupportSpecializationCreateView(generics.CreateAPIView):
     queryset = ITSupportSpecialization.objects.all()
     serializer_class = ITSupportSpecializationCreateSerializer
     permission_classes = [AllowAny]
+
