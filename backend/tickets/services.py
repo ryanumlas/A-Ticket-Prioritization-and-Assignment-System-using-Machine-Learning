@@ -404,7 +404,7 @@ def calculate_status(remaining, total_duration):
     return Ticket.SLAStatus.SAFE
 
 
-def update_sla(ticket, response_start=None):
+def update_sla(ticket, response_start=None, recalculate_deadlines=False):
     if not ticket.priority:
         return
 
@@ -413,11 +413,15 @@ def update_sla(ticket, response_start=None):
     if not response_start:
         response_start = ticket.created_at
 
-    if not ticket.response_deadline:
-        ticket.response_deadline = response_start + ticket.priority.response_time
+    if not ticket.response_deadline or recalculate_deadlines:
+        ticket.response_deadline = (
+            response_start + ticket.priority.response_time
+        )
 
-    if not ticket.resolution_deadline:
-        ticket.resolution_deadline = ticket.created_at + ticket.priority.resolution_time
+    if not ticket.resolution_deadline or recalculate_deadlines:
+        ticket.resolution_deadline = (
+            ticket.created_at + ticket.priority.resolution_time
+        )
 
     # Response SLA
     if ticket.status in [
@@ -435,7 +439,9 @@ def update_sla(ticket, response_start=None):
         )
 
     else:
-        response_remaining = ticket.response_deadline - now
+        response_remaining = (
+            ticket.response_deadline - now
+        )
 
         ticket.response_sla_status = calculate_status(
             response_remaining,
@@ -455,7 +461,9 @@ def update_sla(ticket, response_start=None):
             )
 
     else:
-        resolution_remaining = ticket.resolution_deadline - now
+        resolution_remaining = (
+            ticket.resolution_deadline - now
+        )
 
         ticket.resolution_sla_status = calculate_status(
             resolution_remaining,

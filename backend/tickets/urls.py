@@ -4,7 +4,8 @@ UpdateTicketView, DeleteTicketView, CreateCategoryView, KeywordUpdateView ,Keywo
 UpdateCategoryView, CreateSymptomCodeView, SLARulesCreateView, SLARulesUpdateView, TicketDetailEmployeeView, TicketListServiceDeskView, UpdateTicketStatusView, ManualOverrideTicketView,
 ServiceDeskOverviewView, ServiceDeskClassifiedResultsView, FlaggedTicketsListView, FlaggedTicketDetailView, SymptomCodeListView, 
 AcceptRecommendationView, ApproveOverrideView, ManuallyClassifyView, SupportOverviewView, TicketQueueView, TicketListSupportView, DepartmentSymptomCodesView, 
-SLAPerformanceView, TicketsByCategoryView, TicketDetailSupportView, TicketStatusHistoryView, TicketCommentListCreateView, PriorityChangeRequestView, PriorityChangeRequestListView, PriorityRequestDetailView)
+SLAPerformanceView, TicketsByCategoryView, TicketDetailSupportView, TicketStatusHistoryView, TicketCommentListCreateView, 
+PriorityChangeRequestView, PriorityChangeRequestListView, PriorityRequestDetailView, ApprovePriorityRequestView, ReturnTicketView, ReturnedTicketRequestListView)
 
 urlpatterns = [
     # --- Ticket URLs ---
@@ -20,6 +21,9 @@ urlpatterns = [
     path("priority-change-request/<int:pk>/",PriorityChangeRequestView.as_view(),name="priority-change-request"),
     path("priority-change-requests/list/", PriorityChangeRequestListView.as_view(), name="priority-change-request-list"),
     path("priority-change-requests/detail/<int:request_id>/", PriorityRequestDetailView.as_view(), name="priority-change-request-detail"),
+    path("return-ticket/<int:pk>/",ReturnTicketView.as_view(),name="return-ticket"),
+    path("return-ticket/list/", ReturnedTicketRequestListView.as_view(), name="returned-ticket-requests",),
+    path("priority-change-requests/approve/<int:request_id>/", ApprovePriorityRequestView.as_view(), name="approve-priority-request"),
     path('employee/list/', TicketListEmployeeView.as_view(), name="ticket-list"),
     path('employee/detail/<int:ticket_id>/', TicketDetailEmployeeView.as_view(), name="ticket-detail"),
 

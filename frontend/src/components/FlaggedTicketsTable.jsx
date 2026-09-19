@@ -37,7 +37,7 @@ export default function FlaggedTicketsTable({
                         </th>
 
                         <th className="w-[15%] px-6 py-3.5 font-semibold text-black">
-                            Requester
+                            Submitted By
                         </th>
 
                         <th className="w-[16%] px-6 py-3.5 font-semibold text-black">

@@ -17,6 +17,7 @@ import TicketQueue from './pages/TicketQueue'
 import TicketDetails from './pages/TicketDetails'
 import PriorityRequest from './pages/PriorityRequest'
 import PriorityRequestDetails from './pages/PriorityRequestDetails'
+import TicketReturn from './pages/TicketReturn'
 
 function Logout() {
   localStorage.clear()
@@ -89,6 +90,17 @@ function App() {
                         allowedRoles={["IT Service Desk"]}
                     >
                         <FlaggedTicketDetails />
+                    </ProtectedRoute>
+                }
+            />
+
+            <Route
+                path="/returned-tickets"
+                element={
+                    <ProtectedRoute
+                        allowedRoles={["IT Service Desk"]}
+                    >
+                        <TicketReturn/>
                     </ProtectedRoute>
                 }
             />

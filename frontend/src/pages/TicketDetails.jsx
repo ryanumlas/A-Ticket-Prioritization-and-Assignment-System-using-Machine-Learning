@@ -143,13 +143,7 @@ export default function TicketDetails() {
             />
         );
     }
-    else if (user?.role === "IT Service Desk") {
-        MainContent = (
-            <TicketDetailsServiceDesk
-                ticketDetails={ticketDetails}
-            />
-        );
-    }
+
     else if (user?.role === "IT Support Specialist") {
         MainContent = (
             <TicketDetailsSupport
@@ -217,6 +211,7 @@ export default function TicketDetails() {
             <ReturnTicketModal
                 open={returnModalOpen}
                 onClose={() => setReturnModalOpen(false)}
+                ticketId={ticketDetails.id}
             />
             <RequestAssistanceModal
                 open={assistanceModalOpen}

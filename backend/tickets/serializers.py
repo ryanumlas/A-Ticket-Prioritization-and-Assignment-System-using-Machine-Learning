@@ -343,7 +343,7 @@ class TicketDetailEmployeeSerializer(serializers.ModelSerializer):
         source='get_status_display',
         read_only=True
     )
-
+    is_under_review = serializers.BooleanField(read_only=True)
     priority = serializers.CharField(
         source='priority.priority_level',
         read_only=True
@@ -404,6 +404,7 @@ class TicketDetailEmployeeSerializer(serializers.ModelSerializer):
             'first_name',
             'last_name',
             'user_code',
+            'is_under_review',
             'is_escalated',
             'resolved_at',
             'resolved_by',
@@ -426,6 +427,7 @@ class TicketDetailSupportSerializer(serializers.ModelSerializer):
     priority = serializers.CharField(source='priority.priority_level', read_only=True)
     affected_scope = serializers.CharField(source='get_affected_scope_display', read_only=True)
     assigned_to = serializers.SerializerMethodField()
+    is_under_review = serializers.BooleanField(read_only=True)
     first_name = serializers.CharField(source='submitted_by.first_name', read_only=True)
     last_name = serializers.CharField(source='submitted_by.last_name', read_only=True)
     user_code = serializers.CharField(source='submitted_by.user_code', read_only=True)
@@ -454,7 +456,7 @@ class TicketDetailSupportSerializer(serializers.ModelSerializer):
     class Meta:
         model = Ticket
 
-        fields = ['id','ticket_code', 'status', 'priority', 'subject', 'description', 'assigned_to', 'business_impact', 
+        fields = ['id','ticket_code', 'status', 'priority', 'subject', 'is_under_review','description', 'assigned_to', 'business_impact', 
                   'affected_scope', 'updated_at', 'created_at', 'response_deadline', 'resolution_deadline', 'office_location', 
                   'workstation','employee_department', 'first_name', 'last_name', 'user_code', 'is_escalated', 'resolved_at', 
                   'resolved_by', 'category', 'symptom_code', 'required_specialization', 'classification_source', 'classification_confidence', 'it_department']
@@ -648,7 +650,7 @@ class PriorityRequestListSerializer(serializers.ModelSerializer):
     ticket_id = serializers.IntegerField(source="ticket.id", read_only=True)
     ticket_code = serializers.CharField(source="ticket.ticket_code", read_only=True)
     subject = serializers.CharField(source="ticket.subject", read_only=True)
-    current_priority = serializers.CharField(source="ticket.priority.priority_level", read_only=True)
+    current_priority = serializers.CharField(source="current_priority.priority_level", read_only=True)
     requested_priority = serializers.CharField(source="requested_priority.priority_level", read_only=True)
     requested_by_first_name = serializers.CharField(source="requested_by.first_name", read_only=True)
     requested_by_last_name = serializers.CharField(source="requested_by.last_name", read_only=True)
@@ -666,7 +668,7 @@ class PriorityRequestDetailSerializer(serializers.ModelSerializer):
     business_impact = serializers.CharField(source="ticket.business_impact", read_only=True)
     affected_scope = serializers.CharField(source="ticket.get_affected_scope_display", read_only=True)
 
-    current_priority = serializers.CharField(source="ticket.priority.priority_level", read_only=True)
+    current_priority = serializers.CharField(source="current_priority.priority_level", read_only=True)
     requested_priority = serializers.CharField(source="requested_priority.priority_level", read_only=True)
 
     requested_by_user_code = serializers.CharField(source="requested_by.user_code", read_only=True)
@@ -674,6 +676,10 @@ class PriorityRequestDetailSerializer(serializers.ModelSerializer):
     requested_by_last_name = serializers.CharField(source="requested_by.last_name", read_only=True)
     it_department = serializers.CharField(source="requested_by.it_support_profile.it_department.name", read_only=True)
     office_location = serializers.CharField(source="requested_by.profile.office_location.name", read_only=True)
+
+    reviewed_by_user_code = serializers.CharField(source="reviewed_by.user_code", read_only=True)
+    reviewed_by_first_name = serializers.CharField(source="reviewed_by.first_name", read_only=True)
+    reviewed_by_last_name = serializers.CharField(source="reviewed_by.last_name", read_only=True)
 
     class Meta:
         model = TicketRequest
@@ -695,8 +701,63 @@ class PriorityRequestDetailSerializer(serializers.ModelSerializer):
             "reason",
             "status",
             "requested_at",
+            "reviewed_by_user_code",
+            "reviewed_by_first_name",
+            "reviewed_by_last_name",
+            "reviewed_at",
+            "review_remarks",
         ]
 
+
+class ReturnTicketSerializer(serializers.Serializer):
+    reason = serializers.CharField(
+        required=True,
+        allow_blank=False,
+    )
+
+    def validate_reason(self, value):
+        value = value.strip()
+
+        if len(value) < 15:
+            raise serializers.ValidationError(
+                "Additional details must be at least 15 characters."
+            )
+
+        if len(value) > 500:
+            raise serializers.ValidationError(
+                "Additional details cannot exceed 500 characters."
+            )
+
+        return value
+
+class ReturnedTicketRequestListSerializer(serializers.ModelSerializer):
+    ticket_id = serializers.IntegerField(source="ticket.id",read_only=True)
+    ticket_code = serializers.CharField(source="ticket.ticket_code",read_only=True)
+    subject = serializers.CharField(source="ticket.subject",read_only=True)
+    requested_by_user_code = serializers.CharField(source="requested_by.user_code",read_only=True)
+    requested_by_first_name = serializers.CharField(source="requested_by.first_name",read_only=True)
+    requested_by_last_name = serializers.CharField(source="requested_by.last_name",read_only=True)
+    it_department = serializers.CharField(source="requested_by.it_support_profile.it_department.name",read_only=True)
+    office_location = serializers.CharField(source="requested_by.profile.office_location.name",read_only=True)
+
+    class Meta:
+        model = TicketRequest
+        fields = [
+            "id",
+            "ticket_id",
+            "ticket_code",
+            "subject",
+
+            "requested_by_user_code",
+            "requested_by_first_name",
+            "requested_by_last_name",
+            "it_department",
+            "office_location",
+
+            "reason",
+            "status",
+            "requested_at",
+        ]
 # class TicketSLASerializer(serializers.ModelSerializer):
 #     class Meta:
 #         model = TicketSLA

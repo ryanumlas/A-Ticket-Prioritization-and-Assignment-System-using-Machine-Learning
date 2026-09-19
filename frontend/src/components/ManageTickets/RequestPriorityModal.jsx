@@ -239,14 +239,14 @@ export default function RequestPriorityModal({
                     )}
 
                     {/* INFORMATION */}
-                    <div className="flex items-start gap-2.5 rounded-lg border border-gray-200 bg-gray-50 px-3.5 py-3">
+                    <div className="flex items-start gap-2.5 rounded-lg border border-blue-200 bg-blue-50 px-3.5 py-3">
 
                         <Info
                             size={17}
-                            className="mt-0.5 shrink-0 text-gray-500"
+                            className="mt-0.5 shrink-0 text-blue-600"
                         />
 
-                        <p className="text-xs leading-5 text-gray-500">
+                        <p className="text-xs leading-5 text-blue-700">
                             This request will be sent to the IT Service Desk for
                             review. The current priority will remain unchanged
                             until the request is approved.

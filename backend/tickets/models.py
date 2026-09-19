@@ -115,6 +115,8 @@ class TicketStatusHistory(models.Model):
         ASSIGNED = "ASSIGNED", "Assigned"
         REASSIGNED = "REASSIGNED", "Reassigned"
         RETURNED = "RETURNED", "Returned to Service Desk"
+        RETURN_APPROVED = "RETURN_APPROVED", "Return Request Approved"
+        RETURN_REJECTED = "RETURN_REJECTED", "Return Request Rejected"
         SYMPTOM_CODE_CHANGED = "SYMPTOM_CHANGED", "Symptom Code Changed"
         REVIEW_COMPLETED = "REVIEW_COMPLETED", "Review Completed"
         PRIORITY_CHANGED = "PRIORITY_CHANGED", "Priority Changed"
@@ -244,15 +246,15 @@ class TicketRequest(models.Model):
     reason = models.TextField()
     status = models.CharField(max_length=20, choices=RequestStatus.choices, default=RequestStatus.PENDING)
 
+    current_priority = models.ForeignKey(SLARules, on_delete=models.SET_NULL, null=True, blank=True, related_name='current_priority_requests')
     requested_priority = models.ForeignKey(SLARules, on_delete=models.SET_NULL, null=True, blank=True, related_name='priority_change_requests')
     assistance_department = models.ForeignKey(ITDepartment, on_delete=models.SET_NULL, null=True, blank=True, related_name='assistance_requests')
 
-    handled_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='handled_ticket_requests')
+    reviewed_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='handled_ticket_requests')
     review_remarks = models.TextField(null=True, blank=True)
 
     requested_at = models.DateTimeField(auto_now_add=True)
-    handled_at = models.DateTimeField(null=True, blank=True)
-    completed_at = models.DateTimeField(null=True, blank=True)
+    reviewed_at = models.DateTimeField(null=True, blank=True)
 
     class Meta:
         db_table = 'ticket_requests'

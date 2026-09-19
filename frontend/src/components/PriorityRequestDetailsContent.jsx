@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
+import { toast } from "sonner";
 import api from "../api";
 import {
     Ticket,
@@ -10,6 +11,7 @@ import {
     X,
     ArrowRight,
     Info,
+    Clock3,
 } from "lucide-react";
 
 export default function PriorityRequestDetailsContent() {
@@ -19,6 +21,7 @@ export default function PriorityRequestDetailsContent() {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState("");
     const [remarks, setRemarks] = useState("");
+    const [approving, setApproving] = useState(false);
 
     useEffect(() => {
         const fetchPriorityRequest = async () => {
@@ -43,6 +46,56 @@ export default function PriorityRequestDetailsContent() {
 
         fetchPriorityRequest();
     }, [id]);
+
+    const handleApprove = async () => {
+        if (approving) return;
+
+        try {
+            setApproving(true);
+
+            const response = await api.patch(
+                `/tickets/priority-change-requests/approve/${id}/`,
+                {
+                    review_remarks: remarks,
+                }
+            );
+
+            setRequest(response.data.request);
+            setRemarks("");
+
+            toast.success("Priority request approved", {
+                description:
+                    response.data.message ||
+                    "The ticket priority and SLA have been updated successfully.",
+                duration: 6000,
+                style: {
+                    background: "#ffffff",
+                    color: "#000000",
+                    border: "1px solid #e5e7eb",
+                    borderRadius: "10px",
+                    padding: "16px",
+                    boxShadow: "0 8px 24px rgba(0, 0, 0, 0.08)",
+                },
+            });
+        } catch (error) {
+            toast.error("Unable to approve request", {
+                description:
+                    error.response?.data?.error ||
+                    "Something went wrong while approving the priority request.",
+                duration: 6000,
+                style: {
+                    background: "#ffffff",
+                    color: "#000000",
+                    border: "1px solid #e5e7eb",
+                    borderRadius: "8px",
+                    padding: "16px 18px",
+                    boxShadow: "0 10px 30px rgba(0, 0, 0, 0.08)",
+                },
+            });
+        } finally {
+            setApproving(false);
+        }
+    };
 
     if (loading) {
         return (
@@ -73,6 +126,40 @@ export default function PriorityRequestDetailsContent() {
         request.requested_by_last_name
             ? `${request.requested_by_first_name} ${request.requested_by_last_name}`
             : "Unknown User";
+
+    const reviewerName =
+        request.reviewed_by_first_name &&
+        request.reviewed_by_last_name
+            ? `${request.reviewed_by_first_name} ${request.reviewed_by_last_name}`
+            : "Unknown User";
+
+    const isPending = request.status === "pending";
+
+    const formatDate = (date) => {
+        if (!date) return "-";
+
+        const formattedDate = new Date(date);
+
+        const datePart = formattedDate.toLocaleDateString("en-US", {
+            month: "short",
+            day: "numeric",
+            year: "numeric",
+        });
+
+        const timePart = formattedDate.toLocaleTimeString("en-US", {
+            hour: "numeric",
+            minute: "2-digit",
+            hour12: true,
+        });
+
+        return `${datePart} • ${timePart}`;
+    };
+
+    const formatStatus = (status) => {
+        return status
+            ?.replaceAll("_", " ")
+            .replace(/\b\w/g, (letter) => letter.toUpperCase());
+    };
 
     return (
         <div className="space-y-4">
@@ -304,40 +391,57 @@ export default function PriorityRequestDetailsContent() {
                                 </p>
                             </div>
 
-                            <div className="my-4 border-t border-gray-200" />
 
-                            <div className="flex items-center gap-3">
+                                    <div className="my-4 border-t border-gray-200" />
 
-                                <button
-                                    type="button"
-                                    className="flex h-10 flex-1 cursor-pointer items-center justify-center gap-2 rounded-lg bg-[#4C4CF9] px-4 text-sm font-medium text-white transition-colors hover:bg-[#3f3fe0]"
-                                >
-                                    <Check size={17} />
-                                    Approve Request
-                                </button>
+                                    <div className="flex items-center gap-3 pt-2">
+                                        <button
+                                            type="button"
+                                            onClick={handleApprove}
+                                            disabled={
+                                                approving ||
+                                                !isPending
+                                            }
+                                            className="flex h-10 flex-1 cursor-pointer items-center justify-center gap-2 rounded-lg bg-[#4C4CF9] px-4 py-3 text-sm font-medium text-white transition-colors hover:bg-[#3f3fe0] disabled:cursor-not-allowed disabled:bg-gray-300"
+                                        >
+                                            <Check size={17} />
 
-                                <button
-                                    type="button"
-                                    className="flex h-10 flex-1 cursor-pointer items-center justify-center gap-2 rounded-lg border border-red-400 bg-white px-4 text-sm font-medium text-red-600 transition-colors hover:bg-red-50"
-                                >
-                                    <X size={17} />
-                                    Reject Request
-                                </button>
+                                            {approving
+                                                ? "Approving..."
+                                                : request.status === "approved"
+                                                ? "Approved"
+                                                : "Approve Request"}
+                                        </button>
 
-                            </div>
+                                        <button
+                                            type="button"
+                                            disabled={
+                                                approving ||
+                                                !isPending
+                                            }
+                                            className="flex h-10 flex-1 cursor-pointer items-center justify-center gap-2 rounded-lg border border-red-400 bg-white px-4 py-3 text-sm font-medium text-red-600 transition-colors hover:bg-red-50 disabled:cursor-not-allowed disabled:border-gray-300 disabled:bg-gray-50 disabled:text-gray-400"
+                                        >
+                                            <X size={17} />
 
-                            <div className="mt-4 flex items-start gap-2.5 rounded-lg border border-blue-200 bg-blue-50 px-3.5 py-3">
-                                <Info
-                                    size={17}
-                                    className="mt-0.5 shrink-0 text-blue-600"
-                                />
+                                            {request.status === "rejected"
+                                                ? "Rejected"
+                                                : "Reject Request"}
+                                        </button>
+                                    </div>
 
-                                <p className="text-xs leading-5 text-blue-700">
-                                    Approving this request will update the
-                                    ticket's priority and recalculate the SLA
-                                    deadlines based on the new priority.
-                                </p>
-                            </div>
+                                    <div className="mt-4 flex items-start gap-2.5 rounded-lg border border-blue-200 bg-blue-50 px-3.5 py-3">
+                                        <Info
+                                            size={17}
+                                            className="mt-0.5 shrink-0 text-blue-600"
+                                        />
+
+                                        <p className="text-xs leading-5 text-blue-700">
+                                            Approving this request will update the
+                                            ticket's priority and recalculate the SLA
+                                            deadlines based on the new priority.
+                                        </p>
+                                    </div>
+
 
                         </div>
 
@@ -347,53 +451,123 @@ export default function PriorityRequestDetailsContent() {
 
             </div>
 
-            {/* Review Remarks */}
-            <div className="overflow-hidden rounded-xl border border-gray-300 bg-white">
+            {/* Review Information / Remarks */}
+            {isPending ? (
+                <div className="overflow-hidden rounded-xl border border-gray-300 bg-white">
 
-                <div className="flex items-start gap-3 border-b border-gray-200 px-5 py-4">
-                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-gray-100">
-                        <MessageSquareText
-                            size={18}
-                            className="text-gray-600"
+                    <div className="flex items-start gap-3 border-b border-gray-200 px-5 py-4">
+                        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-gray-100">
+                            <MessageSquareText
+                                size={18}
+                                className="text-gray-600"
+                            />
+                        </div>
+
+                        <div>
+                            <h2 className="text-base font-semibold text-black">
+                                Review Remarks
+                                <span className="ml-1 font-normal text-gray-500">
+                                    (Optional)
+                                </span>
+                            </h2>
+
+                            <p className="mt-0.5 text-xs text-gray-500">
+                                Add any remarks regarding your decision.
+                            </p>
+                        </div>
+                    </div>
+
+                    <div className="p-5">
+
+                        <textarea
+                            id="review-remarks"
+                            rows={4}
+                            maxLength={500}
+                            value={remarks}
+                            onChange={(e) =>
+                                setRemarks(e.target.value)
+                            }
+                            placeholder="Enter your remarks here..."
+                            className="w-full resize-none rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm text-black outline-none transition placeholder:text-gray-400 focus:border-[#4C4CF9] focus:ring-2 focus:ring-[#4C4CF9]/10"
                         />
-                    </div>
 
-                    <div>
-                        <h2 className="text-base font-semibold text-black">
-                            Review Remarks
+                        <div className="mt-1 text-right text-xs text-gray-400">
+                            {remarks.length}/500
+                        </div>
 
-                            <span className="ml-1 font-normal text-gray-500">
-                                (Optional)
-                            </span>
-                        </h2>
-
-                        <p className="mt-0.5 text-xs text-gray-500">
-                            Add any remarks regarding your decision.
-                        </p>
-                    </div>
-                </div>
-
-                <div className="p-5">
-
-                    <textarea
-                        id="review-remarks"
-                        rows={4}
-                        maxLength={500}
-                        value={remarks}
-                        onChange={(e) =>
-                            setRemarks(e.target.value)
-                        }
-                        placeholder="Enter your remarks here..."
-                        className="w-full resize-none rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm text-black outline-none transition placeholder:text-gray-400 focus:border-[#4C4CF9] focus:ring-2 focus:ring-[#4C4CF9]/10"
-                    />
-
-                    <div className="mt-1 text-right text-xs text-gray-400">
-                        {remarks.length}/500
                     </div>
 
                 </div>
+            ) : (
+                <div className="overflow-hidden rounded-xl border border-gray-300 bg-white">
 
-            </div>
+                    <div className="flex items-start gap-3 border-b border-gray-200 px-5 py-4">
+                        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-gray-100">
+                            <Check
+                                size={18}
+                                className="text-gray-600"
+                            />
+                        </div>
+
+                        <div>
+                            <h2 className="text-base font-semibold text-black">
+                                Review Information
+                            </h2>
+
+                            <p className="mt-0.5 text-xs text-gray-500">
+                                Details of the Service Desk review.
+                            </p>
+                        </div>
+                    </div>
+
+                    <div className="p-5">
+
+                        <div className="grid grid-cols-2 gap-x-10 gap-y-5">
+
+                            <InfoRow
+                                label="Reviewed By"
+                                value={reviewerName}
+                            />
+
+                            <InfoRow
+                                label="User ID"
+                                value={
+                                    request.reviewed_by_user_code ||
+                                    "-"
+                                }
+                            />
+
+                            <InfoRow
+                                label="Reviewed At"
+                                value={formatDate(request.reviewed_at)}
+                            />
+
+                            <InfoRow
+                                label="Decision"
+                                value={formatStatus(request.status)}
+                            />
+
+                        </div>
+
+                        <div className="my-5 border-t border-gray-200" />
+
+                        <div>
+                            <p className="text-xs font-medium uppercase text-gray-500">
+                                Review Remarks
+                            </p>
+
+                            <div className="mt-2 rounded-lg border border-gray-200 bg-gray-50 px-4 py-3">
+                                <p className="whitespace-pre-wrap break-words text-sm leading-6 text-black">
+                                    {request.review_remarks ||
+                                        "No remarks provided."}
+                                </p>
+                            </div>
+                        </div>
+
+                    </div>
+
+                </div>
+            )}
 
         </div>
     );

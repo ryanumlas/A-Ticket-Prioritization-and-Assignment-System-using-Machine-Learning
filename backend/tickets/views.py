@@ -13,7 +13,8 @@ from .serializers import (SymptomCodeSerializer, TicketSerializer, CategorySeria
 TicketAssistanceSerializer, TicketCommentSerializer, TicketStatusHistory, SLARulesSerializer, 
 SLARulesUpdateSerializer, KeywordSerializer, KeywordUpdateSerializer, UpdateSymptomCodeSerializer, CreateSymptomCodeSerializer,
 TicketCreateSerializer, TicketUpdateSerializer, TicketDetailEmployeeSerializer, CategoryUpdateSerializer, FlaggedTicketsListSerializer, 
-FlaggedTicketDetailSerializer, TicketDetailSupportSerializer, TicketStatusHistorySerializer, PriorityChangeRequestSerializer, PriorityRequestListSerializer, PriorityRequestDetailSerializer)
+FlaggedTicketDetailSerializer, TicketDetailSupportSerializer, TicketStatusHistorySerializer, PriorityChangeRequestSerializer, PriorityRequestListSerializer, 
+PriorityRequestDetailSerializer, ReturnTicketSerializer, ReturnedTicketRequestListSerializer)
 from users.models import User, ITSupportProfile
 from .services import predict_ticket, assign_ticket_automatically
 from ai.models import TicketAnalysis, TicketAIAnalysis
@@ -402,6 +403,17 @@ class UpdateTicketStatusView(APIView):
                 {"error": "Ticket not found"},
                 status=status.HTTP_404_NOT_FOUND,
             )
+        
+        if ticket.is_under_review:
+            return Response(
+                {
+                    "error": (
+                        "This ticket is currently under Service Desk "
+                        "review and cannot be modified."
+                    )
+                },
+                status=status.HTTP_403_FORBIDDEN,
+            )
 
         old_status = ticket.status
         new_status = request.data.get("status")
@@ -581,8 +593,13 @@ class UpdateTicketView(APIView):
 
 # --- Service Desk ---
 class FlaggedTicketsListView(generics.ListAPIView):
-    queryset = ReviewFlags.objects.filter(status=ReviewFlags.Status.PENDING).select_related("ticket","ticket__priority",).order_by("-created_at")
+    queryset = ReviewFlags.objects.select_related(
+        "ticket",
+        "ticket__priority",
+    ).order_by("-created_at")
+
     serializer_class = FlaggedTicketsListSerializer
+
     permission_classes = [IsAuthenticated]
 
 class FlaggedTicketDetailView(generics.RetrieveAPIView):
@@ -983,6 +1000,17 @@ class TicketCommentListCreateView(APIView):
                 {"detail": "Ticket not found or access denied."},
                 status=status.HTTP_404_NOT_FOUND,
             )
+        
+        if ticket.is_under_review:
+            return Response(
+                {
+                    "detail": (
+                        "This ticket is currently under Service Desk "
+                        "review and cannot receive new messages."
+                    )
+                },
+                status=status.HTTP_403_FORBIDDEN,
+            )
 
         message = request.data.get("message", "")
         comment_type = request.data.get(
@@ -1284,26 +1312,31 @@ class ServiceDeskClassifiedResultsView(APIView):
 
     def get(self, request):
 
+        # Rule-based automated classifications
         rule_based_tickets = TicketAnalysis.objects.filter(
             model_type=TicketAnalysis.ModelType.RULE_BASED,
         ).values("ticket").distinct().count()
 
+        # ML classifications that were accepted/not overridden
         machine_learning_tickets = TicketAnalysis.objects.filter(
             model_type=TicketAnalysis.ModelType.MACHINE_LEARNING,
+            was_overridden=False,
         ).values("ticket").distinct().count()
 
+        # Human overrides / manual reviews
         manual_override_tickets = TicketAnalysis.objects.filter(
-            model_type=TicketAnalysis.ModelType.MANUAL_OVERRIDE,
+            was_overridden=True,
         ).values("ticket").distinct().count()
 
+        # Automated = Rule-Based + accepted ML
         automated_tickets = (
-            rule_based_tickets +
-            machine_learning_tickets
+            rule_based_tickets
+            + machine_learning_tickets
         )
 
         total_tickets = (
-            automated_tickets +
-            manual_override_tickets
+            automated_tickets
+            + manual_override_tickets
         )
 
         if total_tickets > 0:
@@ -1913,15 +1946,16 @@ class PriorityChangeRequestView(APIView):
             )
 
         priority_request = TicketRequest.objects.create(
-            ticket=ticket,
-            request_type=(
-                TicketRequest.RequestType.PRIORITY_CHANGE
-            ),
-            requested_by=request.user,
-            requested_priority=requested_priority,
-            reason=serializer.validated_data["reason"],
-            status=TicketRequest.RequestStatus.PENDING
-        )
+        ticket=ticket,
+        request_type=(
+            TicketRequest.RequestType.PRIORITY_CHANGE
+        ),
+        requested_by=request.user,
+        current_priority=ticket.priority,
+        requested_priority=requested_priority,
+        reason=serializer.validated_data["reason"],
+        status=TicketRequest.RequestStatus.PENDING
+    )
 
         return Response(
             {
@@ -2007,6 +2041,256 @@ class PriorityRequestDetailView(APIView):
             serializer.data,
             status=status.HTTP_200_OK
         )
+
+class ApprovePriorityRequestView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    @transaction.atomic
+    def patch(self, request, request_id):
+        priority_request = (
+            TicketRequest.objects
+            .select_for_update()
+            .filter(
+                id=request_id,
+                request_type=TicketRequest.RequestType.PRIORITY_CHANGE,
+            )
+            .first()
+        )
+
+        if not priority_request:
+            return Response(
+                {
+                    "error": "Priority change request not found."
+                },
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        if (
+            priority_request.status
+            != TicketRequest.RequestStatus.PENDING
+        ):
+            return Response(
+                {
+                    "error": "This priority change request has already been reviewed."
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        if not priority_request.requested_priority:
+            return Response(
+                {
+                    "error": "Requested priority is missing."
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        ticket = priority_request.ticket
+
+        review_remarks = request.data.get(
+            "review_remarks",
+            ""
+        ).strip()
+
+        ticket.priority = priority_request.requested_priority
+
+        ticket.save(
+            update_fields=[
+                "priority",
+            ]
+        )
+
+        update_sla(
+            ticket,
+            recalculate_deadlines=True,
+        )
+
+        priority_request.status = (
+            TicketRequest.RequestStatus.APPROVED
+        )
+
+        priority_request.reviewed_by = request.user
+        priority_request.reviewed_at = timezone.now()
+        priority_request.review_remarks = review_remarks
+
+        priority_request.save(
+            update_fields=[
+                "status",
+                "reviewed_by",
+                "reviewed_at",
+                "review_remarks",
+            ]
+        )
+
+        serializer = PriorityRequestDetailSerializer(
+            priority_request
+        )
+
+        return Response(
+            {
+                "message": "Priority change request approved successfully.",
+                "request": serializer.data,
+            },
+            status=status.HTTP_200_OK,
+        )
+
+class ReturnTicketView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    @transaction.atomic
+    def post(self, request, pk):
+        serializer = ReturnTicketSerializer(
+            data=request.data
+        )
+
+        serializer.is_valid(raise_exception=True)
+
+        ticket = Ticket.objects.filter(
+            pk=pk
+        ).first()
+
+        if not ticket:
+            return Response(
+                {
+                    "error": "Ticket not found."
+                },
+                status=status.HTTP_404_NOT_FOUND
+            )
+
+        # Only the currently assigned IT Support Specialist
+        # can return the ticket.
+        if ticket.assigned_to_id != request.user.id:
+            return Response(
+                {
+                    "error": "You are not assigned to this ticket."
+                },
+                status=status.HTTP_403_FORBIDDEN
+            )
+
+        # Prevent returning a ticket that is already
+        # under Service Desk review.
+        if ticket.is_under_review:
+            return Response(
+                {
+                    "error": (
+                        "This ticket is already under Service Desk "
+                        "review."
+                    )
+                },
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # Prevent multiple pending return requests
+        # for the same ticket.
+        existing_request = TicketRequest.objects.filter(
+            ticket=ticket,
+            request_type=(
+                TicketRequest.RequestType.RETURN_TO_SERVICE_DESK
+            ),
+            status=TicketRequest.RequestStatus.PENDING
+        ).exists()
+
+        if existing_request:
+            return Response(
+                {
+                    "error": (
+                        "This ticket already has a pending "
+                        "return request."
+                    )
+                },
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        reason = serializer.validated_data["reason"]
+
+        # Store the current ticket status before changing it.
+        previous_status = ticket.status
+
+        # Create the return request.
+        return_request = TicketRequest.objects.create(
+            ticket=ticket,
+            request_type=(
+                TicketRequest.RequestType.RETURN_TO_SERVICE_DESK
+            ),
+            requested_by=request.user,
+            reason=reason,
+            status=TicketRequest.RequestStatus.PENDING,
+        )
+
+        # Put the ticket under Service Desk review.
+        #
+        # Keep assigned_to unchanged so the original
+        # IT Support Specialist can still see the ticket.
+        ticket.status = Ticket.TicketStatus.UNDER_REVIEW
+        ticket.is_under_review = True
+        ticket.updated_by = request.user
+
+        ticket.save(
+            update_fields=[
+                "status",
+                "is_under_review",
+                "updated_by",
+                "updated_at",
+            ]
+        )
+
+        # Record the return event in the ticket history.
+        TicketStatusHistory.objects.create(
+            ticket=ticket,
+            event_type=TicketStatusHistory.EventType.RETURNED,
+            old_value=previous_status,
+            new_value="Service Desk",
+            remarks=return_request.reason,
+            created_by=request.user,
+            changed_by=request.user,
+        )
+
+        return Response(
+            {
+                "success": True,
+                "message": (
+                    "Ticket return request submitted successfully. "
+                    "The ticket is now pending Service Desk review."
+                ),
+                "request": {
+                    "id": return_request.id,
+                    "ticket": ticket.ticket_code,
+                    "requested_by": request.user.user_code,
+                    "reason": return_request.reason,
+                    "status": return_request.status,
+                    "requested_at": return_request.requested_at,
+                }
+            },
+            status=status.HTTP_201_CREATED
+        )
+
+class ReturnedTicketRequestListView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        requests = (
+            TicketRequest.objects
+            .filter(
+                request_type=(
+                    TicketRequest.RequestType.RETURN_TO_SERVICE_DESK
+                )
+            )
+            .select_related(
+                "ticket",
+                "requested_by",
+                "requested_by__it_support_profile",
+                "requested_by__it_support_profile__it_department",
+                "requested_by__profile",
+                "requested_by__profile__office_location",
+            )
+            .order_by("-requested_at")
+        )
+
+        serializer = ReturnedTicketRequestListSerializer(
+            requests,
+            many=True
+        )
+
+        return Response(serializer.data)
 # class AddTicketAssigneeView(generics.CreateAPIView):
 #     permission_classes = [IsAuthenticated]
 
