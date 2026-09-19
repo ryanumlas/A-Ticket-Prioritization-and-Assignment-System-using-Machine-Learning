@@ -4,7 +4,7 @@ UpdateTicketView, DeleteTicketView, CreateCategoryView, KeywordUpdateView ,Keywo
 UpdateCategoryView, CreateSymptomCodeView, SLARulesCreateView, SLARulesUpdateView, TicketDetailEmployeeView, TicketListServiceDeskView, UpdateTicketStatusView, ManualOverrideTicketView,
 ServiceDeskOverviewView, ServiceDeskClassifiedResultsView, FlaggedTicketsListView, FlaggedTicketDetailView, SymptomCodeListView, 
 AcceptRecommendationView, ApproveOverrideView, ManuallyClassifyView, SupportOverviewView, TicketQueueView, TicketListSupportView, DepartmentSymptomCodesView, 
-SLAPerformanceView, TicketsByCategoryView, TicketDetailSupportView, TicketStatusHistoryView, TicketCommentListCreateView, PriorityChangeRequestView, PriorityChangeRequestListView)
+SLAPerformanceView, TicketsByCategoryView, TicketDetailSupportView, TicketStatusHistoryView, TicketCommentListCreateView, PriorityChangeRequestView, PriorityChangeRequestListView, PriorityRequestDetailView)
 
 urlpatterns = [
     # --- Ticket URLs ---
@@ -19,7 +19,7 @@ urlpatterns = [
     path("<int:pk>/comments/",TicketCommentListCreateView.as_view(),name="ticket-comments"),
     path("priority-change-request/<int:pk>/",PriorityChangeRequestView.as_view(),name="priority-change-request"),
     path("priority-change-requests/list/", PriorityChangeRequestListView.as_view(), name="priority-change-request-list"),
-
+    path("priority-change-requests/detail/<int:request_id>/", PriorityRequestDetailView.as_view(), name="priority-change-request-detail"),
     path('employee/list/', TicketListEmployeeView.as_view(), name="ticket-list"),
     path('employee/detail/<int:ticket_id>/', TicketDetailEmployeeView.as_view(), name="ticket-detail"),
 

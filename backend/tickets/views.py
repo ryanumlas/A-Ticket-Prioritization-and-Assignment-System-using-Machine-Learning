@@ -13,7 +13,7 @@ from .serializers import (SymptomCodeSerializer, TicketSerializer, CategorySeria
 TicketAssistanceSerializer, TicketCommentSerializer, TicketStatusHistory, SLARulesSerializer, 
 SLARulesUpdateSerializer, KeywordSerializer, KeywordUpdateSerializer, UpdateSymptomCodeSerializer, CreateSymptomCodeSerializer,
 TicketCreateSerializer, TicketUpdateSerializer, TicketDetailEmployeeSerializer, CategoryUpdateSerializer, FlaggedTicketsListSerializer, 
-FlaggedTicketDetailSerializer, TicketDetailSupportSerializer, TicketStatusHistorySerializer, PriorityChangeRequestSerializer, PriorityRequestListSerializer)
+FlaggedTicketDetailSerializer, TicketDetailSupportSerializer, TicketStatusHistorySerializer, PriorityChangeRequestSerializer, PriorityRequestListSerializer, PriorityRequestDetailSerializer)
 from users.models import User, ITSupportProfile
 from .services import predict_ticket, assign_ticket_automatically
 from ai.models import TicketAnalysis, TicketAIAnalysis
@@ -1966,6 +1966,41 @@ class PriorityChangeRequestListView(APIView):
         serializer = PriorityRequestListSerializer(
             priority_requests,
             many=True
+        )
+
+        return Response(
+            serializer.data,
+            status=status.HTTP_200_OK
+        )
+
+class PriorityRequestDetailView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, request_id):
+        priority_request = TicketRequest.objects.filter(
+            id=request_id,
+            request_type=TicketRequest.RequestType.PRIORITY_CHANGE
+        ).select_related(
+            "ticket",
+            "ticket__priority",
+            "requested_priority",
+            "requested_by",
+            "requested_by__it_support_profile",
+            "requested_by__it_support_profile__it_department",
+            "requested_by__profile",
+            "requested_by__profile__office_location",
+        ).first()
+
+        if not priority_request:
+            return Response(
+                {
+                    "error": "Priority change request not found."
+                },
+                status=status.HTTP_404_NOT_FOUND
+            )
+
+        serializer = PriorityRequestDetailSerializer(
+            priority_request
         )
 
         return Response(

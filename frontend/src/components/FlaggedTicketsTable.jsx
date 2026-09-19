@@ -1,183 +1,182 @@
 import { formatDate } from "../utils/formatDate";
 import { useNavigate } from "react-router-dom";
-import {
-    Flag,
-    Ticket,
-    UserRound,
-    Building2,
-    Clock3,
-} from "lucide-react";
 
 export default function FlaggedTicketsTable({
-    flaggedTickets,
+    flaggedTickets = [],
     loading = false,
     maxRows = 15,
 }) {
-    const limitedTickets = flaggedTickets.slice(0, maxRows);
     const navigate = useNavigate();
+
+    const limitedTickets = flaggedTickets.slice(0, maxRows);
 
     if (loading) {
         return (
-            <div className="flex items-center justify-center py-12 text-sm text-gray-500">
-                Loading tickets...
-            </div>
-        );
-    }
-
-    if (limitedTickets.length === 0) {
-        return (
-            <div className="flex min-h-[250px] items-center justify-center rounded-xl border border-gray-300 bg-white">
+            <div className="flex min-h-[240px] items-center justify-center bg-white">
                 <p className="text-sm text-gray-500">
-                    No flagged tickets found.
+                    Loading tickets...
                 </p>
             </div>
         );
     }
 
     return (
-        <div className="space-y-3">
-            {limitedTickets.map((ticket) => (
-                <div
-                    key={ticket.id}
-                    onClick={() =>
-                        navigate(`/flagged-ticket/${ticket.id}`)
-                    }
-                    className="cursor-pointer rounded-xl border border-gray-300 bg-white transition-colors duration-150 hover:border-gray-400 hover:bg-gray-50"
-                >
-                    <div className="flex min-h-[125px] items-stretch px-4 py-4">
+        <div className="max-h-[637px] w-full overflow-y-auto bg-white">
+            <table className="w-full table-fixed text-sm">
 
-                        {/* LEFT ICON */}
-                        <div className="flex shrink-0 items-center pr-4">
-                            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-[#4C4CF9]/10">
-                                <Flag
-                                    size={22}
-                                    className="text-[#4C4CF9]"
-                                />
-                            </div>
-                        </div>
+                {/* Header */}
+                <thead className="sticky top-0 z-10 bg-gray-50">
+                    <tr className="border-b border-gray-300 text-left">
 
-                        {/* MAIN CONTENT */}
-                        <div className="flex min-w-0 flex-1 flex-col">
+                        <th className="w-[13%] px-6 py-3.5 font-semibold text-black">
+                            Ticket ID
+                        </th>
 
-                            {/* TOP */}
-                            <div className="flex items-start justify-between gap-6">
+                        <th className="w-[25%] px-6 py-3.5 font-semibold text-black">
+                            Subject
+                        </th>
 
-                                {/* SUBJECT */}
-                                <h3
-                                    className="min-w-0 truncate text-base font-semibold text-black"
-                                    title={ticket.subject}
+                        <th className="w-[15%] px-6 py-3.5 font-semibold text-black">
+                            Requester
+                        </th>
+
+                        <th className="w-[16%] px-6 py-3.5 font-semibold text-black">
+                            Department
+                        </th>
+
+                        <th className="w-[14%] px-6 py-3.5 font-semibold text-black">
+                            Flag Reason
+                        </th>
+
+                        <th className="w-[9%] px-6 py-3.5 font-semibold text-black">
+                            Status
+                        </th>
+
+                        <th className="w-[17%] px-6 py-3.5 font-semibold text-black">
+                            Submitted
+                        </th>
+
+                    </tr>
+                </thead>
+
+                {/* Body */}
+                <tbody>
+                    {limitedTickets.length > 0 ? (
+                        limitedTickets.map((ticket) => {
+                            const requesterName =
+                                ticket.first_name &&
+                                ticket.last_name
+                                    ? `${ticket.first_name} ${ticket.last_name}`
+                                    : "Unknown User";
+
+                            const department =
+                                ticket.employee_department ||
+                                ticket.department ||
+                                "No Department";
+
+                            return (
+                                <tr
+                                    key={ticket.id}
+                                    onClick={() =>
+                                        navigate(
+                                            `/flagged-ticket/${ticket.id}`
+                                        )
+                                    }
+                                    className="cursor-pointer border-b border-gray-200 transition-colors hover:bg-gray-50 last:border-b-0"
                                 >
-                                    {ticket.subject}
-                                </h3>
 
-                                {/* BADGES */}
-                                <div className="flex shrink-0 items-center gap-2">
-
-                                    <span
-                                        className={`inline-flex items-center rounded-md border px-2.5 py-1 text-xs font-semibold ${getFlagReasonStyle(
-                                            ticket.reason
-                                        )}`}
-                                    >
-                                        {formatText(ticket.reason)}
-                                    </span>
-
-                                    <span
-                                        className={`inline-flex items-center rounded-md border px-2.5 py-1 text-xs font-semibold ${getStatusStyle(
-                                            ticket.status
-                                        )}`}
-                                    >
-                                        {formatText(ticket.status)}
-                                    </span>
-
-                                </div>
-
-                            </div>
-
-                            {/* DESCRIPTION */}
-                            <p
-                                className="mt-1.5 max-w-[1000px] line-clamp-2 break-words text-sm leading-5 text-gray-600"
-                                title={ticket.description}
-                            >
-                                {ticket.description ||
-                                    "No description provided."}
-                            </p>
-
-                            {/* BOTTOM */}
-                            <div className="mt-auto flex items-center justify-between gap-6 pt-3">
-
-                                {/* TICKET INFORMATION */}
-                                <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-sm">
-
-                                    {/* TICKET CODE */}
-                                    <div className="flex items-center gap-1.5">
-                                        <Ticket
-                                            size={15}
-                                            className="text-gray-400"
-                                        />
-
+                                    {/* Ticket ID */}
+                                    <td className="px-6 py-4">
                                         <span className="font-semibold text-black">
-                                            {ticket.ticket_code}
+                                            {ticket.ticket_code || "-"}
                                         </span>
-                                    </div>
+                                    </td>
 
-                                    <span className="text-gray-300">
-                                        •
-                                    </span>
+                                    {/* Subject */}
+                                    <td className="px-6 py-4">
+                                        <p
+                                            className="truncate font-medium text-black"
+                                            title={ticket.subject}
+                                        >
+                                            {ticket.subject || "-"}
+                                        </p>
+                                    </td>
 
-                                    {/* USER */}
-                                    <div className="flex items-center gap-1.5">
-                                        <UserRound
-                                            size={15}
-                                            className="text-gray-400"
-                                        />
+                                    {/* Requester */}
+                                    <td className="px-6 py-4">
+                                        <p
+                                            className="truncate text-black"
+                                            title={requesterName}
+                                        >
+                                            {requesterName}
+                                        </p>
+                                    </td>
 
-                                        <span className="text-black">
-                                            {ticket.first_name &&
-                                            ticket.last_name
-                                                ? `${ticket.first_name} ${ticket.last_name}`
-                                                : "Unknown User"}
+                                    {/* Department */}
+                                    <td className="px-6 py-4">
+                                        <p
+                                            className="truncate text-black"
+                                            title={department}
+                                        >
+                                            {department}
+                                        </p>
+                                    </td>
+
+                                    {/* Flag Reason */}
+                                    <td className="px-6 py-4">
+                                        <span
+                                            className={`inline-flex max-w-full items-center rounded-md border px-2.5 py-1 text-xs font-semibold ${getFlagReasonStyle(
+                                                ticket.reason
+                                            )}`}
+                                        >
+                                            <span className="truncate">
+                                                {formatText(ticket.reason)}
+                                            </span>
                                         </span>
-                                    </div>
+                                    </td>
 
-                                    <span className="text-gray-300">
-                                        •
-                                    </span>
-
-                                    {/* DEPARTMENT */}
-                                    <div className="flex items-center gap-1.5">
-                                        <Building2
-                                            size={15}
-                                            className="text-gray-400"
-                                        />
-
-                                        <span className="font-medium text-black">
-                                            {ticket.employee_department ||
-                                                ticket.department ||
-                                                "No Department"}
+                                    {/* Status */}
+                                    <td className="px-6 py-4">
+                                        <span
+                                            className={`inline-flex whitespace-nowrap rounded-md border px-2.5 py-1 text-xs font-medium ${getStatusStyle(
+                                                ticket.status
+                                            )}`}
+                                        >
+                                            {formatText(ticket.status)}
                                         </span>
-                                    </div>
+                                    </td>
 
-                                </div>
+                                    {/* Submitted */}
+                                    <td className="px-6 py-4">
+                                        <span className="whitespace-nowrap font-medium text-black">
+                                            {ticket.created_at
+                                                ? formatDate(ticket.created_at)
+                                                : "-"}
+                                        </span>
+                                    </td>
 
-                                {/* DATE */}
-                                <div className="flex shrink-0 items-center gap-2 text-sm">
-                                    <Clock3
-                                        size={15}
-                                        className="text-gray-400"
-                                    />
+                                </tr>
+                            );
+                        })
+                    ) : (
+                        <tr>
+                            <td
+                                colSpan="7"
+                                className="px-6 py-16 text-center"
+                            >
+                                <p className="font-medium text-black">
+                                    No flagged tickets found
+                                </p>
 
-                                    <span className="whitespace-nowrap font-medium text-black">
-                                        {formatDate(ticket.created_at)}
-                                    </span>
-                                </div>
+                                <p className="mt-1 text-sm text-gray-500">
+                                    There are currently no flagged tickets requiring review.
+                                </p>
+                            </td>
+                        </tr>
+                    )}
+                </tbody>
 
-                            </div>
-
-                        </div>
-
-                    </div>
-                </div>
-            ))}
+            </table>
         </div>
     );
 }
@@ -214,7 +213,17 @@ function getStatusStyle(status = "") {
         return "border-amber-300 bg-amber-50 text-amber-700";
     }
 
-    if (value === "approved") {
+    if (
+        value === "under_review" ||
+        value === "under review"
+    ) {
+        return "border-blue-300 bg-blue-50 text-blue-700";
+    }
+
+    if (
+        value === "approved" ||
+        value === "resolved"
+    ) {
         return "border-green-300 bg-green-50 text-green-700";
     }
 
@@ -222,10 +231,16 @@ function getStatusStyle(status = "") {
         return "border-red-300 bg-red-50 text-red-700";
     }
 
-    return "border-gray-300 bg-gray-50 text-gray-700";
+    if (value === "closed") {
+        return "border-gray-300 bg-gray-100 text-gray-700";
+    }
+
+    return "border-gray-300 bg-gray-100 text-gray-700";
 }
 
 function formatText(value = "") {
+    if (!value) return "-";
+
     return value
         .replaceAll("_", " ")
         .replace(/\b\w/g, (letter) =>
