@@ -2,6 +2,7 @@ from django.shortcuts import render
 
 from rest_framework import generics
 from rest_framework.views import APIView
+from rest_framework import viewsets, generics, status
 from rest_framework.response import Response
 from rest_framework_simplejwt.views import TokenObtainPairView
 from rest_framework.permissions import AllowAny, IsAuthenticated
@@ -89,3 +90,71 @@ class ITSupportSpecializationCreateView(generics.CreateAPIView):
     serializer_class = ITSupportSpecializationCreateSerializer
     permission_classes = [AllowAny]
 
+class NotificationListView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        notifications = (
+            Notifications.objects
+            .filter(user=request.user)
+            .select_related("ticket")
+            .order_by("-created_at")
+        )
+
+        serializer = NotificationSerializer(
+            notifications,
+            many=True
+        )
+
+        return Response(
+            serializer.data,
+            status=status.HTTP_200_OK
+        )
+
+class NotificationUnreadCountView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        count = Notifications.objects.filter(
+            user=request.user,
+            is_read=False
+        ).count()
+
+        return Response(
+            {"count": count},
+            status=status.HTTP_200_OK
+        )
+
+class NotificationMarkReadView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def patch(self, request, pk):
+        notification = (
+            Notifications.objects
+            .filter(
+                pk=pk,
+                user=request.user
+            )
+            .first()
+        )
+
+        if not notification:
+            return Response(
+                {"error": "Notification not found."},
+                status=status.HTTP_404_NOT_FOUND
+            )
+
+        notification.is_read = True
+        notification.updated_by = request.user
+        notification.save(
+            update_fields=[
+                "is_read",
+                "updated_by",
+                "updated_at",
+            ]
+        )
+
+        return Response(
+            {"success": True},
+            status=status.HTTP_200_OK
+        )

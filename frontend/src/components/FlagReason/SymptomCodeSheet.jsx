@@ -12,11 +12,11 @@ export default function SymptomCodeSheet({
     open,
     onClose,
     onSelect,
-    excludeCode,
+    excludeDepartment,
 }) {
     const [search, setSearch] = useState("");
     const [category, setCategory] = useState("All");
-    const [selectedCode, setSelectedCode] = useState("");
+    const [selectedSymptom, setSelectedSymptom] = useState(null);
     const [symptomCodes, setSymptomCodes] = useState([]);
     const [loading, setLoading] = useState(true);
 
@@ -30,9 +30,6 @@ export default function SymptomCodeSheet({
                 );
 
                 setSymptomCodes(response.data);
-                console.log(response.data);
-            } catch (error) {
-                console.error(error);
             } finally {
                 setLoading(false);
             }
@@ -40,6 +37,14 @@ export default function SymptomCodeSheet({
 
         fetchSymptomCodeList();
     }, []);
+
+    useEffect(() => {
+        if (!open) {
+            setSearch("");
+            setCategory("All");
+            setSelectedSymptom(null);
+        }
+    }, [open]);
 
     const categories = [
         "All",
@@ -50,14 +55,17 @@ export default function SymptomCodeSheet({
         ),
     ];
 
+    const normalizedExcludeDepartment =
+        typeof excludeDepartment === "string"
+            ? excludeDepartment.trim().toLowerCase()
+            : "";
+
     const filteredSymptoms = useMemo(() => {
-        const query = search
-            .trim()
-            .toLowerCase();
+        const query = search.trim().toLowerCase();
 
         return symptomCodes.filter((symptom) => {
             const code =
-                symptom.code?.toLowerCase() || "";
+                symptom.code?.trim().toLowerCase() || "";
 
             const description =
                 symptom.description?.toLowerCase() || "";
@@ -65,21 +73,26 @@ export default function SymptomCodeSheet({
             const symptomCategory =
                 symptom.category?.toLowerCase() || "";
 
-            const excluded =
-                symptom.code === excludeCode;
+            const department =
+                symptom.department?.trim().toLowerCase() || "";
+
+            const belongsToCurrentDepartment =
+                normalizedExcludeDepartment &&
+                department === normalizedExcludeDepartment;
 
             const matchesSearch =
                 !query ||
                 code.includes(query) ||
                 description.includes(query) ||
-                symptomCategory.includes(query);
+                symptomCategory.includes(query) ||
+                department.includes(query);
 
             const matchesCategory =
                 category === "All" ||
                 symptom.category === category;
 
             return (
-                !excluded &&
+                !belongsToCurrentDepartment &&
                 matchesSearch &&
                 matchesCategory
             );
@@ -87,14 +100,14 @@ export default function SymptomCodeSheet({
     }, [
         search,
         category,
-        excludeCode,
+        normalizedExcludeDepartment,
         symptomCodes,
     ]);
 
     const handleUseSelected = () => {
-        if (!selectedCode) return;
+        if (!selectedSymptom) return;
 
-        onSelect(selectedCode);
+        onSelect(selectedSymptom);
         onClose();
     };
 
@@ -227,7 +240,8 @@ export default function SymptomCodeSheet({
 
                                 <p className="text-xs text-gray-500">
                                     {filteredSymptoms.length} result
-                                    {filteredSymptoms.length !== 1 && "s"}
+                                    {filteredSymptoms.length !== 1 &&
+                                        "s"}
                                 </p>
                             </div>
 
@@ -241,15 +255,16 @@ export default function SymptomCodeSheet({
                                 ) : filteredSymptoms.length > 0 ? (
                                     filteredSymptoms.map((symptom) => {
                                         const isSelected =
-                                            selectedCode === symptom.code;
+                                            selectedSymptom?.code ===
+                                            symptom.code;
 
                                         return (
                                             <button
-                                                key={symptom.code}
+                                                key={symptom.id}
                                                 type="button"
                                                 onClick={() =>
-                                                    setSelectedCode(
-                                                        symptom.code
+                                                    setSelectedSymptom(
+                                                        symptom
                                                     )
                                                 }
                                                 className={`w-full rounded-md border p-4 text-left transition ${
@@ -262,32 +277,54 @@ export default function SymptomCodeSheet({
                                                     <div className="min-w-0">
                                                         <div className="flex items-center gap-2">
                                                             <p className="text-sm font-semibold text-black">
-                                                                {symptom.code}
+                                                                {
+                                                                    symptom.code
+                                                                }
                                                             </p>
 
                                                             {isSelected && (
                                                                 <Check
-                                                                    size={16}
+                                                                    size={
+                                                                        16
+                                                                    }
                                                                     className="text-[#4C4CF9]"
                                                                 />
                                                             )}
                                                         </div>
 
                                                         <p className="mt-1 text-sm text-black">
-                                                            {symptom.description}
+                                                            {
+                                                                symptom.description
+                                                            }
                                                         </p>
 
-                                                        <div className="mt-2 flex items-center gap-1.5">
-                                                            <Tag
-                                                                size={13}
-                                                                className="text-gray-500"
-                                                            />
+                                                        <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1.5">
+                                                            <div className="flex items-center gap-1.5">
+                                                                <Tag
+                                                                    size={
+                                                                        13
+                                                                    }
+                                                                    className="text-gray-500"
+                                                                />
 
-                                                            <p className="text-xs text-gray-500">
-                                                                {
-                                                                    symptom.category
-                                                                }
-                                                            </p>
+                                                                <p className="text-xs text-gray-500">
+                                                                    {
+                                                                        symptom.category
+                                                                    }
+                                                                </p>
+                                                            </div>
+
+                                                            {symptom.department && (
+                                                                <p className="text-xs text-gray-500">
+                                                                    IT
+                                                                    Department:{" "}
+                                                                    <span className="font-medium text-gray-700">
+                                                                        {
+                                                                            symptom.department
+                                                                        }
+                                                                    </span>
+                                                                </p>
+                                                            )}
                                                         </div>
                                                     </div>
                                                 </div>
@@ -301,7 +338,8 @@ export default function SymptomCodeSheet({
                                         </p>
 
                                         <p className="mt-1 text-xs text-gray-500">
-                                            Try changing your search or category.
+                                            Try changing your search or
+                                            category.
                                         </p>
                                     </div>
                                 )}
@@ -309,15 +347,26 @@ export default function SymptomCodeSheet({
                         </div>
 
                         <div className="border-t border-gray-300 bg-white px-6 py-4">
-                            {selectedCode && (
+                            {selectedSymptom && (
                                 <div className="mb-4 rounded-md border border-gray-300 bg-gray-50 px-4 py-3">
                                     <p className="text-xs font-semibold uppercase text-gray-500">
                                         Selected Symptom
                                     </p>
 
                                     <p className="mt-1 text-sm font-semibold text-black">
-                                        {selectedCode}
+                                        {selectedSymptom.code}
                                     </p>
+
+                                    {selectedSymptom.department && (
+                                        <p className="mt-1 text-xs text-gray-500">
+                                            IT Department:{" "}
+                                            <span className="font-medium text-gray-700">
+                                                {
+                                                    selectedSymptom.department
+                                                }
+                                            </span>
+                                        </p>
+                                    )}
                                 </div>
                             )}
 
@@ -332,10 +381,10 @@ export default function SymptomCodeSheet({
 
                                 <button
                                     type="button"
-                                    disabled={!selectedCode}
+                                    disabled={!selectedSymptom}
                                     onClick={handleUseSelected}
                                     className={`rounded-md border px-4 py-3 text-sm font-semibold transition ${
-                                        selectedCode
+                                        selectedSymptom
                                             ? "cursor-pointer border-[#4C4CF9] bg-[#4C4CF9] text-white hover:bg-[#4242e8]"
                                             : "cursor-not-allowed border-gray-300 bg-gray-100 text-gray-400"
                                     }`}

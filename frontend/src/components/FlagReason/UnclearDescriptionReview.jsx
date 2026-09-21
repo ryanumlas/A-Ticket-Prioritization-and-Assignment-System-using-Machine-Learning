@@ -5,10 +5,10 @@ import {
     Ticket,
     Sparkles,
     Search,
-    Contact,
     Pencil,
     MessageSquareText,
     X,
+    Check,
 } from "lucide-react";
 
 import { useNavigate } from "react-router-dom";
@@ -73,11 +73,6 @@ export default function UnclearDescriptionReview({ flag }) {
                 },
             });
         } catch (error) {
-            console.error(
-                "Manual classification failed:",
-                error
-            );
-
             toast.error("Unable to classify ticket", {
                 description:
                     error.response?.data?.message ||
@@ -97,10 +92,15 @@ export default function UnclearDescriptionReview({ flag }) {
         }
     };
 
+    const submittedByName = `${flag.first_name || ""} ${
+        flag.last_name || ""
+    }`.trim();
+
     return (
         <>
             <div className="space-y-5">
                 <div className="grid grid-cols-1 items-start gap-5 xl:grid-cols-[1.35fr_1fr]">
+                    {/* TICKET INFORMATION */}
                     <div
                         className="
                             max-h-[720px] overflow-y-auto
@@ -114,17 +114,27 @@ export default function UnclearDescriptionReview({ flag }) {
                         "
                     >
                         <div className="flex items-center gap-3 border-b border-gray-300 px-6 py-4">
-                            <div className="flex h-9 w-9 items-center justify-center rounded-md bg-gray-100">
+                            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-gray-100">
                                 <Ticket
                                     size={19}
                                     className="text-black"
                                 />
                             </div>
 
-                            <div>
-                                <h2 className="font-semibold text-black">
-                                    Ticket Information
-                                </h2>
+                            <div className="min-w-0 flex-1">
+                                <div className="flex items-center justify-between gap-3">
+                                    <h2 className="font-semibold text-black">
+                                        Ticket Information
+                                    </h2>
+
+                                    <span
+                                        className={`shrink-0 rounded-md border px-2.5 py-1 text-xs font-medium ${getStatusStyle(
+                                            flag.status
+                                        )}`}
+                                    >
+                                        {formatStatus(flag.status)}
+                                    </span>
+                                </div>
 
                                 <p className="mt-0.5 text-xs text-gray-500">
                                     Information submitted by the employee.
@@ -185,71 +195,61 @@ export default function UnclearDescriptionReview({ flag }) {
                         </div>
 
                         <div className="px-6 py-5">
-                            <div className="mb-5 flex items-center gap-2">
-                                <Contact
-                                    size={18}
-                                    className="text-gray-500"
-                                />
-
-                                <h3 className="font-semibold text-black">
-                                    Requester Information
-                                </h3>
-                            </div>
-
-                            <div className="grid grid-cols-1 gap-x-10 gap-y-4 sm:grid-cols-2">
-                                <div className="flex items-center">
-                                    <p className="w-32 shrink-0 text-xs font-semibold uppercase text-gray-500">
-                                        Name
+                            <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
+                                <div className="min-w-0">
+                                    <p className="text-xs font-medium uppercase text-gray-500">
+                                        Ticket Submitted By
                                     </p>
 
-                                    <p className="text-sm font-medium text-black">
-                                        {flag.first_name} {flag.last_name}
-                                    </p>
+                                    <div className="mt-3 flex items-center gap-3">
+                                        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#4C4CF9]/10 text-xs font-semibold text-[#4C4CF9]">
+                                            {getInitials(
+                                                submittedByName
+                                            )}
+                                        </div>
+
+                                        <div className="min-w-0">
+                                            <p className="truncate text-sm font-semibold text-black">
+                                                {submittedByName || "-"}
+                                            </p>
+
+                                            <p className="mt-1 truncate text-xs text-gray-500">
+                                                {flag.user_code || "-"}
+                                                {flag.role
+                                                    ? ` • ${flag.role}`
+                                                    : ""}
+                                            </p>
+
+                                            <p className="mt-0.5 truncate text-xs text-gray-500">
+                                                {flag.employee_department ||
+                                                    "-"}
+                                            </p>
+                                        </div>
+                                    </div>
                                 </div>
 
-                                <div className="flex items-center">
-                                    <p className="w-32 shrink-0 text-xs font-semibold uppercase text-gray-500">
-                                        Employee ID
+                                <div className="min-w-0">
+                                    <p className="text-xs font-medium uppercase text-gray-500">
+                                        Ticket Submitted At
                                     </p>
 
-                                    <p className="text-sm font-medium text-black">
-                                        {flag.user_code || "-"}
-                                    </p>
-                                </div>
-
-                                <div className="flex items-center">
-                                    <p className="w-32 shrink-0 text-xs font-semibold uppercase text-gray-500">
-                                        Department
-                                    </p>
-
-                                    <p className="text-sm font-medium text-black">
-                                        {flag.employee_department || "-"}
-                                    </p>
-                                </div>
-
-                                <div className="flex items-center">
-                                    <p className="w-32 shrink-0 text-xs font-semibold uppercase text-gray-500">
-                                        Office Location
-                                    </p>
-
-                                    <p className="text-sm font-medium text-black">
-                                        {flag.office_location || "-"}
-                                    </p>
-                                </div>
-
-                                <div className="flex items-center">
-                                    <p className="w-32 shrink-0 text-xs font-semibold uppercase text-gray-500">
-                                        Workstation
-                                    </p>
-
-                                    <p className="text-sm font-medium text-black">
-                                        {flag.workstation || "-"}
+                                    <p className="mt-3 text-sm font-medium text-black">
+                                        {flag.created_at
+                                            ? formatDate(
+                                                  flag.created_at
+                                              )
+                                            : flag.submitted_at
+                                              ? formatDate(
+                                                    flag.submitted_at
+                                                )
+                                              : "-"}
                                     </p>
                                 </div>
                             </div>
                         </div>
                     </div>
 
+                    {/* REVIEW DESCRIPTION */}
                     <div className="overflow-hidden rounded-md border border-gray-300 bg-white">
                         <div className="flex items-start gap-3 border-b border-gray-300 px-6 py-4">
                             <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-gray-100">
@@ -265,13 +265,14 @@ export default function UnclearDescriptionReview({ flag }) {
                                 </h2>
 
                                 <p className="mt-0.5 text-xs text-gray-500">
-                                    Determine whether the ticket contains enough
-                                    information for classification.
+                                    Determine whether the ticket contains
+                                    enough information for classification.
                                 </p>
                             </div>
                         </div>
 
                         <div className="p-6">
+                            {/* REVIEW REASON */}
                             <div className="rounded-md border border-gray-300 bg-gray-50 px-4 py-3">
                                 <p className="text-xs font-semibold uppercase text-gray-500">
                                     Review Reason
@@ -284,71 +285,121 @@ export default function UnclearDescriptionReview({ flag }) {
                                     />
 
                                     <p className="text-sm font-semibold text-black">
-                                        {flag.reason || "Unclear Description"}
+                                        {flag.reason ||
+                                            "Unclear Description"}
                                     </p>
                                 </div>
                             </div>
 
+                            {/* SELECT CORRECT SYMPTOM CODE */}
                             <div className="mt-6">
-                                <p className="mb-2 text-xs font-semibold uppercase text-gray-500">
-                                    Manual Classification
-                                </p>
+                                <label className="text-xs font-medium uppercase text-gray-500">
+                                    Select Correct Symptom Code
+                                </label>
 
                                 <button
                                     type="button"
                                     onClick={() => setSheetOpen(true)}
-                                    className="flex w-full cursor-pointer items-center justify-between rounded-md border border-gray-300 bg-white px-4 py-3 text-left text-sm text-black transition hover:bg-gray-50"
+                                    className="mt-2 flex w-full items-center justify-between rounded-lg border border-gray-300 bg-white px-4 py-3 text-left transition hover:bg-gray-50 focus:border-[#4C4CF9] focus:ring-2 focus:ring-[#4C4CF9]/10"
                                 >
-                                    <span>
-                                        {selectedSymptom ||
-                                            "Search and select symptom code"}
-                                    </span>
+                                    <div className="min-w-0">
+                                        <p className="truncate text-sm font-medium text-black">
+                                            {selectedSymptom ||
+                                                "Select symptom code"}
+                                        </p>
+
+                                        {!selectedSymptom && (
+                                            <p className="mt-0.5 text-xs text-gray-500">
+                                                Search and select the correct
+                                                classification
+                                            </p>
+                                        )}
+                                    </div>
 
                                     <Search
                                         size={17}
-                                        className="text-gray-500"
+                                        className="ml-3 shrink-0 text-gray-400"
                                     />
                                 </button>
                             </div>
 
-                            <div className="mt-6 grid grid-cols-1 gap-3 sm:grid-cols-2">
+                            {/* SELECTED CLASSIFICATION */}
+                            {selectedSymptom && (
+                                <div className="mt-4 rounded-lg border border-[#4C4CF9]/30 bg-[#4C4CF9]/5 px-4 py-3.5">
+                                    <p className="text-xs font-semibold uppercase text-gray-500">
+                                        Selected Classification
+                                    </p>
+
+                                    <div className="mt-2 flex items-center justify-between gap-3">
+                                        <div className="flex min-w-0 items-center gap-2">
+                                            <Pencil
+                                                size={15}
+                                                className="text-[#4C4CF9]"
+                                            />
+
+                                            <p className="truncate text-sm font-semibold text-black">
+                                                {selectedSymptom}
+                                            </p>
+                                        </div>
+
+                                        <button
+                                            type="button"
+                                            onClick={() =>
+                                                setSheetOpen(true)
+                                            }
+                                            className="shrink-0 text-xs font-medium text-[#4C4CF9] hover:underline"
+                                        >
+                                            Change
+                                        </button>
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* ACTION BUTTONS */}
+                            <div className="mt-5 grid grid-cols-1 gap-3 sm:grid-cols-2">
                                 <button
                                     type="button"
                                     onClick={openConfirmModal}
                                     disabled={
-                                        !selectedSymptom ||
-                                        submitting
+                                        !selectedSymptom || submitting
                                     }
-                                    className={`flex items-center justify-center gap-2 rounded-md border px-4 py-3 text-sm font-semibold transition ${
+                                    className={`flex h-10 items-center justify-center gap-2 rounded-lg border px-4 text-sm font-medium transition ${
                                         selectedSymptom && !submitting
                                             ? "cursor-pointer border-[#4C4CF9] bg-[#4C4CF9] text-white hover:bg-[#4242e8]"
                                             : "cursor-not-allowed border-gray-300 bg-gray-100 text-gray-400"
                                     }`}
                                 >
-                                    <Pencil size={16} />
+                                    <Check
+                                        size={16}
+                                        strokeWidth={2.2}
+                                    />
 
-                                    Manually Classify
+                                    {submitting
+                                        ? "Classifying..."
+                                        : "Manually Classify"}
                                 </button>
 
                                 <button
                                     type="button"
                                     disabled={submitting}
-                                    className="flex cursor-pointer items-center justify-center gap-2 rounded-md border border-gray-300 bg-white px-4 py-3 text-sm font-semibold text-black transition hover:bg-gray-100 disabled:cursor-not-allowed disabled:bg-gray-100 disabled:text-gray-400"
+                                    className="flex h-10 cursor-pointer items-center justify-center gap-2 rounded-lg border border-gray-300 bg-white px-4 text-sm font-medium text-black transition hover:bg-gray-100 disabled:cursor-not-allowed disabled:bg-gray-100 disabled:text-gray-400"
                                 >
                                     <MessageSquareText size={16} />
+
                                     Request Clarification
                                 </button>
                             </div>
 
                             <p className="mt-4 text-xs leading-5 text-gray-500">
                                 Manually classify the ticket if the submitted
-                                information is sufficient. Otherwise, return it to
-                                the employee for clarification.
+                                information is sufficient. Otherwise, return
+                                it to the employee for clarification.
                             </p>
                         </div>
                     </div>
                 </div>
 
+                {/* TICKET ANALYSIS */}
                 <div className="overflow-hidden rounded-md border border-gray-300 bg-white">
                     <div className="flex items-start gap-3 border-b border-gray-300 px-6 py-4">
                         <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-gray-100">
@@ -364,7 +415,8 @@ export default function UnclearDescriptionReview({ flag }) {
                             </h2>
 
                             <p className="mt-0.5 text-xs text-gray-500">
-                                System-generated summary of the submitted ticket.
+                                System-generated summary of the submitted
+                                ticket.
                             </p>
                         </div>
                     </div>
@@ -376,7 +428,8 @@ export default function UnclearDescriptionReview({ flag }) {
                             </p>
 
                             <p className="mt-3 text-sm leading-6 text-black">
-                                {flag.summary || "No summary available."}
+                                {flag.summary ||
+                                    "No summary available."}
                             </p>
                         </div>
 
@@ -413,6 +466,7 @@ export default function UnclearDescriptionReview({ flag }) {
                 />
             </div>
 
+            {/* CONFIRMATION MODAL */}
             {showConfirm && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 px-4">
                     <div className="w-full max-w-[440px] rounded-xl bg-white shadow-xl">
@@ -423,7 +477,8 @@ export default function UnclearDescriptionReview({ flag }) {
                                 </h3>
 
                                 <p className="mt-1 text-xs text-gray-500">
-                                    Review the classification before confirming.
+                                    Review the classification before
+                                    confirming.
                                 </p>
                             </div>
 
@@ -439,8 +494,8 @@ export default function UnclearDescriptionReview({ flag }) {
 
                         <div className="p-5">
                             <p className="text-sm leading-6 text-gray-600">
-                                Are you sure you want to manually classify this
-                                ticket using the following symptom code?
+                                Are you sure you want to manually classify
+                                this ticket using the following symptom code?
                             </p>
 
                             <div className="mt-4 rounded-md border border-gray-200 bg-gray-50 px-4 py-3">
@@ -502,8 +557,13 @@ export default function UnclearDescriptionReview({ flag }) {
                                     type="button"
                                     onClick={handleManualClassify}
                                     disabled={submitting}
-                                    className="rounded-md bg-[#4C4CF9] px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-[#4242e8] disabled:cursor-not-allowed disabled:opacity-50"
+                                    className="flex items-center gap-2 rounded-md bg-[#4C4CF9] px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-[#4242e8] disabled:cursor-not-allowed disabled:opacity-50"
                                 >
+                                    <Check
+                                        size={16}
+                                        strokeWidth={2.2}
+                                    />
+
                                     {submitting
                                         ? "Classifying..."
                                         : "Confirm"}
@@ -515,4 +575,58 @@ export default function UnclearDescriptionReview({ flag }) {
             )}
         </>
     );
+}
+
+function getInitials(name) {
+    if (!name) {
+        return "?";
+    }
+
+    return name
+        .trim()
+        .split(/\s+/)
+        .slice(0, 2)
+        .map((part) => part.charAt(0).toUpperCase())
+        .join("");
+}
+
+function formatDate(value) {
+    if (!value) {
+        return "-";
+    }
+
+    return new Date(value).toLocaleString([], {
+        year: "numeric",
+        month: "short",
+        day: "numeric",
+        hour: "numeric",
+        minute: "2-digit",
+    });
+}
+
+function formatStatus(status = "") {
+    if (!status) {
+        return "-";
+    }
+
+    return (
+        status.charAt(0).toUpperCase() +
+        status.slice(1).toLowerCase()
+    );
+}
+
+function getStatusStyle(status = "") {
+    switch (status.toLowerCase()) {
+        case "pending":
+            return "border-amber-300 bg-amber-50 text-amber-700";
+
+        case "approved":
+            return "border-green-300 bg-green-50 text-green-700";
+
+        case "rejected":
+            return "border-red-300 bg-red-50 text-red-700";
+
+        default:
+            return "border-gray-300 bg-gray-100 text-gray-700";
+    }
 }

@@ -4,6 +4,7 @@ import EmployeeDashboard from "../pages/EmployeeDashboard";
 import SupportDashboard from "../pages/SupportDashboard";
 import ServiceDeskDashboard from "../pages/ServiceDeskDashboard";
 import { motion } from "motion/react";
+import Topbar from "../components/Topbar";
 
 export default function Dashboard() {
     const user = getCurrentUser();
@@ -40,8 +41,7 @@ export default function Dashboard() {
 
             <div className="flex h-screen flex-1 flex-col overflow-y-auto">
 
-                <div className="h-14 shrink-0 border-b border-gray-300 bg-white">
-                </div>
+                <Topbar/>
 
                 <motion.main
                     initial={{

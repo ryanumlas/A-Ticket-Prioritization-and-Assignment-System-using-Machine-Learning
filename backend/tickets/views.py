@@ -14,8 +14,9 @@ TicketAssistanceSerializer, TicketCommentSerializer, TicketStatusHistory, SLARul
 SLARulesUpdateSerializer, KeywordSerializer, KeywordUpdateSerializer, UpdateSymptomCodeSerializer, CreateSymptomCodeSerializer,
 TicketCreateSerializer, TicketUpdateSerializer, TicketDetailEmployeeSerializer, CategoryUpdateSerializer, FlaggedTicketsListSerializer, 
 FlaggedTicketDetailSerializer, TicketDetailSupportSerializer, TicketStatusHistorySerializer, PriorityChangeRequestSerializer, PriorityRequestListSerializer, 
-PriorityRequestDetailSerializer, ReturnTicketSerializer, ReturnedTicketRequestListSerializer)
-from users.models import User, ITSupportProfile
+PriorityRequestDetailSerializer, ReturnTicketSerializer, ReturnedTicketRequestListSerializer, ReturnedTicketDetailSerializer, ApproveReturnTicketSerializer)
+from users.models import User, ITSupportProfile, Notifications
+from users.services import create_notification
 from .services import predict_ticket, assign_ticket_automatically
 from ai.models import TicketAnalysis, TicketAIAnalysis
 from ai.services import analyze_ticket
@@ -50,6 +51,14 @@ class CreateTicketView(generics.CreateAPIView):
             office_location=profile.office_location,
         )
 
+        create_notification(
+            user=ticket.submitted_by,
+            ticket=ticket,
+            notification_type=Notifications.NotificationType.TICKET_CREATED,
+            message=f"Your ticket {ticket.ticket_code} has been submitted successfully.",
+            created_by=self.request.user,
+        )
+
         TicketStatusHistory.objects.create(
             ticket=ticket,
             event_type=TicketStatusHistory.EventType.CREATED,
@@ -57,6 +66,8 @@ class CreateTicketView(generics.CreateAPIView):
             changed_by=self.request.user,
             created_by=self.request.user,
         )
+
+    # rest of your existing logic...
 
         analysis = analyze_ticket(ticket)
 
@@ -242,7 +253,36 @@ class CreateTicketView(generics.CreateAPIView):
 
         update_sla(ticket)
 
-        assign_ticket_automatically(ticket)
+        assigned_profile = assign_ticket_automatically(ticket)
+
+        if assigned_profile:
+            technician_name = (
+                f"{assigned_profile.user.first_name} "
+                f"{assigned_profile.user.last_name}"
+            ).strip() or assigned_profile.user.username
+
+            create_notification(
+                user=ticket.submitted_by,
+                ticket=ticket,
+                notification_type=Notifications.NotificationType.TICKET_CREATED,
+                message=(
+                    f"Your ticket {ticket.ticket_code} has been submitted "
+                    f"and assigned to {technician_name}."
+                ),
+                created_by=self.request.user,
+            )
+        else:
+            create_notification(
+                user=ticket.submitted_by,
+                ticket=ticket,
+                notification_type=Notifications.NotificationType.TICKET_CREATED,
+                message=(
+                    f"Your ticket {ticket.ticket_code} has been submitted "
+                    f"successfully and is waiting for assignment."
+                ),
+                created_by=self.request.user,
+            )
+
 
 class ManualOverrideTicketView(APIView):
     permission_classes = [IsAuthenticated]
@@ -2291,6 +2331,371 @@ class ReturnedTicketRequestListView(APIView):
         )
 
         return Response(serializer.data)
+
+class ReturnedTicketDetailRetrieve(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, pk):
+        return_request = (
+            TicketRequest.objects
+            .filter(
+                pk=pk,
+                request_type=TicketRequest.RequestType.RETURN_TO_SERVICE_DESK,
+            )
+            .select_related(
+                "ticket",
+                "ticket__submitted_by",
+                "ticket__submitted_by__profile",
+                "ticket__submitted_by__profile__office_location",
+                "ticket__submitted_by__it_support_profile",
+                "ticket__submitted_by__it_support_profile__it_department",
+                "ticket__it_department",
+                "requested_by",
+                "requested_by__profile",
+                "requested_by__profile__office_location",
+                "requested_by__it_support_profile",
+                "requested_by__it_support_profile__it_department",
+                "reviewed_by",
+            )
+            .first()
+        )
+
+        if not return_request:
+            return Response(
+                {"error": "Returned ticket request not found."},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        serializer = ReturnedTicketDetailSerializer(return_request)
+
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+class ApproveReturnTicketView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    @transaction.atomic
+    def post(self, request, pk):
+        serializer = ApproveReturnTicketSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        selected_symptom_id = serializer.validated_data["symptom_code_id"]
+        review_remarks = serializer.validated_data.get(
+            "review_remarks",
+            ""
+        )
+
+        # Lock only the TicketRequest row.
+        return_request = (
+            TicketRequest.objects
+            .select_for_update()
+            .filter(
+                pk=pk,
+                request_type=TicketRequest.RequestType.RETURN_TO_SERVICE_DESK,
+            )
+            .first()
+        )
+
+        if not return_request:
+            return Response(
+                {
+                    "error": "Returned ticket request not found."
+                },
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        if return_request.status != TicketRequest.RequestStatus.PENDING:
+            return Response(
+                {
+                    "error": (
+                        "This return request has already been reviewed."
+                    )
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        # Get the ticket separately.
+        ticket = (
+            Ticket.objects
+            .select_related(
+                "symptom_code",
+                "category",
+                "it_department",
+            )
+            .get(pk=return_request.ticket_id)
+        )
+
+        if not ticket.is_under_review:
+            return Response(
+                {
+                    "error": (
+                        "This ticket is no longer under "
+                        "Service Desk review."
+                    )
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        # Get the selected symptom code and its routing.
+        selected_symptom = (
+            SymptomCode.objects
+            .select_related(
+                "category",
+                "category__it_department",
+            )
+            .filter(pk=selected_symptom_id)
+            .first()
+        )
+
+        if not selected_symptom:
+            return Response(
+                {
+                    "error": "Selected symptom code not found."
+                },
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        if not selected_symptom.category:
+            return Response(
+                {
+                    "error": (
+                        "The selected symptom code has no "
+                        "category assigned."
+                    )
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        new_department = selected_symptom.category.it_department
+
+        if not new_department:
+            return Response(
+                {
+                    "error": (
+                        "The selected symptom code's category "
+                        "has no IT department assigned."
+                    )
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        # The selected symptom must belong to a different
+        # IT department from the ticket's current department.
+        current_department_id = ticket.it_department_id
+
+        if current_department_id == new_department.id:
+            return Response(
+                {
+                    "error": (
+                        "Please select a symptom code from a "
+                        "different IT department."
+                    )
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        # Keep the old values for history.
+        old_symptom = ticket.symptom_code
+        old_category = ticket.category
+        old_department = ticket.it_department
+        old_assigned_to = ticket.assigned_to
+        old_status = ticket.status
+
+        # UPDATE TICKET ROUTING
+        ticket.symptom_code = selected_symptom
+        ticket.category = selected_symptom.category
+        ticket.it_department = new_department
+
+        # Clear the previous technician assignment because
+        # the ticket is now being routed to a different department.
+        ticket.assigned_to = None
+
+        # IMPORTANT:
+        # The ticket was previously UNDER_REVIEW.
+        # Move it back to OPEN so automatic assignment can run.
+        ticket.status = Ticket.TicketStatus.OPEN
+
+        ticket.is_under_review = False
+        ticket.updated_by = request.user
+
+        ticket.save(
+            update_fields=[
+                "symptom_code",
+                "category",
+                "it_department",
+                "assigned_to",
+                "status",
+                "is_under_review",
+                "updated_by",
+                "updated_at",
+            ]
+        )
+
+        # ---------------------------------------------------------
+        # HISTORY: SYMPTOM / ROUTING CHANGE
+        # ---------------------------------------------------------
+
+        old_symptom_code = (
+            old_symptom.code
+            if old_symptom
+            else None
+        )
+
+        old_category_name = (
+            old_category.name
+            if old_category
+            else None
+        )
+
+        old_department_name = (
+            old_department.name
+            if old_department
+            else None
+        )
+
+        TicketStatusHistory.objects.create(
+            ticket=ticket,
+            event_type=TicketStatusHistory.EventType.SYMPTOM_CODE_CHANGED,
+            old_value=old_symptom_code,
+            new_value=selected_symptom.code,
+            remarks=(
+                f"Category: {old_category_name or '-'} → "
+                f"{selected_symptom.category.name}. "
+                f"IT Department: {old_department_name or '-'} → "
+                f"{new_department.name}."
+            ),
+            created_by=request.user,
+            changed_by=request.user,
+        )
+
+        # ---------------------------------------------------------
+        # HISTORY: PREVIOUS ASSIGNMENT CLEARED
+        # ---------------------------------------------------------
+
+        if old_assigned_to:
+            old_assignee_name = (
+                f"{old_assigned_to.first_name} "
+                f"{old_assigned_to.last_name}"
+            ).strip() or old_assigned_to.username
+
+            TicketStatusHistory.objects.create(
+                ticket=ticket,
+                event_type=TicketStatusHistory.EventType.REASSIGNED,
+                old_value=old_assignee_name,
+                new_value=None,
+                remarks=(
+                    "Previous assignment cleared for automatic "
+                    "reassignment after return approval."
+                ),
+                created_by=request.user,
+                changed_by=request.user,
+            )
+
+        # ---------------------------------------------------------
+        # HISTORY: STATUS CHANGE
+        # ---------------------------------------------------------
+
+        if old_status != ticket.status:
+            TicketStatusHistory.objects.create(
+                ticket=ticket,
+                event_type=TicketStatusHistory.EventType.STATUS_CHANGED,
+                old_value=old_status,
+                new_value=ticket.status,
+                remarks=(
+                    "Ticket moved from Service Desk review "
+                    "back to open status for reassignment."
+                ),
+                created_by=request.user,
+                changed_by=request.user,
+            )
+
+        # ---------------------------------------------------------
+        # APPROVE RETURN REQUEST
+        # ---------------------------------------------------------
+
+        return_request.status = (
+            TicketRequest.RequestStatus.APPROVED
+        )
+
+        return_request.reviewed_by = request.user
+        return_request.reviewed_at = timezone.now()
+        return_request.review_remarks = review_remarks
+
+        return_request.save(
+            update_fields=[
+                "status",
+                "reviewed_by",
+                "reviewed_at",
+                "review_remarks",
+            ]
+        )
+
+        # ---------------------------------------------------------
+        # HISTORY: RETURN APPROVED
+        # ---------------------------------------------------------
+
+        TicketStatusHistory.objects.create(
+            ticket=ticket,
+            event_type=TicketStatusHistory.EventType.RETURN_APPROVED,
+            old_value="pending",
+            new_value="approved",
+            remarks=(
+                review_remarks
+                or "Return request approved."
+            ),
+            created_by=request.user,
+            changed_by=request.user,
+        )
+
+        # ---------------------------------------------------------
+        # AUTOMATIC ASSIGNMENT
+        # ---------------------------------------------------------
+
+        assigned_profile = assign_ticket_automatically(ticket)
+
+        # ---------------------------------------------------------
+        # RESPONSE
+        # ---------------------------------------------------------
+
+        if assigned_profile:
+            message = (
+                "Return request approved and ticket "
+                "routed successfully."
+            )
+        else:
+            message = (
+                "Return request approved and ticket routing "
+                "updated, but no eligible IT Support Specialist "
+                "was available."
+            )
+
+        return Response(
+            {
+                "success": True,
+                "message": message,
+                "request": {
+                    "id": return_request.id,
+                    "status": return_request.status,
+                    "reviewed_at": return_request.reviewed_at,
+                },
+                "ticket": {
+                    "id": ticket.id,
+                    "ticket_code": ticket.ticket_code,
+                    "symptom_code": selected_symptom.code,
+                    "category": selected_symptom.category.name,
+                    "it_department": new_department.name,
+                    "assigned_to": (
+                        assigned_profile.user.user_code
+                        if assigned_profile
+                        else None
+                    ),
+                    "status": ticket.status,
+                    "is_under_review": ticket.is_under_review,
+                },
+            },
+            status=status.HTTP_200_OK,
+        )
+
+
 # class AddTicketAssigneeView(generics.CreateAPIView):
 #     permission_classes = [IsAuthenticated]
 

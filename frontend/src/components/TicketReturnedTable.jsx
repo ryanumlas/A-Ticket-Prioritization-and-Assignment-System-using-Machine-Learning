@@ -81,9 +81,7 @@ export default function TicketReturnedTable({
                                 <tr
                                     key={request.id}
                                     onClick={() =>
-                                        navigate(
-                                            `/ticket/${request.ticket_id}`
-                                        )
+                                        navigate(`/returned-ticket/${request.id}`)
                                     }
                                     className="cursor-pointer border-b border-gray-200 transition-colors hover:bg-gray-50 last:border-b-0"
                                 >

@@ -156,15 +156,13 @@ class AuditLogs(models.Model):
     reference_id = models.CharField(max_length=255, blank=True, null=True)
     remarks = models.TextField(blank=True)
     created_by = models.ForeignKey('User', on_delete=models.SET_NULL, null=True, blank=True, related_name='created_audit_logs')
-    updated_by = models.ForeignKey('User', on_delete=models.SET_NULL, null=True, blank=True, related_name='updated_audit_logs')
     created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
         db_table = 'audit_logs'
 
     def __str__(self):
-        return f"{self.user.username if self.user else 'Unknown User'} - {self.action} at {self.timestamp}"
+        return f"{self.user.username if self.user else 'Unknown User'} - {self.action} at {self.created_at}"
     
 class Notifications(models.Model):
     class NotificationType(models.TextChoices):

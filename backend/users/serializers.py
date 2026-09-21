@@ -4,7 +4,7 @@ from django.contrib.auth import get_user_model
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from django.contrib.auth import authenticate
 from django.db import transaction
-from .models import ITSupportSpecialization, User, ITSupportProfile, UserRoles, UserProfile, Specializations
+from .models import ITSupportSpecialization, User, ITSupportProfile, UserRoles, UserProfile, Specializations, Notifications
 
 class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
 
@@ -148,3 +148,21 @@ class ITSupportSpecializationCreateSerializer(serializers.ModelSerializer):
 
     def get_created_at_formatted(self, obj):
         return timezone.localtime(obj.created_at).strftime("%B %d, %Y %I:%M %p")
+
+
+class NotificationSerializer(serializers.ModelSerializer):
+    ticket_code = serializers.CharField(source="ticket.ticket_code",read_only=True)
+    notification_type_display = serializers.CharField(source="get_notification_type_display",read_only=True)
+
+    class Meta:
+        model = Notifications
+        fields = [
+            "id",
+            "ticket",
+            "ticket_code",
+            "message",
+            "notification_type",
+            "notification_type_display",
+            "is_read",
+            "created_at",
+        ]

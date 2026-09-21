@@ -5,13 +5,11 @@ import api from "../api";
 import {
     Ticket,
     ArrowUpDown,
-    UserRound,
     MessageSquareText,
     Check,
     X,
     ArrowRight,
     Info,
-    Clock3,
 } from "lucide-react";
 
 export default function PriorityRequestDetailsContent() {
@@ -20,7 +18,7 @@ export default function PriorityRequestDetailsContent() {
     const [request, setRequest] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState("");
-    const [remarks, setRemarks] = useState("");
+    const [reviewRemarks, setReviewRemarks] = useState("");
     const [approving, setApproving] = useState(false);
 
     useEffect(() => {
@@ -37,18 +35,22 @@ export default function PriorityRequestDetailsContent() {
             } catch (error) {
                 setError(
                     error.response?.data?.error ||
-                    "Failed to load priority request."
+                        "Failed to load priority request."
                 );
             } finally {
                 setLoading(false);
             }
         };
 
-        fetchPriorityRequest();
+        if (id) {
+            fetchPriorityRequest();
+        }
     }, [id]);
 
     const handleApprove = async () => {
-        if (approving) return;
+        if (approving || request.status !== "pending") {
+            return;
+        }
 
         try {
             setApproving(true);
@@ -56,12 +58,12 @@ export default function PriorityRequestDetailsContent() {
             const response = await api.patch(
                 `/tickets/priority-change-requests/approve/${id}/`,
                 {
-                    review_remarks: remarks,
+                    review_remarks: reviewRemarks.trim(),
                 }
             );
 
             setRequest(response.data.request);
-            setRemarks("");
+            setReviewRemarks("");
 
             toast.success("Priority request approved", {
                 description:
@@ -87,8 +89,8 @@ export default function PriorityRequestDetailsContent() {
                     background: "#ffffff",
                     color: "#000000",
                     border: "1px solid #e5e7eb",
-                    borderRadius: "8px",
-                    padding: "16px 18px",
+                    borderRadius: "10px",
+                    padding: "16px",
                     boxShadow: "0 10px 30px rgba(0, 0, 0, 0.08)",
                 },
             });
@@ -121,57 +123,59 @@ export default function PriorityRequestDetailsContent() {
         return null;
     }
 
-    const requesterName =
-        request.requested_by_first_name &&
-        request.requested_by_last_name
-            ? `${request.requested_by_first_name} ${request.requested_by_last_name}`
-            : "Unknown User";
+    const submittedByName = [
+        request.submitted_by_first_name,
+        request.submitted_by_last_name,
+    ]
+        .filter(Boolean)
+        .join(" ");
 
-    const reviewerName =
-        request.reviewed_by_first_name &&
-        request.reviewed_by_last_name
-            ? `${request.reviewed_by_first_name} ${request.reviewed_by_last_name}`
-            : "Unknown User";
+    const requestedByName = [
+        request.requested_by_first_name,
+        request.requested_by_last_name,
+    ]
+        .filter(Boolean)
+        .join(" ");
 
+    const reviewedByName = [
+        request.reviewed_by_first_name,
+        request.reviewed_by_last_name,
+    ]
+        .filter(Boolean)
+        .join(" ");
+
+    const submittedBy = {
+        name: submittedByName || "Unknown User",
+        user_code: request.submitted_by_user_code,
+        role: request.submitted_by_role,
+        department: request.employee_department,
+    };
+
+    const requestedBy = {
+        name: requestedByName || "Unknown User",
+        user_code: request.requested_by_user_code,
+        role: request.requested_by_role,
+        department: request.it_department,
+    };
+
+    const reviewedBy = {
+        name: reviewedByName || "-",
+        user_code: request.reviewed_by_user_code,
+        role: request.reviewed_by_role,
+    };
+
+    const isApproved = request.status === "approved";
+    const isRejected = request.status === "rejected";
+    const isReviewed = isApproved || isRejected;
     const isPending = request.status === "pending";
-
-    const formatDate = (date) => {
-        if (!date) return "-";
-
-        const formattedDate = new Date(date);
-
-        const datePart = formattedDate.toLocaleDateString("en-US", {
-            month: "short",
-            day: "numeric",
-            year: "numeric",
-        });
-
-        const timePart = formattedDate.toLocaleTimeString("en-US", {
-            hour: "numeric",
-            minute: "2-digit",
-            hour12: true,
-        });
-
-        return `${datePart} • ${timePart}`;
-    };
-
-    const formatStatus = (status) => {
-        return status
-            ?.replaceAll("_", " ")
-            .replace(/\b\w/g, (letter) => letter.toUpperCase());
-    };
 
     return (
         <div className="space-y-4">
-
-            <div className="grid grid-cols-[1.1fr_0.9fr] items-start gap-4">
-
-                {/* Left column */}
+            <div className="grid grid-cols-[1.05fr_0.95fr] items-start gap-4">
+                {/* LEFT COLUMN */}
                 <div className="space-y-4">
-
-                    {/* Ticket Information */}
+                    {/* TICKET INFORMATION */}
                     <div className="overflow-hidden rounded-xl border border-gray-300 bg-white">
-
                         <div className="flex items-start gap-3 border-b border-gray-200 px-5 py-4">
                             <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-gray-100">
                                 <Ticket
@@ -180,146 +184,95 @@ export default function PriorityRequestDetailsContent() {
                                 />
                             </div>
 
-                            <div>
-                                <h2 className="text-base font-semibold text-black">
-                                    Ticket Information
-                                </h2>
+                            <div className="min-w-0 flex-1">
+                                <div className="flex items-center justify-between gap-3">
+                                    <h2 className="text-base font-semibold text-black">
+                                        Ticket Information
+                                    </h2>
+
+                                    <span
+                                        className={`shrink-0 rounded-md border px-2.5 py-1 text-xs font-medium ${getStatusStyle(
+                                            request.status
+                                        )}`}
+                                    >
+                                        {formatStatus(request.status)}
+                                    </span>
+                                </div>
 
                                 <p className="mt-0.5 text-xs text-gray-500">
-                                    Information submitted for the ticket.
+                                    Information submitted by the employee.
                                 </p>
                             </div>
                         </div>
 
                         <div className="divide-y divide-gray-200">
+                            <div className="grid grid-cols-2">
+                                <InfoCell
+                                    label="Ticket Code"
+                                    value={request.ticket_code}
+                                />
 
-                            <div className="grid grid-cols-2 divide-x divide-gray-200">
+                                <InfoCell
+                                    label="Affected Scope"
+                                    value={request.affected_scope}
+                                    bordered
+                                />
+                            </div>
 
-                                <div className="px-5 py-4">
-                                    <p className="text-xs font-medium uppercase text-gray-500">
-                                        Ticket Code
-                                    </p>
+                            <InfoCell
+                                label="Subject"
+                                value={request.subject}
+                            />
 
-                                    <p className="mt-2 text-sm font-medium text-black">
-                                        {request.ticket_code || "-"}
-                                    </p>
+                            <InfoCell
+                                label="Description"
+                                value={request.description}
+                                multiline
+                            />
+
+                            <InfoCell
+                                label="Business Impact"
+                                value={request.business_impact}
+                                multiline
+                            />
+
+                            <div className="px-5 py-4">
+                                <div className="grid grid-cols-2 gap-6">
+                                    <UserCard
+                                        label="Ticket Submitted By"
+                                        user={submittedBy}
+                                    />
+
+                                    <UserCard
+                                        label="Priority Requested By"
+                                        user={requestedBy}
+                                    />
                                 </div>
 
-                                <div className="px-5 py-4">
-                                    <p className="text-xs font-medium uppercase text-gray-500">
-                                        Affected Scope
-                                    </p>
+                                <div className="mt-5 grid grid-cols-2 gap-6 border-t border-gray-200 pt-4">
+                                    <InfoRow
+                                        label="Ticket Submitted At"
+                                        value={formatDate(
+                                            request.submitted_at
+                                        )}
+                                    />
 
-                                    <p className="mt-2 text-sm font-medium text-black">
-                                        {request.affected_scope || "-"}
-                                    </p>
+                                    <InfoRow
+                                        label="Priority Requested At"
+                                        value={formatDate(
+                                            request.requested_at
+                                        )}
+                                    />
                                 </div>
-
                             </div>
-
-                            <div className="px-5 py-4">
-                                <p className="text-xs font-medium uppercase text-gray-500">
-                                    Subject
-                                </p>
-
-                                <p className="mt-2 text-sm font-medium text-black">
-                                    {request.subject || "-"}
-                                </p>
-                            </div>
-
-                            <div className="px-5 py-4">
-                                <p className="text-xs font-medium uppercase text-gray-500">
-                                    Description
-                                </p>
-
-                                <p className="mt-2 whitespace-pre-wrap break-words text-sm leading-6 text-black">
-                                    {request.description ||
-                                        "No description provided."}
-                                </p>
-                            </div>
-
-                            <div className="px-5 py-4">
-                                <p className="text-xs font-medium uppercase text-gray-500">
-                                    Business Impact
-                                </p>
-
-                                <p className="mt-2 whitespace-pre-wrap break-words text-sm leading-6 text-black">
-                                    {request.business_impact ||
-                                        "No business impact provided."}
-                                </p>
-                            </div>
-
                         </div>
-
                     </div>
-
-                    {/* Requester Information */}
-                    <div className="overflow-hidden rounded-xl border border-gray-300 bg-white">
-
-                        <div className="flex items-start gap-3 border-b border-gray-200 px-5 py-4">
-                            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-gray-100">
-                                <UserRound
-                                    size={18}
-                                    className="text-gray-600"
-                                />
-                            </div>
-
-                            <div>
-                                <h2 className="text-base font-semibold text-black">
-                                    Requester Information
-                                </h2>
-
-                                <p className="mt-0.5 text-xs text-gray-500">
-                                    Details of the IT Support staff who submitted the request.
-                                </p>
-                            </div>
-                        </div>
-
-                        <div className="px-5 py-5">
-                            <div className="grid grid-cols-2 gap-x-10 gap-y-5">
-
-                                <InfoRow
-                                    label="Name"
-                                    value={requesterName}
-                                />
-
-                                <InfoRow
-                                    label="User ID"
-                                    value={
-                                        request.requested_by_user_code ||
-                                        "-"
-                                    }
-                                />
-
-                                <InfoRow
-                                    label="IT Department"
-                                    value={
-                                        request.it_department ||
-                                        "No Department"
-                                    }
-                                />
-
-                                <InfoRow
-                                    label="Office Location"
-                                    value={
-                                        request.office_location ||
-                                        "No Office Location"
-                                    }
-                                />
-
-                            </div>
-                        </div>
-
-                    </div>
-
                 </div>
 
-                {/* Right column */}
+                {/* RIGHT COLUMN */}
                 <div className="space-y-4">
-
-                    {/* Priority Change */}
+                    {/* PRIORITY CHANGE */}
                     <div className="overflow-hidden rounded-xl border border-gray-300 bg-white">
-
                         <div className="flex items-start gap-3 border-b border-gray-200 px-5 py-4">
                             <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-gray-100">
                                 <ArrowUpDown
@@ -334,13 +287,13 @@ export default function PriorityRequestDetailsContent() {
                                 </h2>
 
                                 <p className="mt-0.5 text-xs text-gray-500">
-                                    Current ticket priority and the requested priority.
+                                    Current ticket priority and the requested
+                                    priority.
                                 </p>
                             </div>
                         </div>
 
                         <div className="flex items-center gap-4 p-5">
-
                             <PriorityBox
                                 title="Current Priority"
                                 priority={request.current_priority}
@@ -355,14 +308,11 @@ export default function PriorityRequestDetailsContent() {
                                 title="Requested Priority"
                                 priority={request.requested_priority}
                             />
-
                         </div>
-
                     </div>
 
-                    {/* Reason for Request */}
+                    {/* REASON FOR REQUEST */}
                     <div className="overflow-hidden rounded-xl border border-gray-300 bg-white">
-
                         <div className="flex items-start gap-3 border-b border-gray-200 px-5 py-4">
                             <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-gray-100">
                                 <MessageSquareText
@@ -377,13 +327,13 @@ export default function PriorityRequestDetailsContent() {
                                 </h2>
 
                                 <p className="mt-0.5 text-xs text-gray-500">
-                                    Reason provided by IT Support for the priority change.
+                                    Reason provided by IT Support for the
+                                    priority change.
                                 </p>
                             </div>
                         </div>
 
                         <div className="p-5">
-
                             <div className="rounded-lg border border-gray-200 bg-gray-50 px-4 py-3">
                                 <p className="whitespace-pre-wrap break-words text-sm leading-6 text-black">
                                     {request.reason ||
@@ -391,203 +341,366 @@ export default function PriorityRequestDetailsContent() {
                                 </p>
                             </div>
 
+                            <div className="my-4 border-t border-gray-200" />
 
-                                    <div className="my-4 border-t border-gray-200" />
+                            <div className="flex items-center gap-3 pt-2">
+                                <button
+                                    type="button"
+                                    disabled={
+                                        approving ||
+                                        !isPending
+                                    }
+                                    className="flex h-10 flex-1 cursor-pointer items-center justify-center gap-2 rounded-lg border border-red-400 bg-white px-4 py-3 text-sm font-medium text-red-600 transition-colors hover:bg-red-50 disabled:cursor-not-allowed disabled:border-gray-300 disabled:bg-gray-50 disabled:text-gray-400"
+                                >
+                                    <X size={17} />
 
-                                    <div className="flex items-center gap-3 pt-2">
-                                        <button
-                                            type="button"
-                                            onClick={handleApprove}
-                                            disabled={
-                                                approving ||
-                                                !isPending
-                                            }
-                                            className="flex h-10 flex-1 cursor-pointer items-center justify-center gap-2 rounded-lg bg-[#4C4CF9] px-4 py-3 text-sm font-medium text-white transition-colors hover:bg-[#3f3fe0] disabled:cursor-not-allowed disabled:bg-gray-300"
-                                        >
-                                            <Check size={17} />
+                                    {isRejected
+                                        ? "Rejected"
+                                        : "Reject Request"}
+                                </button>
 
-                                            {approving
-                                                ? "Approving..."
-                                                : request.status === "approved"
-                                                ? "Approved"
-                                                : "Approve Request"}
-                                        </button>
+                                <button
+                                    type="button"
+                                    onClick={handleApprove}
+                                    disabled={
+                                        approving ||
+                                        !isPending
+                                    }
+                                    className="flex h-10 flex-1 cursor-pointer items-center justify-center gap-2 rounded-lg bg-[#4C4CF9] px-4 py-3 text-sm font-medium text-white transition-colors hover:bg-[#3f3fe0] disabled:cursor-not-allowed disabled:bg-gray-300"
+                                >
+                                    <Check size={17} />
 
-                                        <button
-                                            type="button"
-                                            disabled={
-                                                approving ||
-                                                !isPending
-                                            }
-                                            className="flex h-10 flex-1 cursor-pointer items-center justify-center gap-2 rounded-lg border border-red-400 bg-white px-4 py-3 text-sm font-medium text-red-600 transition-colors hover:bg-red-50 disabled:cursor-not-allowed disabled:border-gray-300 disabled:bg-gray-50 disabled:text-gray-400"
-                                        >
-                                            <X size={17} />
+                                    {approving
+                                        ? "Approving..."
+                                        : isApproved
+                                        ? "Approved"
+                                        : "Approve Request"}
+                                </button>
+                            </div>
 
-                                            {request.status === "rejected"
-                                                ? "Rejected"
-                                                : "Reject Request"}
-                                        </button>
+                            {!isReviewed && (
+                                <div className="mt-4 flex items-start gap-2.5 rounded-lg border border-blue-200 bg-blue-50 px-3.5 py-3">
+                                    <Info
+                                        size={17}
+                                        className="mt-0.5 shrink-0 text-blue-600"
+                                    />
+
+                                    <p className="text-xs leading-5 text-blue-700">
+                                        Approving this request will update the
+                                        ticket's priority and recalculate the
+                                        SLA deadlines based on the new
+                                        priority.
+                                    </p>
+                                </div>
+                            )}
+
+                            {isReviewed && (
+                                <div
+                                    className={`mt-4 flex items-center gap-3 rounded-lg border px-4 py-3 ${
+                                        isApproved
+                                            ? "border-green-200 bg-green-50"
+                                            : "border-red-200 bg-red-50"
+                                    }`}
+                                >
+                                    <div
+                                        className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full ${
+                                            isApproved
+                                                ? "bg-green-100"
+                                                : "bg-red-100"
+                                        }`}
+                                    >
+                                        {isApproved ? (
+                                            <Check
+                                                size={16}
+                                                className="text-green-600"
+                                            />
+                                        ) : (
+                                            <X
+                                                size={16}
+                                                className="text-red-600"
+                                            />
+                                        )}
                                     </div>
 
-                                    <div className="mt-4 flex items-start gap-2.5 rounded-lg border border-blue-200 bg-blue-50 px-3.5 py-3">
-                                        <Info
-                                            size={17}
-                                            className="mt-0.5 shrink-0 text-blue-600"
-                                        />
+                                    <div>
+                                        <p
+                                            className={`text-sm font-semibold ${
+                                                isApproved
+                                                    ? "text-green-800"
+                                                    : "text-red-800"
+                                            }`}
+                                        >
+                                            Review Completed
+                                        </p>
 
-                                        <p className="text-xs leading-5 text-blue-700">
-                                            Approving this request will update the
-                                            ticket's priority and recalculate the SLA
-                                            deadlines based on the new priority.
+                                        <p
+                                            className={`mt-0.5 text-xs ${
+                                                isApproved
+                                                    ? "text-green-700"
+                                                    : "text-red-700"
+                                            }`}
+                                        >
+                                            This priority request has already
+                                            been{" "}
+                                            {isApproved
+                                                ? "approved."
+                                                : "rejected."}
                                         </p>
                                     </div>
-
-
+                                </div>
+                            )}
                         </div>
-
                     </div>
-
                 </div>
-
             </div>
 
-            {/* Review Information / Remarks */}
-            {isPending ? (
-                <div className="overflow-hidden rounded-xl border border-gray-300 bg-white">
+            {/* REVIEW REMARKS */}
+            <div className="overflow-hidden rounded-xl border border-gray-300 bg-white">
+                <div className="flex items-start gap-3 border-b border-gray-200 px-5 py-4">
+                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-gray-100">
+                        <MessageSquareText
+                            size={18}
+                            className="text-gray-600"
+                        />
+                    </div>
 
-                    <div className="flex items-start gap-3 border-b border-gray-200 px-5 py-4">
-                        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-gray-100">
-                            <MessageSquareText
-                                size={18}
-                                className="text-gray-600"
-                            />
-                        </div>
-
-                        <div>
-                            <h2 className="text-base font-semibold text-black">
-                                Review Remarks
-                                <span className="ml-1 font-normal text-gray-500">
+                    <div>
+                        <h2 className="text-base font-semibold text-black">
+                            Review Remarks
+                            {!isReviewed && (
+                                <span className="font-normal text-gray-500">
+                                    {" "}
                                     (Optional)
                                 </span>
-                            </h2>
+                            )}
+                        </h2>
 
-                            <p className="mt-0.5 text-xs text-gray-500">
-                                Add any remarks regarding your decision.
-                            </p>
-                        </div>
+                        <p className="mt-0.5 text-xs text-gray-500">
+                            {isReviewed
+                                ? "Details of the Service Desk review."
+                                : "Add any remarks regarding your decision."}
+                        </p>
                     </div>
-
-                    <div className="p-5">
-
-                        <textarea
-                            id="review-remarks"
-                            rows={4}
-                            maxLength={500}
-                            value={remarks}
-                            onChange={(e) =>
-                                setRemarks(e.target.value)
-                            }
-                            placeholder="Enter your remarks here..."
-                            className="w-full resize-none rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm text-black outline-none transition placeholder:text-gray-400 focus:border-[#4C4CF9] focus:ring-2 focus:ring-[#4C4CF9]/10"
-                        />
-
-                        <div className="mt-1 text-right text-xs text-gray-400">
-                            {remarks.length}/500
-                        </div>
-
-                    </div>
-
                 </div>
-            ) : (
-                <div className="overflow-hidden rounded-xl border border-gray-300 bg-white">
 
-                    <div className="flex items-start gap-3 border-b border-gray-200 px-5 py-4">
-                        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-gray-100">
-                            <Check
-                                size={18}
-                                className="text-gray-600"
-                            />
-                        </div>
-
-                        <div>
-                            <h2 className="text-base font-semibold text-black">
-                                Review Information
-                            </h2>
-
-                            <p className="mt-0.5 text-xs text-gray-500">
-                                Details of the Service Desk review.
-                            </p>
-                        </div>
-                    </div>
-
+                {isReviewed ? (
                     <div className="p-5">
+                        <div className="grid grid-cols-2 gap-6">
+                            {/* DECISION */}
+                            <div>
+                                <p className="text-xs font-medium uppercase text-gray-500">
+                                    Decision
+                                </p>
 
-                        <div className="grid grid-cols-2 gap-x-10 gap-y-5">
+                                <div className="mt-2 flex items-center gap-2">
+                                    <div
+                                        className={`flex h-7 w-7 items-center justify-center rounded-full ${
+                                            isApproved
+                                                ? "bg-green-100"
+                                                : "bg-red-100"
+                                        }`}
+                                    >
+                                        {isApproved ? (
+                                            <Check
+                                                size={15}
+                                                className="text-green-600"
+                                            />
+                                        ) : (
+                                            <X
+                                                size={15}
+                                                className="text-red-600"
+                                            />
+                                        )}
+                                    </div>
 
-                            <InfoRow
-                                label="Reviewed By"
-                                value={reviewerName}
-                            />
+                                    <span
+                                        className={`text-sm font-semibold ${
+                                            isApproved
+                                                ? "text-green-700"
+                                                : "text-red-700"
+                                        }`}
+                                    >
+                                        {isApproved
+                                            ? "Approved"
+                                            : "Rejected"}
+                                    </span>
+                                </div>
+                            </div>
 
-                            <InfoRow
-                                label="User ID"
-                                value={
-                                    request.reviewed_by_user_code ||
-                                    "-"
-                                }
-                            />
+                            {/* REVIEWED BY */}
+                            <div>
+                                <p className="text-xs font-medium uppercase text-gray-500">
+                                    Reviewed By
+                                </p>
 
+                                <div className="mt-2 flex items-center gap-3">
+                                    <Avatar
+                                        name={reviewedBy.name}
+                                    />
+
+                                    <div className="min-w-0">
+                                        <p className="truncate text-sm font-semibold text-black">
+                                            {reviewedBy.name || "-"}
+                                        </p>
+
+                                        <p className="mt-0.5 truncate text-xs text-gray-500">
+                                            {reviewedBy.user_code || "-"}
+                                            {" • "}
+                                            {reviewedBy.role || "-"}
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* REVIEWED AT */}
+                        <div className="mt-5 border-t border-gray-200 pt-4">
                             <InfoRow
                                 label="Reviewed At"
-                                value={formatDate(request.reviewed_at)}
+                                value={formatDate(
+                                    request.reviewed_at
+                                )}
                             />
-
-                            <InfoRow
-                                label="Decision"
-                                value={formatStatus(request.status)}
-                            />
-
                         </div>
 
-                        <div className="my-5 border-t border-gray-200" />
-
-                        <div>
+                        {/* REVIEW REMARKS */}
+                        <div className="mt-5 border-t border-gray-200 pt-4">
                             <p className="text-xs font-medium uppercase text-gray-500">
                                 Review Remarks
                             </p>
 
                             <div className="mt-2 rounded-lg border border-gray-200 bg-gray-50 px-4 py-3">
                                 <p className="whitespace-pre-wrap break-words text-sm leading-6 text-black">
-                                    {request.review_remarks ||
-                                        "No remarks provided."}
+                                    {request.review_remarks || "-"}
                                 </p>
                             </div>
                         </div>
-
                     </div>
+                ) : (
+                    <div className="p-5">
+                        <textarea
+                            rows={4}
+                            maxLength={500}
+                            value={reviewRemarks}
+                            onChange={(e) =>
+                                setReviewRemarks(e.target.value)
+                            }
+                            placeholder="Enter your remarks here..."
+                            className="w-full resize-none rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm text-black outline-none transition placeholder:text-gray-400 focus:border-[#4C4CF9] focus:ring-2 focus:ring-[#4C4CF9]/10"
+                        />
 
-                </div>
-            )}
-
+                        <div className="mt-1 text-right text-xs text-gray-400">
+                            {reviewRemarks.length}/500
+                        </div>
+                    </div>
+                )}
+            </div>
         </div>
     );
 }
 
-function InfoRow({
+function InfoCell({
     label,
     value,
+    bordered = false,
+    multiline = false,
 }) {
     return (
-        <div className="grid grid-cols-[115px_1fr] items-center gap-3">
-            <span className="text-xs font-medium uppercase text-gray-500">
+        <div
+            className={`px-5 py-4 ${
+                bordered ? "border-l border-gray-200" : ""
+            }`}
+        >
+            <p className="text-xs font-medium uppercase text-gray-500">
                 {label}
-            </span>
+            </p>
 
-            <span className="text-sm font-medium text-black">
-                {value}
-            </span>
+            <p
+                className={`mt-2 whitespace-pre-wrap break-words text-sm text-black ${
+                    multiline ? "leading-6" : "font-medium"
+                }`}
+            >
+                {value || "-"}
+            </p>
         </div>
     );
+}
+
+function InfoRow({ label, value }) {
+    return (
+        <div className="min-w-0">
+            <p className="text-xs font-medium uppercase text-gray-500">
+                {label}
+            </p>
+
+            <p className="mt-2 text-sm font-medium text-black">
+                {value || "-"}
+            </p>
+        </div>
+    );
+}
+
+function UserCard({ label, user }) {
+    return (
+        <div className="min-w-0">
+            <p className="text-xs font-medium uppercase text-gray-500">
+                {label}
+            </p>
+
+            {!user?.name ? (
+                <p className="mt-3 text-sm text-gray-400">
+                    -
+                </p>
+            ) : (
+                <div className="mt-3 flex items-center gap-3">
+                    <Avatar name={user.name} />
+
+                    <div className="min-w-0">
+                        <p className="truncate text-sm font-semibold text-black">
+                            {user.name}
+                        </p>
+
+                        <p className="mt-1 truncate text-xs text-gray-500">
+                            {user.user_code || "-"}
+                            {" • "}
+                            {user.role || "-"}
+                        </p>
+
+                        {user.department && (
+                            <p className="mt-0.5 truncate text-xs text-gray-500">
+                                {user.department}
+                            </p>
+                        )}
+                    </div>
+                </div>
+            )}
+        </div>
+    );
+}
+
+function Avatar({ name }) {
+    const initials = getInitials(name);
+
+    return (
+        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#4C4CF9]/10 text-xs font-semibold text-[#4C4CF9]">
+            {initials}
+        </div>
+    );
+}
+
+function getInitials(name) {
+    if (!name) {
+        return "?";
+    }
+
+    return name
+        .trim()
+        .split(/\s+/)
+        .slice(0, 2)
+        .map((part) =>
+            part.charAt(0).toUpperCase()
+        )
+        .join("");
 }
 
 function PriorityBox({
@@ -631,4 +744,46 @@ function PriorityBox({
             </p>
         </div>
     );
+}
+
+function formatDate(value) {
+    if (!value) {
+        return "-";
+    }
+
+    return new Date(value).toLocaleString("en-US", {
+        month: "short",
+        day: "numeric",
+        year: "numeric",
+        hour: "numeric",
+        minute: "2-digit",
+    });
+}
+
+function formatStatus(status = "") {
+    if (!status) {
+        return "-";
+    }
+
+    return status
+        .replaceAll("_", " ")
+        .replace(/\b\w/g, (letter) =>
+            letter.toUpperCase()
+        );
+}
+
+function getStatusStyle(status = "") {
+    switch (status.toLowerCase()) {
+        case "pending":
+            return "border-amber-300 bg-amber-50 text-amber-700";
+
+        case "approved":
+            return "border-green-300 bg-green-50 text-green-700";
+
+        case "rejected":
+            return "border-red-300 bg-red-50 text-red-700";
+
+        default:
+            return "border-gray-300 bg-gray-100 text-gray-700";
+    }
 }

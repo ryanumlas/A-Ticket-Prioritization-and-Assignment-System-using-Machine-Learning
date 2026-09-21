@@ -162,9 +162,7 @@ print("==============================")
 print(classification_report(y_test, predictions, digits=4))
 
 
-# =========================================================
 # MISCLASSIFIED TEST TICKETS
-# =========================================================
 
 errors = pd.DataFrame({
     "text": list(X_test),
@@ -185,9 +183,7 @@ for _, row in errors.iterrows():
     print("-" * 80)
 
 
-# =========================================================
 # ERROR PAIR SUMMARY
-# =========================================================
 
 print("\n==============================================")
 print("MISCLASSIFICATION SUMMARY")
@@ -203,9 +199,7 @@ else:
     print("No misclassified tickets.")
 
 
-# =========================================================
 # CONFIDENCE THRESHOLD TEST
-# =========================================================
 
 confidences = probabilities.max(axis=1)
 thresholds = [0.40, 0.50, 0.60, 0.65, 0.70, 0.75, 0.80, 0.85, 0.90]

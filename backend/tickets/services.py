@@ -577,62 +577,287 @@ def get_current_workload(profile):
 
 
 def get_last_assigned_at(profile):
-    return profile.last_assigned_at or datetime.min.replace(tzinfo=dt_timezone.utc)
+    return (
+        profile.last_assigned_at
+        or datetime.min.replace(tzinfo=dt_timezone.utc)
+    )
 
 
 def get_eligible_technicians(ticket):
-    required_specialization = ticket.symptom_code.required_specialization
+    print("\n[AUTO-ASSIGN] ================================")
+    print("[AUTO-ASSIGN] CHECKING ELIGIBLE TECHNICIANS")
+    print(f"[AUTO-ASSIGN] Ticket ID: {ticket.id}")
+    print(f"[AUTO-ASSIGN] Ticket Code: {ticket.ticket_code}")
+    print(f"[AUTO-ASSIGN] Ticket Status: {ticket.status}")
+    print(
+        f"[AUTO-ASSIGN] IT Department: "
+        f"{ticket.it_department.name if ticket.it_department else None}"
+    )
+    print(
+        f"[AUTO-ASSIGN] IT Department ID: "
+        f"{ticket.it_department_id}"
+    )
 
-    profiles = ITSupportProfile.objects.filter(
-        it_department=ticket.it_department,
-        availability_status=ITSupportProfile.AvailabilityStatus.available,
-        specializations__specialization=required_specialization,
-    ).distinct()
+    if ticket.symptom_code:
+        print(
+            f"[AUTO-ASSIGN] Symptom Code: "
+            f"{ticket.symptom_code.code}"
+        )
+        print(
+            f"[AUTO-ASSIGN] Required Specialization: "
+            f"{ticket.symptom_code.required_specialization}"
+        )
+        print(
+            f"[AUTO-ASSIGN] Required Specialization ID: "
+            f"{ticket.symptom_code.required_specialization_id}"
+        )
+    else:
+        print("[AUTO-ASSIGN] Symptom Code: NONE")
+
+    required_specialization = (
+        ticket.symptom_code.required_specialization
+        if ticket.symptom_code
+        else None
+    )
+
+    if not ticket.it_department:
+        print(
+            "[AUTO-ASSIGN] STOP: Ticket has no IT department."
+        )
+        return []
+
+    if not ticket.symptom_code:
+        print(
+            "[AUTO-ASSIGN] STOP: Ticket has no symptom code."
+        )
+        return []
+
+    print("\n[AUTO-ASSIGN] ---- ALL IT SUPPORT PROFILES ----")
+
+    all_profiles = (
+        ITSupportProfile.objects
+        .filter(
+            it_department=ticket.it_department
+        )
+        .select_related("user", "it_department")
+        .prefetch_related("specializations__specialization")
+    )
+
+    print(
+        f"[AUTO-ASSIGN] Profiles in department: "
+        f"{all_profiles.count()}"
+    )
+
+    for profile in all_profiles:
+        full_name = (
+            f"{profile.user.first_name} "
+            f"{profile.user.last_name}"
+        ).strip() or profile.user.username
+
+        print(
+            f"[AUTO-ASSIGN] TECH: {full_name} "
+            f"| User ID={profile.user_id} "
+            f"| Profile ID={profile.id}"
+        )
+
+        print(
+            f"[AUTO-ASSIGN]   Department="
+            f"{profile.it_department.name if profile.it_department else None}"
+        )
+
+        print(
+            f"[AUTO-ASSIGN]   Availability="
+            f"{profile.availability_status}"
+        )
+
+        print(
+            f"[AUTO-ASSIGN]   Workload Limit="
+            f"{profile.workload_limit}"
+        )
+
+        print(
+            f"[AUTO-ASSIGN]   Last Assigned="
+            f"{profile.last_assigned_at}"
+        )
+
+        specializations = list(
+            profile.specializations.all()
+        )
+
+        if not specializations:
+            print(
+                "[AUTO-ASSIGN]   Specializations=NONE"
+            )
+        else:
+            for specialization in specializations:
+                print(
+                    "[AUTO-ASSIGN]   Specialization="
+                    f"{specialization.specialization}"
+                    f" | ID="
+                    f"{specialization.specialization_id}"
+                )
+
+        workload = get_current_workload(profile)
+
+        print(
+            f"[AUTO-ASSIGN]   Current Workload="
+            f"{workload}"
+        )
+
+    print("\n[AUTO-ASSIGN] ---- FILTERED CANDIDATES ----")
+
+    profiles = (
+        ITSupportProfile.objects
+        .filter(
+            it_department=ticket.it_department,
+            availability_status=(
+                ITSupportProfile.AvailabilityStatus.available
+            ),
+            specializations__specialization=(
+                required_specialization
+            ),
+        )
+        .distinct()
+        .select_related("user", "it_department")
+    )
+
+    print(
+        f"[AUTO-ASSIGN] Matching department + "
+        f"availability + specialization: "
+        f"{profiles.count()}"
+    )
 
     eligible = []
 
     for profile in profiles:
         workload = get_current_workload(profile)
 
+        full_name = (
+            f"{profile.user.first_name} "
+            f"{profile.user.last_name}"
+        ).strip() or profile.user.username
+
+        print(
+            f"[AUTO-ASSIGN] Candidate: {full_name}"
+        )
+
+        print(
+            f"[AUTO-ASSIGN]   Workload: "
+            f"{workload}/{profile.workload_limit}"
+        )
+
         if profile.workload_limit <= 0:
+            print(
+                "[AUTO-ASSIGN]   REJECTED: "
+                "Workload limit is 0."
+            )
             continue
 
         if workload >= profile.workload_limit:
+            print(
+                "[AUTO-ASSIGN]   REJECTED: "
+                "Workload limit reached."
+            )
             continue
+
+        print(
+            "[AUTO-ASSIGN]   ACCEPTED"
+        )
 
         eligible.append({
             "profile": profile,
             "current_workload": workload,
-            "workload_ratio": workload / profile.workload_limit,
-            "last_assigned_at": get_last_assigned_at(profile),
+            "workload_ratio": (
+                workload / profile.workload_limit
+            ),
+            "last_assigned_at": get_last_assigned_at(
+                profile
+            ),
         })
+
+    print(
+        f"\n[AUTO-ASSIGN] FINAL ELIGIBLE COUNT: "
+        f"{len(eligible)}"
+    )
 
     return eligible
 
 
 def find_best_technician(ticket):
+    print("\n[AUTO-ASSIGN] FINDING BEST TECHNICIAN")
+
     eligible = get_eligible_technicians(ticket)
 
     if not eligible:
+        print(
+            "[AUTO-ASSIGN] STOP: No eligible technicians."
+        )
         return None
 
-    eligible.sort(key=lambda tech: (
-        tech["workload_ratio"],
-        tech["current_workload"],
-        tech["last_assigned_at"],
-        tech["profile"].id,
-    ))
+    eligible.sort(
+        key=lambda tech: (
+            tech["workload_ratio"],
+            tech["current_workload"],
+            tech["last_assigned_at"],
+            tech["profile"].id,
+        )
+    )
 
-    return eligible[0]
+    best = eligible[0]
+
+    profile = best["profile"]
+
+    full_name = (
+        f"{profile.user.first_name} "
+        f"{profile.user.last_name}"
+    ).strip() or profile.user.username
+
+    print(
+        f"[AUTO-ASSIGN] SELECTED: {full_name}"
+    )
+    print(
+        f"[AUTO-ASSIGN] User ID: {profile.user_id}"
+    )
+    print(
+        f"[AUTO-ASSIGN] Profile ID: {profile.id}"
+    )
+
+    return best
+
 
 def assign_ticket_automatically(ticket):
+    print("\n[AUTO-ASSIGN] ################################")
+    print("[AUTO-ASSIGN] START AUTO ASSIGNMENT")
+    print(f"[AUTO-ASSIGN] Ticket ID={ticket.id}")
+    print(f"[AUTO-ASSIGN] Ticket Code={ticket.ticket_code}")
+    print(f"[AUTO-ASSIGN] Status={ticket.status}")
+    print(
+        f"[AUTO-ASSIGN] Assigned To="
+        f"{ticket.assigned_to_id}"
+    )
+    print(
+        f"[AUTO-ASSIGN] Under Review="
+        f"{ticket.is_under_review}"
+    )
+
     if ticket.is_under_review:
+        print(
+            "[AUTO-ASSIGN] STOP: Ticket is under review."
+        )
         return None
 
     if ticket.status == Ticket.TicketStatus.UNDER_REVIEW:
+        print(
+            "[AUTO-ASSIGN] STOP: Ticket status is "
+            "UNDER_REVIEW."
+        )
         return None
 
     if ticket.assigned_to:
+        print(
+            "[AUTO-ASSIGN] STOP: Ticket already has "
+            f"assigned_to={ticket.assigned_to_id}"
+        )
         return None
 
     if ticket.status in [
@@ -641,28 +866,60 @@ def assign_ticket_automatically(ticket):
         Ticket.TicketStatus.CANCELLED,
         Ticket.TicketStatus.RETURNED,
     ]:
+        print(
+            "[AUTO-ASSIGN] STOP: Ticket status does not "
+            "allow assignment."
+        )
         return None
 
     best = find_best_technician(ticket)
 
     if not best:
+        print(
+            "[AUTO-ASSIGN] STOP: No eligible technician "
+            "was found."
+        )
+        print("[AUTO-ASSIGN] ################################\n")
         return None
 
     profile = best["profile"]
+
     old_status = ticket.status
+
+    print(
+        f"[AUTO-ASSIGN] ASSIGNING USER ID="
+        f"{profile.user_id}"
+    )
 
     ticket.assigned_to = profile.user
     ticket.status = Ticket.TicketStatus.IN_PROGRESS
-    ticket.save(update_fields=["assigned_to", "status", "updated_at"])
+
+    ticket.save(
+        update_fields=[
+            "assigned_to",
+            "status",
+            "updated_at",
+        ]
+    )
 
     profile.last_assigned_at = timezone.now()
-    profile.save(update_fields=["last_assigned_at"])
 
-    full_name = f"{profile.user.first_name} {profile.user.last_name}".strip() or profile.user.username
+    profile.save(
+        update_fields=[
+            "last_assigned_at"
+        ]
+    )
+
+    full_name = (
+        f"{profile.user.first_name} "
+        f"{profile.user.last_name}"
+    ).strip() or profile.user.username
 
     TicketStatusHistory.objects.create(
         ticket=ticket,
-        event_type=TicketStatusHistory.EventType.ASSIGNED,
+        event_type=(
+            TicketStatusHistory.EventType.ASSIGNED
+        ),
         old_value=None,
         new_value=full_name,
         changed_by=None,
@@ -672,12 +929,22 @@ def assign_ticket_automatically(ticket):
     if old_status != ticket.status:
         TicketStatusHistory.objects.create(
             ticket=ticket,
-            event_type=TicketStatusHistory.EventType.STATUS_CHANGED,
+            event_type=(
+                TicketStatusHistory.EventType.STATUS_CHANGED
+            ),
             old_value=old_status,
             new_value=ticket.status,
             changed_by=None,
             created_by=None,
         )
+
+    print(
+        f"[AUTO-ASSIGN] SUCCESS: Assigned to {full_name}"
+    )
+    print(
+        f"[AUTO-ASSIGN] New Status={ticket.status}"
+    )
+    print("[AUTO-ASSIGN] ################################\n")
 
     return profile
 # WAG NA TO PANGET PAG SCORING

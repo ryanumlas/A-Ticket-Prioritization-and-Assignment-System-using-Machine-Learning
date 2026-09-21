@@ -1,16 +1,18 @@
 import { useState } from "react";
 import {
-    Contact,
     CircleAlert,
     ClipboardCheck,
     Ticket,
     TrendingUp,
     Pencil,
     Search,
+    Check,
+    CheckCircle2,
 } from "lucide-react";
 import SymptomCodeSheet from "./SymptomCodeSheet";
 import RemarksModal from "../RemarksModal";
 import { toast } from "sonner";
+import { formatDate } from "../../utils/formatDate";
 import { useNavigate } from "react-router-dom";
 import api from "/src/api";
 
@@ -31,12 +33,14 @@ export default function LowConfidenceReview({ flag }) {
 
     const openOverrideModal = () => {
         if (!selectedSymptom) return;
+
         setRemarks("");
         setReviewAction("override");
     };
 
     const closeReviewModal = () => {
         if (accepting || approving) return;
+
         setReviewAction(null);
         setRemarks("");
     };
@@ -70,8 +74,6 @@ export default function LowConfidenceReview({ flag }) {
                 },
             });
         } catch (error) {
-            console.error(error);
-
             toast.error("Unable to accept recommendation", {
                 description:
                     error.response?.data?.message ||
@@ -123,8 +125,6 @@ export default function LowConfidenceReview({ flag }) {
                 },
             });
         } catch (error) {
-            console.error(error);
-
             toast.error("Unable to approve override", {
                 description:
                     error.response?.data?.message ||
@@ -189,14 +189,16 @@ export default function LowConfidenceReview({ flag }) {
                 to{" "}
                 <span className="font-semibold">
                     {selectedSymptom || "-"}
-                </span>.
+                </span>
+                .
             </>
         ) : (
             <>
                 You are accepting the model&apos;s recommended symptom code{" "}
                 <span className="font-semibold">
                     {flag.predicted_symptom_code || "-"}
-                </span>.
+                </span>
+                .
             </>
         );
 
@@ -205,20 +207,37 @@ export default function LowConfidenceReview({ flag }) {
             ? "Confirm Override"
             : "Confirm Review";
 
+    const submittedByName =
+        `${flag.first_name || ""} ${flag.last_name || ""}`.trim();
+
     return (
         <>
-            <div className="space-y-5">
-                <div className="grid grid-cols-1 items-start gap-5 xl:grid-cols-[1.35fr_1fr]">
-                    <div className="max-h-[720px] overflow-y-auto rounded-md border border-gray-300 bg-white [&::-webkit-scrollbar]:w-1 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-transparent hover:[&::-webkit-scrollbar-thumb]:bg-gray-300">
-                        <div className="flex items-center gap-3 border-b border-gray-300 px-6 py-4">
-                            <div className="flex h-9 w-9 items-center justify-center rounded-md bg-gray-100">
-                                <Ticket size={19} className="text-black" />
+            <div className="space-y-4">
+                <div className="grid grid-cols-[1.05fr_0.95fr] items-start gap-4">
+                    {/* TICKET INFORMATION */}
+                    <div className="overflow-hidden rounded-xl border border-gray-300 bg-white">
+                        <div className="flex items-start gap-3 border-b border-gray-200 px-5 py-4">
+                            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-gray-100">
+                                <Ticket
+                                    size={18}
+                                    className="text-gray-600"
+                                />
                             </div>
 
-                            <div>
-                                <h2 className="font-semibold text-black">
-                                    Ticket Information
-                                </h2>
+                            <div className="min-w-0 flex-1">
+                                <div className="flex items-center justify-between gap-3">
+                                    <h2 className="text-base font-semibold text-black">
+                                        Ticket Information
+                                    </h2>
+
+                                    <span
+                                        className={`shrink-0 rounded-md border px-2.5 py-1 text-xs font-medium ${getStatusStyle(
+                                            flag.status
+                                        )}`}
+                                    >
+                                        {formatStatus(flag.status)}
+                                    </span>
+                                </div>
 
                                 <p className="mt-0.5 text-xs text-gray-500">
                                     Information submitted by the employee.
@@ -226,146 +245,101 @@ export default function LowConfidenceReview({ flag }) {
                             </div>
                         </div>
 
-                        <div className="grid grid-cols-1 border-b border-gray-300 sm:grid-cols-2">
-                            <div className="border-b border-gray-300 px-6 py-4 sm:border-b-0 sm:border-r">
-                                <p className="text-xs font-semibold uppercase text-gray-500">
-                                    Ticket Code
-                                </p>
+                        <div className="divide-y divide-gray-200">
+                            <div className="grid grid-cols-2">
+                                <InfoCell
+                                    label="Ticket Code"
+                                    value={flag.ticket_code}
+                                />
 
-                                <p className="mt-2 text-sm font-medium text-black">
-                                    {flag.ticket_code || "-"}
-                                </p>
+                                <InfoCell
+                                    label="Affected Scope"
+                                    value={flag.affected_scope}
+                                    bordered
+                                />
                             </div>
 
-                            <div className="px-6 py-4">
-                                <p className="text-xs font-semibold uppercase text-gray-500">
-                                    Affected Scope
-                                </p>
+                            <InfoCell
+                                label="Subject"
+                                value={flag.subject}
+                            />
 
-                                <p className="mt-2 text-sm font-medium text-black">
-                                    {flag.affected_scope || "-"}
-                                </p>
-                            </div>
-                        </div>
+                            <InfoCell
+                                label="Description"
+                                value={flag.description}
+                                multiline
+                            />
 
-                        <div className="border-b border-gray-300 px-6 py-4">
-                            <p className="text-xs font-semibold uppercase text-gray-500">
-                                Subject
-                            </p>
+                            <InfoCell
+                                label="Business Impact"
+                                value={flag.business_impact}
+                                multiline
+                            />
 
-                            <p className="mt-2 text-sm font-medium text-black">
-                                {flag.subject || "-"}
-                            </p>
-                        </div>
+                            <div className="px-5 py-4">
+                                <div className="grid grid-cols-2 gap-6">
+                                    <UserCard
+                                        label="Ticket Submitted By"
+                                        user={{
+                                            name: submittedByName,
+                                            userCode: flag.user_code,
+                                            department: flag.role,
+                                            officeLocation:
+                                                flag.employee_department,
+                                        }}
+                                    />
 
-                        <div className="border-b border-gray-300 px-6 py-4">
-                            <p className="text-xs font-semibold uppercase text-gray-500">
-                                Description
-                            </p>
-
-                            <p className="mt-2 text-sm leading-6 text-black">
-                                {flag.description || "-"}
-                            </p>
-                        </div>
-
-                        <div className="px-6 py-4">
-                            <p className="text-xs font-semibold uppercase text-gray-500">
-                                Business Impact
-                            </p>
-
-                            <p className="mt-2 text-sm leading-6 text-black">
-                                {flag.business_impact || "-"}
-                            </p>
-                        </div>
-
-                        <div className="border-t border-gray-300 px-6 py-5">
-                            <div className="mb-5 flex items-center gap-2">
-                                <Contact size={18} className="text-black" />
-
-                                <h3 className="font-semibold text-black">
-                                    Requester Information
-                                </h3>
-                            </div>
-
-                            <div className="grid grid-cols-1 gap-x-10 gap-y-4 sm:grid-cols-2">
-                                <div className="flex items-center">
-                                    <p className="w-32 shrink-0 text-xs font-semibold uppercase text-gray-500">
-                                        Name
-                                    </p>
-
-                                    <p className="text-sm font-medium text-black">
-                                        {flag.first_name} {flag.last_name}
-                                    </p>
-                                </div>
-
-                                <div className="flex items-center">
-                                    <p className="w-32 shrink-0 text-xs font-semibold uppercase text-gray-500">
-                                        Employee ID
-                                    </p>
-
-                                    <p className="text-sm font-medium text-black">
-                                        {flag.user_code}
-                                    </p>
-                                </div>
-
-                                <div className="flex items-center">
-                                    <p className="w-32 shrink-0 text-xs font-semibold uppercase text-gray-500">
-                                        Department
-                                    </p>
-
-                                    <p className="text-sm font-medium text-black">
-                                        {flag.employee_department || "-"}
-                                    </p>
-                                </div>
-
-                                <div className="flex items-center">
-                                    <p className="w-32 shrink-0 text-xs font-semibold uppercase text-gray-500">
-                                        Office Location
-                                    </p>
-
-                                    <p className="text-sm font-medium text-black">
-                                        {flag.office_location || "-"}
-                                    </p>
-                                </div>
-
-                                <div className="flex items-center">
-                                    <p className="w-32 shrink-0 text-xs font-semibold uppercase text-gray-500">
-                                        Workstation
-                                    </p>
-
-                                    <p className="text-sm font-medium text-black">
-                                        {flag.workstation || "-"}
-                                    </p>
+                                    <UserCard
+                                        label="Ticket Submitted At"
+                                        value={
+                                            flag.created_at ||
+                                            flag.submitted_at
+                                                ? formatDate(
+                                                      flag.created_at ||
+                                                          flag.submitted_at
+                                                  )
+                                                : "-"
+                                        }
+                                    />
                                 </div>
                             </div>
                         </div>
                     </div>
 
-                    <div className="overflow-hidden rounded-md border border-gray-300 bg-white">
-                        <div className="flex items-start gap-3 border-b border-gray-300 px-6 py-4">
-                            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-gray-100">
-                                <ClipboardCheck size={19} className="text-gray-500" />
+                    {/* REVIEW CLASSIFICATION */}
+                    <div className="overflow-hidden rounded-xl border border-gray-300 bg-white">
+                        <div className="flex items-start gap-3 border-b border-gray-200 px-5 py-4">
+                            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-gray-100">
+                                <ClipboardCheck
+                                    size={18}
+                                    className="text-gray-600"
+                                />
                             </div>
 
                             <div>
-                                <h2 className="font-semibold text-black">
+                                <h2 className="text-base font-semibold text-black">
                                     Review Classification
                                 </h2>
 
                                 <p className="mt-0.5 text-xs text-gray-500">
-                                    Review the model recommendation and decide the final symptom classification.
+                                    Review the model recommendation and decide
+                                    the final symptom classification.
                                 </p>
                             </div>
                         </div>
 
-                        <div className="p-6">
-                            <div className="mb-5 rounded-md border border-gray-300 bg-gray-50 px-4 py-3">
-                                <p className="text-xs font-semibold uppercase text-gray-500">
+                        <div className="p-5">
+                            {/* REVIEW REASON */}
+                            <div className="rounded-lg border border-gray-300 bg-gray-50 px-4 py-3">
+                                <p className="text-xs font-medium uppercase text-gray-500">
                                     Review Reason
                                 </p>
 
                                 <div className="mt-2 flex items-center gap-2">
-                                    <CircleAlert size={17} className="shrink-0 text-red-700" />
+                                    <CircleAlert
+                                        size={17}
+                                        className="shrink-0 text-red-700"
+                                    />
 
                                     <p className="text-sm font-semibold text-black">
                                         {flag.reason || "Low Confidence"}
@@ -373,18 +347,19 @@ export default function LowConfidenceReview({ flag }) {
                                 </div>
                             </div>
 
-                            <div className="rounded-md border border-gray-300 bg-gray-50 p-5">
+                            {/* MODEL RECOMMENDATION */}
+                            <div className="mt-5 rounded-lg border border-gray-300 bg-gray-50 p-4">
                                 <div className="flex items-center justify-between gap-3">
-                                    <p className="text-xs font-semibold uppercase text-gray-500">
+                                    <p className="text-xs font-medium uppercase text-gray-500">
                                         Model Recommended
                                     </p>
 
-                                    <span className="rounded-md bg-[#4C4CF9] px-2.5 py-1 text-xs font-semibold text-white">
+                                    <span className="rounded-full bg-[#4C4CF9]/10 px-2.5 py-1 text-xs font-semibold text-[#4C4CF9]">
                                         {confidence}%
                                     </span>
                                 </div>
 
-                                <p className="mt-3 text-2xl font-semibold text-black">
+                                <p className="mt-3 text-xl font-semibold text-black">
                                     {flag.predicted_symptom_code || "-"}
                                 </p>
 
@@ -393,119 +368,175 @@ export default function LowConfidenceReview({ flag }) {
                                 </p>
                             </div>
 
-                            <div className="mt-6">
-                                <p className="mb-2 text-xs font-semibold uppercase text-gray-500">
-                                    Override Symptom Code
-                                </p>
+                            {/* SELECT CORRECT SYMPTOM CODE */}
+                            <div className="mt-5">
+                                <label className="text-xs font-medium uppercase text-gray-500">
+                                    Select Correct Symptom Code
+                                </label>
 
                                 <button
                                     type="button"
                                     onClick={() => setSheetOpen(true)}
-                                    className="flex w-full items-center justify-between rounded-md border border-gray-300 bg-white px-4 py-3 text-left text-sm text-black transition hover:bg-gray-50"
+                                    className="mt-2 flex w-full items-center justify-between rounded-lg border border-gray-300 bg-white px-4 py-3 text-left transition hover:bg-gray-50 focus:border-[#4C4CF9] focus:ring-2 focus:ring-[#4C4CF9]/10"
                                 >
-                                    <span>
-                                        {selectedSymptom || "Search and select symptom code"}
-                                    </span>
+                                    <div className="min-w-0">
+                                        <p className="truncate text-sm font-medium text-black">
+                                            {selectedSymptom ||
+                                                "Select symptom code"}
+                                        </p>
 
-                                    <Search size={17} className="text-gray-500" />
+                                        {!selectedSymptom && (
+                                            <p className="mt-0.5 text-xs text-gray-500">
+                                                Search and select the correct
+                                                classification
+                                            </p>
+                                        )}
+                                    </div>
+
+                                    <Search
+                                        size={17}
+                                        className="ml-3 shrink-0 text-gray-400"
+                                    />
                                 </button>
                             </div>
 
+                            {/* SELECTED CLASSIFICATION */}
                             {selectedSymptom && (
-                                <div className="mt-4 rounded-md border border-gray-300 px-4 py-3">
+                                <div className="mt-4 rounded-lg border border-[#4C4CF9]/30 bg-[#4C4CF9]/5 px-4 py-3.5">
                                     <p className="text-xs font-semibold uppercase text-gray-500">
                                         Selected Classification
                                     </p>
 
-                                    <div className="mt-2 flex items-center gap-2">
-                                        <Pencil
-                                            size={15}
-                                            className={
-                                                canOverride
-                                                    ? "text-black"
-                                                    : "text-gray-400"
-                                            }
-                                        />
+                                    <div className="mt-2 flex items-center justify-between gap-3">
+                                        <div className="flex min-w-0 items-center gap-2">
+                                            <Pencil
+                                                size={15}
+                                                className={
+                                                    canOverride
+                                                        ? "text-[#4C4CF9]"
+                                                        : "text-gray-400"
+                                                }
+                                            />
 
-                                        <p className="text-sm font-semibold text-black">
-                                            {selectedSymptom}
-                                        </p>
+                                            <p className="truncate text-sm font-semibold text-black">
+                                                {selectedSymptom}
+                                            </p>
+                                        </div>
+
+                                        <button
+                                            type="button"
+                                            onClick={() =>
+                                                setSheetOpen(true)
+                                            }
+                                            className="shrink-0 text-xs font-medium text-[#4C4CF9] hover:underline"
+                                        >
+                                            Change
+                                        </button>
                                     </div>
 
                                     {!canOverride && (
-                                        <p className="mt-2 text-xs text-gray-500">
-                                            This is already the AI recommended symptom code. Use Accept Recommendation instead.
+                                        <p className="mt-2 text-xs leading-5 text-gray-500">
+                                            This is already the AI recommended
+                                            symptom code. Use Accept
+                                            Recommendation instead.
                                         </p>
                                     )}
                                 </div>
                             )}
 
-                            <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
+                            {/* ACTION BUTTONS */}
+                            <div className="mt-5 grid grid-cols-2 gap-3">
                                 <button
                                     type="button"
                                     onClick={openOverrideModal}
-                                    disabled={!canOverride || approving || accepting}
-                                    className={`rounded-md px-4 py-3 text-sm font-semibold transition ${
-                                        canOverride && !approving && !accepting
-                                            ? "bg-[#4C4CF9] text-white hover:bg-[#4242e8]"
+                                    disabled={
+                                        !canOverride ||
+                                        approving ||
+                                        accepting
+                                    }
+                                    className={`flex h-10 cursor-pointer items-center justify-center gap-2 rounded-lg px-4 text-sm font-medium transition ${
+                                        canOverride &&
+                                        !approving &&
+                                        !accepting
+                                            ? "bg-[#4C4CF9] text-white hover:bg-[#3f3fe0]"
                                             : "cursor-not-allowed bg-gray-100 text-gray-400"
                                     }`}
                                 >
-                                    {approving ? "Approving..." : "Approve Override"}
+                                    <Check
+                                        size={16}
+                                        strokeWidth={2.2}
+                                    />
+
+                                    {approving
+                                        ? "Approving..."
+                                        : "Approve Override"}
                                 </button>
 
                                 <button
                                     type="button"
                                     onClick={openAcceptModal}
                                     disabled={accepting || approving}
-                                    className={`rounded-md px-4 py-3 text-sm font-semibold text-white transition ${
+                                    className={`flex h-10 cursor-pointer items-center justify-center gap-2 rounded-lg px-4 text-sm font-medium text-white transition ${
                                         accepting || approving
                                             ? "cursor-not-allowed bg-gray-400"
-                                            : "bg-[#4C4CF9] hover:bg-[#4242e8]"
+                                            : "bg-[#4C4CF9] hover:bg-[#3f3fe0]"
                                     }`}
                                 >
-                                    {accepting ? "Accepting..." : "Accept Recommendation"}
+                                    <CheckCircle2
+                                        size={16}
+                                        strokeWidth={2.2}
+                                    />
+
+                                    {accepting
+                                        ? "Accepting..."
+                                        : "Accept Recommendation"}
                                 </button>
                             </div>
                         </div>
                     </div>
                 </div>
 
-                <div className="overflow-hidden rounded-md border border-gray-300 bg-white">
-                    <div className="flex items-start gap-3 border-b border-gray-300 px-6 py-4">
-                        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-gray-100">
-                            <TrendingUp size={19} className="text-black" />
+                {/* MODEL RECOMMENDATION RESULT */}
+                <div className="overflow-hidden rounded-xl border border-gray-300 bg-white">
+                    <div className="flex items-start gap-3 border-b border-gray-200 px-5 py-4">
+                        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-gray-100">
+                            <TrendingUp
+                                size={18}
+                                className="text-gray-600"
+                            />
                         </div>
 
                         <div>
-                            <h2 className="font-semibold text-black">
+                            <h2 className="text-base font-semibold text-black">
                                 Model Recommendation Result
                             </h2>
 
                             <p className="mt-0.5 text-xs text-gray-500">
-                                The model returned a low-confidence recommendation and requires manual verification.
+                                The model returned a low-confidence
+                                recommendation and requires manual
+                                verification.
                             </p>
                         </div>
                     </div>
 
-                    <div className="grid grid-cols-1 gap-4 p-6 md:grid-cols-3">
-                        <div className="rounded-md border border-gray-300 p-5">
+                    <div className="grid grid-cols-3 gap-4 p-5">
+                        <div className="rounded-lg border border-gray-300 p-4">
                             <div className="flex items-center justify-between gap-3">
-                                <p className="text-xs font-semibold uppercase text-gray-500">
+                                <p className="text-xs font-medium uppercase text-gray-500">
                                     Primary Recommended
                                 </p>
 
-                                <span className="rounded-md bg-gray-100 px-2 py-1 text-[11px] font-medium text-black">
+                                <span className="rounded-full bg-gray-100 px-2.5 py-1 text-[11px] font-medium text-gray-700">
                                     Model Recommended
                                 </span>
                             </div>
 
                             <div className="mt-5 flex items-end justify-between gap-4">
-                                <p className="text-2xl font-semibold text-black">
+                                <p className="text-xl font-semibold text-black">
                                     {flag.predicted_symptom_code || "-"}
                                 </p>
 
-                                <p className="text-xl font-semibold text-[#4C4CF9]">
+                                <p className="text-lg font-semibold text-[#4C4CF9]">
                                     {confidence}%
                                 </p>
                             </div>
@@ -515,17 +546,18 @@ export default function LowConfidenceReview({ flag }) {
                             </p>
                         </div>
 
-                        <div className="rounded-md border border-gray-300 p-5">
-                            <p className="text-xs font-semibold uppercase text-gray-500">
+                        <div className="rounded-lg border border-gray-300 p-4">
+                            <p className="text-xs font-medium uppercase text-gray-500">
                                 Secondary Recommended
                             </p>
 
                             <div className="mt-5 flex items-end justify-between gap-4">
-                                <p className="text-2xl font-semibold text-black">
-                                    {flag.second_predicted_symptom_code || "-"}
+                                <p className="text-xl font-semibold text-black">
+                                    {flag.second_predicted_symptom_code ||
+                                        "-"}
                                 </p>
 
-                                <p className="text-xl font-semibold text-amber-600">
+                                <p className="text-lg font-semibold text-amber-600">
                                     {secondConfidence}%
                                 </p>
                             </div>
@@ -535,27 +567,40 @@ export default function LowConfidenceReview({ flag }) {
                             </p>
                         </div>
 
-                        <div className="rounded-md border border-gray-300 p-5">
-                            <p className="text-xs font-semibold uppercase text-gray-500">
+                        <div className="rounded-lg border border-gray-300 p-4">
+                            <p className="text-xs font-medium uppercase text-gray-500">
                                 Confidence Margin
                             </p>
 
-                            <p className="mt-5 text-3xl font-semibold text-green-600">
+                            <p className="mt-5 text-2xl font-semibold text-green-600">
                                 {confidenceMargin}%
                             </p>
 
                             <p className="mt-3 text-xs leading-5 text-gray-500">
-                                Difference between the primary and secondary recommendation confidence.
+                                Difference between the primary and secondary
+                                recommendation confidence.
                             </p>
                         </div>
                     </div>
 
-                    <div className="mx-6 mb-6 flex items-center gap-3 rounded-md border border-gray-300 bg-gray-50 px-4 py-3">
-                        <CircleAlert size={18} className="shrink-0 text-red-600" />
+                    <div className="mx-5 mb-5 flex items-start gap-2.5 rounded-lg border border-blue-200 bg-blue-50 px-3.5 py-3">
+                        <CircleAlert
+                            size={17}
+                            className="mt-0.5 shrink-0 text-blue-600"
+                        />
 
-                        <p className="text-xs leading-5 text-black">
-                            This ticket was flagged because the model recommendation did not meet the required confidence threshold. Manual verification is required before the ticket can continue.
-                        </p>
+                        <div>
+                            <p className="text-sm font-medium text-blue-800">
+                                Low Confidence Recommendation
+                            </p>
+
+                            <p className="mt-1 text-xs leading-5 text-blue-700">
+                                This ticket was flagged because the model
+                                recommendation did not meet the required
+                                confidence threshold. Manual verification is
+                                required before the ticket can continue.
+                            </p>
+                        </div>
                     </div>
                 </div>
 
@@ -580,4 +625,133 @@ export default function LowConfidenceReview({ flag }) {
             />
         </>
     );
+}
+
+function InfoCell({
+    label,
+    value,
+    bordered = false,
+    multiline = false,
+}) {
+    return (
+        <div
+            className={`px-5 py-4 ${
+                bordered ? "border-l border-gray-200" : ""
+            }`}
+        >
+            <p className="text-xs font-medium uppercase text-gray-500">
+                {label}
+            </p>
+
+            <p
+                className={`mt-2 whitespace-pre-wrap break-words text-sm text-black ${
+                    multiline ? "leading-6" : "font-medium"
+                }`}
+            >
+                {value || "-"}
+            </p>
+        </div>
+    );
+}
+
+function UserCard({ label, user, value }) {
+    if (value !== undefined) {
+        return (
+            <div className="min-w-0">
+                <p className="text-xs font-medium uppercase text-gray-500">
+                    {label}
+                </p>
+
+                <p className="mt-2 text-sm font-medium text-black">
+                    {value || "-"}
+                </p>
+            </div>
+        );
+    }
+
+    return (
+        <div className="min-w-0">
+            <p className="text-xs font-medium uppercase text-gray-500">
+                {label}
+            </p>
+
+            <div className="mt-3 flex items-center gap-3">
+                <Avatar name={user.name} />
+
+                <div className="min-w-0">
+                    <p className="truncate text-sm font-semibold text-black">
+                        {user.name || "-"}
+                    </p>
+
+                    <p className="mt-1 truncate text-xs text-gray-500">
+                        {user.userCode || "-"}
+                        {user.department
+                            ? ` • ${user.department}`
+                            : ""}
+                    </p>
+
+                    <p className="mt-0.5 truncate text-xs text-gray-500">
+                        {user.officeLocation || "-"}
+                    </p>
+                </div>
+            </div>
+        </div>
+    );
+}
+
+function Avatar({ name, size = "md" }) {
+    const initials = getInitials(name);
+
+    const sizeClass =
+        size === "lg"
+            ? "h-12 w-12 text-sm"
+            : "h-9 w-9 text-xs";
+
+    return (
+        <div
+            className={`flex shrink-0 items-center justify-center rounded-full bg-[#4C4CF9]/10 font-semibold text-[#4C4CF9] ${sizeClass}`}
+        >
+            {initials}
+        </div>
+    );
+}
+
+function getInitials(name) {
+    if (!name) {
+        return "?";
+    }
+
+    return name
+        .trim()
+        .split(/\s+/)
+        .slice(0, 2)
+        .map((part) => part.charAt(0).toUpperCase())
+        .join("");
+}
+
+function formatStatus(status = "") {
+    if (!status) {
+        return "-";
+    }
+
+    return (
+        status.charAt(0).toUpperCase() +
+        status.slice(1).toLowerCase()
+    );
+}
+
+function getStatusStyle(status = "") {
+    switch (status.toLowerCase()) {
+        case "pending":
+            return "border-amber-300 bg-amber-50 text-amber-700";
+
+        case "approved":
+            return "border-green-300 bg-green-50 text-green-700";
+
+        case "rejected":
+            return "border-red-300 bg-red-50 text-red-700";
+
+        default:
+            return "border-gray-300 bg-gray-100 text-gray-700";
+    }
 }

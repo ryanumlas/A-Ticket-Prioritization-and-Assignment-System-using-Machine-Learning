@@ -5,7 +5,8 @@ UpdateCategoryView, CreateSymptomCodeView, SLARulesCreateView, SLARulesUpdateVie
 ServiceDeskOverviewView, ServiceDeskClassifiedResultsView, FlaggedTicketsListView, FlaggedTicketDetailView, SymptomCodeListView, 
 AcceptRecommendationView, ApproveOverrideView, ManuallyClassifyView, SupportOverviewView, TicketQueueView, TicketListSupportView, DepartmentSymptomCodesView, 
 SLAPerformanceView, TicketsByCategoryView, TicketDetailSupportView, TicketStatusHistoryView, TicketCommentListCreateView, 
-PriorityChangeRequestView, PriorityChangeRequestListView, PriorityRequestDetailView, ApprovePriorityRequestView, ReturnTicketView, ReturnedTicketRequestListView)
+PriorityChangeRequestView, PriorityChangeRequestListView, PriorityRequestDetailView, ApprovePriorityRequestView, ReturnTicketView, 
+ReturnedTicketRequestListView, ReturnedTicketDetailRetrieve, ApproveReturnTicketView)
 
 urlpatterns = [
     # --- Ticket URLs ---
@@ -22,7 +23,9 @@ urlpatterns = [
     path("priority-change-requests/list/", PriorityChangeRequestListView.as_view(), name="priority-change-request-list"),
     path("priority-change-requests/detail/<int:request_id>/", PriorityRequestDetailView.as_view(), name="priority-change-request-detail"),
     path("return-ticket/<int:pk>/",ReturnTicketView.as_view(),name="return-ticket"),
-    path("return-ticket/list/", ReturnedTicketRequestListView.as_view(), name="returned-ticket-requests",),
+    path("return-ticket/list/", ReturnedTicketRequestListView.as_view(), name="returned-ticket-requests"),
+    path("return-ticket/<int:pk>/detail/", ReturnedTicketDetailRetrieve.as_view(), name="returned-ticket-detail"),
+    path("return-ticket/<int:pk>/approve/", ApproveReturnTicketView.as_view(), name="approve-return-ticket"),
     path("priority-change-requests/approve/<int:request_id>/", ApprovePriorityRequestView.as_view(), name="approve-priority-request"),
     path('employee/list/', TicketListEmployeeView.as_view(), name="ticket-list"),
     path('employee/detail/<int:ticket_id>/', TicketDetailEmployeeView.as_view(), name="ticket-detail"),
@@ -42,6 +45,7 @@ urlpatterns = [
     path('ticket-queue/list/', TicketQueueView.as_view(), name='support-ticket-queue'),
 
     path("<int:pk>/history/", TicketStatusHistoryView.as_view(), name="ticket-history"),
+
     # --- Category URLs ---
     path('categories/create/', CreateCategoryView.as_view(), name='create-category'),
     path('categories/update/<int:pk>/', UpdateCategoryView.as_view(), name='update-category'),
