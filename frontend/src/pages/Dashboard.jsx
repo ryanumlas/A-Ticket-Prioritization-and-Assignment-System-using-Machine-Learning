@@ -3,6 +3,7 @@ import { getCurrentUser } from "../utils/auth";
 import EmployeeDashboard from "../pages/EmployeeDashboard";
 import SupportDashboard from "../pages/SupportDashboard";
 import ServiceDeskDashboard from "../pages/ServiceDeskDashboard";
+import SystemAdminDashboard from "../pages/SystemAdminDashboard";
 import { motion } from "motion/react";
 import Topbar from "../components/Topbar";
 
@@ -26,6 +27,9 @@ export default function Dashboard() {
     }
     else if (user.role === "IT Service Desk") {
         MainContent = <ServiceDeskDashboard />;
+    }
+    else if (user.role === "System Administrator") {
+        MainContent = <SystemAdminDashboard />;
     }
     else {
         MainContent = (

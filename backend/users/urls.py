@@ -1,7 +1,8 @@
 from django.urls import path
 from .views import (CreateITSupportProfileView, RegisterView, UserListView, CreateITSupportProfileView, UserUpdateView, UserRoleCreateView, UserRoleDeleteView, 
 UserRoleListView, EmployeeOverviewAPIView, UserProfileUpdateView, SpecializationCreateView, ITSupportProfileCreateView, 
-ITSupportSpecializationCreateView, ITSupportProfileUpdateView, NotificationListView, NotificationMarkReadView, NotificationUnreadCountView)
+ITSupportSpecializationCreateView, ITSupportProfileUpdateView, NotificationListView, NotificationMarkReadView, NotificationUnreadCountView, AdminUserListView, 
+ITDepartmentOptionsView, EmployeeDepartmentOptionsView, OfficeLocationOptionsView)
 
 urlpatterns = [
     path('list/', UserListView.as_view(), name='user-list'),
@@ -16,6 +17,11 @@ urlpatterns = [
     path('it-support-profile/create/', ITSupportProfileCreateView.as_view(), name='it-support-profile-create'),
     path('it-support-specializations/create/', ITSupportSpecializationCreateView.as_view(), name='it-support-specialization-create'),
     path('it-support-profile/update/<int:pk>/', ITSupportProfileUpdateView.as_view(), name='it-support-profile-update'),
+
+    path("admin/list/",AdminUserListView.as_view(),name="admin-user-list",),
+    path("admin/create-options/employee-departments/",EmployeeDepartmentOptionsView.as_view(),name="employee-department-options",),
+    path("admin/create-options/it-departments/",ITDepartmentOptionsView.as_view(),name="it-department-options",),
+    path("admin/create-options/office-locations/",OfficeLocationOptionsView.as_view(),name="office-location-options",),
 
     # --- Notifications ---
     path("notifications/list/",NotificationListView.as_view(), name="notification-list",),

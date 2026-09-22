@@ -6,7 +6,7 @@ ServiceDeskOverviewView, ServiceDeskClassifiedResultsView, FlaggedTicketsListVie
 AcceptRecommendationView, ApproveOverrideView, ManuallyClassifyView, SupportOverviewView, TicketQueueView, TicketListSupportView, DepartmentSymptomCodesView, 
 SLAPerformanceView, TicketsByCategoryView, TicketDetailSupportView, TicketStatusHistoryView, TicketCommentListCreateView, 
 PriorityChangeRequestView, PriorityChangeRequestListView, PriorityRequestDetailView, ApprovePriorityRequestView, ReturnTicketView, 
-ReturnedTicketRequestListView, ReturnedTicketDetailRetrieve, ApproveReturnTicketView)
+ReturnedTicketRequestListView, ReturnedTicketDetailRetrieve, ApproveReturnTicketView, PendingPriorityRequestCountView, PendingReturnTicketRequestCountView)
 
 urlpatterns = [
     # --- Ticket URLs ---
@@ -45,6 +45,9 @@ urlpatterns = [
     path('ticket-queue/list/', TicketQueueView.as_view(), name='support-ticket-queue'),
 
     path("<int:pk>/history/", TicketStatusHistoryView.as_view(), name="ticket-history"),
+
+    path("return-ticket/pending-count/",PendingReturnTicketRequestCountView.as_view(),name="pending-return-ticket-count",),
+    path("priority-request/pending-count/",PendingPriorityRequestCountView.as_view(),name="pending-priority-request-count",),
 
     # --- Category URLs ---
     path('categories/create/', CreateCategoryView.as_view(), name='create-category'),

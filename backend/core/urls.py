@@ -1,6 +1,6 @@
 from django.contrib import admin
 from django.urls import path, include
-from users.views import RegisterView, CustomTokenView
+from users.views import RegisterView, CustomTokenView, LogoutView
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 
 urlpatterns = [
@@ -8,6 +8,7 @@ urlpatterns = [
     path('api/user/register/', RegisterView.as_view(), name="user-register"),
     path('api/user/token/', CustomTokenView.as_view(), name='token_obtain_pair'),
     path('api/user/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
+    path('api/user/logout/',LogoutView.as_view(), name='user-logout',),
     path('api/tickets/', include('tickets.urls')),
     path('api/departments/', include('departments.urls')),
     path('api/ai/', include('ai.urls')),

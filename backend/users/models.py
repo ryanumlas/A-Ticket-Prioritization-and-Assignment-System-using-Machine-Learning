@@ -89,6 +89,21 @@ class ITSupportProfile(models.Model):
     def __str__(self):
         return f"{self.user.username} - {self.it_department.name if self.it_department else 'No Department'}"
 
+class ITServiceDeskProfile(models.Model):
+    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name="it_service_desk_profile")
+    it_department = models.ForeignKey(ITDepartment, on_delete=models.SET_NULL, null=True, blank=True)
+    office_location = models.ForeignKey(OfficeLocation, on_delete=models.SET_NULL, null=True, blank=True)
+
+class ITSupervisorProfile(models.Model):
+    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name="it_supervisor_profile")
+    it_department = models.ForeignKey(ITDepartment, on_delete=models.SET_NULL, null=True, blank=True)
+    office_location = models.ForeignKey(OfficeLocation, on_delete=models.SET_NULL, null=True, blank=True)
+
+class SystemAdministratorProfile(models.Model):
+    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name="system_administrator_profile")
+    it_department = models.ForeignKey(ITDepartment, on_delete=models.SET_NULL, null=True, blank=True)
+    office_location = models.ForeignKey(OfficeLocation, on_delete=models.SET_NULL, null=True, blank=True)
+
 class Specializations(models.Model):
     name = models.CharField(max_length=100, unique=True)
     created_by = models.ForeignKey('User', on_delete=models.SET_NULL, null=True, blank=True, related_name='created_specializations')

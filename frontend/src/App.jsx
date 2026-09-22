@@ -19,11 +19,15 @@ import PriorityRequest from './pages/PriorityRequest'
 import PriorityRequestDetails from './pages/PriorityRequestDetails'
 import TicketReturn from './pages/TicketReturn'
 import TicketReturnedDetail from './pages/TicketReturnedDetail'
+import Notification from './pages/Notification'
+import UserList from './pages/UserList'
+import SystemAdUserCreate from "./pages/SystemAdUserCreate";
+import { User } from 'lucide-react'
 
-function Logout() {
-  localStorage.clear()
-  return <Navigate to="/login" />
-}
+// function Logout() {
+//   localStorage.clear()
+//   return <Navigate to="/login" />
+// }
 
 function App() {
   return (
@@ -41,6 +45,15 @@ function App() {
                 element={
                     <ProtectedRoute>
                         <Dashboard />
+                    </ProtectedRoute>
+                }
+            />
+
+            <Route
+                path="/notifications"
+                element={
+                    <ProtectedRoute>
+                        <Notification />
                     </ProtectedRoute>
                 }
             />
@@ -154,7 +167,27 @@ function App() {
                     </ProtectedRoute>
                 }
             />
-            {/* IT SUPPORT ONLY */}
+            {/* System Admin */}
+            <Route
+                path="/user-management"
+                element={
+                    <ProtectedRoute
+                        allowedRoles={["System Administrator"]}
+                    >
+                        <UserList />
+                    </ProtectedRoute>
+                }
+            />
+            <Route
+                path="/user-management/create"
+                element={
+                    <ProtectedRoute
+                        allowedRoles={["System Administrator"]}
+                    >
+                        <SystemAdUserCreate />
+                    </ProtectedRoute>
+                }
+            />
             <Route
                 path="/sidebar"
                 element={<Sidebar />}
@@ -165,10 +198,10 @@ function App() {
                 element={<Login />}
             />
 
-            <Route
+            {/* <Route
                 path="/logout"
                 element={<Logout />}
-            />
+            /> */}
 
             <Route
                 path="/"
