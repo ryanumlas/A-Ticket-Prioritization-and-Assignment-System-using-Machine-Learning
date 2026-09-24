@@ -2,6 +2,7 @@ import { getCurrentUser } from "../utils/auth";
 import TicketQueueSupport from '../pages/TicketQueueSupport'
 import TicketQueueServiceDesk from "./TicketQueueServiceDesk";
 import Sidebar from "../components/Sidebar";
+import Topbar from "../components/Topbar";
 
 export default function TicketQueue() {
     const user = getCurrentUser();
@@ -25,10 +26,9 @@ export default function TicketQueue() {
             <Sidebar />
             <div className="flex-1 h-screen overflow-y-auto flex flex-col">
                 
-                <div className="h-14 border-b border-gray-300 bg-white shrink-0">
-                </div>
+                <Topbar/>
     
-                <main className="p-6">
+                <main className="">
                     {MainContent}
                 </main>
             </div>

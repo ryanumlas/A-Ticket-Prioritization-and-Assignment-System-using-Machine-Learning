@@ -4,6 +4,7 @@ from rest_framework import generics
 from .pagination import UserPagination
 from rest_framework.views import APIView
 from rest_framework import viewsets, generics, status
+from django.shortcuts import get_object_or_404
 from rest_framework.response import Response
 from rest_framework_simplejwt.views import TokenObtainPairView
 
@@ -19,12 +20,115 @@ from .serializers import (UserSerializer, ITSupportSpecializationCreateSerialize
                           UserProfileUpdateSerializer, SpecializationSerializer, ITSupportProfileUpdateSerializer, NotificationSerializer, AdminUserListSerializer,
                               EmployeeDepartmentOptionSerializer,
     ITDepartmentOptionSerializer,
-    OfficeLocationOptionSerializer,)
+    OfficeLocationOptionSerializer, UserRoleOptionSerializer, AdminUserCreateSerializer, SpecializationOptionSerializer, AdminUserDetailSerializer)
 
 class RegisterView(generics.CreateAPIView):
     queryset = User.objects.all()
     serializer_class = UserSerializer
     permission_classes = [AllowAny] 
+
+class AdminUserListView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        users = (
+            User.objects
+            .select_related(
+                "role",
+                "profile",
+                "profile__employee_department",
+                "profile__office_location",
+                "it_support_profile",
+                "it_support_profile__it_department",
+            )
+            .prefetch_related(
+                "it_support_profile__specializations__specialization",
+            )
+            .order_by("-created_at")
+        )
+
+        search = request.query_params.get(
+            "search",
+            "",
+        ).strip()
+
+        role = request.query_params.get(
+            "role",
+            "",
+        ).strip()
+
+        status = request.query_params.get(
+            "status",
+            "",
+        ).strip()
+
+        if search:
+            users = users.filter(
+                Q(first_name__icontains=search)
+                | Q(last_name__icontains=search)
+                | Q(username__icontains=search)
+                | Q(user_code__icontains=search)
+                | Q(email__icontains=search)
+            )
+
+        if role:
+            users = users.filter(
+                role__name=role
+            )
+
+        if status == "active":
+            users = users.filter(
+                is_active=True
+            )
+
+        elif status == "inactive":
+            users = users.filter(
+                is_active=False
+            )
+
+        paginator = UserPagination()
+
+        page = paginator.paginate_queryset(
+            users,
+            request,
+            view=self,
+        )
+
+        serializer = AdminUserListSerializer(
+            page,
+            many=True,
+        )
+
+        return paginator.get_paginated_response(
+            serializer.data
+        )
+
+
+class AdminUserCreateView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        serializer = AdminUserCreateSerializer(
+            data=request.data,
+            context={
+                "request": request,
+            },
+        )
+
+        serializer.is_valid(
+            raise_exception=True
+        )
+
+        user = serializer.save()
+
+        return Response(
+            {
+                "message": "User created successfully.",
+                "user_id": user.id,
+                "user_code": user.user_code,
+            },
+            status=201,
+        )
 
 
 class EmployeeOverviewAPIView(APIView):
@@ -264,6 +368,37 @@ class AdminUserListView(APIView):
             serializer.data
         )
 
+class AdminUserDetailView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, user_id):
+        user = get_object_or_404(
+            User.objects.select_related(
+                "role",
+                "profile",
+                "profile__employee_department",
+                "profile__office_location",
+                "it_support_profile",
+                "it_support_profile__it_department",
+                "it_service_desk_profile",
+                "it_service_desk_profile__it_department",
+                "it_service_desk_profile__office_location",
+                "it_supervisor_profile",
+                "it_supervisor_profile__it_department",
+                "it_supervisor_profile__office_location",
+                "system_administrator_profile",
+                "system_administrator_profile__it_department",
+                "system_administrator_profile__office_location",
+            ).prefetch_related(
+                "it_support_profile__specializations__specialization",
+            ),
+            id=user_id,
+        )
+
+        serializer = AdminUserDetailSerializer(user)
+
+        return Response(serializer.data)
+
 class EmployeeDepartmentOptionsView(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -300,6 +435,32 @@ class OfficeLocationOptionsView(APIView):
 
         serializer = OfficeLocationOptionSerializer(
             locations,
+            many=True,
+        )
+
+        return Response(serializer.data)
+
+class UserRoleOptionsView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        roles = UserRoles.objects.order_by("name")
+
+        serializer = UserRoleOptionSerializer(
+            roles,
+            many=True,
+        )
+
+        return Response(serializer.data)
+
+class SpecializationOptionsView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        specializations = Specializations.objects.order_by("name")
+
+        serializer = SpecializationOptionSerializer(
+            specializations,
             many=True,
         )
 

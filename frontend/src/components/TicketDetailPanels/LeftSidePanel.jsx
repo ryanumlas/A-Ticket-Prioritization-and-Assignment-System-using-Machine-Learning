@@ -40,7 +40,7 @@ export default function LeftSidePanel({ ticketDetails }) {
             <div className="border-b border-gray-200 px-6 py-4">
                 <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
-                        <Ticket size={20} className="text-gray-500" />
+                        <Ticket size={20} className="text-[#2563EB]" />
                         <p className="font-semibold tracking-wide text-black">Ticket Information</p>
                     </div>
 
@@ -183,7 +183,7 @@ export default function LeftSidePanel({ ticketDetails }) {
 
             <div className="border-t border-gray-200 p-5">
                 <div className="mb-4 flex items-center gap-2">
-                    <SquareUserRound size={20} className="text-gray-500" />
+                    <SquareUserRound size={20} className="text-[#2563EB]" />
                     <p className="font-semibold text-black">Requester Information</p>
                 </div>
 

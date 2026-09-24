@@ -153,7 +153,7 @@ export default function CenterPanel({
                         <div className="flex items-center gap-3">
                             <MessageCircle
                                 size={20}
-                                className="text-gray-500"
+                                className="text-[#2563EB]"
                             />
 
                             <h2 className="font-semibold text-black">

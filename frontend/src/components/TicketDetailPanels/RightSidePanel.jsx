@@ -208,7 +208,7 @@ export default function RightSidePanel({ ticketDetails, onTicketUpdated }) {
             <div className="flex h-full w-[350px] shrink-0 flex-col border-l border-gray-300 bg-white">
                 <div className="shrink-0 border-b border-gray-200  px-6 py-4">
                     <div className="flex items-center gap-2">
-                        <History size={20} className="text-gray-500" />
+                        <History size={20} className="text-[#2563EB]" />
 
                         <p className="font-semibold text-black">
                             Status History

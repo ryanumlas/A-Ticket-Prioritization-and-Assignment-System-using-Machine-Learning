@@ -3,6 +3,7 @@ import { getCurrentUser } from "../utils/auth"
 import EmployeeTicket from "../pages/EmployeeTicket";
 import ServiceDeskTicket from "../pages/ServiceDeskTicket";
 import SupportTicket from  "../pages/SupportTicket";
+import TopBar from "../components/Topbar"
 
 export default function Ticket() {
     const user = getCurrentUser();
@@ -27,8 +28,7 @@ export default function Ticket() {
             <Sidebar />
             <div className="flex-1 h-screen flex flex-col">
             
-                <div className="h-14 border-b border-gray-300 bg-white mb-20 shrink-0">
-                </div>
+                <TopBar/>
 
                 <main className="flex-1 h-full">
                     {MainContent}

@@ -146,7 +146,7 @@ export default function Topbar() {
         unreadCount > 99 ? "99+" : unreadCount;
 
     return (
-        <header className="flex h-16 items-center justify-end border-b border-gray-200 bg-white px-6">
+        <header className="sticky top-0 z-40 flex h-16 shrink-0 items-center justify-end border-b border-gray-200 bg-white px-6">
             <div className="flex items-center gap-4">
                 {/* Notifications */}
                 <div className="relative">
@@ -158,7 +158,7 @@ export default function Topbar() {
                             );
                             setUserOpen(false);
                         }}
-                        className="relative flex h-9 w-9 items-center justify-center rounded-full cursor-pointer text-gray-600 transition hover:bg-gray-100 hover:text-gray-900"
+                        className="relative flex h-9 w-9 cursor-pointer items-center justify-center rounded-full text-gray-600 transition hover:bg-gray-100 hover:text-gray-900"
                     >
                         <Bell size={20} />
 
@@ -191,7 +191,7 @@ export default function Topbar() {
                                             "/notifications"
                                         )
                                     }
-                                    className="text-xs font-medium text-[#4C4CF9] hover:underline cursor-pointer"
+                                    className="cursor-pointer text-xs font-medium text-[#2563EB] hover:underline"
                                 >
                                     View all
                                 </button>
@@ -226,7 +226,7 @@ export default function Topbar() {
                                                             notification
                                                         )
                                                     }
-                                                    className={`flex w-full items-start gap-3 border-b border-gray-100 px-4 py-3 text-left transition ${
+                                                    className={`flex w-full cursor-pointer items-start gap-3 border-b border-gray-100 px-4 py-3 text-left transition ${
                                                         notification.is_read
                                                             ? "bg-white hover:bg-gray-50"
                                                             : "bg-blue-50 hover:bg-blue-100"
@@ -236,7 +236,7 @@ export default function Topbar() {
                                                         className={`mt-1 flex h-7 w-7 shrink-0 items-center justify-center rounded-full ${
                                                             notification.is_read
                                                                 ? "bg-gray-100 text-gray-500"
-                                                                : "bg-blue-100 text-[#4C4CF9]"
+                                                                : "bg-blue-100 text-[#2563EB]"
                                                         }`}
                                                     >
                                                         {notification.is_read ? (
@@ -269,7 +269,7 @@ export default function Topbar() {
                                                             </p>
 
                                                             {!notification.is_read && (
-                                                                <span className="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-[#4C4CF9]" />
+                                                                <span className="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-[#2563EB]" />
                                                             )}
                                                         </div>
 
@@ -296,7 +296,7 @@ export default function Topbar() {
                                                 "/notifications"
                                             )
                                         }
-                                        className="w-full text-center text-xs font-medium text-[#4C4CF9] hover:underline"
+                                        className="w-full cursor-pointer text-center text-xs font-medium text-[#2563EB] hover:underline"
                                     >
                                         View all notifications
                                     </button>
@@ -316,9 +316,9 @@ export default function Topbar() {
                             );
                             setNotificationOpen(false);
                         }}
-                        className="flex items-center gap-2 rounded-lg px-2 py-1.5 transition cursor-pointer hover:bg-gray-100"
+                        className="flex cursor-pointer items-center gap-2 rounded-lg px-2 py-1.5 transition hover:bg-gray-100"
                     >
-                        <div className="flex h-8 w-8 items-center justify-center rounded-full bg-[#4C4CF9] text-xs font-semibold text-white">
+                        <div className="flex h-8 w-8 items-center justify-center rounded-full bg-[#2563EB] text-xs font-semibold text-white">
                             {initials}
                         </div>
 
@@ -356,7 +356,7 @@ export default function Topbar() {
                                     setUserOpen(false);
                                     navigate("/profile");
                                 }}
-                                className="flex w-full items-center gap-3 px-4 py-2.5 text-sm cursor-pointer text-gray-700 transition hover:bg-gray-50"
+                                className="flex w-full cursor-pointer items-center gap-3 px-4 py-2.5 text-sm text-gray-700 transition hover:bg-gray-50"
                             >
                                 <User size={16} />
                                 Profile
@@ -367,7 +367,7 @@ export default function Topbar() {
                             <button
                                 type="button"
                                 onClick={handleLogout}
-                                className="flex w-full items-center gap-3 px-4 py-2.5 cursor-pointer text-sm text-gray-700 transition hover:bg-gray-50"
+                                className="flex w-full cursor-pointer items-center gap-3 px-4 py-2.5 text-sm text-gray-700 transition hover:bg-gray-50"
                             >
                                 <LogOut size={16} />
                                 Logout

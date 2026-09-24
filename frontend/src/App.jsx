@@ -22,6 +22,7 @@ import TicketReturnedDetail from './pages/TicketReturnedDetail'
 import Notification from './pages/Notification'
 import UserList from './pages/UserList'
 import SystemAdUserCreate from "./pages/SystemAdUserCreate";
+import SystemUserDetails from './pages/SystemUserDetails'
 import { User } from 'lucide-react'
 
 // function Logout() {
@@ -185,6 +186,16 @@ function App() {
                         allowedRoles={["System Administrator"]}
                     >
                         <SystemAdUserCreate />
+                    </ProtectedRoute>
+                }
+            />
+            <Route
+                path="/user-management/:id"
+                element={
+                    <ProtectedRoute
+                        allowedRoles={["System Administrator"]}
+                    >
+                        <SystemUserDetails />
                     </ProtectedRoute>
                 }
             />

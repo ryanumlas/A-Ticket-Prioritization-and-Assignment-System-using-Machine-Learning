@@ -6,60 +6,121 @@ from rest_framework import serializers
 
 
 class TicketSerializer(serializers.ModelSerializer):
-    status = serializers.CharField(source='get_status_display', read_only=True)
-    assigned_to = serializers.SerializerMethodField()   
+    status = serializers.CharField(
+        source="get_status_display",
+        read_only=True,
+    )
+
+    assigned_to = serializers.SerializerMethodField()
+    submitted_by_name = serializers.SerializerMethodField()
+    submitted_by_department = serializers.SerializerMethodField()
+
     resolution_time_remaining = serializers.SerializerMethodField()
     response_time_remaining = serializers.SerializerMethodField()
+
     symptom_code = serializers.CharField(
-        source='symptom_code.code',
-        read_only=True
+        source="symptom_code.code",
+        read_only=True,
     )
+
     priority = serializers.CharField(
-        source='priority.priority_level',
-        read_only=True
+        source="priority.priority_level",
+        read_only=True,
     )
+
     created_at_formatted = serializers.SerializerMethodField()
+
     class Meta:
         model = Ticket
-        fields = [
-            'id',
-            'ticket_code',
-            'submitted_by',
-            'assigned_to',
-            'updated_by',
-            'it_department',
-            'employee_department',
-            'subject',
-            'description',
-            'business_impact',
-            'affected_scope',
-            'category',
-            'symptom_code',
-            'status',
-            'priority',
-            'is_under_review',
-            "response_deadline",
-            'response_time_remaining',
-            'resolution_deadline',
-            'resolution_time_remaining',
-            'is_escalated',
-            'resolved_at',
-            'resolved_by',
-            'created_at',
-            'created_at_formatted',
-            'updated_at',
-        ]
-        read_only_fields = [
-            'submitted_by',
-            'updated_by',
-            'resolved_at',
-            'created_at',
-            'updated_at',
-        ]   
-    def get_response_time_remaining(self, obj):
 
+        fields = [
+            "id",
+            "ticket_code",
+            "submitted_by",
+            "submitted_by_name",
+            "submitted_by_department",
+            "assigned_to",
+            "updated_by",
+            "it_department",
+            "employee_department",
+            "subject",
+            "description",
+            "business_impact",
+            "affected_scope",
+            "category",
+            "symptom_code",
+            "status",
+            "priority",
+            "is_under_review",
+            "response_deadline",
+            "response_time_remaining",
+            "resolution_deadline",
+            "resolution_time_remaining",
+            "is_escalated",
+            "resolved_at",
+            "resolved_by",
+            "created_at",
+            "created_at_formatted",
+            "updated_at",
+        ]
+
+        read_only_fields = [
+            "submitted_by",
+            "updated_by",
+            "resolved_at",
+            "created_at",
+            "updated_at",
+        ]
+
+    def get_submitted_by_name(self, obj):
+        if not obj.submitted_by:
+            return None
+
+        return (
+            f"{obj.submitted_by.first_name} "
+            f"{obj.submitted_by.last_name}"
+        ).strip()
+
+    def get_submitted_by_department(self, obj):
+        if not obj.submitted_by:
+            return None
+
+        profile = getattr(
+            obj.submitted_by,
+            "profile",
+            None,
+        )
+
+        if not profile:
+            return None
+
+        department = getattr(
+            profile,
+            "employee_department",
+            None,
+        )
+
+        if not department:
+            return None
+
+        return department.name
+
+    def get_assigned_to(self, obj):
+        if not obj.assigned_to:
+            return None
+
+        return (
+            f"{obj.assigned_to.first_name} "
+            f"{obj.assigned_to.last_name}"
+        ).strip()
+
+    def get_response_time_remaining(self, obj):
         if obj.response_at:
-            return obj.response_sla_status.upper() if obj.response_sla_status else None
+            return (
+                obj.response_sla_status.upper()
+                if obj.response_sla_status
+                else None
+            )
 
         if not obj.response_deadline:
             return None
@@ -69,11 +130,24 @@ class TicketSerializer(serializers.ModelSerializer):
         if remaining.total_seconds() <= 0:
             return "OVERDUE"
 
-        total_seconds = int(remaining.total_seconds())
+        total_seconds = int(
+            remaining.total_seconds()
+        )
 
-        days, remainder = divmod(total_seconds, 86400)
-        hours, remainder = divmod(remainder, 3600)
-        minutes, seconds = divmod(remainder, 60)
+        days, remainder = divmod(
+            total_seconds,
+            86400,
+        )
+
+        hours, remainder = divmod(
+            remainder,
+            3600,
+        )
+
+        minutes, seconds = divmod(
+            remainder,
+            60,
+        )
 
         if days > 0:
             return f"{days}d {hours}h {minutes}m"
@@ -87,23 +161,41 @@ class TicketSerializer(serializers.ModelSerializer):
         return f"{seconds}s"
 
     def get_resolution_time_remaining(self, obj):
-
         if obj.resolved_at:
-            return obj.resolution_sla_status.upper() if obj.resolution_sla_status else None
+            return (
+                obj.resolution_sla_status.upper()
+                if obj.resolution_sla_status
+                else None
+            )
 
         if not obj.resolution_deadline:
             return None
 
-        remaining = obj.resolution_deadline - timezone.now()
+        remaining = (
+            obj.resolution_deadline - timezone.now()
+        )
 
         if remaining.total_seconds() <= 0:
             return "OVERDUE"
 
-        total_seconds = int(remaining.total_seconds())
+        total_seconds = int(
+            remaining.total_seconds()
+        )
 
-        days, remainder = divmod(total_seconds, 86400)
-        hours, remainder = divmod(remainder, 3600)
-        minutes, seconds = divmod(remainder, 60)
+        days, remainder = divmod(
+            total_seconds,
+            86400,
+        )
+
+        hours, remainder = divmod(
+            remainder,
+            3600,
+        )
+
+        minutes, seconds = divmod(
+            remainder,
+            60,
+        )
 
         if days > 0:
             return f"{days}d {hours}h {minutes}m"
@@ -125,11 +217,24 @@ class TicketSerializer(serializers.ModelSerializer):
         if remaining.total_seconds() <= 0:
             return "Overdue"
 
-        total_seconds = int(remaining.total_seconds())
+        total_seconds = int(
+            remaining.total_seconds()
+        )
 
-        days, remainder = divmod(total_seconds, 86400)
-        hours, remainder = divmod(remainder, 3600)
-        minutes, _ = divmod(remainder, 60)
+        days, remainder = divmod(
+            total_seconds,
+            86400,
+        )
+
+        hours, remainder = divmod(
+            remainder,
+            3600,
+        )
+
+        minutes, _ = divmod(
+            remainder,
+            60,
+        )
 
         if days > 0:
             return f"{days}d {hours}h"
@@ -139,67 +244,12 @@ class TicketSerializer(serializers.ModelSerializer):
 
         return f"{minutes}m"
 
-    def get_assigned_to(self, obj):
-        if not obj.assigned_to:
-            return None
-        return f"{obj.assigned_to.first_name} {obj.assigned_to.last_name}".strip()
-
     def get_created_at_formatted(self, obj):
-        return timezone.localtime(obj.created_at).strftime("%B %d, %Y %I:%M %p")
-    # Priority: P3
-
-    # Response SLA
-    # • Deadline: July 18, 2026 3:30 PM
-    # • Time Remaining: 42m
-
-    # Resolution SLA
-    # • Deadline: July 19, 2026 2:30 PM
-    # • Time Remaining: 23h 42m
-    # def get_response_deadline(self, obj):
-    #     if not obj.response_deadline:
-    #         return None
-
-    #     return timezone.localtime(
-    #         obj.response_deadline
-    #     ).strftime("%B %d, %Y %I:%M %p")
-    
-    # def get_response_time_remaining(self, obj):
-    #     if not obj.response_deadline:
-    #         return None
-
-    #     remaining = obj.response_deadline - timezone.now()
-
-    #     if remaining.total_seconds() <= 0:
-    #         return "Overdue"
-
-    #     days = remaining.days
-    #     hours = remaining.seconds // 3600
-    #     minutes = (remaining.seconds % 3600) // 60
-
-    #     return f"{days}d {hours}h {minutes}m"
-    
-    # def get_resolution_deadline(self, obj):
-    #     if not obj.resolution_deadline:
-    #         return None
-
-    #     return timezone.localtime(
-    #         obj.resolution_deadline
-    #     ).strftime("%B %d, %Y %I:%M %p")
-
-    # def get_resolution_time_remaining(self, obj):
-    #     if not obj.resolution_deadline:
-    #         return None
-
-    #     remaining = obj.resolution_deadline - timezone.now()
-
-    #     if remaining.total_seconds() <= 0:
-    #         return "Overdue"
-
-    #     days = remaining.days
-    #     hours = remaining.seconds // 3600
-    #     minutes = (remaining.seconds % 3600) // 60
-
-        # return f"{days}d {hours}h {minutes}m"
+        return timezone.localtime(
+            obj.created_at
+        ).strftime(
+            "%B %d, %Y %I:%M %p"
+        )
 
 class FlaggedTicketsListSerializer(serializers.ModelSerializer):
     ticket_code = serializers.CharField(source="ticket.ticket_code", read_only=True)

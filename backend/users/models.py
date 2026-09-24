@@ -44,7 +44,7 @@ class UserRoles(models.Model):
         return self.name
 
 class User(AbstractUser):
-    user_code = models.CharField(max_length=20, unique=True)
+    user_code = models.CharField(max_length=20, null=True, blank=True, unique=True)
     role = models.ForeignKey(UserRoles, on_delete=models.SET_NULL, null=True, blank=True)
     created_by = models.ForeignKey('self', on_delete=models.SET_NULL, null=True, blank=True, related_name='created_users')
     updated_by = models.ForeignKey('self', on_delete=models.SET_NULL, null=True, blank=True, related_name='updated_users')
@@ -94,16 +94,23 @@ class ITServiceDeskProfile(models.Model):
     it_department = models.ForeignKey(ITDepartment, on_delete=models.SET_NULL, null=True, blank=True)
     office_location = models.ForeignKey(OfficeLocation, on_delete=models.SET_NULL, null=True, blank=True)
 
+    class Meta:
+        db_table = 'it_service_desk_profile'
 class ITSupervisorProfile(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name="it_supervisor_profile")
     it_department = models.ForeignKey(ITDepartment, on_delete=models.SET_NULL, null=True, blank=True)
     office_location = models.ForeignKey(OfficeLocation, on_delete=models.SET_NULL, null=True, blank=True)
+
+    class Meta:
+        db_table = 'it_supervisor_profile'
 
 class SystemAdministratorProfile(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name="system_administrator_profile")
     it_department = models.ForeignKey(ITDepartment, on_delete=models.SET_NULL, null=True, blank=True)
     office_location = models.ForeignKey(OfficeLocation, on_delete=models.SET_NULL, null=True, blank=True)
 
+    class Meta:
+        db_table = 'it_system_admin_profile'
 class Specializations(models.Model):
     name = models.CharField(max_length=100, unique=True)
     created_by = models.ForeignKey('User', on_delete=models.SET_NULL, null=True, blank=True, related_name='created_specializations')

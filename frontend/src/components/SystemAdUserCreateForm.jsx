@@ -1,25 +1,28 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { Eye, EyeOff } from "lucide-react";
 import { toast } from "sonner";
 import api from "../api";
+import SpecializationModal from "./SpecializationModal";
 
-const roles = [
-    { label: "Employee", value: "Employee" },
-    { label: "IT Support Specialist", value: "IT Support Specialist" },
-    { label: "IT Service Desk", value: "IT Service Desk" },
-    { label: "IT Supervisor", value: "Supervisor" },
-    { label: "System Administrator", value: "System Administrator" },
-];
-
-export default function SystemAdUserCreateForm({ onSuccess, onCancel }) {
-    const [loading, setLoading] = useState(false);
-    const [optionsLoading, setOptionsLoading] = useState(true);
-
-    const [employeeDepartments, setEmployeeDepartments] = useState([]);
+export default function SystemAdUserCreateForm({
+    onSuccess,
+    onCancel,
+}) {
+    const [roles, setRoles] = useState([]);
+    const [employeeDepartments, setEmployeeDepartments] =
+        useState([]);
     const [itDepartments, setItDepartments] = useState([]);
     const [officeLocations, setOfficeLocations] = useState([]);
+    const [specializations, setSpecializations] = useState([]);
+
+    const [loadingOptions, setLoadingOptions] = useState(true);
+    const [submitting, setSubmitting] = useState(false);
+
+    const [showPassword, setShowPassword] = useState(false);
+    const [specializationModalOpen, setSpecializationModalOpen] =
+        useState(false);
 
     const [form, setForm] = useState({
-        user_code: "",
         username: "",
         first_name: "",
         last_name: "",
@@ -29,19 +32,26 @@ export default function SystemAdUserCreateForm({ onSuccess, onCancel }) {
         employee_department: "",
         it_department: "",
         office_location: "",
-        workload_limit: 5,
+        specializations: [],
     });
+
+    const [errors, setErrors] = useState({});
 
     useEffect(() => {
         const fetchOptions = async () => {
-            try {
-                setOptionsLoading(true);
+            setLoadingOptions(true);
 
+            try {
                 const [
+                    rolesResponse,
                     employeeDepartmentsResponse,
                     itDepartmentsResponse,
                     officeLocationsResponse,
+                    specializationsResponse,
                 ] = await Promise.all([
+                    api.get(
+                        "/users/admin/create-options/roles/"
+                    ),
                     api.get(
                         "/users/admin/create-options/employee-departments/"
                     ),
@@ -51,34 +61,50 @@ export default function SystemAdUserCreateForm({ onSuccess, onCancel }) {
                     api.get(
                         "/users/admin/create-options/office-locations/"
                     ),
+                    api.get(
+                        "/users/admin/create-options/specializations/"
+                    ),
                 ]);
 
+                setRoles(rolesResponse.data || []);
                 setEmployeeDepartments(
                     employeeDepartmentsResponse.data || []
                 );
-
                 setItDepartments(
                     itDepartmentsResponse.data || []
                 );
-
                 setOfficeLocations(
                     officeLocationsResponse.data || []
                 );
+                setSpecializations(
+                    specializationsResponse.data || []
+                );
             } catch {
-                setEmployeeDepartments([]);
-                setItDepartments([]);
-                setOfficeLocations([]);
-
                 toast.error(
-                    "Failed to load departments and office locations."
+                    "Failed to load user creation options."
                 );
             } finally {
-                setOptionsLoading(false);
+                setLoadingOptions(false);
             }
         };
 
         fetchOptions();
     }, []);
+
+    const selectedRole = useMemo(() => {
+        return roles.find(
+            (role) => String(role.id) === String(form.role)
+        );
+    }, [roles, form.role]);
+
+    const isEmployee = selectedRole?.name === "Employee";
+    const isITSupport =
+        selectedRole?.name === "IT Support Specialist";
+
+    const selectedSpecializationNames =
+        specializations.filter((specialization) =>
+            form.specializations.includes(specialization.id)
+        );
 
     const handleChange = (event) => {
         const { name, value } = event.target;
@@ -87,111 +113,112 @@ export default function SystemAdUserCreateForm({ onSuccess, onCancel }) {
             ...previous,
             [name]: value,
         }));
+
+        setErrors((previous) => ({
+            ...previous,
+            [name]: "",
+        }));
     };
 
     const handleRoleChange = (event) => {
-        const { value } = event.target;
+        const value = event.target.value;
 
         setForm((previous) => ({
             ...previous,
             role: value,
             employee_department: "",
             it_department: "",
-            office_location: "",
-            workload_limit:
-                value === "IT Support Specialist"
-                    ? previous.workload_limit || 5
-                    : 5,
+            specializations: [],
         }));
+
+        setErrors({});
+    };
+
+    const validate = () => {
+        const newErrors = {};
+
+        if (!form.username.trim()) {
+            newErrors.username = "Username is required.";
+        }
+
+        if (!form.first_name.trim()) {
+            newErrors.first_name = "First name is required.";
+        }
+
+        if (!form.last_name.trim()) {
+            newErrors.last_name = "Last name is required.";
+        }
+
+        if (!form.password) {
+            newErrors.password = "Password is required.";
+        }
+
+        if (!form.role) {
+            newErrors.role = "Role is required.";
+        }
+
+        if (isEmployee) {
+            if (!form.employee_department) {
+                newErrors.employee_department =
+                    "Employee department is required.";
+            }
+        } else if (form.role) {
+            if (!form.it_department) {
+                newErrors.it_department =
+                    "IT department is required.";
+            }
+        }
+
+        if (!form.office_location) {
+            newErrors.office_location =
+                "Office location is required.";
+        }
+
+        if (isITSupport) {
+            if (form.specializations.length === 0) {
+                newErrors.specializations =
+                    "At least one specialization is required.";
+            }
+        }
+
+        setErrors(newErrors);
+
+        return Object.keys(newErrors).length === 0;
     };
 
     const handleSubmit = async (event) => {
         event.preventDefault();
 
-        if (!form.user_code.trim()) {
-            toast.error("User code is required.");
+        if (!validate()) {
+            toast.error(
+                "Please complete the required fields."
+            );
+
             return;
         }
 
-        if (!form.username.trim()) {
-            toast.error("Username is required.");
-            return;
-        }
-
-        if (!form.first_name.trim()) {
-            toast.error("First name is required.");
-            return;
-        }
-
-        if (!form.last_name.trim()) {
-            toast.error("Last name is required.");
-            return;
-        }
-
-        if (!form.password) {
-            toast.error("Password is required.");
-            return;
-        }
-
-        if (!form.role) {
-            toast.error("Please select a role.");
-            return;
-        }
-
-        if (
-            form.role === "Employee" &&
-            !form.employee_department
-        ) {
-            toast.error("Employee department is required.");
-            return;
-        }
-
-        if (!form.office_location) {
-            toast.error("Office location is required.");
-            return;
-        }
-
-        if (
-            form.role !== "Employee" &&
-            !form.it_department
-        ) {
-            toast.error("IT department is required.");
-            return;
-        }
-
-        if (
-            form.role === "IT Support Specialist" &&
-            Number(form.workload_limit) < 1
-        ) {
-            toast.error("Workload limit must be at least 1.");
-            return;
-        }
+        setSubmitting(true);
 
         try {
-            setLoading(true);
-
             const payload = {
-                user_code: form.user_code.trim(),
                 username: form.username.trim(),
                 first_name: form.first_name.trim(),
                 last_name: form.last_name.trim(),
                 email: form.email.trim(),
                 password: form.password,
-                role: form.role,
-                employee_department:
-                    form.role === "Employee"
-                        ? Number(form.employee_department)
-                        : null,
-                it_department:
-                    form.role !== "Employee"
-                        ? Number(form.it_department)
-                        : null,
-                office_location:
-                    Number(form.office_location),
-                workload_limit:
-                    form.role === "IT Support Specialist"
-                        ? Number(form.workload_limit)
-                        : null,
+                role: Number(form.role),
+                employee_department: isEmployee
+                    ? Number(form.employee_department)
+                    : null,
+                it_department: !isEmployee
+                    ? Number(form.it_department)
+                    : null,
+                office_location: Number(
+                    form.office_location
+                ),
+                specializations: isITSupport
+                    ? form.specializations
+                    : [],
             };
 
             await api.post(
@@ -199,384 +226,586 @@ export default function SystemAdUserCreateForm({ onSuccess, onCancel }) {
                 payload
             );
 
-            toast.success("User created successfully.");
+            toast.success(
+                "User created successfully."
+            );
 
-            onSuccess();
+            if (onSuccess) {
+                onSuccess();
+            }
         } catch (error) {
-            const errors = error?.response?.data;
+            const responseData = error?.response?.data;
 
-            if (errors) {
-                const firstError = Object.values(errors).flat()[0];
+            if (
+                responseData &&
+                typeof responseData === "object"
+            ) {
+                const backendErrors = {};
 
-                toast.error(
-                    firstError || "Failed to create user."
+                Object.entries(responseData).forEach(
+                    ([field, message]) => {
+                        if (Array.isArray(message)) {
+                            backendErrors[field] =
+                                message.join(" ");
+                        } else if (
+                            typeof message === "string"
+                        ) {
+                            backendErrors[field] = message;
+                        }
+                    }
                 );
+
+                if (
+                    Object.keys(backendErrors).length > 0
+                ) {
+                    setErrors(backendErrors);
+
+                    toast.error(
+                        "Please check the highlighted fields."
+                    );
+                } else {
+                    toast.error(
+                        "Failed to create user."
+                    );
+                }
             } else {
-                toast.error("Failed to create user.");
+                toast.error(
+                    "Failed to create user."
+                );
             }
         } finally {
-            setLoading(false);
+            setSubmitting(false);
         }
     };
 
-    const isEmployee = form.role === "Employee";
-
-    const isITRole =
-        form.role === "IT Support Specialist" ||
-        form.role === "IT Service Desk" ||
-        form.role === "Supervisor" ||
-        form.role === "System Administrator";
-
-    const isITSupport =
-        form.role === "IT Support Specialist";
+    if (loadingOptions) {
+        return (
+            <div className="rounded-lg border border-gray-200 bg-white p-6">
+                <p className="text-sm text-gray-500">
+                    Loading form options...
+                </p>
+            </div>
+        );
+    }
 
     return (
-        <form
-            onSubmit={handleSubmit}
-            className="overflow-hidden border border-gray-300 bg-white"
-        >
-            <div className="flex items-start justify-between border-b border-gray-300 px-6 py-5">
-                <div>
-                    <h2 className="text-base font-semibold text-black">
-                        Basic Information
-                    </h2>
-
-                    <p className="mt-1 text-sm text-gray-500">
-                        Enter the user's account and personal information.
-                    </p>
-                </div>
-
-                <p className="text-xs text-gray-500">
-                    <span className="text-red-500">*</span> Required fields
-                </p>
-            </div>
-
-            <div className="grid grid-cols-1 gap-5 p-6 md:grid-cols-2">
-                <div>
-                    <label className="mb-1.5 block text-sm font-medium text-black">
-                        User Code{" "}
-                        <span className="text-red-500">*</span>
-                    </label>
-
-                    <input
-                        type="text"
-                        name="user_code"
-                        value={form.user_code}
-                        onChange={handleChange}
-                        placeholder="e.g. EMP-0001"
-                        required
-                        className="h-10 w-full rounded-md border border-gray-300 px-3 text-sm outline-none focus:border-[#4C4CF9]"
-                    />
-                </div>
-
-                <div>
-                    <label className="mb-1.5 block text-sm font-medium text-black">
-                        Username{" "}
-                        <span className="text-red-500">*</span>
-                    </label>
-
-                    <input
-                        type="text"
-                        name="username"
-                        value={form.username}
-                        onChange={handleChange}
-                        placeholder="Enter username"
-                        required
-                        className="h-10 w-full rounded-md border border-gray-300 px-3 text-sm outline-none focus:border-[#4C4CF9]"
-                    />
-                </div>
-
-                <div>
-                    <label className="mb-1.5 block text-sm font-medium text-black">
-                        First Name{" "}
-                        <span className="text-red-500">*</span>
-                    </label>
-
-                    <input
-                        type="text"
-                        name="first_name"
-                        value={form.first_name}
-                        onChange={handleChange}
-                        placeholder="Enter first name"
-                        required
-                        className="h-10 w-full rounded-md border border-gray-300 px-3 text-sm outline-none focus:border-[#4C4CF9]"
-                    />
-                </div>
-
-                <div>
-                    <label className="mb-1.5 block text-sm font-medium text-black">
-                        Last Name{" "}
-                        <span className="text-red-500">*</span>
-                    </label>
-
-                    <input
-                        type="text"
-                        name="last_name"
-                        value={form.last_name}
-                        onChange={handleChange}
-                        placeholder="Enter last name"
-                        required
-                        className="h-10 w-full rounded-md border border-gray-300 px-3 text-sm outline-none focus:border-[#4C4CF9]"
-                    />
-                </div>
-
-                <div>
-                    <label className="mb-1.5 block text-sm font-medium text-black">
-                        Email
-                    </label>
-
-                    <input
-                        type="email"
-                        name="email"
-                        value={form.email}
-                        onChange={handleChange}
-                        placeholder="Enter email address"
-                        className="h-10 w-full rounded-md border border-gray-300 px-3 text-sm outline-none focus:border-[#4C4CF9]"
-                    />
-                </div>
-
-                <div>
-                    <label className="mb-1.5 block text-sm font-medium text-black">
-                        Password{" "}
-                        <span className="text-red-500">*</span>
-                    </label>
-
-                    <input
-                        type="password"
-                        name="password"
-                        value={form.password}
-                        onChange={handleChange}
-                        placeholder="Enter password"
-                        required
-                        className="h-10 w-full rounded-md border border-gray-300 px-3 text-sm outline-none focus:border-[#4C4CF9]"
-                    />
-                </div>
-            </div>
-
-            <div className="flex items-start justify-between border-t border-b border-gray-300 px-6 py-5">
-                <div>
-                    <h2 className="text-base font-semibold text-black">
-                        Role & Assignment
-                    </h2>
-
-                    <p className="mt-1 text-sm text-gray-500">
-                        Select the user's role and assignment details.
-                    </p>
-                </div>
-
-                <p className="text-xs text-gray-500">
-                    <span className="text-red-500">*</span> Required fields
-                </p>
-            </div>
-
-            <div className="grid grid-cols-1 gap-5 p-6 md:grid-cols-2">
-                <div>
-                    <label className="mb-1.5 block text-sm font-medium text-black">
-                        Role{" "}
-                        <span className="text-red-500">*</span>
-                    </label>
-
-                    <select
-                        name="role"
-                        value={form.role}
-                        onChange={handleRoleChange}
-                        required
-                        disabled={optionsLoading}
-                        className="h-10 w-full cursor-pointer rounded-md border border-gray-300 bg-white px-3 text-sm outline-none focus:border-[#4C4CF9] disabled:cursor-not-allowed disabled:bg-gray-100"
-                    >
-                        <option value="">
-                            Select role
-                        </option>
-
-                        {roles.map((role) => (
-                            <option
-                                key={role.value}
-                                value={role.value}
-                            >
-                                {role.label}
-                            </option>
-                        ))}
-                    </select>
-                </div>
-
-                {isEmployee && (
-                    <>
+        <>
+            <form
+                onSubmit={handleSubmit}
+                className="overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm"
+            >
+                <div className="border-b border-gray-200 px-5 py-5 sm:px-7">
+                    <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                         <div>
-                            <label className="mb-1.5 block text-sm font-medium text-black">
-                                Employee Department{" "}
-                                <span className="text-red-500">*</span>
-                            </label>
+                            <h2 className="text-lg font-semibold text-gray-900">
+                                Create User
+                            </h2>
 
-                            <select
-                                name="employee_department"
-                                value={form.employee_department}
-                                onChange={handleChange}
-                                required
-                                disabled={optionsLoading}
-                                className="h-10 w-full cursor-pointer rounded-md border border-gray-300 bg-white px-3 text-sm outline-none focus:border-[#4C4CF9] disabled:cursor-not-allowed disabled:bg-gray-100"
-                            >
-                                <option value="">
-                                    {optionsLoading
-                                        ? "Loading departments..."
-                                        : "Select employee department"}
-                                </option>
-
-                                {employeeDepartments.map(
-                                    (department) => (
-                                        <option
-                                            key={department.id}
-                                            value={department.id}
-                                        >
-                                            {department.name}
-                                        </option>
-                                    )
-                                )}
-                            </select>
+                            <p className="mt-1 text-sm text-gray-500">
+                                Create and configure a new
+                                system user account.
+                            </p>
                         </div>
 
-                        <div>
-                            <label className="mb-1.5 block text-sm font-medium text-black">
-                                Office Location{" "}
-                                <span className="text-red-500">*</span>
-                            </label>
-
-                            <select
-                                name="office_location"
-                                value={form.office_location}
-                                onChange={handleChange}
-                                required
-                                disabled={optionsLoading}
-                                className="h-10 w-full cursor-pointer rounded-md border border-gray-300 bg-white px-3 text-sm outline-none focus:border-[#4C4CF9] disabled:cursor-not-allowed disabled:bg-gray-100"
-                            >
-                                <option value="">
-                                    {optionsLoading
-                                        ? "Loading locations..."
-                                        : "Select office location"}
-                                </option>
-
-                                {officeLocations.map(
-                                    (location) => (
-                                        <option
-                                            key={location.id}
-                                            value={location.id}
-                                        >
-                                            {location.name}
-                                        </option>
-                                    )
-                                )}
-                            </select>
-                        </div>
-                    </>
-                )}
-
-                {isITRole && (
-                    <>
-                        <div>
-                            <label className="mb-1.5 block text-sm font-medium text-black">
-                                IT Department{" "}
-                                <span className="text-red-500">*</span>
-                            </label>
-
-                            <select
-                                name="it_department"
-                                value={form.it_department}
-                                onChange={handleChange}
-                                required
-                                disabled={optionsLoading}
-                                className="h-10 w-full cursor-pointer rounded-md border border-gray-300 bg-white px-3 text-sm outline-none focus:border-[#4C4CF9] disabled:cursor-not-allowed disabled:bg-gray-100"
-                            >
-                                <option value="">
-                                    {optionsLoading
-                                        ? "Loading departments..."
-                                        : "Select IT department"}
-                                </option>
-
-                                {itDepartments.map(
-                                    (department) => (
-                                        <option
-                                            key={department.id}
-                                            value={department.id}
-                                        >
-                                            {department.name}
-                                        </option>
-                                    )
-                                )}
-                            </select>
-                        </div>
-
-                        <div>
-                            <label className="mb-1.5 block text-sm font-medium text-black">
-                                Office Location{" "}
-                                <span className="text-red-500">*</span>
-                            </label>
-
-                            <select
-                                name="office_location"
-                                value={form.office_location}
-                                onChange={handleChange}
-                                required
-                                disabled={optionsLoading}
-                                className="h-10 w-full cursor-pointer rounded-md border border-gray-300 bg-white px-3 text-sm outline-none focus:border-[#4C4CF9] disabled:cursor-not-allowed disabled:bg-gray-100"
-                            >
-                                <option value="">
-                                    {optionsLoading
-                                        ? "Loading locations..."
-                                        : "Select office location"}
-                                </option>
-
-                                {officeLocations.map(
-                                    (location) => (
-                                        <option
-                                            key={location.id}
-                                            value={location.id}
-                                        >
-                                            {location.name}
-                                        </option>
-                                    )
-                                )}
-                            </select>
-                        </div>
-                    </>
-                )}
-
-                {isITSupport && (
-                    <div>
-                        <label className="mb-1.5 block text-sm font-medium text-black">
-                            Workload Limit{" "}
-                            <span className="text-red-500">*</span>
-                        </label>
-
-                        <input
-                            type="number"
-                            name="workload_limit"
-                            min="1"
-                            value={form.workload_limit}
-                            onChange={handleChange}
-                            required
-                            className="h-10 w-full rounded-md border border-gray-300 px-3 text-sm outline-none focus:border-[#4C4CF9]"
-                        />
+                        <p className="text-xs text-gray-500 sm:pt-1">
+                            Fields marked with{" "}
+                            <span className="text-red-500">
+                                *
+                            </span>{" "}
+                            are required.
+                        </p>
                     </div>
-                )}
-            </div>
+                </div>
 
-            <div className="flex items-center justify-end gap-3 border-t border-gray-300 bg-gray-50 px-6 py-4">
-                <button
-                    type="button"
-                    onClick={onCancel}
-                    disabled={loading}
-                    className="h-10 cursor-pointer rounded-md border border-gray-300 bg-white px-4 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
-                >
-                    Cancel
-                </button>
+                <div className="px-5 py-6 sm:px-7 sm:py-7">
+                    <section>
+                        <div className="mb-5">
+                            <h3 className="text-sm font-semibold text-gray-900">
+                                Account Details
+                            </h3>
 
-                <button
-                    type="submit"
-                    disabled={loading || optionsLoading}
-                    className="h-10 cursor-pointer rounded-md bg-[#4C4CF9] px-5 text-sm font-medium text-white transition-colors hover:bg-[#3f3fe8] disabled:cursor-not-allowed disabled:opacity-50"
-                >
-                    {loading ? "Creating..." : "Create User"}
-                </button>
-            </div>
-        </form>
+                            <p className="mt-1 text-xs text-gray-500">
+                                Enter the user's basic account
+                                information.
+                            </p>
+                        </div>
+
+                        <div className="grid grid-cols-1 gap-x-8 gap-y-5 md:grid-cols-2">
+                            <div>
+                                <label className="mb-1.5 block text-sm font-medium text-gray-700">
+                                    Username{" "}
+                                    <span className="text-red-500">
+                                        *
+                                    </span>
+                                </label>
+
+                                <input
+                                    type="text"
+                                    name="username"
+                                    value={form.username}
+                                    onChange={handleChange}
+                                    placeholder="e.g. juan.delacruz"
+                                    className={`h-10 w-full rounded-md border bg-white px-3 text-sm text-gray-900 outline-none transition-all placeholder:text-gray-400 focus:border-[#4C4CF9] focus:ring-2 focus:ring-[#4C4CF9]/10 ${
+                                        errors.username
+                                            ? "border-red-400"
+                                            : "border-gray-300"
+                                    }`}
+                                />
+
+                                {errors.username && (
+                                    <p className="mt-1.5 text-xs text-red-500">
+                                        {errors.username}
+                                    </p>
+                                )}
+                            </div>
+
+                            <div>
+                                <label className="mb-1.5 block text-sm font-medium text-gray-700">
+                                    Email Address
+                                </label>
+
+                                <input
+                                    type="email"
+                                    name="email"
+                                    value={form.email}
+                                    onChange={handleChange}
+                                    placeholder="e.g. juan.delacruz@company.com"
+                                    className="h-10 w-full rounded-md border border-gray-300 bg-white px-3 text-sm text-gray-900 outline-none transition-all placeholder:text-gray-400 focus:border-[#4C4CF9] focus:ring-2 focus:ring-[#4C4CF9]/10"
+                                />
+                            </div>
+
+                            <div>
+                                <label className="mb-1.5 block text-sm font-medium text-gray-700">
+                                    First Name{" "}
+                                    <span className="text-red-500">
+                                        *
+                                    </span>
+                                </label>
+
+                                <input
+                                    type="text"
+                                    name="first_name"
+                                    value={form.first_name}
+                                    onChange={handleChange}
+                                    placeholder="e.g. Juan"
+                                    className={`h-10 w-full rounded-md border bg-white px-3 text-sm text-gray-900 outline-none transition-all placeholder:text-gray-400 focus:border-[#4C4CF9] focus:ring-2 focus:ring-[#4C4CF9]/10 ${
+                                        errors.first_name
+                                            ? "border-red-400"
+                                            : "border-gray-300"
+                                    }`}
+                                />
+
+                                {errors.first_name && (
+                                    <p className="mt-1.5 text-xs text-red-500">
+                                        {errors.first_name}
+                                    </p>
+                                )}
+                            </div>
+
+                            <div>
+                                <label className="mb-1.5 block text-sm font-medium text-gray-700">
+                                    Last Name{" "}
+                                    <span className="text-red-500">
+                                        *
+                                    </span>
+                                </label>
+
+                                <input
+                                    type="text"
+                                    name="last_name"
+                                    value={form.last_name}
+                                    onChange={handleChange}
+                                    placeholder="e.g. Dela Cruz"
+                                    className={`h-10 w-full rounded-md border bg-white px-3 text-sm text-gray-900 outline-none transition-all placeholder:text-gray-400 focus:border-[#4C4CF9] focus:ring-2 focus:ring-[#4C4CF9]/10 ${
+                                        errors.last_name
+                                            ? "border-red-400"
+                                            : "border-gray-300"
+                                    }`}
+                                />
+
+                                {errors.last_name && (
+                                    <p className="mt-1.5 text-xs text-red-500">
+                                        {errors.last_name}
+                                    </p>
+                                )}
+                            </div>
+
+                            <div className="md:col-span-2">
+                                <label className="mb-1.5 block text-sm font-medium text-gray-700">
+                                    Password{" "}
+                                    <span className="text-red-500">
+                                        *
+                                    </span>
+                                </label>
+
+                                <div className="relative max-w-md">
+                                    <input
+                                        type={
+                                            showPassword
+                                                ? "text"
+                                                : "password"
+                                        }
+                                        name="password"
+                                        value={form.password}
+                                        onChange={handleChange}
+                                        placeholder="e.g. *********"
+                                        className={`h-10 w-full rounded-md border bg-white px-3 pr-10 text-sm text-gray-900 outline-none transition-all placeholder:text-gray-400 focus:border-[#4C4CF9] focus:ring-2 focus:ring-[#4C4CF9]/10 ${
+                                            errors.password
+                                                ? "border-red-400"
+                                                : "border-gray-300"
+                                        }`}
+                                    />
+
+                                    <button
+                                        type="button"
+                                        onClick={() =>
+                                            setShowPassword(
+                                                (previous) =>
+                                                    !previous
+                                            )
+                                        }
+                                        className="absolute right-0 top-0 flex h-10 w-10 cursor-pointer items-center justify-center text-gray-400 transition-colors hover:text-gray-700"
+                                        aria-label={
+                                            showPassword
+                                                ? "Hide password"
+                                                : "Show password"
+                                        }
+                                    >
+                                        {showPassword ? (
+                                            <EyeOff size={17} />
+                                        ) : (
+                                            <Eye size={17} />
+                                        )}
+                                    </button>
+                                </div>
+
+                                {errors.password && (
+                                    <p className="mt-1.5 text-xs text-red-500">
+                                        {errors.password}
+                                    </p>
+                                )}
+                            </div>
+                        </div>
+                    </section>
+
+                    <div className="my-8 border-t border-gray-200" />
+
+                    <section>
+                        <div className="mb-5">
+                            <h3 className="text-sm font-semibold text-gray-900">
+                                Role & Organization
+                            </h3>
+
+                            <p className="mt-1 text-xs text-gray-500">
+                                Assign the user's role,
+                                department, and office location.
+                            </p>
+                        </div>
+
+                        <div className="grid grid-cols-1 gap-x-8 gap-y-5 md:grid-cols-2">
+                            <div>
+                                <label className="mb-1.5 block text-sm font-medium text-gray-700">
+                                    Role{" "}
+                                    <span className="text-red-500">
+                                        *
+                                    </span>
+                                </label>
+
+                                <select
+                                    name="role"
+                                    value={form.role}
+                                    onChange={handleRoleChange}
+                                    className={`h-10 w-full cursor-pointer rounded-md border bg-white px-3 text-sm text-gray-900 outline-none transition-all focus:border-[#4C4CF9] focus:ring-2 focus:ring-[#4C4CF9]/10 ${
+                                        errors.role
+                                            ? "border-red-400"
+                                            : "border-gray-300"
+                                    }`}
+                                >
+                                    <option value="">
+                                        Select role
+                                    </option>
+
+                                    {roles.map((role) => (
+                                        <option
+                                            key={role.id}
+                                            value={role.id}
+                                        >
+                                            {role.name}
+                                        </option>
+                                    ))}
+                                </select>
+
+                                {errors.role && (
+                                    <p className="mt-1.5 text-xs text-red-500">
+                                        {errors.role}
+                                    </p>
+                                )}
+                            </div>
+
+                            {isEmployee ? (
+                                <div>
+                                    <label className="mb-1.5 block text-sm font-medium text-gray-700">
+                                        Employee Department{" "}
+                                        <span className="text-red-500">
+                                            *
+                                        </span>
+                                    </label>
+
+                                    <select
+                                        name="employee_department"
+                                        value={
+                                            form.employee_department
+                                        }
+                                        onChange={handleChange}
+                                        className={`h-10 w-full cursor-pointer rounded-md border bg-white px-3 text-sm text-gray-900 outline-none transition-all focus:border-[#4C4CF9] focus:ring-2 focus:ring-[#4C4CF9]/10 ${
+                                            errors.employee_department
+                                                ? "border-red-400"
+                                                : "border-gray-300"
+                                        }`}
+                                    >
+                                        <option value="">
+                                            Select employee department
+                                        </option>
+
+                                        {employeeDepartments.map(
+                                            (department) => (
+                                                <option
+                                                    key={department.id}
+                                                    value={department.id}
+                                                >
+                                                    {department.name}
+                                                </option>
+                                            )
+                                        )}
+                                    </select>
+
+                                    {errors.employee_department && (
+                                        <p className="mt-1.5 text-xs text-red-500">
+                                            {
+                                                errors.employee_department
+                                            }
+                                        </p>
+                                    )}
+                                </div>
+                            ) : (
+                                <div>
+                                    <label className="mb-1.5 block text-sm font-medium text-gray-700">
+                                        IT Department{" "}
+                                        <span className="text-red-500">
+                                            *
+                                        </span>
+                                    </label>
+
+                                    <select
+                                        name="it_department"
+                                        value={form.it_department}
+                                        onChange={handleChange}
+                                        className={`h-10 w-full cursor-pointer rounded-md border bg-white px-3 text-sm text-gray-900 outline-none transition-all focus:border-[#4C4CF9] focus:ring-2 focus:ring-[#4C4CF9]/10 ${
+                                            errors.it_department
+                                                ? "border-red-400"
+                                                : "border-gray-300"
+                                        }`}
+                                    >
+                                        <option value="">
+                                            Select IT department
+                                        </option>
+
+                                        {itDepartments.map(
+                                            (department) => (
+                                                <option
+                                                    key={department.id}
+                                                    value={department.id}
+                                                >
+                                                    {department.name}
+                                                </option>
+                                            )
+                                        )}
+                                    </select>
+
+                                    {errors.it_department && (
+                                        <p className="mt-1.5 text-xs text-red-500">
+                                            {errors.it_department}
+                                        </p>
+                                    )}
+                                </div>
+                            )}
+
+                            <div>
+                                <label className="mb-1.5 block text-sm font-medium text-gray-700">
+                                    Office Location{" "}
+                                    <span className="text-red-500">
+                                        *
+                                    </span>
+                                </label>
+
+                                <select
+                                    name="office_location"
+                                    value={form.office_location}
+                                    onChange={handleChange}
+                                    className={`h-10 w-full cursor-pointer rounded-md border bg-white px-3 text-sm text-gray-900 outline-none transition-all focus:border-[#4C4CF9] focus:ring-2 focus:ring-[#4C4CF9]/10 ${
+                                        errors.office_location
+                                            ? "border-red-400"
+                                            : "border-gray-300"
+                                    }`}
+                                >
+                                    <option value="">
+                                        Select office location
+                                    </option>
+
+                                    {officeLocations.map(
+                                        (location) => (
+                                            <option
+                                                key={location.id}
+                                                value={location.id}
+                                            >
+                                                {location.name}
+                                            </option>
+                                        )
+                                    )}
+                                </select>
+
+                                {errors.office_location && (
+                                    <p className="mt-1.5 text-xs text-red-500">
+                                        {errors.office_location}
+                                    </p>
+                                )}
+                            </div>
+                        </div>
+                    </section>
+
+                    {isITSupport && (
+                        <>
+                            <div className="my-8 border-t border-gray-200" />
+
+                            <section>
+                                <div className="mb-5">
+                                    <h3 className="text-sm font-semibold text-gray-900">
+                                        IT Support Details
+                                    </h3>
+
+                                    <p className="mt-1 text-xs text-gray-500">
+                                        Configure technical
+                                        specializations for this
+                                        support specialist.
+                                    </p>
+                                </div>
+
+                                <div>
+                                    <label className="mb-1.5 block text-sm font-medium text-gray-700">
+                                        Specializations{" "}
+                                        <span className="text-red-500">
+                                            *
+                                        </span>
+                                    </label>
+
+                                    <button
+                                        type="button"
+                                        onClick={() =>
+                                            setSpecializationModalOpen(
+                                                true
+                                            )
+                                        }
+                                        className={`flex min-h-10 w-full cursor-pointer items-center justify-between rounded-md border bg-white px-3 py-2 text-left text-sm outline-none transition-all hover:bg-gray-50 focus:border-[#4C4CF9] focus:ring-2 focus:ring-[#4C4CF9]/10 ${
+                                            errors.specializations
+                                                ? "border-red-400"
+                                                : "border-gray-300"
+                                        }`}
+                                    >
+                                        <span
+                                            className={
+                                                selectedSpecializationNames.length >
+                                                0
+                                                    ? "text-gray-900"
+                                                    : "text-gray-400"
+                                            }
+                                        >
+                                            {selectedSpecializationNames.length >
+                                            0
+                                                ? `${selectedSpecializationNames.length} selected`
+                                                : "Select specializations"}
+                                        </span>
+
+                                        <span className="text-xs font-medium text-gray-500">
+                                            Choose
+                                        </span>
+                                    </button>
+
+                                    {selectedSpecializationNames.length >
+                                        0 && (
+                                        <div className="mt-2 flex flex-wrap gap-2">
+                                            {selectedSpecializationNames.map(
+                                                (specialization) => (
+                                                    <span
+                                                        key={
+                                                            specialization.id
+                                                        }
+                                                        className="rounded-full border border-gray-200 bg-gray-50 px-2.5 py-1 text-xs text-gray-700"
+                                                    >
+                                                        {
+                                                            specialization.name
+                                                        }
+                                                    </span>
+                                                )
+                                            )}
+                                        </div>
+                                    )}
+
+                                    {errors.specializations && (
+                                        <p className="mt-1.5 text-xs text-red-500">
+                                            {errors.specializations}
+                                        </p>
+                                    )}
+                                </div>
+                            </section>
+                        </>
+                    )}
+                </div>
+
+                <div className="flex flex-col-reverse gap-2 border-t border-gray-200 bg-gray-50 px-5 py-4 sm:flex-row sm:items-center sm:justify-end sm:px-7">
+                    <button
+                        type="button"
+                        onClick={onCancel}
+                        disabled={submitting}
+                        className="h-10 w-full cursor-pointer rounded-md border border-gray-300 bg-white px-5 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto"
+                    >
+                        Cancel
+                    </button>
+
+                    <button
+                        type="submit"
+                        disabled={submitting}
+                        className="h-10 w-full cursor-pointer rounded-md bg-[#4C4CF9] px-5 text-sm font-medium text-white transition-colors hover:bg-[#3f3fe8] disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto"
+                    >
+                        {submitting
+                            ? "Creating..."
+                            : "Create User"}
+                    </button>
+                </div>
+            </form>
+
+            <SpecializationModal
+                open={specializationModalOpen}
+                specializations={specializations}
+                selectedSpecializations={
+                    form.specializations
+                }
+                onClose={() =>
+                    setSpecializationModalOpen(false)
+                }
+                onDone={(selected) => {
+                    setForm((previous) => ({
+                        ...previous,
+                        specializations: selected,
+                    }));
+
+                    setErrors((previous) => ({
+                        ...previous,
+                        specializations: "",
+                    }));
+
+                    setSpecializationModalOpen(false);
+                }}
+            />
+        </>
     );
 }
