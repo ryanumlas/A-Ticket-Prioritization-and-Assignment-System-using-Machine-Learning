@@ -10,7 +10,7 @@ export default function PriorityRequestTable({
 
     if (loading) {
         return (
-            <div className="flex min-h-[240px] items-center justify-center bg-white">
+            <div className="flex h-[637px] items-center justify-center overflow-hidden bg-white">
                 <p className="text-sm text-gray-500">
                     Loading priority requests...
                 </p>
@@ -19,25 +19,10 @@ export default function PriorityRequestTable({
     }
 
     return (
-        <div
-            className="
-                max-h-[510px]
-                w-full
-                overflow-auto
-                bg-white
-                [&::-webkit-scrollbar]:w-[3px]
-                [&::-webkit-scrollbar]:h-[3px]
-                [&::-webkit-scrollbar-track]:bg-transparent
-                [&::-webkit-scrollbar-thumb]:rounded-full
-                [&::-webkit-scrollbar-thumb]:bg-gray-300
-                hover:[&::-webkit-scrollbar-thumb]:bg-gray-400
-            "
-        >
+        <div className="h-[637px] w-full overflow-y-auto overflow-x-hidden bg-white">
             <table className="w-full table-fixed text-sm">
-
                 <thead className="sticky top-0 z-10 bg-gray-50">
                     <tr className="border-b border-gray-300 text-left">
-
                         <th className="w-[8%] px-4 py-3.5 font-semibold text-black">
                             Ticket ID
                         </th>
@@ -46,19 +31,19 @@ export default function PriorityRequestTable({
                             Subject
                         </th>
 
-                        <th className="w-[11%] px-5 py-3.5 font-semibold text-black">
+                        <th className="w-[13%] px-5 py-3.5 font-semibold text-black">
                             Requested By
                         </th>
 
-                        <th className="w-[10%] px-5 py-3.5 font-semibold text-black">
+                        <th className="w-[11%] px-5 py-3.5 font-semibold text-black">
                             IT Department
                         </th>
 
-                        <th className="w-[10%] px-5 py-3.5 font-semibold text-black">
+                        <th className="w-[11%] px-5 py-3.5 font-semibold text-black">
                             Priority Change
                         </th>
 
-                        <th className="w-[18%] px-5 py-3.5 font-semibold text-black">
+                        <th className="w-[17%] px-5 py-3.5 font-semibold text-black">
                             Reason
                         </th>
 
@@ -66,10 +51,9 @@ export default function PriorityRequestTable({
                             Status
                         </th>
 
-                        <th className="w-[14%] px-5 py-3.5 font-semibold text-black">
+                        <th className="w-[11%] px-5 py-3.5 font-semibold text-black">
                             Requested At
                         </th>
-
                     </tr>
                 </thead>
 
@@ -92,10 +76,10 @@ export default function PriorityRequestTable({
                                     }
                                     className="cursor-pointer border-b border-gray-200 transition-colors hover:bg-gray-50 last:border-b-0"
                                 >
-
                                     <td className="px-4 py-4">
                                         <span className="whitespace-nowrap font-semibold text-black">
-                                            {request.ticket_code || "-"}
+                                            {request.ticket_code ||
+                                                "-"}
                                         </span>
                                     </td>
 
@@ -109,12 +93,24 @@ export default function PriorityRequestTable({
                                     </td>
 
                                     <td className="px-5 py-4">
-                                        <p
-                                            className="truncate text-black"
-                                            title={requesterName}
-                                        >
-                                            {requesterName}
-                                        </p>
+                                        <div className="min-w-0">
+                                            <p
+                                                className="truncate font-medium text-black"
+                                                title={requesterName}
+                                            >
+                                                {requesterName}
+                                            </p>
+
+                                            <p
+                                                className="mt-0.5 truncate text-xs text-gray-500"
+                                                title={
+                                                    request.requested_by_user_code
+                                                }
+                                            >
+                                                {request.requested_by_user_code ||
+                                                    "-"}
+                                            </p>
+                                        </div>
                                     </td>
 
                                     <td className="px-5 py-4">
@@ -132,13 +128,13 @@ export default function PriorityRequestTable({
 
                                     <td className="px-5 py-4">
                                         <div className="flex items-center gap-1.5">
-
                                             <span
                                                 className={`inline-flex items-center justify-center rounded-md border px-2 py-1 text-xs font-semibold ${getPriorityStyle(
                                                     request.current_priority
                                                 )}`}
                                             >
-                                                {request.current_priority || "-"}
+                                                {request.current_priority ||
+                                                    "-"}
                                             </span>
 
                                             <ArrowRight
@@ -151,9 +147,9 @@ export default function PriorityRequestTable({
                                                     request.requested_priority
                                                 )}`}
                                             >
-                                                {request.requested_priority || "-"}
+                                                {request.requested_priority ||
+                                                    "-"}
                                             </span>
-
                                         </div>
                                     </td>
 
@@ -173,7 +169,9 @@ export default function PriorityRequestTable({
                                                 request.status
                                             )}`}
                                         >
-                                            {formatText(request.status)}
+                                            {formatText(
+                                                request.status
+                                            )}
                                         </span>
                                     </td>
 
@@ -186,7 +184,6 @@ export default function PriorityRequestTable({
                                                 : "-"}
                                         </span>
                                     </td>
-
                                 </tr>
                             );
                         })
@@ -208,7 +205,6 @@ export default function PriorityRequestTable({
                         </tr>
                     )}
                 </tbody>
-
             </table>
         </div>
     );

@@ -9,7 +9,7 @@ export default function TicketReturnedTable({
 
     if (loading) {
         return (
-            <div className="flex min-h-[240px] items-center justify-center bg-white">
+            <div className="flex h-[637px] items-center justify-center overflow-hidden bg-white">
                 <p className="text-sm text-gray-500">
                     Loading returned ticket requests...
                 </p>
@@ -18,25 +18,10 @@ export default function TicketReturnedTable({
     }
 
     return (
-        <div
-            className="
-                max-h-[510px]
-                w-full
-                overflow-auto
-                bg-white
-                [&::-webkit-scrollbar]:w-[3px]
-                [&::-webkit-scrollbar]:h-[3px]
-                [&::-webkit-scrollbar-track]:bg-transparent
-                [&::-webkit-scrollbar-thumb]:rounded-full
-                [&::-webkit-scrollbar-thumb]:bg-gray-300
-                hover:[&::-webkit-scrollbar-thumb]:bg-gray-400
-            "
-        >
+        <div className="h-[637px] w-full overflow-y-auto overflow-x-hidden bg-white">
             <table className="w-full table-fixed text-sm">
-
                 <thead className="sticky top-0 z-10 bg-gray-50">
                     <tr className="border-b border-gray-300 text-left">
-
                         <th className="w-[10%] px-4 py-3.5 font-semibold text-black">
                             Ticket ID
                         </th>
@@ -45,7 +30,7 @@ export default function TicketReturnedTable({
                             Subject
                         </th>
 
-                        <th className="w-[14%] px-5 py-3.5 font-semibold text-black">
+                        <th className="w-[16%] px-5 py-3.5 font-semibold text-black">
                             Requested By
                         </th>
 
@@ -61,10 +46,9 @@ export default function TicketReturnedTable({
                             Status
                         </th>
 
-                        <th className="w-[14%] px-5 py-3.5 font-semibold text-black">
+                        <th className="w-[12%] px-5 py-3.5 font-semibold text-black">
                             Requested At
                         </th>
-
                     </tr>
                 </thead>
 
@@ -81,14 +65,16 @@ export default function TicketReturnedTable({
                                 <tr
                                     key={request.id}
                                     onClick={() =>
-                                        navigate(`/returned-ticket/${request.id}`)
+                                        navigate(
+                                            `/returned-ticket/${request.id}`
+                                        )
                                     }
                                     className="cursor-pointer border-b border-gray-200 transition-colors hover:bg-gray-50 last:border-b-0"
                                 >
-
                                     <td className="px-4 py-4">
                                         <span className="whitespace-nowrap font-semibold text-black">
-                                            {request.ticket_code || "-"}
+                                            {request.ticket_code ||
+                                                "-"}
                                         </span>
                                     </td>
 
@@ -102,16 +88,24 @@ export default function TicketReturnedTable({
                                     </td>
 
                                     <td className="px-5 py-4">
-                                        <p
-                                            className="truncate text-black"
-                                            title={requesterName}
-                                        >
-                                            {requesterName}
-                                        </p>
+                                        <div className="min-w-0">
+                                            <p
+                                                className="truncate font-medium text-black"
+                                                title={requesterName}
+                                            >
+                                                {requesterName}
+                                            </p>
 
-                                        <p className="mt-0.5 text-xs text-gray-500">
-                                            {request.requested_by_user_code || "-"}
-                                        </p>
+                                            <p
+                                                className="mt-0.5 truncate text-xs text-gray-500"
+                                                title={
+                                                    request.requested_by_user_code
+                                                }
+                                            >
+                                                {request.requested_by_user_code ||
+                                                    "-"}
+                                            </p>
+                                        </div>
                                     </td>
 
                                     <td className="px-5 py-4">
@@ -143,7 +137,9 @@ export default function TicketReturnedTable({
                                                 request.status
                                             )}`}
                                         >
-                                            {formatText(request.status)}
+                                            {formatText(
+                                                request.status
+                                            )}
                                         </span>
                                     </td>
 
@@ -156,7 +152,6 @@ export default function TicketReturnedTable({
                                                 : "-"}
                                         </span>
                                     </td>
-
                                 </tr>
                             );
                         })
@@ -171,14 +166,13 @@ export default function TicketReturnedTable({
                                 </p>
 
                                 <p className="mt-1 text-sm text-gray-500">
-                                    There are currently no returned ticket
-                                    requests to review.
+                                    There are currently no returned
+                                    ticket requests to review.
                                 </p>
                             </td>
                         </tr>
                     )}
                 </tbody>
-
             </table>
         </div>
     );

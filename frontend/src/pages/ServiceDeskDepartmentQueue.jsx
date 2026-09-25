@@ -47,7 +47,7 @@ export default function ServiceDeskDepartmentQueue() {
 
     useEffect(() => {
         fetchSymptomCodes();
-    }, []);
+    }, [departmentId]);
 
     const fetchDepartment = async () => {
         try {
@@ -130,17 +130,24 @@ export default function ServiceDeskDepartmentQueue() {
     };
 
     const fetchSymptomCodes = async () => {
+        if (!departmentId) {
+            setSymptomCodes([]);
+            return;
+        }
+
         try {
             const response = await api.get(
-                "/tickets/symptom-codes/ticket-queue/"
+                "/tickets/service-desk/department-symptom-codes/",
+                {
+                    params: {
+                        department: departmentId,
+                    },
+                }
             );
 
             setSymptomCodes(response.data || []);
         } catch {
-            toast.error(
-                "Failed to load symptom codes."
-            );
-
+            toast.error("Failed to load symptom codes.");
             setSymptomCodes([]);
         }
     };

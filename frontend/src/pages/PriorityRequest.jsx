@@ -1,5 +1,6 @@
-import Sidebar from "../components/Sidebar"
-import { getCurrentUser } from "../utils/auth"
+import Sidebar from "../components/Sidebar";
+import TopBar from "../components/Topbar";
+import { getCurrentUser } from "../utils/auth";
 import PriorityRequestServiceDesk from "../pages/PriorityRequestServiceDesk";
 
 export default function PriorityRequest() {
@@ -8,24 +9,27 @@ export default function PriorityRequest() {
     let MainContent;
 
     if (user?.role === "IT Service Desk") {
-        MainContent = <PriorityRequestServiceDesk/>;
-    }
-    else {
-        MainContent = <div className="p-6">Access Denied / Invalid Role</div>;
+        MainContent = <PriorityRequestServiceDesk />;
+    } else {
+        MainContent = (
+            <div className="p-6">
+                Access Denied / Invalid Role
+            </div>
+        );
     }
 
     return (
-        <div className="flex w-screen h-screen overflow-hidden bg-gray-50">
+        <div className="flex h-screen w-screen overflow-hidden bg-gray-50">
             <Sidebar />
-            <div className="flex-1 h-screen flex flex-col">
-            
-                <div className="h-14 border-b border-gray-300 bg-white mb-20 shrink-0">
+
+            <div className="flex h-screen min-w-0 flex-1 flex-col overflow-hidden">
+                <div className="shrink-0">
+                    <TopBar />
                 </div>
 
-                <main className="flex-1 h-full">
+                <main className="min-h-0 flex-1 overflow-y-auto">
                     {MainContent}
                 </main>
-
             </div>
         </div>
     );

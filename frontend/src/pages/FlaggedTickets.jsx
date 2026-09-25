@@ -1,6 +1,7 @@
 import Sidebar from "../components/Sidebar"
 import { getCurrentUser } from "../utils/auth"
 import FlaggedTicketsTable from "../components/FlaggedTicketsTable"
+import TopBar from "../components/Topbar"
 import ServiceDeskFlaggedTickets from "./ServiceDeskFlaggedTickets";
 
 export default function FlaggedTickets() {
@@ -18,8 +19,7 @@ export default function FlaggedTickets() {
             <Sidebar />
             <div className="flex-1 h-screen flex flex-col">
             
-                <div className="h-14 border-b border-gray-300 bg-white mb-20 shrink-0">
-                </div>
+                <TopBar/>
 
                 <main className="flex-1 h-full">
                     {MainContent}

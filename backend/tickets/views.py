@@ -14,7 +14,8 @@ TicketAssistanceSerializer, TicketCommentSerializer, TicketStatusHistory, SLARul
 SLARulesUpdateSerializer, KeywordSerializer, KeywordUpdateSerializer, UpdateSymptomCodeSerializer, CreateSymptomCodeSerializer,
 TicketCreateSerializer, TicketUpdateSerializer, TicketDetailEmployeeSerializer, CategoryUpdateSerializer, FlaggedTicketsListSerializer, 
 FlaggedTicketDetailSerializer, TicketDetailSupportSerializer, TicketStatusHistorySerializer, PriorityChangeRequestSerializer, PriorityRequestListSerializer, 
-PriorityRequestDetailSerializer, ReturnTicketSerializer, ReturnedTicketRequestListSerializer, ReturnedTicketDetailSerializer, ApproveReturnTicketSerializer, ServiceDeskDepartmentSerializer)
+PriorityRequestDetailSerializer, ReturnTicketSerializer, ReturnedTicketRequestListSerializer, ReturnedTicketDetailSerializer, ApproveReturnTicketSerializer, 
+ServiceDeskDepartmentSerializer)
 from users.models import User, ITSupportProfile, Notifications
 from users.services import create_notification
 from .services import predict_ticket, assign_ticket_automatically
@@ -726,14 +727,52 @@ class UpdateTicketView(APIView):
 
 # --- Service Desk ---
 class FlaggedTicketsListView(generics.ListAPIView):
-    queryset = ReviewFlags.objects.select_related(
-        "ticket",
-        "ticket__priority",
-    ).order_by("-created_at")
-
     serializer_class = FlaggedTicketsListSerializer
-
     permission_classes = [IsAuthenticated]
+    pagination_class = TicketPagination
+
+    def get_queryset(self):
+        queryset = (
+            ReviewFlags.objects
+            .select_related(
+                "ticket",
+                "ticket__priority",
+            )
+            .order_by("-created_at")
+        )
+
+        search = self.request.query_params.get(
+            "search",
+            ""
+        ).strip()
+
+        reason = self.request.query_params.get(
+            "reason",
+            ""
+        ).strip()
+
+        status_filter = self.request.query_params.get(
+            "status",
+            ""
+        ).strip()
+
+        if search:
+            queryset = queryset.filter(
+                Q(ticket__ticket_code__icontains=search)
+                | Q(ticket__subject__icontains=search)
+            )
+
+        if reason:
+            queryset = queryset.filter(
+                reason=reason
+            )
+
+        if status_filter:
+            queryset = queryset.filter(
+                status=status_filter
+            )
+
+        return queryset
 
 class FlaggedTicketDetailView(generics.RetrieveAPIView):
     queryset = ReviewFlags.objects.all()
@@ -2045,6 +2084,47 @@ class ServiceDeskDepartmentListView(APIView):
         )
 
         return Response(serializer.data)
+
+class ServiceDeskDepartmentSymptomCodesView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        if not request.user.role or request.user.role.name != "IT Service Desk":
+            return Response(
+                {"detail": "You do not have permission to view symptom codes."},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
+        department_id = request.query_params.get("department")
+
+        if not department_id:
+            return Response(
+                {"detail": "IT department is required."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        symptom_codes = (
+            SymptomCode.objects
+            .filter(category__it_department_id=department_id)
+            .select_related("category")
+            .order_by("code")
+        )
+
+        data = [
+            {
+                "id": symptom.id,
+                "code": symptom.code,
+                "description": symptom.description,
+                "category": (
+                    symptom.category.name
+                    if symptom.category
+                    else None
+                ),
+            }
+            for symptom in symptom_codes
+        ]
+
+        return Response(data)
 # --- End ---
 
 # --- Category Views ---
@@ -2335,11 +2415,13 @@ class PriorityChangeRequestView(APIView):
             status=status.HTTP_201_CREATED,
         )
 
-class PriorityChangeRequestListView(APIView):
+class PriorityChangeRequestListView(generics.ListAPIView):
+    serializer_class = PriorityRequestListSerializer
     permission_classes = [IsAuthenticated]
+    pagination_class = TicketPagination
 
-    def get(self, request):
-        priority_requests = (
+    def get_queryset(self):
+        queryset = (
             TicketPriorityRequest.objects
             .select_related(
                 "ticket",
@@ -2347,20 +2429,38 @@ class PriorityChangeRequestListView(APIView):
                 "requested_priority",
                 "requested_by",
             )
-            .order_by(
-                "-requested_at"
+            .order_by("-requested_at")
+        )
+
+        search = self.request.query_params.get(
+            "search",
+            ""
+        ).strip()
+
+        status_filter = self.request.query_params.get(
+            "status",
+            ""
+        ).strip()
+
+        if search:
+            queryset = queryset.filter(
+                Q(ticket__ticket_code__icontains=search)
+                | Q(ticket__subject__icontains=search)
+                | Q(
+                    requested_by__first_name__icontains=search
+                )
+                | Q(
+                    requested_by__last_name__icontains=search
+                )
             )
-        )
 
-        serializer = PriorityRequestListSerializer(
-            priority_requests,
-            many=True
-        )
+        if status_filter:
+            queryset = queryset.filter(
+                status=status_filter
+            )
 
-        return Response(
-            serializer.data,
-            status=status.HTTP_200_OK
-        )
+        return queryset
+        
 
 class PriorityRequestDetailView(APIView):
     permission_classes = [IsAuthenticated]
@@ -3062,11 +3162,13 @@ class ApproveReturnTicketView(APIView):
             status=status.HTTP_200_OK,
         )
 
-class ReturnedTicketRequestListView(APIView):
+class ReturnedTicketRequestListView(generics.ListAPIView):
+    serializer_class = ReturnedTicketRequestListSerializer
     permission_classes = [IsAuthenticated]
+    pagination_class = TicketPagination
 
-    def get(self, request):
-        requests = (
+    def get_queryset(self):
+        queryset = (
             TicketReturn.objects
             .select_related(
                 "ticket",
@@ -3079,12 +3181,34 @@ class ReturnedTicketRequestListView(APIView):
             .order_by("-requested_at")
         )
 
-        serializer = ReturnedTicketRequestListSerializer(
-            requests,
-            many=True,
-        )
+        search = self.request.query_params.get(
+            "search",
+            ""
+        ).strip()
 
-        return Response(serializer.data)
+        status_filter = self.request.query_params.get(
+            "status",
+            ""
+        ).strip()
+
+        if search:
+            queryset = queryset.filter(
+                Q(ticket__ticket_code__icontains=search)
+                | Q(ticket__subject__icontains=search)
+                | Q(
+                    returned_by__first_name__icontains=search
+                )
+                | Q(
+                    returned_by__last_name__icontains=search
+                )
+            )
+
+        if status_filter:
+            queryset = queryset.filter(
+                status=status_filter
+            )
+
+        return queryset
 
 class ReturnedTicketDetailRetrieve(APIView):
     permission_classes = [IsAuthenticated]
