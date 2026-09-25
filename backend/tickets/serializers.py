@@ -406,88 +406,98 @@ class TicketStatusHistorySerializer(serializers.ModelSerializer):
 
 class TicketDetailEmployeeSerializer(serializers.ModelSerializer):
     status = serializers.CharField(
-        source='get_status_display',
-        read_only=True
+        source="get_status_display",
+        read_only=True,
     )
-    is_under_review = serializers.BooleanField(read_only=True)
+
+    is_under_review = serializers.BooleanField(
+        read_only=True,
+    )
+
     priority = serializers.CharField(
-        source='priority.priority_level',
-        read_only=True
+        source="priority.priority_level",
+        read_only=True,
     )
 
     affected_scope = serializers.CharField(
-        source='get_affected_scope_display',
-        read_only=True
+        source="get_affected_scope_display",
+        read_only=True,
     )
 
     assigned_to = serializers.SerializerMethodField()
 
     first_name = serializers.CharField(
-        source='submitted_by.first_name',
-        read_only=True
+        source="submitted_by.first_name",
+        read_only=True,
     )
 
     last_name = serializers.CharField(
-        source='submitted_by.last_name',
-        read_only=True
+        source="submitted_by.last_name",
+        read_only=True,
     )
 
     user_code = serializers.CharField(
-        source='submitted_by.user_code',
-        read_only=True
+        source="submitted_by.user_code",
+        read_only=True,
     )
 
     employee_department = serializers.CharField(
-        source='employee_department.name',
-        read_only=True
+        source="employee_department.name",
+        read_only=True,
     )
 
     office_location = serializers.CharField(
-        source='office_location.name',
-        read_only=True
+        source="office_location.name",
+        read_only=True,
     )
 
     class Meta:
         model = Ticket
 
         fields = [
-            'id',
-            'ticket_code',
-            'status',
-            'priority',
-            'subject',
-            'description',
-            'assigned_to',
-            'business_impact',
-            'affected_scope',
-            'updated_at',
-            'created_at',
-            'response_deadline',
-            'resolution_deadline',
-            'office_location',
-            'workstation',
-            'employee_department',
-            'first_name',
-            'last_name',
-            'user_code',
-            'is_under_review',
-            'is_escalated',
-            'resolved_at',
-            'resolved_by',
+            "id",
+            "ticket_code",
+            "status",
+            "priority",
+            "subject",
+            "description",
+            "assigned_to",
+            "business_impact",
+            "affected_scope",
+            "updated_at",
+            "created_at",
+            "response_deadline",
+            "resolution_deadline",
+            "office_location",
+            "workstation",
+            "employee_department",
+            "first_name",
+            "last_name",
+            "user_code",
+            "is_under_review",
+            "is_escalated",
+            "resolved_at",
+            "resolved_by",
         ]
 
     def get_assigned_to(self, obj):
         if not obj.assigned_to:
             return None
 
+        full_name = (
+            f"{obj.assigned_to.first_name} "
+            f"{obj.assigned_to.last_name}"
+        ).strip()
+
         return {
             "id": obj.assigned_to.id,
-            "full_name": (
-                f"{obj.assigned_to.first_name} "
-                f"{obj.assigned_to.last_name}"
-            ).strip(),
+            "full_name": full_name or obj.assigned_to.username,
+            "role": (
+                obj.assigned_to.role.name
+                if obj.assigned_to.role
+                else None
+            ),
         }
-
 class TicketDetailSupportSerializer(serializers.ModelSerializer):
     status = serializers.CharField(source='get_status_display', read_only=True)
     priority = serializers.CharField(source='priority.priority_level', read_only=True)
@@ -1074,6 +1084,12 @@ class ApproveReturnTicketSerializer(serializers.Serializer):
         return value.strip()
 
 
+class RejectReturnTicketSerializer(serializers.Serializer):
+    review_remarks = serializers.CharField(
+        required=True,
+        allow_blank=False,
+        trim_whitespace=True,
+    )
 class ServiceDeskDepartmentSerializer(serializers.ModelSerializer):
     class Meta:
         model = ITDepartment
@@ -1081,6 +1097,64 @@ class ServiceDeskDepartmentSerializer(serializers.ModelSerializer):
             "id",
             "name",
         ]
+
+class EmployeeCurrentActiveTicketSerializer(serializers.ModelSerializer):
+    assigned_to_name = serializers.SerializerMethodField()
+    priority = serializers.SerializerMethodField()
+    resolution_time_remaining = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Ticket
+        fields = [
+            "id",
+            "ticket_code",
+            "subject",
+            "status",
+            "priority",
+            "assigned_to_name",
+            "created_at",
+            "resolution_deadline",
+            "resolution_time_remaining",
+        ]
+
+    def get_assigned_to_name(self, obj):
+        if not obj.assigned_to:
+            return None
+
+        full_name = obj.assigned_to.get_full_name()
+
+        return full_name or obj.assigned_to.username
+
+    def get_priority(self, obj):
+        if not obj.priority:
+            return None
+
+        return obj.priority.priority_level
+
+    def get_resolution_time_remaining(self, obj):
+        if not obj.resolution_deadline:
+            return None
+
+        from django.utils import timezone
+
+        remaining = obj.resolution_deadline - timezone.now()
+
+        if remaining.total_seconds() <= 0:
+            return "SLA Breached"
+
+        total_seconds = int(remaining.total_seconds())
+
+        days, remainder = divmod(total_seconds, 86400)
+        hours, remainder = divmod(remainder, 3600)
+        minutes, _ = divmod(remainder, 60)
+
+        if days > 0:
+            return f"{days}d {hours}h"
+
+        if hours > 0:
+            return f"{hours}h {minutes}m"
+
+        return f"{minutes}m"
 # class TicketSLASerializer(serializers.ModelSerializer):
 #     class Meta:
 #         model = TicketSLA

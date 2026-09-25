@@ -19,17 +19,21 @@ import { useEffect, useState } from "react";
 import api from "/src/api";
 import { formatDate } from "/src/utils/formatDate";
 import { getCurrentUser } from "/src/utils/auth";
+import { getHistoryColor } from "/src/utils/historyColor";
 
 export default function RightSidePanel({
     ticketDetails,
     onTicketUpdated,
 }) {
     const user = getCurrentUser();
-    const canEditStatus = user?.role === "IT Support Specialist";
+
+    const canEditStatus =
+        user?.role === "IT Support Specialist";
 
     const [status, setStatus] = useState(
         normalizeStatus(ticketDetails?.status)
     );
+
     const [history, setHistory] = useState([]);
     const [pendingStatus, setPendingStatus] = useState(null);
     const [showConfirm, setShowConfirm] = useState(false);
@@ -43,10 +47,14 @@ export default function RightSidePanel({
         "cancelled",
     ];
 
-    const showRemarks = statusesWithRemarks.includes(pendingStatus);
+    const showRemarks = statusesWithRemarks.includes(
+        pendingStatus
+    );
 
     useEffect(() => {
-        setStatus(normalizeStatus(ticketDetails?.status));
+        setStatus(
+            normalizeStatus(ticketDetails?.status)
+        );
     }, [ticketDetails?.status]);
 
     useEffect(() => {
@@ -81,6 +89,7 @@ export default function RightSidePanel({
 
     const handleStatusChange = (newStatus) => {
         if (!canEditStatus) return;
+
         if (newStatus === status) return;
 
         setPendingStatus(newStatus);
@@ -106,7 +115,9 @@ export default function RightSidePanel({
                 `/tickets/update-status/${ticketDetails.id}/`,
                 {
                     status: newStatus,
-                    remarks: showRemarks ? remarks.trim() : "",
+                    remarks: showRemarks
+                        ? remarks.trim()
+                        : "",
                 }
             );
 
@@ -118,48 +129,94 @@ export default function RightSidePanel({
             await onTicketUpdated?.();
             await fetchHistory();
         } catch {
-            setStatus(normalizeStatus(ticketDetails?.status));
+            setStatus(
+                normalizeStatus(
+                    ticketDetails?.status
+                )
+            );
         } finally {
             setIsUpdating(false);
         }
     };
 
     const getHistoryIcon = (item) => {
-        if (item.event_type === "CREATED") return CircleCheck;
-        if (item.event_type === "ASSIGNED") return UserCheck;
-        if (item.event_type === "REASSIGNED") return ArrowLeftRight;
-        if (item.event_type === "RETURNED") return Undo2;
-        if (item.event_type === "RETURN_APPROVED") return CircleCheck;
-        if (item.event_type === "REVIEW_COMPLETED") return CircleCheck;
+        if (item.event_type === "CREATED") {
+            return CircleCheck;
+        }
+
+        if (item.event_type === "ASSIGNED") {
+            return UserCheck;
+        }
+
+        if (item.event_type === "REASSIGNED") {
+            return ArrowLeftRight;
+        }
+
+        if (item.event_type === "RETURNED") {
+            return Undo2;
+        }
+
+        if (item.event_type === "RETURN_APPROVED") {
+            return CircleCheck;
+        }
+
+        if (item.event_type === "RETURN_REJECTED") {
+            return XCircle;
+        }
+
+        if (item.event_type === "REVIEW_COMPLETED") {
+            return CircleCheck;
+        }
 
         if (
             item.event_type === "PRIORITY_REVIEW" ||
-            item.event_type === "PRIORITY_CHANGED" ||
-            item.event_type === "ESCALATED"
+            item.event_type === "PRIORITY_REVIEW_REQUESTED"
         ) {
             return AlertTriangle;
         }
 
+        if (item.event_type === "PRIORITY_CHANGED") {
+            return AlertTriangle;
+        }
+
+        if (item.event_type === "PRIORITY_REJECTED") {
+            return XCircle;
+        }
+
+        if (item.event_type === "ESCALATED") {
+            return AlertTriangle;
+        }
+
         if (item.event_type === "STATUS_CHANGED") {
-            const newStatus = normalizeStatus(item.new_value);
+            const newStatus = normalizeStatus(
+                item.new_value
+            );
 
             switch (newStatus) {
                 case "open":
                     return Circle;
+
                 case "under_review":
                     return Eye;
+
                 case "in_progress":
                     return Clock3;
+
                 case "returned":
                     return Undo2;
+
                 case "resolved":
                     return CircleCheck;
+
                 case "closed":
                     return CheckCheck;
+
                 case "reopened":
                     return RotateCcw;
+
                 case "cancelled":
                     return XCircle;
+
                 default:
                     return Clock3;
             }
@@ -169,7 +226,9 @@ export default function RightSidePanel({
     };
 
     const getHistoryTitle = (item) => {
-        if (item.title) return item.title;
+        if (item.title) {
+            return item.title;
+        }
 
         if (item.event_type === "CREATED") {
             return "Ticket Submitted";
@@ -191,16 +250,27 @@ export default function RightSidePanel({
             return "Return Approved";
         }
 
+        if (item.event_type === "RETURN_REJECTED") {
+            return "Return Rejected";
+        }
+
         if (item.event_type === "REVIEW_COMPLETED") {
             return "Review Completed";
         }
 
-        if (item.event_type === "PRIORITY_REVIEW") {
+        if (
+            item.event_type === "PRIORITY_REVIEW" ||
+            item.event_type === "PRIORITY_REVIEW_REQUESTED"
+        ) {
             return "Priority Review Requested";
         }
 
         if (item.event_type === "PRIORITY_CHANGED") {
             return "Priority Changed";
+        }
+
+        if (item.event_type === "PRIORITY_REJECTED") {
+            return "Priority Request Rejected";
         }
 
         if (item.event_type === "ESCALATED") {
@@ -218,10 +288,13 @@ export default function RightSidePanel({
         switch (pendingStatus) {
             case "resolved":
                 return "Resolve Ticket";
+
             case "reopened":
                 return "Reopen Ticket";
+
             case "cancelled":
                 return "Cancel Ticket";
+
             default:
                 return "Update Ticket Status";
         }
@@ -231,10 +304,13 @@ export default function RightSidePanel({
         switch (pendingStatus) {
             case "resolved":
                 return "Resolution Remarks";
+
             case "reopened":
                 return "Reopening Reason";
+
             case "cancelled":
                 return "Cancellation Reason";
+
             default:
                 return "Remarks";
         }
@@ -244,17 +320,22 @@ export default function RightSidePanel({
         switch (pendingStatus) {
             case "resolved":
                 return "Describe how the issue was resolved...";
+
             case "reopened":
                 return "Explain why the ticket is being reopened...";
+
             case "cancelled":
                 return "Explain why the ticket is being cancelled...";
+
             default:
                 return "Add remarks...";
         }
     };
 
     const latestHistoryId =
-        history.length > 0 ? history[0].id : null;
+        history.length > 0
+            ? history[0].id
+            : null;
 
     return (
         <>
@@ -357,11 +438,14 @@ export default function RightSidePanel({
                         </p>
                     ) : (
                         <div className="relative">
-                            <div className="absolute bottom-5 left-[15px] top-5 w-px bg-[#2563EB]" />
+                            <div className="absolute bottom-5 left-[15px] top-5 w-px bg-gray-200" />
 
                             {history.map((item) => {
                                 const Icon =
                                     getHistoryIcon(item);
+
+                                const colorClass =
+                                    getHistoryColor(item);
 
                                 return (
                                     <TimelineItem
@@ -374,11 +458,15 @@ export default function RightSidePanel({
                                             item.message ||
                                             "Ticket was updated."
                                         }
-                                        remarks={item.remarks}
+                                        remarks={
+                                            item.remarks
+                                        }
                                         date={formatDate(
                                             item.created_at
                                         )}
-                                        active
+                                        colorClass={
+                                            colorClass
+                                        }
                                         current={
                                             item.id ===
                                             latestHistoryId
@@ -391,87 +479,101 @@ export default function RightSidePanel({
                 </div>
             </div>
 
-            {canEditStatus && showConfirm && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 px-4">
-                    <div className="w-full max-w-[430px] rounded-xl bg-white p-5 shadow-xl">
-                        <p className="text-base font-semibold text-black">
-                            {getModalTitle()}
-                        </p>
+            {canEditStatus &&
+                showConfirm && (
+                    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 px-4">
+                        <div className="w-full max-w-[430px] rounded-xl bg-white p-5 shadow-xl">
+                            <p className="text-base font-semibold text-black">
+                                {getModalTitle()}
+                            </p>
 
-                        <p className="mt-2 text-sm leading-6 text-gray-500">
-                            Are you sure you want to change the
-                            ticket status from{" "}
-                            <span className="font-semibold text-black">
-                                {formatStatus(status)}
-                            </span>{" "}
-                            to{" "}
-                            <span className="font-semibold text-black">
-                                {formatStatus(pendingStatus)}
-                            </span>
-                            ?
-                        </p>
+                            <p className="mt-2 text-sm leading-6 text-gray-500">
+                                Are you sure you want to
+                                change the ticket status
+                                from{" "}
+                                <span className="font-semibold text-black">
+                                    {formatStatus(
+                                        status
+                                    )}
+                                </span>{" "}
+                                to{" "}
+                                <span className="font-semibold text-black">
+                                    {formatStatus(
+                                        pendingStatus
+                                    )}
+                                </span>
+                                ?
+                            </p>
 
-                        {showRemarks && (
-                            <div className="mt-4">
-                                <label className="mb-1.5 block text-sm font-medium">
-                                    {getRemarksLabel()}
+                            {showRemarks && (
+                                <div className="mt-4">
+                                    <label className="mb-1.5 block text-sm font-medium">
+                                        {getRemarksLabel()}
 
-                                    <span className="ml-1 font-normal text-gray-400">
-                                        (Optional)
-                                    </span>
-                                </label>
+                                        <span className="ml-1 font-normal text-gray-400">
+                                            (Optional)
+                                        </span>
+                                    </label>
 
-                                <textarea
-                                    value={remarks}
-                                    onChange={(e) =>
-                                        setRemarks(
-                                            e.target.value
-                                        )
-                                    }
-                                    disabled={isUpdating}
-                                    rows={4}
-                                    maxLength={1000}
-                                    placeholder={getRemarksPlaceholder()}
-                                    className="w-full resize-none rounded-lg border border-gray-300 px-3 py-2.5 text-sm text-black outline-none transition-colors placeholder:text-gray-400 focus:border-[#2563EB] focus:ring-2 focus:ring-[#2563EB]/10 disabled:bg-gray-100"
-                                />
+                                    <textarea
+                                        value={remarks}
+                                        onChange={(e) =>
+                                            setRemarks(
+                                                e.target.value
+                                            )
+                                        }
+                                        disabled={
+                                            isUpdating
+                                        }
+                                        rows={4}
+                                        maxLength={1000}
+                                        placeholder={getRemarksPlaceholder()}
+                                        className="w-full resize-none rounded-lg border border-gray-300 px-3 py-2.5 text-sm text-black outline-none transition-colors placeholder:text-gray-400 focus:border-[#2563EB] focus:ring-2 focus:ring-[#2563EB]/10 disabled:bg-gray-100"
+                                    />
 
-                                <div className="mt-1 flex justify-between text-xs text-gray-400">
-                                    <span>
-                                        Add additional context if
-                                        needed.
-                                    </span>
+                                    <div className="mt-1 flex justify-between text-xs text-gray-400">
+                                        <span>
+                                            Add additional
+                                            context if
+                                            needed.
+                                        </span>
 
-                                    <span>
-                                        {remarks.length}/1000
-                                    </span>
+                                        <span>
+                                            {remarks.length}
+                                            /1000
+                                        </span>
+                                    </div>
                                 </div>
+                            )}
+
+                            <div className="mt-5 flex justify-end gap-2">
+                                <button
+                                    type="button"
+                                    disabled={isUpdating}
+                                    onClick={
+                                        cancelStatusChange
+                                    }
+                                    className="rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
+                                >
+                                    Cancel
+                                </button>
+
+                                <button
+                                    type="button"
+                                    disabled={isUpdating}
+                                    onClick={
+                                        confirmStatusChange
+                                    }
+                                    className="rounded-lg bg-[#2563EB] px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-[#1D4ED8] disabled:cursor-not-allowed disabled:opacity-50"
+                                >
+                                    {isUpdating
+                                        ? "Updating..."
+                                        : "Confirm"}
+                                </button>
                             </div>
-                        )}
-
-                        <div className="mt-5 flex justify-end gap-2">
-                            <button
-                                type="button"
-                                disabled={isUpdating}
-                                onClick={cancelStatusChange}
-                                className="rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
-                            >
-                                Cancel
-                            </button>
-
-                            <button
-                                type="button"
-                                disabled={isUpdating}
-                                onClick={confirmStatusChange}
-                                className="rounded-lg bg-[#2563EB] px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-[#1D4ED8] disabled:cursor-not-allowed disabled:opacity-50"
-                            >
-                                {isUpdating
-                                    ? "Updating..."
-                                    : "Confirm"}
-                            </button>
                         </div>
                     </div>
-                </div>
-            )}
+                )}
         </>
     );
 }
@@ -482,34 +584,27 @@ function TimelineItem({
     description,
     remarks,
     date,
-    active = false,
+    colorClass,
     current = false,
 }) {
     return (
         <div className="relative flex gap-3 pb-7 last:pb-0">
             <div
-                className={`relative z-10 flex h-[31px] w-[31px] shrink-0 items-center justify-center rounded-full border ${
-                    active
-                        ? "border-[#2563EB] bg-[#2563EB] text-white"
-                        : "border-gray-200 bg-white text-gray-400"
-                } ${
+                className={`relative z-10 flex h-[31px] w-[31px] shrink-0 items-center justify-center rounded-full border ${colorClass} ${
                     current
-                        ? "ring-4 ring-[#2563EB]/15"
+                        ? "ring-4 ring-gray-200"
                         : ""
                 }`}
             >
-                <Icon size={15} strokeWidth={2.2} />
+                <Icon
+                    size={15}
+                    strokeWidth={2.2}
+                />
             </div>
 
             <div className="min-w-0 flex-1 pt-0.5">
                 <div className="flex items-center gap-2">
-                    <p
-                        className={`text-sm font-semibold ${
-                            active
-                                ? "text-black"
-                                : "text-gray-400"
-                        }`}
-                    >
+                    <p className="text-sm font-semibold text-black">
                         {title}
                     </p>
 
@@ -521,28 +616,23 @@ function TimelineItem({
                 </div>
 
                 {description && (
-                    <p
-                        className={`mt-1 text-xs leading-5 ${
-                            active
-                                ? "text-gray-500"
-                                : "text-gray-400"
-                        }`}
-                    >
+                    <p className="mt-1 text-xs leading-5 text-gray-500">
                         {description}
                     </p>
                 )}
 
-                {remarks && remarks.trim() && (
-                    <div className="mt-2 rounded-md border border-gray-200 bg-gray-50 px-2.5 py-2">
-                        <p className="text-[10px] font-medium uppercase tracking-wide text-gray-400">
-                            Remarks
-                        </p>
+                {remarks &&
+                    remarks.trim() && (
+                        <div className="mt-2 rounded-md border border-gray-200 bg-gray-50 px-2.5 py-2">
+                            <p className="text-[10px] font-medium uppercase tracking-wide text-gray-400">
+                                Remarks
+                            </p>
 
-                        <p className="mt-1 whitespace-pre-wrap break-words text-xs leading-5 text-black">
-                            {remarks}
-                        </p>
-                    </div>
-                )}
+                            <p className="mt-1 whitespace-pre-wrap break-words text-xs leading-5 text-black">
+                                {remarks}
+                            </p>
+                        </div>
+                    )}
 
                 <div className="mt-2 text-[11px] text-gray-400">
                     {date}
@@ -558,7 +648,9 @@ function formatStatus(value) {
     return String(value)
         .replaceAll("_", " ")
         .toLowerCase()
-        .replace(/\b\w/g, (letter) => letter.toUpperCase());
+        .replace(/\b\w/g, (letter) =>
+            letter.toUpperCase()
+        );
 }
 
 function normalizeStatus(value) {

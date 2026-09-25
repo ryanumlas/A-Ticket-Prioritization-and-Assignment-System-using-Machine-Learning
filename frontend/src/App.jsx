@@ -11,7 +11,6 @@ import SubmitTicket from './pages/SubmitTicket'
 import NotFound from './pages/NotFound'
 import ProtectedRoute from './components/ProtectedRoute'
 import FlaggedTickets from './pages/FlaggedTickets'
-import ActiveTicketSLA from './components/ActiveTicketSLA'
 import { Toaster } from "sonner";
 import TicketQueue from './pages/TicketQueue'
 import TicketDetails from './pages/TicketDetails'

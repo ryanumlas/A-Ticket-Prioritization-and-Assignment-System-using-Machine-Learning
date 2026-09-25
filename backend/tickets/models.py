@@ -106,11 +106,17 @@ class TicketStatusHistory(models.Model):
         SYMPTOM_CODE_CHANGED = "SYMPTOM_CHANGED", "Symptom Code Changed"
         REVIEW_COMPLETED = "REVIEW_COMPLETED", "Review Completed"
         PRIORITY_CHANGED = "PRIORITY_CHANGED", "Priority Changed"
-        PRIORITY_REVIEW_REQUESTED = "PRIORITY_REVIEW", "Priority Review Requested"
+        PRIORITY_REVIEW_REQUESTED = (
+            "PRIORITY_REVIEW",
+            "Priority Review Requested",
+        )
+        PRIORITY_REQUEST_REJECTED = (
+            "PRIORITY_REJECTED",
+            "Priority Request Rejected",
+        )
         ESCALATED = "ESCALATED", "Escalated"
         RESOLVED = "RESOLVED", "Resolved"
         CLOSED = "CLOSED", "Closed"
-
     class Visibility(models.TextChoices):
         ALL = "ALL", "All"
         INTERNAL = "INTERNAL", "Internal Only"

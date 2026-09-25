@@ -1,19 +1,17 @@
-import Sidebar from "../components/Sidebar";
-import { getCurrentUser } from "../utils/auth";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, Ticket } from "lucide-react";
 import api from "../api";
 import { Link } from "react-router-dom";
-import OverviewEmployee from "../components/OverviewEmployee";
 import TicketTableEmployee from "../components/TicketTableEmployee";
-import CurrentTicket from "../components/CurrentTicket";
+import CurrentActiveTicket from "../components/CurrentActiveTicket";
+import RecentStatusHistory from "../components/RecentStatusHistory";
+import { getCurrentUser } from "../utils/auth";
 import foundever_cover from "../assets/foundever-cover_upscaled.jpg";
-import foundever_hero from "../assets/foundever-hero_upscaled.jpg";
 import { useEffect, useState } from "react";
 
 export default function EmployeeDashboard() {
     const user = getCurrentUser();
 
-    const [overview, setOverview] = useState(null);
+    const [currentTicket, setCurrentTicket] = useState(null);
     const [ticketList, setTicketList] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
@@ -21,13 +19,23 @@ export default function EmployeeDashboard() {
     useEffect(() => {
         const fetchDashboardData = async () => {
             try {
-                const [overviewRes, ticketsRes] = await Promise.all([
-                    api.get("/users/employee/list/overview/"),
-                    api.get("/tickets/employee/list/"),
-                ]);
+                const [currentTicketRes, ticketsRes] =
+                    await Promise.all([
+                        api.get(
+                            "/tickets/employee/current-active/"
+                        ),
+                        api.get(
+                            "/tickets/employee/list/"
+                        ),
+                    ]);
 
-                setOverview(overviewRes.data);
-                setTicketList(ticketsRes.data.results);
+                setCurrentTicket(
+                    currentTicketRes.data?.ticket || null
+                );
+
+                setTicketList(
+                    ticketsRes.data?.results || []
+                );
             } catch {
                 setError(
                     "Unable to load dashboard data right now."
@@ -50,11 +58,11 @@ export default function EmployeeDashboard() {
         );
     }
 
-    if (error || !overview) {
+    if (error) {
         return (
             <div className="flex min-h-screen items-center justify-center bg-gray-50 p-6">
                 <p className="text-sm text-gray-500">
-                    {error || "No dashboard data available yet."}
+                    {error}
                 </p>
             </div>
         );
@@ -64,7 +72,7 @@ export default function EmployeeDashboard() {
         user?.first_name || user?.username || "there";
 
     return (
-        <div className="grid w-full grid-cols-12 gap-4 sm:gap-5 lg:gap-6">
+        <div className="grid w-full grid-cols-12 items-stretch gap-4 sm:gap-5 lg:gap-6">
             {/* Hero */}
             <div className="col-span-12">
                 <div className="relative h-56 w-full overflow-hidden rounded-xl sm:h-64 sm:rounded-2xl">
@@ -102,21 +110,35 @@ export default function EmployeeDashboard() {
                 </div>
             </div>
 
-            {/* Current Ticket */}
-            <div className="col-span-12 lg:col-span-4">
-                <CurrentTicket />
+            {/* Current Active Ticket */}
+            <div className="col-span-12 lg:col-span-5">
+                <CurrentActiveTicket
+                    ticket={currentTicket}
+                />
+            </div>
+
+            {/* Recent Status History */}
+            <div className="col-span-12 lg:col-span-7">
+                <RecentStatusHistory />
             </div>
 
             {/* My Tickets */}
-            <div className="col-span-12 lg:col-span-8">
+            <div className="col-span-12">
                 <div className="overflow-hidden rounded-xl border border-gray-300 bg-white">
                     <div className="flex flex-col gap-3 border-b border-gray-300 px-4 py-4 sm:flex-row sm:items-center sm:justify-between">
                         <div className="min-w-0">
-                            <h1 className="text-lg font-semibold text-gray-900 sm:text-xl">
-                                My Tickets
-                            </h1>
+                            <div className="flex items-center gap-2">
+                                <Ticket
+                                    size={20}
+                                    className="shrink-0 text-[#2563EB]"
+                                />
 
-                            <p className="text-xs text-gray-500 sm:text-sm">
+                                <h1 className="text-lg font-semibold text-gray-900 sm:text-xl">
+                                    My Tickets
+                                </h1>
+                            </div>
+
+                            <p className="mt-1 text-xs text-gray-500 sm:text-sm">
                                 Recently submitted tickets
                             </p>
                         </div>

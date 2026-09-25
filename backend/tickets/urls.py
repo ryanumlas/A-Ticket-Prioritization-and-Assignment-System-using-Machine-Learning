@@ -7,7 +7,7 @@ AcceptRecommendationView, ApproveOverrideView, ManuallyClassifyView, SupportOver
 SLAPerformanceView, TicketsByCategoryView, TicketDetailSupportView, TicketStatusHistoryView, TicketCommentListCreateView, 
 PriorityChangeRequestView, PriorityChangeRequestListView, PriorityRequestDetailView, ApprovePriorityRequestView, ReturnTicketView, 
 ReturnedTicketRequestListView, ReturnedTicketDetailRetrieve, ApproveReturnTicketView, PendingPriorityRequestCountView, PendingReturnTicketRequestCountView, 
-ServiceDeskDepartmentQueueView, ServiceDeskDepartmentSymptomCodesView, ServiceDeskDepartmentListView)
+ServiceDeskDepartmentQueueView, ServiceDeskDepartmentSymptomCodesView, ServiceDeskDepartmentListView, RejectReturnTicketView, RejectPriorityRequestView, EmployeeCurrentActiveTicketView)
 
 urlpatterns = [
     # --- Ticket URLs ---
@@ -21,10 +21,12 @@ urlpatterns = [
     path("sla-performance/",SLAPerformanceView.as_view(),name="support-sla-performance"),
     path("<int:pk>/comments/",TicketCommentListCreateView.as_view(),name="ticket-comments"),
     path("priority-change-request/<int:pk>/",PriorityChangeRequestView.as_view(),name="priority-change-request"),
+    path("priority-change-requests/reject/<int:request_id>/", RejectPriorityRequestView.as_view(), name="reject-priority-request",),
     path("priority-change-requests/list/", PriorityChangeRequestListView.as_view(), name="priority-change-request-list"),
     path("priority-change-requests/detail/<int:request_id>/", PriorityRequestDetailView.as_view(), name="priority-change-request-detail"),
     path("return-ticket/<int:pk>/",ReturnTicketView.as_view(),name="return-ticket"),
     path("return-ticket/list/", ReturnedTicketRequestListView.as_view(), name="returned-ticket-requests"),
+    path("return-ticket/<int:pk>/reject/", RejectReturnTicketView.as_view(), name="reject-return-ticket",),
     path("return-ticket/<int:pk>/detail/", ReturnedTicketDetailRetrieve.as_view(), name="returned-ticket-detail"),
     path("return-ticket/<int:pk>/approve/", ApproveReturnTicketView.as_view(), name="approve-return-ticket"),
     path("priority-change-requests/approve/<int:request_id>/", ApprovePriorityRequestView.as_view(), name="approve-priority-request"),
@@ -52,6 +54,8 @@ urlpatterns = [
 
     path("return-ticket/pending-count/",PendingReturnTicketRequestCountView.as_view(),name="pending-return-ticket-count",),
     path("priority-request/pending-count/",PendingPriorityRequestCountView.as_view(),name="pending-priority-request-count",),
+
+    path("employee/current-active/",EmployeeCurrentActiveTicketView.as_view(), name="employee-current-active-ticket",),
 
     # --- Category URLs ---
     path('categories/create/', CreateCategoryView.as_view(), name='create-category'),

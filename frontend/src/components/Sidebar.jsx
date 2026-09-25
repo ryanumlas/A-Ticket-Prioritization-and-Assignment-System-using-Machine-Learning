@@ -97,7 +97,7 @@ export default function Sidebar() {
 
     useEffect(() => {
         const handleResize = () => {
-            if (window.innerWidth >= 768) {
+            if (window.innerWidth >= 1024) {
                 setMobileOpen(false);
             }
         };
@@ -154,7 +154,7 @@ export default function Sidebar() {
     };
 
     const closeMobileSidebar = () => {
-        if (window.innerWidth < 768) {
+        if (window.innerWidth < 1024) {
             setMobileOpen(false);
         }
     };
@@ -204,7 +204,7 @@ export default function Sidebar() {
                     type="button"
                     onClick={() => setMobileOpen(false)}
                     aria-label="Close navigation"
-                    className="flex h-10 w-10 shrink-0 cursor-pointer items-center justify-center rounded-md text-white transition hover:bg-white/10 md:hidden"
+                    className="flex h-10 w-10 shrink-0 cursor-pointer items-center justify-center rounded-md text-white transition hover:bg-white/10 lg:hidden"
                 >
                     <X size={22} />
                 </button>
@@ -267,12 +267,13 @@ export default function Sidebar() {
 
     return (
         <>
+            {/* Mobile + Tablet Menu Button */}
             {!mobileOpen && (
                 <button
                     type="button"
                     onClick={() => setMobileOpen(true)}
                     aria-label="Open navigation"
-                    className="fixed left-4 top-4 z-[9999] flex h-11 w-11 cursor-pointer items-center justify-center rounded-lg bg-[#2563EB] text-white shadow-lg transition hover:bg-[#1D4ED8] md:hidden"
+                    className="fixed left-4 top-4 z-[9999] flex h-11 w-11 cursor-pointer items-center justify-center rounded-lg bg-[#2563EB] text-white shadow-lg transition hover:bg-[#1D4ED8] lg:hidden"
                 >
                     <Menu
                         size={24}
@@ -281,13 +282,15 @@ export default function Sidebar() {
                 </button>
             )}
 
-            <aside className="hidden h-screen w-67 shrink-0 bg-[#4C4CF9] p-4 text-white shadow-lg md:block">
+            {/* Desktop Sidebar */}
+            <aside className="hidden h-screen w-67 shrink-0 bg-[#4C4CF9] p-4 text-white shadow-lg lg:block">
                 {sidebarContent}
             </aside>
 
             <AnimatePresence>
                 {mobileOpen && (
                     <>
+                        {/* Overlay */}
                         <motion.div
                             initial={{ opacity: 0 }}
                             animate={{ opacity: 1 }}
@@ -298,9 +301,10 @@ export default function Sidebar() {
                             onClick={() =>
                                 setMobileOpen(false)
                             }
-                            className="fixed inset-0 z-[9997] bg-black/40 md:hidden"
+                            className="fixed inset-0 z-[9997] bg-black/40 lg:hidden"
                         />
 
+                        {/* Mobile / Tablet Sidebar */}
                         <motion.aside
                             initial={{ x: "-100%" }}
                             animate={{ x: 0 }}
@@ -310,7 +314,7 @@ export default function Sidebar() {
                                 stiffness: 300,
                                 damping: 30,
                             }}
-                            className="fixed left-0 top-0 z-[9998] h-screen w-[300px] max-w-[85vw] overflow-y-auto bg-[#4C4CF9] p-4 text-white shadow-2xl md:hidden"
+                            className="fixed left-0 top-0 z-[9998] h-screen w-[300px] max-w-[85vw] overflow-y-auto bg-[#4C4CF9] p-4 text-white shadow-2xl lg:hidden [&::-webkit-scrollbar]:w-1 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-transparent hover:[&::-webkit-scrollbar-thumb]:bg-white/30"
                         >
                             {sidebarContent}
                         </motion.aside>

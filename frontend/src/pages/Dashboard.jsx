@@ -43,7 +43,7 @@ export default function Dashboard() {
                     <Topbar />
                 </div>
 
-                <main className="min-h-0 flex-1 overflow-y-auto">
+                <main className="min-h-0 flex-1 overflow-y-auto [&::-webkit-scrollbar]:w-1 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-transparent hover:[&::-webkit-scrollbar-thumb]:bg-gray-300">
                     <motion.div
                         initial={{
                             opacity: 0,
@@ -57,7 +57,7 @@ export default function Dashboard() {
                             duration: 0.4,
                             ease: "easeOut",
                         }}
-                        className="p-6"
+                        className="p-2 sm:p-4 lg:p-6"
                     >
                         {MainContent}
                     </motion.div>

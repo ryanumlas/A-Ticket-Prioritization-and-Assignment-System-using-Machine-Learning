@@ -15,9 +15,18 @@ export default function TicketTableSupport({
         ? ticketList.slice(0, maxRows)
         : ticketList;
 
+    const formatAffectedScope = (scope) => {
+        if (!scope) return "-";
+
+        return (
+            scope.charAt(0).toUpperCase() +
+            scope.slice(1)
+        );
+    };
+
     if (loading) {
         return (
-            <div className="flex h-[637px] items-center justify-center bg-white">
+            <div className="flex min-h-[300px] items-center justify-center bg-white px-4 py-12 md:h-[637px]">
                 <p className="text-sm text-gray-500">
                     Loading tickets...
                 </p>
@@ -25,13 +34,30 @@ export default function TicketTableSupport({
         );
     }
 
+    if (displayedTickets.length === 0) {
+        return (
+            <div className="bg-white">
+                <div className="px-6 py-16 text-center">
+                    <p className="font-medium text-black">
+                        No tickets found
+                    </p>
+
+                    <p className="mt-1 text-sm text-gray-500">
+                        There are currently no tickets to display.
+                    </p>
+                </div>
+            </div>
+        );
+    }
+
     return (
         <div className="overflow-hidden bg-white">
+            {/* Desktop / Tablet */}
             <div
                 className={
                     dashboard
-                        ? ""
-                        : "h-[637px] overflow-y-auto"
+                        ? "hidden md:block"
+                        : "hidden h-[637px] overflow-y-auto md:block"
                 }
             >
                 <table className="w-full table-fixed text-sm">
@@ -72,72 +98,217 @@ export default function TicketTableSupport({
                     </thead>
 
                     <tbody>
-                        {displayedTickets.length > 0 ? (
-                            displayedTickets.map((ticket) => (
-                                <tr
-                                    key={ticket.id}
-                                    onClick={() =>
-                                        navigate(
-                                            `/ticket/${ticket.id}`
-                                        )
-                                    }
-                                    className="cursor-pointer border-b border-gray-200 transition-colors hover:bg-gray-50 last:border-b-0"
-                                >
-                                    <td className="px-6 py-4">
-                                        <span className="font-semibold text-black">
-                                            {ticket.ticket_code || "-"}
-                                        </span>
-                                    </td>
+                        {displayedTickets.map((ticket) => (
+                            <tr
+                                key={ticket.id}
+                                onClick={() =>
+                                    navigate(
+                                        `/ticket/${ticket.id}`
+                                    )
+                                }
+                                className="cursor-pointer border-b border-gray-200 transition-colors hover:bg-gray-50 last:border-b-0"
+                            >
+                                <td className="px-6 py-4">
+                                    <span className="font-semibold text-black">
+                                        {ticket.ticket_code || "-"}
+                                    </span>
+                                </td>
 
-                                    <td className="px-6 py-4">
+                                <td className="px-6 py-4">
+                                    <p
+                                        className="truncate font-medium text-black"
+                                        title={ticket.subject}
+                                    >
+                                        {ticket.subject || "-"}
+                                    </p>
+                                </td>
+
+                                <td className="px-4 py-4">
+                                    <div className="min-w-0">
                                         <p
                                             className="truncate font-medium text-black"
-                                            title={ticket.subject}
+                                            title={
+                                                ticket.submitted_by_name
+                                            }
                                         >
-                                            {ticket.subject || "-"}
+                                            {ticket.submitted_by_name ||
+                                                "-"}
                                         </p>
+
+                                        <p
+                                            className="mt-0.5 truncate text-xs text-gray-500"
+                                            title={
+                                                ticket.submitted_by_department
+                                            }
+                                        >
+                                            {ticket.submitted_by_department ||
+                                                "-"}
+                                        </p>
+                                    </div>
+                                </td>
+
+                                <td className="px-4 py-4">
+                                    <span className="whitespace-nowrap text-black">
+                                        {formatAffectedScope(
+                                            ticket.affected_scope
+                                        )}
+                                    </span>
+                                </td>
+
+                                <td className="px-4 py-4">
+                                    <span
+                                        className={`inline-flex whitespace-nowrap rounded-md border px-2 py-1 text-xs font-semibold ${
+                                            priorityColor[
+                                                ticket.priority
+                                            ] ||
+                                            "border-gray-300 bg-gray-100 text-gray-600"
+                                        }`}
+                                    >
+                                        {priorityLabel[
+                                            ticket.priority
+                                        ] ||
+                                            ticket.priority ||
+                                            "-"}
+                                    </span>
+                                </td>
+
+                                <td className="px-4 py-4">
+                                    <span
+                                        className={`inline-flex whitespace-nowrap rounded-md px-2 py-1 text-xs font-medium ${
+                                            statusColor[
+                                                ticket.status
+                                            ] ||
+                                            "border border-gray-300 bg-gray-100 text-gray-700"
+                                        }`}
+                                    >
+                                        {ticket.status || "-"}
+                                    </span>
+                                </td>
+
+                                <td className="px-4 py-4">
+                                    <span
+                                        className="whitespace-nowrap text-black"
+                                        title={formatDate(
+                                            ticket.created_at
+                                        )}
+                                    >
+                                        {formatDate(
+                                            ticket.created_at
+                                        )}
+                                    </span>
+                                </td>
+
+                                <td className="px-4 py-4">
+                                    <span className="whitespace-nowrap font-medium text-black">
+                                        {ticket.resolution_time_remaining ||
+                                            "-"}
+                                    </span>
+                                </td>
+                            </tr>
+                        ))}
+                    </tbody>
+                </table>
+            </div>
+
+            {/* Mobile */}
+            <div
+                className={
+                    dashboard
+                        ? "md:hidden"
+                        : "max-h-[637px] overflow-y-auto md:hidden"
+                }
+            >
+                {displayedTickets.map((ticket) => (
+                    <div
+                        key={ticket.id}
+                        onClick={() =>
+                            navigate(`/ticket/${ticket.id}`)
+                        }
+                        className="cursor-pointer border-b border-gray-300 bg-white transition-colors hover:bg-gray-50"
+                    >
+                        <table className="w-full table-fixed text-xs">
+                            <tbody>
+                                {/* Ticket ID */}
+                                <tr className="bg-gray-100">
+                                    <th className="w-[40%] border-r border-gray-300 px-3 py-2 text-left font-semibold text-gray-700">
+                                        Ticket ID
+                                    </th>
+
+                                    <td className="px-3 py-2 font-semibold text-[#2563EB]">
+                                        {ticket.ticket_code || "-"}
                                     </td>
+                                </tr>
 
-                                    <td className="px-4 py-4">
-                                        <div className="min-w-0">
-                                            <p
-                                                className="truncate font-medium text-black"
-                                                title={
-                                                    ticket.submitted_by_name
-                                                }
-                                            >
-                                                {ticket.submitted_by_name ||
-                                                    "-"}
-                                            </p>
+                                {/* Subject */}
+                                <tr>
+                                    <th className="border-r border-gray-200 px-3 py-2 text-left font-medium text-gray-600">
+                                        Subject
+                                    </th>
 
-                                            <p
-                                                className="mt-0.5 truncate text-xs text-gray-500"
-                                                title={
-                                                    ticket.submitted_by_department
-                                                }
-                                            >
-                                                {ticket.submitted_by_department ||
-                                                    "-"}
-                                            </p>
-                                        </div>
+                                    <td
+                                        className="truncate px-3 py-2 font-medium text-gray-900"
+                                        title={ticket.subject}
+                                    >
+                                        {ticket.subject || "-"}
                                     </td>
+                                </tr>
 
-                                    <td className="px-4 py-4">
-                                        <span className="whitespace-nowrap text-black">
-                                            {ticket.affected_scope
-                                                ? ticket.affected_scope
-                                                      .charAt(0)
-                                                      .toUpperCase() +
-                                                  ticket.affected_scope.slice(
-                                                      1
-                                                  )
-                                                : "-"}
-                                        </span>
+                                {/* Submitted By */}
+                                <tr className="bg-gray-100">
+                                    <th className="border-r border-gray-300 px-3 py-2 text-left font-medium text-gray-700">
+                                        Submitted By
+                                    </th>
+
+                                    <td
+                                        className="truncate px-3 py-2 text-gray-900"
+                                        title={
+                                            ticket.submitted_by_name
+                                        }
+                                    >
+                                        {ticket.submitted_by_name ||
+                                            "-"}
                                     </td>
+                                </tr>
 
-                                    <td className="px-4 py-4">
+                                {/* Submitted By Department */}
+                                <tr>
+                                    <th className="border-r border-gray-200 px-3 py-2 text-left font-medium text-gray-600">
+                                        Department
+                                    </th>
+
+                                    <td
+                                        className="truncate px-3 py-2 text-gray-900"
+                                        title={
+                                            ticket.submitted_by_department
+                                        }
+                                    >
+                                        {ticket.submitted_by_department ||
+                                            "-"}
+                                    </td>
+                                </tr>
+
+                                {/* Affected Scope */}
+                                <tr className="bg-gray-100">
+                                    <th className="border-r border-gray-300 px-3 py-2 text-left font-medium text-gray-700">
+                                        Affected Scope
+                                    </th>
+
+                                    <td className="px-3 py-2 text-gray-900">
+                                        {formatAffectedScope(
+                                            ticket.affected_scope
+                                        )}
+                                    </td>
+                                </tr>
+
+                                {/* Priority */}
+                                <tr>
+                                    <th className="border-r border-gray-200 px-3 py-2 text-left font-medium text-gray-600">
+                                        Priority
+                                    </th>
+
+                                    <td className="px-3 py-2">
                                         <span
-                                            className={`inline-flex whitespace-nowrap rounded-md border px-2 py-1 text-xs font-semibold ${
+                                            className={`inline-flex rounded-md border px-2 py-1 text-[10px] font-semibold ${
                                                 priorityColor[
                                                     ticket.priority
                                                 ] ||
@@ -151,10 +322,17 @@ export default function TicketTableSupport({
                                                 "-"}
                                         </span>
                                     </td>
+                                </tr>
 
-                                    <td className="px-4 py-4">
+                                {/* Status */}
+                                <tr className="bg-gray-100">
+                                    <th className="border-r border-gray-300 px-3 py-2 text-left font-medium text-gray-700">
+                                        Status
+                                    </th>
+
+                                    <td className="px-3 py-2">
                                         <span
-                                            className={`inline-flex whitespace-nowrap rounded-md px-2 py-1 text-xs font-medium ${
+                                            className={`inline-flex rounded-md px-2 py-1 text-[10px] font-medium ${
                                                 statusColor[
                                                     ticket.status
                                                 ] ||
@@ -164,47 +342,41 @@ export default function TicketTableSupport({
                                             {ticket.status || "-"}
                                         </span>
                                     </td>
+                                </tr>
 
-                                    <td className="px-4 py-4">
-                                        <span
-                                            className="whitespace-nowrap text-black"
-                                            title={formatDate(
-                                                ticket.created_at
-                                            )}
-                                        >
-                                            {formatDate(
-                                                ticket.created_at
-                                            )}
-                                        </span>
-                                    </td>
+                                {/* Created */}
+                                <tr>
+                                    <th className="border-r border-gray-200 px-3 py-2 text-left font-medium text-gray-600">
+                                        Created
+                                    </th>
 
-                                    <td className="px-4 py-4">
-                                        <span className="whitespace-nowrap font-medium text-black">
-                                            {ticket.resolution_time_remaining ||
-                                                "-"}
-                                        </span>
+                                    <td
+                                        className="px-3 py-2 text-gray-900"
+                                        title={formatDate(
+                                            ticket.created_at
+                                        )}
+                                    >
+                                        {formatDate(
+                                            ticket.created_at
+                                        )}
                                     </td>
                                 </tr>
-                            ))
-                        ) : (
-                            <tr>
-                                <td
-                                    colSpan="8"
-                                    className="px-6 py-16 text-center"
-                                >
-                                    <p className="font-medium text-black">
-                                        No tickets found
-                                    </p>
 
-                                    <p className="mt-1 text-sm text-gray-500">
-                                        There are currently no
-                                        tickets to display.
-                                    </p>
-                                </td>
-                            </tr>
-                        )}
-                    </tbody>
-                </table>
+                                {/* SLA Remaining */}
+                                <tr className="bg-gray-100">
+                                    <th className="border-r border-gray-300 px-3 py-2 text-left font-medium text-gray-700">
+                                        SLA Remaining
+                                    </th>
+
+                                    <td className="px-3 py-2 font-medium text-gray-900">
+                                        {ticket.resolution_time_remaining ||
+                                            "-"}
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                ))}
             </div>
         </div>
     );

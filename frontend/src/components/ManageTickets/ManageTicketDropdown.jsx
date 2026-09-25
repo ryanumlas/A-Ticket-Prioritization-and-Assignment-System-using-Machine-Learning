@@ -137,31 +137,6 @@ export default function ManageTicketDropdown({
                             </div>
                         </button>
 
-                        <div className="my-1 border-t border-gray-200" />
-
-                        <button
-                            type="button"
-                            onClick={() => {
-                                setIsOpen(false);
-                                onAutomated?.();
-                            }}
-                            className="flex w-full cursor-pointer items-start gap-3 rounded-md px-3 py-2.5 text-left transition-colors hover:bg-gray-50"
-                        >
-                            <Sparkles
-                                size={18}
-                                className="mt-0.5 shrink-0 text-[#2563EB]"
-                            />
-
-                            <div className="min-w-0">
-                                <p className="text-sm font-medium text-black">
-                                    Automated
-                                </p>
-
-                                <p className="mt-0.5 text-xs leading-4 text-gray-500">
-                                    Use automated tools to assist with this ticket.
-                                </p>
-                            </div>
-                        </button>
 
                         <div className="my-1 border-t border-gray-200" />
 

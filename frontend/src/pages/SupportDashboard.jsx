@@ -20,8 +20,8 @@ export default function SupportDashboard() {
                     "/tickets/support-specialist/list/"
                 );
 
-                setTicketList(response.data.results);
-            } catch (error) {
+                setTicketList(response.data.results || []);
+            } catch {
                 setTicketList([]);
             } finally {
                 setLoading(false);
@@ -33,7 +33,7 @@ export default function SupportDashboard() {
 
     if (loading) {
         return (
-            <div className="flex items-center justify-center py-12">
+            <div className="flex min-h-[300px] items-center justify-center px-4">
                 <p className="text-sm text-gray-500">
                     Loading dashboard...
                 </p>
@@ -42,58 +42,60 @@ export default function SupportDashboard() {
     }
 
     return (
-        <div className="space-y-4">
-
+        <div className="w-full space-y-4 overflow-hidden sm:px-4 sm:py-4 lg:px-0 lg:py-0">
             {/* OVERVIEW CARDS */}
             <SupportOverview />
 
-            <div className="grid grid-cols-12 gap-4">
-
+            <div className="grid grid-cols-1 gap-4 lg:grid-cols-12">
                 {/* TICKETS NEEDING ATTENTION */}
-                <div className="col-span-7">
+                <div className="min-w-0 lg:col-span-7">
                     <TicketNeedingAttention />
                 </div>
 
                 {/* SLA OVERVIEW */}
-                <div className="col-span-5">
+                <div className="min-w-0 lg:col-span-5">
                     <SLAOverview />
                 </div>
 
                 {/* MY ACTIVE TICKETS */}
-                <div className="col-span-12">
+                <div className="min-w-0 lg:col-span-12">
                     <div className="overflow-hidden rounded-xl border border-gray-300 bg-white">
-
-                        <div className="flex items-center justify-between border-b border-gray-300 px-4 py-4">
-
-                            <div>
-                                <h1 className="text-xl font-semibold text-black">
+                        {/* Header */}
+                        <div className="flex flex-col gap-3 border-b border-gray-300 px-4 py-4 sm:flex-row sm:items-center sm:justify-between">
+                            <div className="min-w-0">
+                                <h1 className="text-lg font-semibold text-black sm:text-xl">
                                     My Active Tickets
                                 </h1>
 
-                                <p className="text-sm text-gray-500">
+                                <p className="mt-0.5 text-sm text-gray-500">
                                     Recently assigned tickets
                                 </p>
                             </div>
 
                             <Link
                                 to="/tickets"
-                                className="group flex cursor-pointer items-center gap-2 rounded-md bg-[#2563EB] px-6 py-2 text-sm text-white transition hover:bg-[#1D4ED8]"
+                                className="group inline-flex h-10 w-full cursor-pointer items-center justify-center gap-2 rounded-md bg-[#2563EB] px-5 text-sm font-medium text-white transition hover:bg-[#1D4ED8] sm:w-auto"
                             >
                                 View All
-                                <ArrowRight size={16} />
+                                <ArrowRight
+                                    size={16}
+                                    className="transition-transform group-hover:translate-x-0.5"
+                                />
                             </Link>
-
                         </div>
 
-                        <TicketTableSupport
-                            ticketList={ticketList}
-                            dashboard={true}
-                            maxRows={5}
-                        />
-
+                        {/* Responsive table */}
+                        <div className="w-full overflow-x-auto">
+                            <div className="min-w-[900px]">
+                                <TicketTableSupport
+                                    ticketList={ticketList}
+                                    dashboard={true}
+                                    maxRows={5}
+                                />
+                            </div>
+                        </div>
                     </div>
                 </div>
-
             </div>
         </div>
     );

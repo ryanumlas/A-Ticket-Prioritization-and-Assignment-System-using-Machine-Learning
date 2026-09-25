@@ -15,7 +15,7 @@ SLARulesUpdateSerializer, KeywordSerializer, KeywordUpdateSerializer, UpdateSymp
 TicketCreateSerializer, TicketUpdateSerializer, TicketDetailEmployeeSerializer, CategoryUpdateSerializer, FlaggedTicketsListSerializer, 
 FlaggedTicketDetailSerializer, TicketDetailSupportSerializer, TicketStatusHistorySerializer, PriorityChangeRequestSerializer, PriorityRequestListSerializer, 
 PriorityRequestDetailSerializer, ReturnTicketSerializer, ReturnedTicketRequestListSerializer, ReturnedTicketDetailSerializer, ApproveReturnTicketSerializer, 
-ServiceDeskDepartmentSerializer)
+ServiceDeskDepartmentSerializer, RejectReturnTicketSerializer, EmployeeCurrentActiveTicketSerializer)
 from users.models import User, ITSupportProfile, Notifications
 from users.services import create_notification
 from .services import predict_ticket, assign_ticket_automatically
@@ -2285,7 +2285,9 @@ class PriorityChangeRequestView(APIView):
             )
 
         requested_priority = SLARules.objects.filter(
-            priority_level=serializer.validated_data["requested_priority"]
+            priority_level=serializer.validated_data[
+                "requested_priority"
+            ]
         ).first()
 
         if not requested_priority:
@@ -2356,7 +2358,7 @@ class PriorityChangeRequestView(APIView):
             else "Unassigned"
         )
 
-        # Internal audit history.
+        # Keep the priority change request internal.
         TicketStatusHistory.objects.create(
             ticket=ticket,
             event_type=(
@@ -2367,7 +2369,9 @@ class PriorityChangeRequestView(APIView):
             remarks=priority_request.reason,
             created_by=request.user,
             changed_by=request.user,
-            visibility=TicketStatusHistory.Visibility.INTERNAL,
+            visibility=(
+                TicketStatusHistory.Visibility.INTERNAL
+            ),
         )
 
         # Notify all active IT Service Desk users.
@@ -2507,12 +2511,6 @@ class ApprovePriorityRequestView(APIView):
         priority_request = (
             TicketPriorityRequest.objects
             .select_for_update()
-            .select_related(
-                "ticket",
-                "ticket__priority",
-                "requested_priority",
-                "requested_by",
-            )
             .filter(id=request_id)
             .first()
         )
@@ -2539,7 +2537,7 @@ class ApprovePriorityRequestView(APIView):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        if not priority_request.requested_priority:
+        if not priority_request.requested_priority_id:
             return Response(
                 {
                     "error": "Requested priority is missing."
@@ -2562,8 +2560,21 @@ class ApprovePriorityRequestView(APIView):
                 status=status.HTTP_404_NOT_FOUND,
             )
 
-        requested_priority = priority_request.requested_priority
-        old_priority = ticket.priority
+        requested_priority = (
+            SLARules.objects
+            .filter(
+                pk=priority_request.requested_priority_id
+            )
+            .first()
+        )
+
+        if not requested_priority:
+            return Response(
+                {
+                    "error": "Requested priority not found."
+                },
+                status=status.HTTP_404_NOT_FOUND,
+            )
 
         review_remarks = request.data.get(
             "review_remarks",
@@ -2575,6 +2586,19 @@ class ApprovePriorityRequestView(APIView):
 
         review_remarks = str(review_remarks).strip()
 
+        if not review_remarks:
+            return Response(
+                {
+                    "error": (
+                        "Review remarks are required when "
+                        "approving a priority change request."
+                    )
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        old_priority = ticket.priority
+
         if (
             old_priority
             and old_priority.id == requested_priority.id
@@ -2582,11 +2606,22 @@ class ApprovePriorityRequestView(APIView):
             return Response(
                 {
                     "error": (
-                        "The ticket already has the requested priority."
+                        "The ticket already has the "
+                        "requested priority."
                     )
                 },
                 status=status.HTTP_400_BAD_REQUEST,
             )
+
+        old_priority_level = (
+            old_priority.priority_level
+            if old_priority
+            else None
+        )
+
+        new_priority_level = (
+            requested_priority.priority_level
+        )
 
         ticket.priority = requested_priority
 
@@ -2601,26 +2636,19 @@ class ApprovePriorityRequestView(APIView):
             recalculate_deadlines=True,
         )
 
-        old_priority_level = (
-            old_priority.priority_level
-            if old_priority
-            else None
-        )
-
-        new_priority_level = requested_priority.priority_level
-
         TicketStatusHistory.objects.create(
             ticket=ticket,
-            event_type=TicketStatusHistory.EventType.PRIORITY_CHANGED,
+            event_type=(
+                TicketStatusHistory.EventType.PRIORITY_CHANGED
+            ),
             old_value=old_priority_level,
             new_value=new_priority_level,
-            remarks=(
-                review_remarks
-                or "Priority change request approved by Service Desk."
-            ),
+            remarks=review_remarks,
             created_by=request.user,
             changed_by=request.user,
-            visibility=TicketStatusHistory.Visibility.ALL,
+            visibility=(
+                TicketStatusHistory.Visibility.ALL
+            ),
         )
 
         priority_request.status = (
@@ -2651,7 +2679,6 @@ class ApprovePriorityRequestView(APIView):
             updated_by=request.user,
         )
 
-        # Notify the employee who submitted the ticket.
         if ticket.submitted_by:
             create_notification(
                 user=ticket.submitted_by,
@@ -2668,7 +2695,6 @@ class ApprovePriorityRequestView(APIView):
                 created_by=request.user,
             )
 
-        # Notify the IT Support Specialist who requested the change.
         if priority_request.requested_by:
             create_notification(
                 user=priority_request.requested_by,
@@ -2692,7 +2718,340 @@ class ApprovePriorityRequestView(APIView):
             {
                 "success": True,
                 "message": (
-                    "Priority change request approved successfully."
+                    "Priority change request approved "
+                    "successfully."
+                ),
+                "request": serializer.data,
+            },
+            status=status.HTTP_200_OK,
+        )
+
+
+class RejectPriorityRequestView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    @transaction.atomic
+    def patch(self, request, request_id):
+        priority_request = (
+            TicketPriorityRequest.objects
+            .select_for_update()
+            .filter(id=request_id)
+            .first()
+        )
+
+        if not priority_request:
+            return Response(
+                {
+                    "error": "Priority change request not found."
+                },
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        if (
+            priority_request.status
+            != TicketPriorityRequest.RequestStatus.PENDING
+        ):
+            return Response(
+                {
+                    "error": (
+                        "This priority change request has "
+                        "already been reviewed."
+                    )
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        ticket = (
+            Ticket.objects
+            .select_for_update()
+            .filter(pk=priority_request.ticket_id)
+            .first()
+        )
+
+        if not ticket:
+            return Response(
+                {
+                    "error": "Ticket not found."
+                },
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        review_remarks = request.data.get(
+            "review_remarks",
+            "",
+        )
+
+        if review_remarks is None:
+            review_remarks = ""
+
+        review_remarks = str(review_remarks).strip()
+
+        if not review_remarks:
+            return Response(
+                {
+                    "error": (
+                        "Review remarks are required when "
+                        "rejecting a priority change request."
+                    )
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        current_priority = (
+            ticket.priority.priority_level
+            if ticket.priority
+            else "Unassigned"
+        )
+
+        requested_priority = (
+            priority_request.requested_priority.priority_level
+            if priority_request.requested_priority
+            else "Unknown"
+        )
+
+        TicketStatusHistory.objects.create(
+            ticket=ticket,
+            event_type=(
+                TicketStatusHistory.EventType.PRIORITY_REQUEST_REJECTED
+            ),
+            old_value=requested_priority,
+            new_value=current_priority,
+            remarks=review_remarks,
+            created_by=request.user,
+            changed_by=request.user,
+            visibility=(
+                TicketStatusHistory.Visibility.ALL
+            ),
+        )
+
+        priority_request.status = (
+            TicketPriorityRequest.RequestStatus.REJECTED
+        )
+
+        priority_request.reviewed_by = request.user
+        priority_request.reviewed_at = timezone.now()
+        priority_request.review_remarks = review_remarks
+
+        priority_request.save(
+            update_fields=[
+                "status",
+                "reviewed_by",
+                "reviewed_at",
+                "review_remarks",
+            ]
+        )
+
+        Notifications.objects.filter(
+            ticket_id=priority_request.ticket_id,
+            notification_type=(
+                Notifications.NotificationType.REVIEW_REQUIRED
+            ),
+            is_read=False,
+        ).update(
+            is_read=True,
+            updated_by=request.user,
+        )
+
+        if ticket.submitted_by:
+            create_notification(
+                user=ticket.submitted_by,
+                ticket=ticket,
+                notification_type=(
+                    Notifications.NotificationType.STATUS_UPDATED
+                ),
+                message=(
+                    f"Your priority change request for ticket "
+                    f"{ticket.ticket_code} was rejected by the "
+                    "Service Desk."
+                ),
+                created_by=request.user,
+            )
+
+        if priority_request.requested_by:
+            create_notification(
+                user=priority_request.requested_by,
+                ticket=ticket,
+                notification_type=(
+                    Notifications.NotificationType.STATUS_UPDATED
+                ),
+                message=(
+                    f"Your priority change request for ticket "
+                    f"{ticket.ticket_code} was rejected. "
+                    f"The priority remains {current_priority}."
+                ),
+                created_by=request.user,
+            )
+
+        serializer = PriorityRequestDetailSerializer(
+            priority_request
+        )
+
+        return Response(
+            {
+                "success": True,
+                "message": (
+                    "Priority change request rejected "
+                    "successfully."
+                ),
+                "request": serializer.data,
+            },
+            status=status.HTTP_200_OK,
+        )
+
+class RejectPriorityRequestView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    @transaction.atomic
+    def patch(self, request, request_id):
+        priority_request = (
+            TicketPriorityRequest.objects
+            .select_for_update()
+            .filter(id=request_id)
+            .first()
+        )
+
+        if not priority_request:
+            return Response(
+                {"error": "Priority change request not found."},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        if (
+            priority_request.status
+            != TicketPriorityRequest.RequestStatus.PENDING
+        ):
+            return Response(
+                {
+                    "error": (
+                        "This priority change request has "
+                        "already been reviewed."
+                    )
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        ticket = (
+            Ticket.objects
+            .select_for_update()
+            .filter(pk=priority_request.ticket_id)
+            .first()
+        )
+
+        if not ticket:
+            return Response(
+                {"error": "Ticket not found."},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        review_remarks = request.data.get("review_remarks", "")
+
+        if review_remarks is None:
+            review_remarks = ""
+
+        review_remarks = str(review_remarks).strip()
+
+        if not review_remarks:
+            return Response(
+                {
+                    "error": (
+                        "Review remarks are required when rejecting "
+                        "a priority change request."
+                    )
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        current_priority = (
+            ticket.priority.priority_level
+            if ticket.priority
+            else "Unassigned"
+        )
+
+        requested_priority = (
+            priority_request.requested_priority.priority_level
+            if priority_request.requested_priority
+            else "Unknown"
+        )
+
+        TicketStatusHistory.objects.create(
+            ticket=ticket,
+            event_type=(
+                TicketStatusHistory.EventType.PRIORITY_REQUEST_REJECTED
+            ),
+            old_value=requested_priority,
+            new_value=current_priority,
+            remarks=review_remarks,
+            created_by=request.user,
+            changed_by=request.user,
+            visibility=TicketStatusHistory.Visibility.ALL,
+        )
+
+        priority_request.status = (
+            TicketPriorityRequest.RequestStatus.REJECTED
+        )
+        priority_request.reviewed_by = request.user
+        priority_request.reviewed_at = timezone.now()
+        priority_request.review_remarks = review_remarks
+
+        priority_request.save(
+            update_fields=[
+                "status",
+                "reviewed_by",
+                "reviewed_at",
+                "review_remarks",
+            ]
+        )
+
+        Notifications.objects.filter(
+            ticket_id=priority_request.ticket_id,
+            notification_type=(
+                Notifications.NotificationType.REVIEW_REQUIRED
+            ),
+            is_read=False,
+        ).update(
+            is_read=True,
+            updated_by=request.user,
+        )
+
+        if ticket.submitted_by:
+            create_notification(
+                user=ticket.submitted_by,
+                ticket=ticket,
+                notification_type=(
+                    Notifications.NotificationType.STATUS_UPDATED
+                ),
+                message=(
+                    f"Your priority change request for ticket "
+                    f"{ticket.ticket_code} was rejected by the "
+                    "Service Desk."
+                ),
+                created_by=request.user,
+            )
+
+        if priority_request.requested_by:
+            create_notification(
+                user=priority_request.requested_by,
+                ticket=ticket,
+                notification_type=(
+                    Notifications.NotificationType.STATUS_UPDATED
+                ),
+                message=(
+                    f"Your priority change request for ticket "
+                    f"{ticket.ticket_code} was rejected. "
+                    f"The priority remains {current_priority}."
+                ),
+                created_by=request.user,
+            )
+
+        serializer = PriorityRequestDetailSerializer(
+            priority_request
+        )
+
+        return Response(
+            {
+                "success": True,
+                "message": (
+                    "Priority change request rejected successfully."
                 ),
                 "request": serializer.data,
             },
@@ -2782,26 +3141,9 @@ class ReturnTicketView(APIView):
             remarks=return_request.reason,
             created_by=request.user,
             changed_by=request.user,
-            visibility=TicketStatusHistory.Visibility.ALL,
+            visibility=TicketStatusHistory.Visibility.INTERNAL,
         )
 
-        # Notify the employee immediately that the ticket
-        # has been returned to the Service Desk.
-        if ticket.submitted_by:
-            create_notification(
-                user=ticket.submitted_by,
-                ticket=ticket,
-                notification_type=(
-                    Notifications.NotificationType.STATUS_UPDATED
-                ),
-                message=(
-                    f"Your ticket {ticket.ticket_code} has been "
-                    "returned to the Service Desk for further review."
-                ),
-                created_by=request.user,
-            )
-
-        # Notify all active Service Desk users that review is required.
         service_desk_users = User.objects.filter(
             role__name="IT Service Desk",
             is_active=True,
@@ -2847,7 +3189,10 @@ class ApproveReturnTicketView(APIView):
         serializer = ApproveReturnTicketSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
-        selected_symptom_id = serializer.validated_data["symptom_code_id"]
+        selected_symptom_id = serializer.validated_data[
+            "symptom_code_id"
+        ]
+
         review_remarks = serializer.validated_data.get(
             "review_remarks",
             "",
@@ -2866,7 +3211,10 @@ class ApproveReturnTicketView(APIView):
                 status=status.HTTP_404_NOT_FOUND,
             )
 
-        if return_request.status != TicketReturn.ReturnStatus.PENDING:
+        if (
+            return_request.status
+            != TicketReturn.ReturnStatus.PENDING
+        ):
             return Response(
                 {
                     "error": (
@@ -2936,8 +3284,8 @@ class ApproveReturnTicketView(APIView):
             return Response(
                 {
                     "error": (
-                        "The selected symptom code's category does not "
-                        "have an IT department assigned."
+                        "The selected symptom code's category does "
+                        "not have an IT department assigned."
                     )
                 },
                 status=status.HTTP_400_BAD_REQUEST,
@@ -3002,13 +3350,17 @@ class ApproveReturnTicketView(APIView):
                 ),
                 created_by=request.user,
                 changed_by=request.user,
-                visibility=TicketStatusHistory.Visibility.ALL,
+                visibility=(
+                    TicketStatusHistory.Visibility.INTERNAL
+                ),
             )
 
         if old_assignee:
             TicketStatusHistory.objects.create(
                 ticket=ticket,
-                event_type=TicketStatusHistory.EventType.REASSIGNED,
+                event_type=(
+                    TicketStatusHistory.EventType.REASSIGNED
+                ),
                 old_value=(
                     f"{old_assignee.first_name} "
                     f"{old_assignee.last_name}"
@@ -3020,13 +3372,17 @@ class ApproveReturnTicketView(APIView):
                 ),
                 created_by=request.user,
                 changed_by=request.user,
-                visibility=TicketStatusHistory.Visibility.ALL,
+                visibility=(
+                    TicketStatusHistory.Visibility.INTERNAL
+                ),
             )
 
         if old_status != ticket.status:
             TicketStatusHistory.objects.create(
                 ticket=ticket,
-                event_type=TicketStatusHistory.EventType.STATUS_CHANGED,
+                event_type=(
+                    TicketStatusHistory.EventType.STATUS_CHANGED
+                ),
                 old_value=old_status,
                 new_value=Ticket.TicketStatus.OPEN,
                 remarks=(
@@ -3035,10 +3391,14 @@ class ApproveReturnTicketView(APIView):
                 ),
                 created_by=request.user,
                 changed_by=request.user,
-                visibility=TicketStatusHistory.Visibility.ALL,
+                visibility=(
+                    TicketStatusHistory.Visibility.ALL
+                ),
             )
 
-        return_request.status = TicketReturn.ReturnStatus.APPROVED
+        return_request.status = (
+            TicketReturn.ReturnStatus.APPROVED
+        )
         return_request.reviewed_by = request.user
         return_request.reviewed_at = timezone.now()
         return_request.review_remarks = review_remarks
@@ -3065,7 +3425,9 @@ class ApproveReturnTicketView(APIView):
 
         TicketStatusHistory.objects.create(
             ticket=ticket,
-            event_type=TicketStatusHistory.EventType.RETURN_APPROVED,
+            event_type=(
+                TicketStatusHistory.EventType.RETURN_APPROVED
+            ),
             old_value="Service Desk",
             new_value=new_department.name,
             remarks=(
@@ -3074,13 +3436,13 @@ class ApproveReturnTicketView(APIView):
             ),
             created_by=request.user,
             changed_by=request.user,
-            visibility=TicketStatusHistory.Visibility.ALL,
+            visibility=(
+                TicketStatusHistory.Visibility.ALL
+            ),
         )
 
         assigned_support = assign_ticket_automatically(ticket)
 
-        # Notify the employee that the return was approved
-        # and the ticket was rerouted.
         if ticket.submitted_by:
             create_notification(
                 user=ticket.submitted_by,
@@ -3096,8 +3458,6 @@ class ApproveReturnTicketView(APIView):
                 created_by=request.user,
             )
 
-        # Notify the previous technician that the ticket
-        # is no longer assigned to them.
         if old_assignee:
             create_notification(
                 user=old_assignee,
@@ -3113,7 +3473,6 @@ class ApproveReturnTicketView(APIView):
                 created_by=request.user,
             )
 
-        # Notify the new technician.
         if assigned_support:
             create_notification(
                 user=assigned_support.user,
@@ -3141,7 +3500,9 @@ class ApproveReturnTicketView(APIView):
                     "status": return_request.status,
                     "reviewed_by": request.user.user_code,
                     "reviewed_at": return_request.reviewed_at,
-                    "review_remarks": return_request.review_remarks,
+                    "review_remarks": (
+                        return_request.review_remarks
+                    ),
                 },
                 "ticket": {
                     "id": ticket.id,
@@ -3157,6 +3518,198 @@ class ApproveReturnTicketView(APIView):
                         if assigned_support
                         else None
                     ),
+                },
+            },
+            status=status.HTTP_200_OK,
+        )
+
+class RejectReturnTicketView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    @transaction.atomic
+    def post(self, request, pk):
+        serializer = RejectReturnTicketSerializer(
+            data=request.data
+        )
+        serializer.is_valid(raise_exception=True)
+
+        review_remarks = serializer.validated_data.get(
+            "review_remarks",
+            "",
+        )
+
+        return_request = (
+            TicketReturn.objects
+            .select_for_update()
+            .filter(pk=pk)
+            .first()
+        )
+
+        if not return_request:
+            return Response(
+                {"error": "Return request not found."},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        if (
+            return_request.status
+            != TicketReturn.ReturnStatus.PENDING
+        ):
+            return Response(
+                {
+                    "error": (
+                        "This return request has already been reviewed."
+                    )
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        if not return_request.ticket_id:
+            return Response(
+                {
+                    "error": (
+                        "This return request is not linked to a ticket."
+                    )
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        ticket = (
+            Ticket.objects
+            .select_for_update()
+            .filter(pk=return_request.ticket_id)
+            .first()
+        )
+
+        if not ticket:
+            return Response(
+                {"error": "Ticket not found."},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        if not ticket.is_under_review:
+            return Response(
+                {
+                    "error": (
+                        "This ticket is no longer under "
+                        "Service Desk review."
+                    )
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        previous_status = return_request.ticket.status
+
+        return_request.status = (
+            TicketReturn.ReturnStatus.REJECTED
+        )
+        return_request.reviewed_by = request.user
+        return_request.reviewed_at = timezone.now()
+        return_request.review_remarks = review_remarks
+
+        return_request.save(
+            update_fields=[
+                "status",
+                "reviewed_by",
+                "reviewed_at",
+                "review_remarks",
+            ]
+        )
+
+        ticket.is_under_review = False
+        ticket.updated_by = request.user
+
+        ticket.save(
+            update_fields=[
+                "is_under_review",
+                "updated_by",
+                "updated_at",
+            ]
+        )
+
+        if previous_status != ticket.status:
+            TicketStatusHistory.objects.create(
+                ticket=ticket,
+                event_type=(
+                    TicketStatusHistory.EventType.STATUS_CHANGED
+                ),
+                old_value=previous_status,
+                new_value=ticket.status,
+                remarks=(
+                    review_remarks
+                    or "Return request rejected by Service Desk."
+                ),
+                created_by=request.user,
+                changed_by=request.user,
+                visibility=(
+                    TicketStatusHistory.Visibility.ALL
+                ),
+            )
+
+        TicketStatusHistory.objects.create(
+            ticket=ticket,
+            event_type=(
+                TicketStatusHistory.EventType.RETURN_REJECTED
+            ),
+            old_value="Service Desk",
+            new_value=ticket.status,
+            remarks=(
+                review_remarks
+                or "Return request rejected by Service Desk."
+            ),
+            created_by=request.user,
+            changed_by=request.user,
+            visibility=(
+                TicketStatusHistory.Visibility.ALL
+            ),
+        )
+
+        Notifications.objects.filter(
+            ticket=ticket,
+            notification_type=(
+                Notifications.NotificationType.REVIEW_REQUIRED
+            ),
+            is_read=False,
+        ).update(
+            is_read=True,
+            updated_by=request.user,
+        )
+
+        if ticket.submitted_by:
+            create_notification(
+                user=ticket.submitted_by,
+                ticket=ticket,
+                notification_type=(
+                    Notifications.NotificationType.STATUS_UPDATED
+                ),
+                message=(
+                    f"Your ticket {ticket.ticket_code} was reviewed "
+                    "by the Service Desk, but the return request "
+                    "was rejected."
+                ),
+                created_by=request.user,
+            )
+
+        return Response(
+            {
+                "success": True,
+                "message": (
+                    "Return request rejected successfully."
+                ),
+                "request": {
+                    "id": return_request.id,
+                    "ticket": ticket.ticket_code,
+                    "status": return_request.status,
+                    "reviewed_by": request.user.user_code,
+                    "reviewed_at": return_request.reviewed_at,
+                    "review_remarks": (
+                        return_request.review_remarks
+                    ),
+                },
+                "ticket": {
+                    "id": ticket.id,
+                    "ticket_code": ticket.ticket_code,
+                    "status": ticket.status,
                 },
             },
             status=status.HTTP_200_OK,
@@ -3274,6 +3827,54 @@ class PendingPriorityRequestCountView(APIView):
             status=status.HTTP_200_OK,
         )
 
+class EmployeeCurrentActiveTicketView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        active_statuses = [
+            Ticket.TicketStatus.IN_PROGRESS,
+            Ticket.TicketStatus.UNDER_REVIEW,
+            Ticket.TicketStatus.REOPENED,
+            Ticket.TicketStatus.OPEN,
+        ]
+
+        status_priority = {
+            Ticket.TicketStatus.IN_PROGRESS: 1,
+            Ticket.TicketStatus.UNDER_REVIEW: 2,
+            Ticket.TicketStatus.REOPENED: 3,
+            Ticket.TicketStatus.OPEN: 4,
+        }
+
+        tickets = (
+            Ticket.objects
+            .filter(
+                submitted_by=request.user,
+                status__in=active_statuses,
+            )
+            .select_related(
+                "assigned_to",
+                "priority",
+            )
+        )
+
+        if not tickets.exists():
+            return Response({"ticket": None})
+
+        current_ticket = min(
+            tickets,
+            key=lambda ticket: (
+                status_priority.get(ticket.status, 99),
+                -ticket.updated_at.timestamp(),
+            ),
+        )
+
+        serializer = TicketDetailEmployeeSerializer(
+            current_ticket
+        )
+
+        return Response({
+            "ticket": serializer.data
+        })
 
 # class AddTicketAssigneeView(generics.CreateAPIView):
 #     permission_classes = [IsAuthenticated]

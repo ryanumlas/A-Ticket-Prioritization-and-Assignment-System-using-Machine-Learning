@@ -18,8 +18,11 @@ export default function PriorityRequestDetailsContent() {
     const [request, setRequest] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState("");
+
     const [reviewRemarks, setReviewRemarks] = useState("");
+
     const [approving, setApproving] = useState(false);
+    const [rejecting, setRejecting] = useState(false);
 
     useEffect(() => {
         const fetchPriorityRequest = async () => {
@@ -48,7 +51,32 @@ export default function PriorityRequestDetailsContent() {
     }, [id]);
 
     const handleApprove = async () => {
-        if (approving || request.status !== "pending") {
+        if (
+            approving ||
+            rejecting ||
+            request.status !== "pending"
+        ) {
+            return;
+        }
+
+        const remarks = reviewRemarks.trim();
+
+        if (!remarks) {
+            toast.error("Review remarks required", {
+                description:
+                    "Please provide a reason for approving this priority request.",
+                duration: 5000,
+                style: {
+                    background: "#ffffff",
+                    color: "#000000",
+                    border: "1px solid #e5e7eb",
+                    borderRadius: "10px",
+                    padding: "16px",
+                    boxShadow:
+                        "0 10px 30px rgba(0, 0, 0, 0.08)",
+                },
+            });
+
             return;
         }
 
@@ -58,7 +86,7 @@ export default function PriorityRequestDetailsContent() {
             const response = await api.patch(
                 `/tickets/priority-change-requests/approve/${id}/`,
                 {
-                    review_remarks: reviewRemarks.trim(),
+                    review_remarks: remarks,
                 }
             );
 
@@ -76,7 +104,8 @@ export default function PriorityRequestDetailsContent() {
                     border: "1px solid #e5e7eb",
                     borderRadius: "10px",
                     padding: "16px",
-                    boxShadow: "0 8px 24px rgba(0, 0, 0, 0.08)",
+                    boxShadow:
+                        "0 8px 24px rgba(0, 0, 0, 0.08)",
                 },
             });
         } catch (error) {
@@ -91,11 +120,91 @@ export default function PriorityRequestDetailsContent() {
                     border: "1px solid #e5e7eb",
                     borderRadius: "10px",
                     padding: "16px",
-                    boxShadow: "0 10px 30px rgba(0, 0, 0, 0.08)",
+                    boxShadow:
+                        "0 10px 30px rgba(0, 0, 0, 0.08)",
                 },
             });
         } finally {
             setApproving(false);
+        }
+    };
+
+    const handleReject = async () => {
+        if (
+            approving ||
+            rejecting ||
+            request.status !== "pending"
+        ) {
+            return;
+        }
+
+        const remarks = reviewRemarks.trim();
+
+        if (!remarks) {
+            toast.error("Review remarks required", {
+                description:
+                    "Please provide a reason for rejecting this priority request.",
+                duration: 5000,
+                style: {
+                    background: "#ffffff",
+                    color: "#000000",
+                    border: "1px solid #e5e7eb",
+                    borderRadius: "10px",
+                    padding: "16px",
+                    boxShadow:
+                        "0 10px 30px rgba(0, 0, 0, 0.08)",
+                },
+            });
+
+            return;
+        }
+
+        try {
+            setRejecting(true);
+
+            const response = await api.patch(
+                `/tickets/priority-change-requests/reject/${id}/`,
+                {
+                    review_remarks: remarks,
+                }
+            );
+
+            setRequest(response.data.request);
+            setReviewRemarks("");
+
+            toast.success("Priority request rejected", {
+                description:
+                    response.data.message ||
+                    "The priority request has been rejected.",
+                duration: 6000,
+                style: {
+                    background: "#ffffff",
+                    color: "#000000",
+                    border: "1px solid #e5e7eb",
+                    borderRadius: "10px",
+                    padding: "16px",
+                    boxShadow:
+                        "0 8px 24px rgba(0, 0, 0, 0.08)",
+                },
+            });
+        } catch (error) {
+            toast.error("Unable to reject request", {
+                description:
+                    error.response?.data?.error ||
+                    "Something went wrong while rejecting the priority request.",
+                duration: 6000,
+                style: {
+                    background: "#ffffff",
+                    color: "#000000",
+                    border: "1px solid #e5e7eb",
+                    borderRadius: "10px",
+                    padding: "16px",
+                    boxShadow:
+                        "0 10px 30px rgba(0, 0, 0, 0.08)",
+                },
+            });
+        } finally {
+            setRejecting(false);
         }
     };
 
@@ -169,12 +278,12 @@ export default function PriorityRequestDetailsContent() {
     const isReviewed = isApproved || isRejected;
     const isPending = request.status === "pending";
 
+    const isProcessing = approving || rejecting;
+
     return (
         <div className="space-y-4">
             <div className="grid grid-cols-[1.05fr_0.95fr] items-start gap-4">
-                {/* LEFT COLUMN */}
                 <div className="space-y-4">
-                    {/* TICKET INFORMATION */}
                     <div className="overflow-hidden rounded-xl border border-gray-300 bg-white">
                         <div className="flex items-start gap-3 border-b border-gray-200 px-5 py-4">
                             <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-gray-100">
@@ -195,7 +304,9 @@ export default function PriorityRequestDetailsContent() {
                                             request.status
                                         )}`}
                                     >
-                                        {formatStatus(request.status)}
+                                        {formatStatus(
+                                            request.status
+                                        )}
                                     </span>
                                 </div>
 
@@ -209,12 +320,16 @@ export default function PriorityRequestDetailsContent() {
                             <div className="grid grid-cols-2">
                                 <InfoCell
                                     label="Ticket Code"
-                                    value={request.ticket_code}
+                                    value={
+                                        request.ticket_code
+                                    }
                                 />
 
                                 <InfoCell
                                     label="Affected Scope"
-                                    value={request.affected_scope}
+                                    value={
+                                        request.affected_scope
+                                    }
                                     bordered
                                 />
                             </div>
@@ -232,7 +347,9 @@ export default function PriorityRequestDetailsContent() {
 
                             <InfoCell
                                 label="Business Impact"
-                                value={request.business_impact}
+                                value={
+                                    request.business_impact
+                                }
                                 multiline
                             />
 
@@ -269,9 +386,7 @@ export default function PriorityRequestDetailsContent() {
                     </div>
                 </div>
 
-                {/* RIGHT COLUMN */}
                 <div className="space-y-4">
-                    {/* PRIORITY CHANGE */}
                     <div className="overflow-hidden rounded-xl border border-gray-300 bg-white">
                         <div className="flex items-start gap-3 border-b border-gray-200 px-5 py-4">
                             <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-gray-100">
@@ -296,7 +411,9 @@ export default function PriorityRequestDetailsContent() {
                         <div className="flex items-center gap-4 p-5">
                             <PriorityBox
                                 title="Current Priority"
-                                priority={request.current_priority}
+                                priority={
+                                    request.current_priority
+                                }
                             />
 
                             <ArrowRight
@@ -306,12 +423,13 @@ export default function PriorityRequestDetailsContent() {
 
                             <PriorityBox
                                 title="Requested Priority"
-                                priority={request.requested_priority}
+                                priority={
+                                    request.requested_priority
+                                }
                             />
                         </div>
                     </div>
 
-                    {/* REASON FOR REQUEST */}
                     <div className="overflow-hidden rounded-xl border border-gray-300 bg-white">
                         <div className="flex items-start gap-3 border-b border-gray-200 px-5 py-4">
                             <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-gray-100">
@@ -343,18 +461,21 @@ export default function PriorityRequestDetailsContent() {
 
                             <div className="my-4 border-t border-gray-200" />
 
-                            <div className="flex items-center gap-3 pt-2">
+                            <div className="flex items-center gap-3">
                                 <button
                                     type="button"
+                                    onClick={handleReject}
                                     disabled={
-                                        approving ||
+                                        isProcessing ||
                                         !isPending
                                     }
                                     className="flex h-10 flex-1 cursor-pointer items-center justify-center gap-2 rounded-lg border border-red-400 bg-white px-4 py-3 text-sm font-medium text-red-600 transition-colors hover:bg-red-50 disabled:cursor-not-allowed disabled:border-gray-300 disabled:bg-gray-50 disabled:text-gray-400"
                                 >
                                     <X size={17} />
 
-                                    {isRejected
+                                    {rejecting
+                                        ? "Rejecting..."
+                                        : isRejected
                                         ? "Rejected"
                                         : "Reject Request"}
                                 </button>
@@ -363,10 +484,10 @@ export default function PriorityRequestDetailsContent() {
                                     type="button"
                                     onClick={handleApprove}
                                     disabled={
-                                        approving ||
+                                        isProcessing ||
                                         !isPending
                                     }
-                                    className="flex h-10 flex-1 cursor-pointer items-center justify-center gap-2 rounded-lg bg-[#4C4CF9] px-4 py-3 text-sm font-medium text-white transition-colors hover:bg-[#3f3fe0] disabled:cursor-not-allowed disabled:bg-gray-300"
+                                    className="flex h-10 flex-1 cursor-pointer items-center justify-center gap-2 rounded-lg bg-[#2563EB] px-4 py-3 text-sm font-medium text-white transition-colors hover:bg-[#1D4ED8] disabled:cursor-not-allowed disabled:bg-gray-300"
                                 >
                                     <Check size={17} />
 
@@ -386,10 +507,9 @@ export default function PriorityRequestDetailsContent() {
                                     />
 
                                     <p className="text-xs leading-5 text-blue-700">
-                                        Approving this request will update the
-                                        ticket's priority and recalculate the
-                                        SLA deadlines based on the new
-                                        priority.
+                                        Review remarks are required for both
+                                        approval and rejection of this
+                                        priority request.
                                     </p>
                                 </div>
                             )}
@@ -454,7 +574,6 @@ export default function PriorityRequestDetailsContent() {
                 </div>
             </div>
 
-            {/* REVIEW REMARKS */}
             <div className="overflow-hidden rounded-xl border border-gray-300 bg-white">
                 <div className="flex items-start gap-3 border-b border-gray-200 px-5 py-4">
                     <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-gray-100">
@@ -468,9 +587,9 @@ export default function PriorityRequestDetailsContent() {
                         <h2 className="text-base font-semibold text-black">
                             Review Remarks
                             {!isReviewed && (
-                                <span className="font-normal text-gray-500">
+                                <span className="font-normal text-red-500">
                                     {" "}
-                                    (Optional)
+                                    (Required)
                                 </span>
                             )}
                         </h2>
@@ -478,7 +597,7 @@ export default function PriorityRequestDetailsContent() {
                         <p className="mt-0.5 text-xs text-gray-500">
                             {isReviewed
                                 ? "Details of the Service Desk review."
-                                : "Add any remarks regarding your decision."}
+                                : "Provide remarks before approving or rejecting this request."}
                         </p>
                     </div>
                 </div>
@@ -486,7 +605,6 @@ export default function PriorityRequestDetailsContent() {
                 {isReviewed ? (
                     <div className="p-5">
                         <div className="grid grid-cols-2 gap-6">
-                            {/* DECISION */}
                             <div>
                                 <p className="text-xs font-medium uppercase text-gray-500">
                                     Decision
@@ -527,7 +645,6 @@ export default function PriorityRequestDetailsContent() {
                                 </div>
                             </div>
 
-                            {/* REVIEWED BY */}
                             <div>
                                 <p className="text-xs font-medium uppercase text-gray-500">
                                     Reviewed By
@@ -535,25 +652,29 @@ export default function PriorityRequestDetailsContent() {
 
                                 <div className="mt-2 flex items-center gap-3">
                                     <Avatar
-                                        name={reviewedBy.name}
+                                        name={
+                                            reviewedBy.name
+                                        }
                                     />
 
                                     <div className="min-w-0">
                                         <p className="truncate text-sm font-semibold text-black">
-                                            {reviewedBy.name || "-"}
+                                            {reviewedBy.name ||
+                                                "-"}
                                         </p>
 
                                         <p className="mt-0.5 truncate text-xs text-gray-500">
-                                            {reviewedBy.user_code || "-"}
+                                            {reviewedBy.user_code ||
+                                                "-"}
                                             {" • "}
-                                            {reviewedBy.role || "-"}
+                                            {reviewedBy.role ||
+                                                "-"}
                                         </p>
                                     </div>
                                 </div>
                             </div>
                         </div>
 
-                        {/* REVIEWED AT */}
                         <div className="mt-5 border-t border-gray-200 pt-4">
                             <InfoRow
                                 label="Reviewed At"
@@ -563,7 +684,6 @@ export default function PriorityRequestDetailsContent() {
                             />
                         </div>
 
-                        {/* REVIEW REMARKS */}
                         <div className="mt-5 border-t border-gray-200 pt-4">
                             <p className="text-xs font-medium uppercase text-gray-500">
                                 Review Remarks
@@ -571,7 +691,8 @@ export default function PriorityRequestDetailsContent() {
 
                             <div className="mt-2 rounded-lg border border-gray-200 bg-gray-50 px-4 py-3">
                                 <p className="whitespace-pre-wrap break-words text-sm leading-6 text-black">
-                                    {request.review_remarks || "-"}
+                                    {request.review_remarks ||
+                                        "-"}
                                 </p>
                             </div>
                         </div>
@@ -583,14 +704,23 @@ export default function PriorityRequestDetailsContent() {
                             maxLength={500}
                             value={reviewRemarks}
                             onChange={(e) =>
-                                setReviewRemarks(e.target.value)
+                                setReviewRemarks(
+                                    e.target.value
+                                )
                             }
-                            placeholder="Enter your remarks here..."
-                            className="w-full resize-none rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm text-black outline-none transition placeholder:text-gray-400 focus:border-[#4C4CF9] focus:ring-2 focus:ring-[#4C4CF9]/10"
+                            disabled={isProcessing}
+                            placeholder="Enter your review remarks..."
+                            className="w-full resize-none rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm text-black outline-none transition placeholder:text-gray-400 focus:border-[#2563EB] focus:ring-2 focus:ring-[#2563EB]/10 disabled:cursor-not-allowed disabled:bg-gray-50"
                         />
 
-                        <div className="mt-1 text-right text-xs text-gray-400">
-                            {reviewRemarks.length}/500
+                        <div className="mt-1 flex items-center justify-between">
+                            <p className="text-xs text-gray-400">
+                                Required for approval or rejection.
+                            </p>
+
+                            <p className="text-xs text-gray-400">
+                                {reviewRemarks.length}/500
+                            </p>
                         </div>
                     </div>
                 )}
@@ -608,7 +738,9 @@ function InfoCell({
     return (
         <div
             className={`px-5 py-4 ${
-                bordered ? "border-l border-gray-200" : ""
+                bordered
+                    ? "border-l border-gray-200"
+                    : ""
             }`}
         >
             <p className="text-xs font-medium uppercase text-gray-500">
@@ -617,7 +749,9 @@ function InfoCell({
 
             <p
                 className={`mt-2 whitespace-pre-wrap break-words text-sm text-black ${
-                    multiline ? "leading-6" : "font-medium"
+                    multiline
+                        ? "leading-6"
+                        : "font-medium"
                 }`}
             >
                 {value || "-"}
@@ -682,7 +816,7 @@ function Avatar({ name }) {
     const initials = getInitials(name);
 
     return (
-        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#4C4CF9]/10 text-xs font-semibold text-[#4C4CF9]">
+        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#2563EB]/10 text-xs font-semibold text-[#2563EB]">
             {initials}
         </div>
     );
@@ -751,13 +885,16 @@ function formatDate(value) {
         return "-";
     }
 
-    return new Date(value).toLocaleString("en-US", {
-        month: "short",
-        day: "numeric",
-        year: "numeric",
-        hour: "numeric",
-        minute: "2-digit",
-    });
+    return new Date(value).toLocaleString(
+        "en-US",
+        {
+            month: "short",
+            day: "numeric",
+            year: "numeric",
+            hour: "numeric",
+            minute: "2-digit",
+        }
+    );
 }
 
 function formatStatus(status = "") {
