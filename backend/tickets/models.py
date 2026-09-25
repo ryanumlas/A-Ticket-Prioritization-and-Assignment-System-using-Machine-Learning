@@ -112,7 +112,7 @@ class TicketStatusHistory(models.Model):
         CLOSED = "CLOSED", "Closed"
 
     class Visibility(models.TextChoices):
-        CUSTOMER = "ALL", "All"
+        ALL = "ALL", "All"
         INTERNAL = "INTERNAL", "Internal Only"
 
 

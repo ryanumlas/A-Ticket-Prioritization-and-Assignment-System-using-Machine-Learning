@@ -1,18 +1,22 @@
 import { useEffect, useRef, useState } from "react";
 import {
     SlidersHorizontal,
-    ChevronDown,
     ArrowUpDown,
     Undo2,
     Users,
     ArrowUp,
+    Sparkles,
 } from "lucide-react";
 
-export default function ManageTicketDropdown({ onPriorityRequest, onReturnTicket, onRequestAssistance }) {
+export default function ManageTicketDropdown({
+    onPriorityRequest,
+    onReturnTicket,
+    onRequestAssistance,
+    onAutomated,
+}) {
     const [isOpen, setIsOpen] = useState(false);
     const dropdownRef = useRef(null);
 
-    // Close dropdown when clicking outside
     useEffect(() => {
         const handleClickOutside = (event) => {
             if (
@@ -26,40 +30,30 @@ export default function ManageTicketDropdown({ onPriorityRequest, onReturnTicket
         document.addEventListener("mousedown", handleClickOutside);
 
         return () => {
-            document.removeEventListener("mousedown", handleClickOutside);
+            document.removeEventListener(
+                "mousedown",
+                handleClickOutside
+            );
         };
     }, []);
-
-    const handleAction = (action) => {
-        console.log("Selected manage ticket action:", action);
-
-        // Close dropdown after selecting an action
-        setIsOpen(false);
-
-        // We will connect the modals here later.
-    };
 
     return (
         <div
             ref={dropdownRef}
             className="relative"
         >
-            {/* MANAGE TICKET BUTTON */}
             <button
                 type="button"
                 onClick={() => setIsOpen((prev) => !prev)}
-                className="flex h-9 cursor-pointer items-center gap-2 rounded-lg border border-gray-300 bg-[#4C4CF9] px-3.5 text-sm font-medium text-white transition-colors hover:bg-[#3a3ae0] focus:outline-none focus:ring-2 focus:ring-[#4C4CF9]/50"
+                className="flex h-9 cursor-pointer items-center gap-2 rounded-lg border border-[#2563EB] bg-[#2563EB] px-3.5 text-sm font-medium text-white transition-colors hover:bg-[#1D4ED8] focus:outline-none focus:ring-2 focus:ring-[#2563EB]/30"
             >
                 Manage Ticket
 
                 <SlidersHorizontal size={16} />
             </button>
 
-            {/* DROPDOWN */}
             {isOpen && (
                 <div className="absolute right-0 top-full z-50 mt-2 w-[280px] overflow-hidden rounded-lg border border-gray-200 bg-white shadow-lg">
-
-                    {/* HEADER */}
                     <div className="border-b border-gray-200 px-4 py-3">
                         <p className="text-sm font-semibold text-black">
                             Manage Ticket
@@ -70,17 +64,14 @@ export default function ManageTicketDropdown({ onPriorityRequest, onReturnTicket
                         </p>
                     </div>
 
-                    {/* ACTIONS */}
                     <div className="p-1.5">
-
-                        {/* REQUEST PRIORITY CHANGE */}
                         <button
                             type="button"
                             onClick={() => {
                                 setIsOpen(false);
                                 onPriorityRequest?.();
                             }}
-                            className="flex w-full items-start gap-3 rounded-md px-3 py-2.5 text-left transition-colors hover:bg-gray-50 cursor-pointer"
+                            className="flex w-full cursor-pointer items-start gap-3 rounded-md px-3 py-2.5 text-left transition-colors hover:bg-gray-50"
                         >
                             <ArrowUpDown
                                 size={18}
@@ -98,13 +89,13 @@ export default function ManageTicketDropdown({ onPriorityRequest, onReturnTicket
                             </div>
                         </button>
 
-                        {/* RETURN TO SERVICE DESK */}
                         <button
+                            type="button"
                             onClick={() => {
                                 setIsOpen(false);
                                 onReturnTicket?.();
                             }}
-                            className="flex w-full items-start gap-3 rounded-md px-3 py-2.5 text-left transition-colors hover:bg-gray-50 cursor-pointer"
+                            className="flex w-full cursor-pointer items-start gap-3 rounded-md px-3 py-2.5 text-left transition-colors hover:bg-gray-50"
                         >
                             <Undo2
                                 size={18}
@@ -122,14 +113,13 @@ export default function ManageTicketDropdown({ onPriorityRequest, onReturnTicket
                             </div>
                         </button>
 
-                        {/* REQUEST ASSISTANCE */}
                         <button
                             type="button"
                             onClick={() => {
                                 setIsOpen(false);
                                 onRequestAssistance?.();
                             }}
-                            className="flex w-full items-start gap-3 rounded-md px-3 py-2.5 text-left transition-colors hover:bg-gray-50 cursor-pointer"
+                            className="flex w-full cursor-pointer items-start gap-3 rounded-md px-3 py-2.5 text-left transition-colors hover:bg-gray-50"
                         >
                             <Users
                                 size={18}
@@ -147,16 +137,38 @@ export default function ManageTicketDropdown({ onPriorityRequest, onReturnTicket
                             </div>
                         </button>
 
-                        {/* DIVIDER */}
                         <div className="my-1 border-t border-gray-200" />
 
-                        {/* ESCALATE */}
                         <button
                             type="button"
-                            onClick={() =>
-                                handleAction("escalate")
-                            }
-                            className="flex w-full items-start gap-3 rounded-md px-3 py-2.5 text-left transition-colors hover:bg-gray-50 cursor-pointer"
+                            onClick={() => {
+                                setIsOpen(false);
+                                onAutomated?.();
+                            }}
+                            className="flex w-full cursor-pointer items-start gap-3 rounded-md px-3 py-2.5 text-left transition-colors hover:bg-gray-50"
+                        >
+                            <Sparkles
+                                size={18}
+                                className="mt-0.5 shrink-0 text-[#2563EB]"
+                            />
+
+                            <div className="min-w-0">
+                                <p className="text-sm font-medium text-black">
+                                    Automated
+                                </p>
+
+                                <p className="mt-0.5 text-xs leading-4 text-gray-500">
+                                    Use automated tools to assist with this ticket.
+                                </p>
+                            </div>
+                        </button>
+
+                        <div className="my-1 border-t border-gray-200" />
+
+                        <button
+                            type="button"
+                            onClick={() => setIsOpen(false)}
+                            className="flex w-full cursor-pointer items-start gap-3 rounded-md px-3 py-2.5 text-left transition-colors hover:bg-gray-50"
                         >
                             <ArrowUp
                                 size={18}
@@ -173,7 +185,6 @@ export default function ManageTicketDropdown({ onPriorityRequest, onReturnTicket
                                 </p>
                             </div>
                         </button>
-
                     </div>
                 </div>
             )}

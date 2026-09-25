@@ -3,7 +3,7 @@ import { getCurrentUser } from "../utils/auth";
 import api from "../api";
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Workflow } from "lucide-react";
 import TopBar from "../components/Topbar";
 
 import TicketDetailsEmployee from "../components/TicketDetailsEmployee";
@@ -12,6 +12,7 @@ import ManageTicketDropdown from "../components/ManageTickets/ManageTicketDropdo
 import RequestPriorityModal from "../components/ManageTickets/RequestPriorityModal";
 import ReturnTicketModal from "../components/ManageTickets/ReturnTicketModal";
 import RequestAssistanceModal from "../components/ManageTickets/RequestAssistanceModal";
+import AutomatedProcessingModal from "../components/AutomatedProcessingModal";
 
 export default function TicketDetails() {
     const user = getCurrentUser();
@@ -19,6 +20,8 @@ export default function TicketDetails() {
     const [assistanceModalOpen, setAssistanceModalOpen] = useState(false);
     const [priorityModalOpen, setPriorityModalOpen] = useState(false);
     const [returnModalOpen, setReturnModalOpen] = useState(false);
+    const [automatedModalOpen, setAutomatedModalOpen] = useState(false);
+
     const [ticketDetails, setTicketDetails] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState("");
@@ -49,7 +52,7 @@ export default function TicketDetails() {
         } catch (error) {
             setError(
                 error.response?.data?.error ||
-                "Failed to load ticket details."
+                    "Failed to load ticket details."
             );
         }
     };
@@ -58,7 +61,6 @@ export default function TicketDetails() {
         const loadTicketDetails = async () => {
             try {
                 setLoading(true);
-
                 await fetchTicketDetails();
             } finally {
                 setLoading(false);
@@ -156,17 +158,34 @@ export default function TicketDetails() {
                         </button>
 
                         {isAssignedSupport && (
-                            <ManageTicketDropdown
-                                onPriorityRequest={() =>
-                                    setPriorityModalOpen(true)
-                                }
-                                onReturnTicket={() =>
-                                    setReturnModalOpen(true)
-                                }
-                                onRequestAssistance={() =>
-                                    setAssistanceModalOpen(true)
-                                }
-                            />
+                            <div className="flex items-center gap-2">
+                                <button
+                                    type="button"
+                                    onClick={() =>
+                                        setAutomatedModalOpen(true)
+                                    }
+                                    className="flex h-9 cursor-pointer items-center gap-2 rounded-lg border border-gray-300 bg-white px-3.5 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50 hover:text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#2563EB]/20"
+                                >
+                                    <Workflow
+                                        size={16}
+                                        className="text-[#2563EB]"
+                                    />
+
+                                    Automated Details
+                                </button>
+
+                                <ManageTicketDropdown
+                                    onPriorityRequest={() =>
+                                        setPriorityModalOpen(true)
+                                    }
+                                    onReturnTicket={() =>
+                                        setReturnModalOpen(true)
+                                    }
+                                    onRequestAssistance={() =>
+                                        setAssistanceModalOpen(true)
+                                    }
+                                />
+                            </div>
                         )}
                     </div>
 
@@ -193,6 +212,11 @@ export default function TicketDetails() {
             <RequestAssistanceModal
                 open={assistanceModalOpen}
                 onClose={() => setAssistanceModalOpen(false)}
+            />
+
+            <AutomatedProcessingModal
+                open={automatedModalOpen}
+                onClose={() => setAutomatedModalOpen(false)}
             />
         </div>
     );
