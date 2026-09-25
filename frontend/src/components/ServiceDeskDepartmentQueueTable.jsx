@@ -3,7 +3,6 @@ import {
     priorityColor,
     priorityLabel,
 } from "../utils/priority";
-import { formatDate } from "../utils/formatDate";
 import { useNavigate } from "react-router-dom";
 
 export default function ServiceDeskDepartmentQueueTable({
@@ -27,23 +26,27 @@ export default function ServiceDeskDepartmentQueueTable({
             <table className="w-full table-fixed text-sm">
                 <thead className="sticky top-0 z-10 bg-gray-50">
                     <tr className="border-b border-gray-300 text-left">
-                        <th className="w-[10%] px-6 py-3.5 font-semibold text-black">
+                        <th className="w-[9%] px-6 py-3.5 font-semibold text-black">
                             Ticket ID
                         </th>
 
-                        <th className="w-[21%] px-6 py-3.5 font-semibold text-black">
+                        <th className="w-[18%] px-6 py-3.5 font-semibold text-black">
                             Subject
                         </th>
 
-                        <th className="w-[15%] px-4 py-3.5 font-semibold text-black">
-                            Submitted By
+                        <th className="w-[11%] px-4 py-3.5 font-semibold text-black">
+                            Symptom Code
                         </th>
 
                         <th className="w-[14%] px-4 py-3.5 font-semibold text-black">
+                            Submitted By
+                        </th>
+
+                        <th className="w-[13%] px-4 py-3.5 font-semibold text-black">
                             Affected Scope
                         </th>
 
-                        <th className="w-[9%] px-4 py-3.5 font-semibold text-black">
+                        <th className="w-[8%] px-4 py-3.5 font-semibold text-black">
                             Priority
                         </th>
 
@@ -51,11 +54,11 @@ export default function ServiceDeskDepartmentQueueTable({
                             Status
                         </th>
 
-                        <th className="w-[11%] px-4 py-3.5 font-semibold text-black">
+                        <th className="w-[9%] px-4 py-3.5 font-semibold text-black">
                             Assigned To
                         </th>
 
-                        <th className="w-[10%] px-4 py-3.5 font-semibold text-black">
+                        <th className="w-[8%] px-4 py-3.5 font-semibold text-black">
                             SLA Remaining
                         </th>
                     </tr>
@@ -86,6 +89,20 @@ export default function ServiceDeskDepartmentQueueTable({
                                     >
                                         {ticket.subject || "-"}
                                     </p>
+                                </td>
+
+                                <td className="px-4 py-4">
+                                    <span
+                                        className="inline-flex max-w-full truncate rounded-md bg-blue-50 px-2 py-1 text-xs font-semibold text-blue-700"
+                                        title={
+                                            ticket.symptom_code ||
+                                            ticket.symptom_code_name
+                                        }
+                                    >
+                                        {ticket.symptom_code ||
+                                            ticket.symptom_code_name ||
+                                            "-"}
+                                    </span>
                                 </td>
 
                                 <td className="px-4 py-4">
@@ -174,7 +191,7 @@ export default function ServiceDeskDepartmentQueueTable({
                     ) : (
                         <tr>
                             <td
-                                colSpan="8"
+                                colSpan="9"
                                 className="px-6 py-16 text-center"
                             >
                                 <p className="font-medium text-black">

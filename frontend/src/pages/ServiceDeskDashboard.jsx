@@ -1,7 +1,7 @@
 import { getCurrentUser } from "../utils/auth";
 import { ArrowRight } from "lucide-react";
 import ServiceDeskOverview from "../components/ServiceDeskOverview";
-import TicketTableServiceDesk from "../components/TicketTableServiceDesk";
+import FlaggedTicketsTable from "../components/FlaggedTicketsTable";
 import { Link } from "react-router-dom";
 import api from "../api";
 import { useEffect, useState } from "react";
@@ -14,8 +14,8 @@ const containerVariants = {
     hidden: {},
     show: {
         transition: {
-            delayChildren: 0.20,
-            staggerChildren: 0.20,
+            delayChildren: 0.2,
+            staggerChildren: 0.2,
         },
     },
 };
@@ -37,45 +37,33 @@ const itemVariants = {
 
 export default function ServiceDeskDashboard() {
     const user = getCurrentUser();
-    const [ticketList, setTicketList] = useState([]);
+
+    const [flaggedTickets, setFlaggedTickets] = useState([]);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        const fetchTicketList = async () => {
+        const fetchFlaggedTickets = async () => {
             try {
                 setLoading(true);
 
                 const response = await api.get(
-                    "/tickets/service-desk/list/"
+                    "/tickets/flagged/list/"
                 );
 
-                setTicketList(response.data.results);
-
-                console.log(
-                    "Service Desk Tickets:",
-                    response.data
+                setFlaggedTickets(
+                    response.data.results ||
+                        response.data ||
+                        []
                 );
-            } catch (error) {
-                console.error(
-                    "Error fetching ticket list:",
-                    error
-                );
+            } catch {
+                setFlaggedTickets([]);
             } finally {
                 setLoading(false);
             }
         };
 
-        fetchTicketList();
+        fetchFlaggedTickets();
     }, []);
-
-    if (!ticketList) {
-        return <div>Loading...</div>;
-    }
-
-    const displayName =
-        user?.first_name ||
-        user?.username ||
-        "there";
 
     return (
         <motion.div
@@ -89,40 +77,41 @@ export default function ServiceDeskDashboard() {
             </motion.div>
 
             <div className="grid grid-cols-12 gap-4">
+                {/* FLAGGED TICKETS */}
                 <motion.div
                     variants={itemVariants}
                     className="col-span-7"
                 >
-                    <div className="bg-white border border-gray-300 rounded-xl overflow-hidden">
-                        <div className="px-4 py-4 border-b border-gray-300 flex items-center justify-between">
+                    <div className="overflow-hidden rounded-xl border border-gray-300 bg-white">
+                        <div className="flex items-center justify-between border-b border-gray-300 px-4 py-4">
                             <div>
-                                <h1 className="text-xl font-semibold">
-                                    My Tickets
+                                <h1 className="text-xl font-semibold text-black">
+                                    Flagged Tickets
                                 </h1>
 
                                 <p className="text-sm text-gray-500">
-                                    Recently assigned tickets
+                                    Tickets requiring Service Desk review
                                 </p>
                             </div>
 
                             <Link
-                                to="/tickets"
-                                className="group flex items-center gap-2 bg-[#4C4CF9] px-6 py-2 text-white text-sm rounded-md hover:bg-[#3f3fe6] cursor-pointer"
+                                to="/flagged-tickets"
+                                className="group flex cursor-pointer items-center gap-2 rounded-md bg-[#2563EB] px-6 py-2 text-sm text-white transition hover:bg-[#1D4ED8]"
                             >
                                 View All
                                 <ArrowRight size={16} />
                             </Link>
                         </div>
 
-                        <TicketTableServiceDesk
-                            ticketList={ticketList}
+                        <FlaggedTicketsTable
+                            flaggedTickets={flaggedTickets}
                             dashboard={true}
-                            loading={loading}
                             maxRows={5}
                         />
                     </div>
                 </motion.div>
 
+                {/* AI RESULT */}
                 <motion.div
                     variants={itemVariants}
                     className="col-span-5"
@@ -130,6 +119,7 @@ export default function ServiceDeskDashboard() {
                     <AIResultPieChart />
                 </motion.div>
 
+                {/* SLA */}
                 <motion.div
                     variants={itemVariants}
                     className="col-span-5"
@@ -137,6 +127,7 @@ export default function ServiceDeskDashboard() {
                     <SLAOverview />
                 </motion.div>
 
+                {/* TICKETS BY CATEGORY */}
                 <motion.div
                     variants={itemVariants}
                     className="col-span-7"
