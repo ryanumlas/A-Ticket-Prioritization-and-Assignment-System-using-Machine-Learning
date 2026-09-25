@@ -9,7 +9,10 @@ import {
     Network,
     AppWindow,
     MonitorCog,
+    Menu,
+    X,
 } from "lucide-react";
+import { motion, AnimatePresence } from "motion/react";
 
 export default function Sidebar() {
     const user = getCurrentUser();
@@ -20,6 +23,7 @@ export default function Sidebar() {
     const [pendingReturnCount, setPendingReturnCount] = useState(0);
     const [pendingPriorityCount, setPendingPriorityCount] = useState(0);
     const [departments, setDepartments] = useState([]);
+    const [mobileOpen, setMobileOpen] = useState(false);
 
     const departmentIcons = {
         "Help Desk": Headphones,
@@ -91,6 +95,42 @@ export default function Sidebar() {
         fetchSidebarData();
     }, [user.role]);
 
+    useEffect(() => {
+        const handleResize = () => {
+            if (window.innerWidth >= 768) {
+                setMobileOpen(false);
+            }
+        };
+
+        window.addEventListener("resize", handleResize);
+
+        return () =>
+            window.removeEventListener("resize", handleResize);
+    }, []);
+
+    useEffect(() => {
+        if (!mobileOpen) return;
+
+        const handleEscape = (event) => {
+            if (event.key === "Escape") {
+                setMobileOpen(false);
+            }
+        };
+
+        document.addEventListener("keydown", handleEscape);
+
+        return () =>
+            document.removeEventListener("keydown", handleEscape);
+    }, [mobileOpen]);
+
+    useEffect(() => {
+        document.body.style.overflow = mobileOpen ? "hidden" : "";
+
+        return () => {
+            document.body.style.overflow = "";
+        };
+    }, [mobileOpen]);
+
     const getItemCount = (item) => {
         if (item.name === "Notifications") {
             return unreadCount;
@@ -113,6 +153,12 @@ export default function Sidebar() {
         return 0;
     };
 
+    const closeMobileSidebar = () => {
+        if (window.innerWidth < 768) {
+            setMobileOpen(false);
+        }
+    };
+
     const renderNavItem = (item) => {
         const Icon = item.icon;
         const itemCount = getItemCount(item);
@@ -121,6 +167,7 @@ export default function Sidebar() {
             <NavLink
                 key={item.name}
                 to={item.path}
+                onClick={closeMobileSidebar}
                 className={({ isActive }) =>
                     `flex items-center gap-3 rounded-md p-2 text-sm transition-all ${
                         isActive
@@ -137,22 +184,31 @@ export default function Sidebar() {
 
                 {itemCount > 0 && (
                     <span className="flex h-4 min-w-4 items-center justify-center rounded-full bg-red-500 px-1 text-[9px] font-semibold leading-none text-white">
-                        {itemCount > 99
-                            ? "99+"
-                            : itemCount}
+                        {itemCount > 99 ? "99+" : itemCount}
                     </span>
                 )}
             </NavLink>
         );
     };
 
-    return (
-        <aside className="h-screen w-67 bg-[#4C4CF9] p-4 text-white shadow-lg">
-            <img
-                src={foundever_blue}
-                alt="Foundever"
-                className="mb-10 p-2"
-            />
+    const sidebarContent = (
+        <>
+            <div className="mb-10 flex items-center justify-between gap-3">
+                <img
+                    src={foundever_blue}
+                    alt="Foundever"
+                    className="h-auto w-[190px] shrink-0 object-contain"
+                />
+
+                <button
+                    type="button"
+                    onClick={() => setMobileOpen(false)}
+                    aria-label="Close navigation"
+                    className="flex h-10 w-10 shrink-0 cursor-pointer items-center justify-center rounded-md text-white transition hover:bg-white/10 md:hidden"
+                >
+                    <X size={22} />
+                </button>
+            </div>
 
             <nav className="flex flex-col gap-2">
                 {menus.map((item) => {
@@ -168,38 +224,37 @@ export default function Sidebar() {
 
                                 {item.title === "TEAMS" &&
                                     user.role === "IT Service Desk" &&
-                                    departments.map(
-                                        (department) => {
-                                            const Icon =
-                                                departmentIcons[
-                                                    department.name
-                                                ];
+                                    departments.map((department) => {
+                                        const Icon =
+                                            departmentIcons[
+                                                department.name
+                                            ];
 
-                                            return (
-                                                <NavLink
-                                                    key={department.id}
-                                                    to={`/service-desk/department/${department.id}`}
-                                                    className={({ isActive }) =>
-                                                        `mb-2 flex items-center gap-3 rounded-md p-2 text-sm transition-all ${
-                                                            isActive
-                                                                ? "bg-white text-black"
-                                                                : "hover:bg-white hover:text-black"
-                                                        }`
-                                                    }
-                                                >
-                                                    {Icon && (
-                                                        <Icon size={18} />
-                                                    )}
+                                        return (
+                                            <NavLink
+                                                key={department.id}
+                                                to={`/service-desk/department/${department.id}`}
+                                                onClick={
+                                                    closeMobileSidebar
+                                                }
+                                                className={({ isActive }) =>
+                                                    `mb-2 flex items-center gap-3 rounded-md p-2 text-sm transition-all ${
+                                                        isActive
+                                                            ? "bg-white text-black"
+                                                            : "hover:bg-white hover:text-black"
+                                                    }`
+                                                }
+                                            >
+                                                {Icon && (
+                                                    <Icon size={18} />
+                                                )}
 
-                                                    <span className="flex-1">
-                                                        {
-                                                            department.name
-                                                        }
-                                                    </span>
-                                                </NavLink>
-                                            );
-                                        }
-                                    )}
+                                                <span className="flex-1">
+                                                    {department.name}
+                                                </span>
+                                            </NavLink>
+                                        );
+                                    })}
                             </div>
                         );
                     }
@@ -207,6 +262,61 @@ export default function Sidebar() {
                     return renderNavItem(item);
                 })}
             </nav>
-        </aside>
+        </>
+    );
+
+    return (
+        <>
+            {!mobileOpen && (
+                <button
+                    type="button"
+                    onClick={() => setMobileOpen(true)}
+                    aria-label="Open navigation"
+                    className="fixed left-4 top-4 z-[9999] flex h-11 w-11 cursor-pointer items-center justify-center rounded-lg bg-[#2563EB] text-white shadow-lg transition hover:bg-[#1D4ED8] md:hidden"
+                >
+                    <Menu
+                        size={24}
+                        strokeWidth={2.5}
+                    />
+                </button>
+            )}
+
+            <aside className="hidden h-screen w-67 shrink-0 bg-[#4C4CF9] p-4 text-white shadow-lg md:block">
+                {sidebarContent}
+            </aside>
+
+            <AnimatePresence>
+                {mobileOpen && (
+                    <>
+                        <motion.div
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                            transition={{
+                                duration: 0.2,
+                            }}
+                            onClick={() =>
+                                setMobileOpen(false)
+                            }
+                            className="fixed inset-0 z-[9997] bg-black/40 md:hidden"
+                        />
+
+                        <motion.aside
+                            initial={{ x: "-100%" }}
+                            animate={{ x: 0 }}
+                            exit={{ x: "-100%" }}
+                            transition={{
+                                type: "spring",
+                                stiffness: 300,
+                                damping: 30,
+                            }}
+                            className="fixed left-0 top-0 z-[9998] h-screen w-[300px] max-w-[85vw] overflow-y-auto bg-[#4C4CF9] p-4 text-white shadow-2xl md:hidden"
+                        >
+                            {sidebarContent}
+                        </motion.aside>
+                    </>
+                )}
+            </AnimatePresence>
+        </>
     );
 }

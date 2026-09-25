@@ -1,4 +1,4 @@
-import Sidebar from "../components/Sidebar"
+import Sidebar from "../components/Sidebar";
 import { getCurrentUser } from "../utils/auth";
 import { ArrowRight } from "lucide-react";
 import api from "../api";
@@ -11,7 +11,8 @@ import foundever_hero from "../assets/foundever-hero_upscaled.jpg";
 import { useEffect, useState } from "react";
 
 export default function EmployeeDashboard() {
-    const user = getCurrentUser();  
+    const user = getCurrentUser();
+
     const [overview, setOverview] = useState(null);
     const [ticketList, setTicketList] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -22,13 +23,15 @@ export default function EmployeeDashboard() {
             try {
                 const [overviewRes, ticketsRes] = await Promise.all([
                     api.get("/users/employee/list/overview/"),
-                    api.get("/tickets/employee/list/")
+                    api.get("/tickets/employee/list/"),
                 ]);
+
                 setOverview(overviewRes.data);
                 setTicketList(ticketsRes.data.results);
-            } catch (error) {
-                console.error(error);
-                setError("Unable to load dashboard data right now.");
+            } catch {
+                setError(
+                    "Unable to load dashboard data right now."
+                );
             } finally {
                 setLoading(false);
             }
@@ -38,44 +41,59 @@ export default function EmployeeDashboard() {
     }, []);
 
     if (loading) {
-        return <div className="p-6">Loading...</div>;
+        return (
+            <div className="flex min-h-screen items-center justify-center bg-gray-50 p-6">
+                <p className="text-sm text-gray-500">
+                    Loading...
+                </p>
+            </div>
+        );
     }
 
     if (error || !overview) {
-        return <div className="p-6">{error || "No dashboard data available yet."}</div>;
+        return (
+            <div className="flex min-h-screen items-center justify-center bg-gray-50 p-6">
+                <p className="text-sm text-gray-500">
+                    {error || "No dashboard data available yet."}
+                </p>
+            </div>
+        );
     }
 
-    const displayName = user?.first_name || user?.username || "there";
+    const displayName =
+        user?.first_name || user?.username || "there";
 
-    return(
-        <div className="grid grid-cols-12 gap-6">
+    return (
+        <div className="grid w-full grid-cols-12 gap-4 sm:gap-5 lg:gap-6">
+            {/* Hero */}
             <div className="col-span-12">
-                <div className="relative w-full h-64 rounded-2xl overflow-hidden">
+                <div className="relative h-56 w-full overflow-hidden rounded-xl sm:h-64 sm:rounded-2xl">
                     <img
                         src={foundever_cover}
                         alt="Foundever"
-                        className="absolute inset-0 w-full h-full object-cover"
+                        className="absolute inset-0 h-full w-full object-cover"
                     />
 
                     <div className="absolute inset-0 bg-gradient-to-r from-black/70 via-black/40 to-transparent" />
 
-                    <div className="relative z-10 h-full flex flex-col justify-center px-10 text-white">
-                        <p className="text-sm font-medium text-white/80 mb-2">
+                    <div className="relative z-10 flex h-full flex-col justify-center px-5 py-6 text-white sm:px-8 lg:px-10">
+                        <p className="mb-1.5 text-xs font-medium text-white/80 sm:mb-2 sm:text-sm">
                             Employee Portal
                         </p>
 
-                        <h1 className="text-3xl font-semibold tracking-tight">
+                        <h1 className="max-w-2xl text-2xl font-semibold tracking-tight sm:text-3xl">
                             Welcome back, {displayName}!
                         </h1>
 
-                        <p className="mt-2 text-sm text-white/80 max-w-md">
-                            Manage your IT support requests, check your active tickets,
-                            and keep track of your recent requests.
+                        <p className="mt-2 max-w-md text-xs leading-relaxed text-white/80 sm:text-sm">
+                            Manage your IT support requests, check
+                            your active tickets, and keep track of
+                            your recent requests.
                         </p>
 
                         <Link
                             to="/submit/ticket"
-                            className="mt-5 w-fit flex items-center gap-2 bg-white text-gray-900 px-5 py-2.5 rounded-lg text-sm font-medium hover:bg-gray-100 transition"
+                            className="mt-4 flex w-fit items-center gap-2 rounded-lg bg-white px-4 py-2.5 text-xs font-medium text-gray-900 transition hover:bg-gray-100 sm:mt-5 sm:px-5 sm:text-sm"
                         >
                             Submit a Ticket
                             <ArrowRight size={16} />
@@ -84,37 +102,46 @@ export default function EmployeeDashboard() {
                 </div>
             </div>
 
-            <div className="col-span-4">
+            {/* Current Ticket */}
+            <div className="col-span-12 lg:col-span-4">
                 <CurrentTicket />
             </div>
 
-            <div className="col-span-8">
-                <div className="bg-white border border-gray-300 rounded-xl overflow-hidden">
-                    <div className="px-4 py-4 border-b border-gray-300 flex items-center justify-between">
-                        <div>
-                            <h1 className="text-xl font-semibold">
+            {/* My Tickets */}
+            <div className="col-span-12 lg:col-span-8">
+                <div className="overflow-hidden rounded-xl border border-gray-300 bg-white">
+                    <div className="flex flex-col gap-3 border-b border-gray-300 px-4 py-4 sm:flex-row sm:items-center sm:justify-between">
+                        <div className="min-w-0">
+                            <h1 className="text-lg font-semibold text-gray-900 sm:text-xl">
                                 My Tickets
                             </h1>
 
-                            <p className="text-sm text-gray-500">
+                            <p className="text-xs text-gray-500 sm:text-sm">
                                 Recently submitted tickets
                             </p>
                         </div>
 
                         <Link
                             to="/tickets"
-                            className="group flex items-center gap-2 bg-[#4C4CF9] px-6 py-2 text-white text-sm rounded-md hover:bg-[#3f3fe6] transition"
+                            className="group flex w-fit shrink-0 items-center gap-2 rounded-md bg-[#2563EB] px-4 py-2 text-xs font-medium text-white transition hover:bg-[#1D4ED8] sm:px-6 sm:text-sm"
                         >
                             View All
-                            <ArrowRight size={16} />
+                            <ArrowRight
+                                size={16}
+                                className="transition-transform group-hover:translate-x-0.5"
+                            />
                         </Link>
                     </div>
 
-                    <TicketTableEmployee
-                        dashboard={true}
-                        maxRows={5}
-                        ticketList={ticketList}
-                    />
+                    <div className="w-full overflow-x-auto">
+                        <div className="min-w-[700px]">
+                            <TicketTableEmployee
+                                dashboard={true}
+                                maxRows={5}
+                                ticketList={ticketList}
+                            />
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>

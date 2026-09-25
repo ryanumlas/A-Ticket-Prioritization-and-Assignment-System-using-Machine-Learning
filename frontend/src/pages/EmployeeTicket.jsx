@@ -1,276 +1,332 @@
-import api from "../api";
 import { useEffect, useState } from "react";
-import TicketTableEmployee from "../components/TicketTableEmployee";
 import {
     Search,
+    X,
     ChevronLeft,
     ChevronRight,
-    X,
 } from "lucide-react";
+
+import api from "../api";
+import TicketTableEmployee from "../components/TicketTableEmployee";
 
 export default function EmployeeTicket() {
     const [ticketList, setTicketList] = useState([]);
     const [loading, setLoading] = useState(true);
 
-    // SEARCH & FILTERS
-    const [search, setSearch] = useState("");
-    const [status, setStatus] = useState("All");
-    const [priority, setPriority] = useState("All");
-
-    // PAGINATION
-    const [currentPage, setCurrentPage] = useState(1);
+    const [page, setPage] = useState(1);
+    const [pageSize, setPageSize] = useState(15);
     const [totalTickets, setTotalTickets] = useState(0);
+    const [totalPages, setTotalPages] = useState(1);
 
-    const pageSize = 15;
+    const [search, setSearch] = useState("");
+    const [searchInput, setSearchInput] = useState("");
+
+    const [status, setStatus] = useState("");
+    const [priority, setPriority] = useState("");
 
     useEffect(() => {
         const fetchTicketList = async () => {
             try {
                 setLoading(true);
 
-                // QUERY PARAMETERS SENT TO DJANGO
-                const params = {
-                    page: currentPage,
-                };
-
-                if (search.trim()) {
-                    params.search = search.trim();
-                }
-
-                if (status !== "All") {
-                    params.status = status;
-                }
-
-                if (priority !== "All") {
-                    params.priority = priority;
-                }
-
                 const response = await api.get(
                     "/tickets/employee/list/",
-                    { params }
+                    {
+                        params: {
+                            page,
+                            page_size: pageSize,
+                            search: search || undefined,
+                            status: status || undefined,
+                            priority: priority || undefined,
+                        },
+                    }
                 );
 
-                // PAGINATED RESPONSE FROM DJANGO
-                setTicketList(response.data.results);
-                setTotalTickets(response.data.count);
+                const data = response.data;
 
-            } catch (error) {
-                console.error(
-                    "Error fetching employee tickets:",
-                    error
+                setTicketList(data.results || []);
+                setTotalTickets(data.count || 0);
+
+                setTotalPages(
+                    Math.max(
+                        1,
+                        Math.ceil(
+                            (data.count || 0) / pageSize
+                        )
+                    )
                 );
+            } catch {
+                setTicketList([]);
+                setTotalTickets(0);
+                setTotalPages(1);
             } finally {
                 setLoading(false);
             }
         };
 
         fetchTicketList();
-    }, [
-        currentPage,
-        search,
-        status,
-        priority,
-    ]);
+    }, [page, pageSize, search, status, priority]);
 
-    // TOTAL NUMBER OF PAGES
-    const totalPages = Math.max(
-        1,
-        Math.ceil(totalTickets / pageSize)
-    );
+    const handleSearch = (event) => {
+        event.preventDefault();
 
-    // SHOWING X-Y
-    const showingStart =
+        setPage(1);
+        setSearch(searchInput.trim());
+    };
+
+    const clearSearch = () => {
+        setSearchInput("");
+        setSearch("");
+        setPage(1);
+    };
+
+    const handleStatusChange = (event) => {
+        setStatus(event.target.value);
+        setPage(1);
+    };
+
+    const handlePriorityChange = (event) => {
+        setPriority(event.target.value);
+        setPage(1);
+    };
+
+    const handlePageSizeChange = (event) => {
+        setPageSize(Number(event.target.value));
+        setPage(1);
+    };
+
+    const startItem =
         totalTickets === 0
             ? 0
-            : (currentPage - 1) * pageSize + 1;
+            : (page - 1) * pageSize + 1;
 
-    const showingEnd = Math.min(
-        currentPage * pageSize,
+    const endItem = Math.min(
+        page * pageSize,
         totalTickets
     );
 
-    const changePage = (page) => {
-        if (page < 1 || page > totalPages) return;
-
-        setCurrentPage(page);
-    };
-
-    const hasActiveFilters =
-        search ||
-        status !== "All" ||
-        priority !== "All";
-
-    const clearFilters = () => {
-        setSearch("");
-        setStatus("All");
-        setPriority("All");
-        setCurrentPage(1);
-    };
-
     return (
-        <div className="w-full">
+        <div className="min-h-full bg-gray-50">
+            {/* PAGE HEADER */}
+            <div className="border-b border-gray-200 px-5 py-4">
+                <h1 className="text-xl font-semibold text-gray-900">
+                    My Tickets
+                </h1>
 
-            {/* MAIN CONTAINER */}
-            <div className="overflow-hidden rounded-lg border border-gray-300 bg-white">
+                <p className="mt-1 text-sm text-gray-500">
+                    View and track your submitted IT support tickets.
+                </p>
+            </div>
 
-                {/* TOOLBAR */}
-                <div className="flex items-center justify-between gap-4 border-b border-gray-300 p-4">
-
+            {/* TOOLBAR */}
+            <div className="border-b border-gray-200 bg-white px-5 py-3">
+                <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
                     {/* SEARCH */}
-                    <div className="relative w-full max-w-[360px]">
+                    <form
+                        onSubmit={handleSearch}
+                        className="relative w-full lg:max-w-[320px]"
+                    >
                         <Search
                             size={17}
-                            strokeWidth={2}
                             className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
                         />
 
                         <input
                             type="text"
-                            value={search}
-                            onChange={(e) => {
-                                setSearch(e.target.value);
-                                setCurrentPage(1);
-                            }}
+                            value={searchInput}
+                            onChange={(event) =>
+                                setSearchInput(
+                                    event.target.value
+                                )
+                            }
                             placeholder="Search ticket ID or subject..."
-                            className="h-10 w-full rounded-md border border-gray-300 bg-white pl-9 pr-3 text-sm text-black outline-none transition-colors placeholder:text-gray-400 focus:border-[#4C4CF9]"
+                            className="h-10 w-full rounded-md border border-gray-300 bg-white pl-9 pr-9 text-sm text-gray-700 outline-none placeholder:text-gray-400 focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
                         />
-                    </div>
+
+                        {searchInput && (
+                            <button
+                                type="button"
+                                onClick={clearSearch}
+                                className="absolute right-2 top-1/2 flex h-7 w-7 -translate-y-1/2 cursor-pointer items-center justify-center rounded-md text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-600"
+                            >
+                                <X size={15} />
+                            </button>
+                        )}
+                    </form>
 
                     {/* FILTERS */}
-                    <div className="flex items-center gap-2">
-
+                    <div className="flex flex-wrap items-center gap-3">
                         {/* STATUS */}
                         <select
                             value={status}
-                            onChange={(e) => {
-                                setStatus(e.target.value);
-                                setCurrentPage(1);
-                            }}
-                            className="h-10 min-w-[140px] cursor-pointer rounded-md border border-gray-300 bg-white px-3 text-sm text-black outline-none transition-colors focus:border-[#4C4CF9]"
+                            onChange={handleStatusChange}
+                            className="h-10 min-w-[140px] rounded-md border border-gray-300 bg-white px-3 text-sm text-gray-700 outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
                         >
-                                <option value="All">All statuses</option>
-                                <option value="open">Open</option>
-                                <option value="in_progress">In Progress</option>
-                                <option value="under_review">Under Review</option>
-                                <option value="returned">Returned</option>
-                                <option value="resolved">Resolved</option>
-                                <option value="closed">Closed</option>
+                            <option value="">
+                                All Statuses
+                            </option>
+
+                            <option value="open">
+                                Open
+                            </option>
+
+                            <option value="in_progress">
+                                In Progress
+                            </option>
+
+                            <option value="under_review">
+                                Under Review
+                            </option>
+
+                            <option value="returned">
+                                Returned
+                            </option>
+
+                            <option value="resolved">
+                                Resolved
+                            </option>
+
+                            <option value="closed">
+                                Closed
+                            </option>
                         </select>
 
                         {/* PRIORITY */}
                         <select
                             value={priority}
-                            onChange={(e) => {
-                                setPriority(e.target.value);
-                                setCurrentPage(1);
-                            }}
-                            className="h-10 min-w-[140px] cursor-pointer rounded-md border border-gray-300 bg-white px-3 text-sm text-black outline-none transition-colors focus:border-[#4C4CF9]"
+                            onChange={handlePriorityChange}
+                            className="h-10 min-w-[140px] rounded-md border border-gray-300 bg-white px-3 text-sm text-gray-700 outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
                         >
-                            <option value="All">
-                                All priorities
+                            <option value="">
+                                All Priorities
                             </option>
 
-                            <option value="P1">P1</option>
-                            <option value="P2">P2</option>
-                            <option value="P3">P3</option>
-                            <option value="P4">P4</option>
-                            <option value="P5">P5</option>
+                            <option value="P1">
+                                P1
+                            </option>
+
+                            <option value="P2">
+                                P2
+                            </option>
+
+                            <option value="P3">
+                                P3
+                            </option>
+
+                            <option value="P4">
+                                P4
+                            </option>
+
+                            <option value="P5">
+                                P5
+                            </option>
                         </select>
 
-                        {/* CLEAR FILTERS */}
-                        {hasActiveFilters && (
-                            <button
-                                type="button"
-                                onClick={clearFilters}
-                                title="Clear filters"
-                                className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md border border-gray-300 bg-white text-gray-500 transition-colors hover:bg-gray-50 hover:text-black"
-                            >
-                                <X size={16} />
-                            </button>
-                        )}
+                        {/* PAGE SIZE */}
+                        <div className="flex items-center gap-2">
+                            <span className="text-sm text-gray-600">
+                                Show
+                            </span>
 
-                    </div>
-                </div>
-
-                {/* TABLE */}
-                <TicketTableEmployee
-                    ticketList={ticketList}
-                    loading={loading}
-                />
-
-                {/* PAGINATION */}
-                {!loading && (
-                    <div className="flex min-h-[60px] items-center justify-between border-t border-gray-300 px-5">
-
-                        {/* RESULT COUNT */}
-                        <p className="text-sm text-gray-500">
-                            Showing{" "}
-                            <span className="font-medium text-black">
-                                {showingStart}–{showingEnd}
-                            </span>{" "}
-                            of{" "}
-                            <span className="font-medium text-black">
-                                {totalTickets}
-                            </span>{" "}
-                            tickets
-                        </p>
-
-                        {/* PAGE CONTROLS */}
-                        <div className="flex items-center gap-1">
-
-                            {/* PREVIOUS */}
-                            <button
-                                type="button"
-                                title="Previous page"
-                                disabled={currentPage === 1}
-                                onClick={() =>
-                                    changePage(currentPage - 1)
+                            <select
+                                value={pageSize}
+                                onChange={
+                                    handlePageSizeChange
                                 }
-                                className="flex h-9 w-9 cursor-pointer items-center justify-center rounded-md border border-gray-300 bg-white text-black transition-colors hover:bg-gray-50 disabled:cursor-not-allowed disabled:text-gray-300 disabled:hover:bg-white"
+                                className="h-10 rounded-md border border-gray-300 bg-white px-3 text-sm text-gray-700 outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
                             >
-                                <ChevronLeft size={16} />
-                            </button>
+                                <option value={10}>
+                                    10
+                                </option>
 
-                            {/* PAGE NUMBERS */}
-                            {Array.from(
-                                { length: totalPages },
-                                (_, index) => index + 1
-                            ).map((page) => (
-                                <button
-                                    key={page}
-                                    type="button"
-                                    onClick={() =>
-                                        changePage(page)
-                                    }
-                                    className={`h-9 min-w-9 cursor-pointer rounded-md border px-2 text-sm font-medium transition-colors ${
-                                        currentPage === page
-                                            ? "border-[#4C4CF9] bg-[#4C4CF9] text-white"
-                                            : "border-gray-300 bg-white text-black hover:bg-gray-50"
-                                    }`}
-                                >
-                                    {page}
-                                </button>
-                            ))}
+                                <option value={15}>
+                                    15
+                                </option>
 
-                            {/* NEXT */}
-                            <button
-                                type="button"
-                                title="Next page"
-                                disabled={
-                                    currentPage === totalPages
-                                }
-                                onClick={() =>
-                                    changePage(currentPage + 1)
-                                }
-                                className="flex h-9 w-9 items-center cursor-pointer justify-center rounded-md border border-gray-300 bg-white text-black transition-colors hover:bg-gray-50 disabled:cursor-not-allowed disabled:text-gray-300 disabled:hover:bg-white"
-                            >
-                                <ChevronRight size={16} />
-                            </button>
+                                <option value={25}>
+                                    25
+                                </option>
 
+                                <option value={50}>
+                                    50
+                                </option>
+                            </select>
                         </div>
                     </div>
-                )}
+                </div>
+            </div>
 
+            {/* TABLE */}
+            <div className="w-full overflow-x-auto bg-white">
+                <div className="min-w-[1050px]">
+                    <TicketTableEmployee
+                        ticketList={ticketList}
+                        loading={loading}
+                    />
+                </div>
+            </div>
+
+            {/* PAGINATION */}
+            <div className="flex flex-col gap-3 border-t border-gray-200 bg-white px-5 py-3 sm:flex-row sm:items-center sm:justify-between">
+                <p className="text-sm text-gray-500">
+                    Showing{" "}
+                    <span className="font-medium text-gray-700">
+                        {startItem}
+                    </span>{" "}
+                    to{" "}
+                    <span className="font-medium text-gray-700">
+                        {endItem}
+                    </span>{" "}
+                    of{" "}
+                    <span className="font-medium text-gray-700">
+                        {totalTickets}
+                    </span>{" "}
+                    tickets
+                </p>
+
+                <div className="flex items-center gap-1">
+                    <button
+                        type="button"
+                        onClick={() =>
+                            setPage((current) =>
+                                Math.max(
+                                    1,
+                                    current - 1
+                                )
+                            )
+                        }
+                        disabled={
+                            page === 1 || loading
+                        }
+                        className="flex h-9 w-9 cursor-pointer items-center justify-center rounded-md border border-gray-300 bg-white text-gray-700 transition-colors hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
+                        title="Previous page"
+                    >
+                        <ChevronLeft size={16} />
+                    </button>
+
+                    <span className="px-2 text-sm text-gray-600">
+                        Page {page} of {totalPages}
+                    </span>
+
+                    <button
+                        type="button"
+                        onClick={() =>
+                            setPage((current) =>
+                                Math.min(
+                                    totalPages,
+                                    current + 1
+                                )
+                            )
+                        }
+                        disabled={
+                            page >= totalPages || loading
+                        }
+                        className="flex h-9 w-9 cursor-pointer items-center justify-center rounded-md bg-[#2563EB] text-white transition-colors hover:bg-[#1D4ED8] disabled:cursor-not-allowed disabled:opacity-50"
+                        title="Next page"
+                    >
+                        <ChevronRight size={16} />
+                    </button>
+                </div>
             </div>
         </div>
     );
