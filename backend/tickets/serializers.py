@@ -1,5 +1,6 @@
 from rest_framework import serializers
-from .models import Ticket, Category, SymptomCode, TicketComments, SLARules, ReviewFlags, TicketAssistance, Keyword, TicketStatusHistory, TicketRequest
+from .models import Ticket, Category, SymptomCode, TicketComments, SLARules, ReviewFlags, TicketAssistance, Keyword, TicketStatusHistory, TicketReturn, TicketPriorityRequest
+from departments.models import ITDepartment
 from django.utils import timezone
 from datetime import timedelta
 from rest_framework import serializers
@@ -27,6 +28,10 @@ class TicketSerializer(serializers.ModelSerializer):
         source="priority.priority_level",
         read_only=True,
     )
+    it_department_name = serializers.CharField(
+        source="it_department.name",
+        read_only=True,
+    )
 
     created_at_formatted = serializers.SerializerMethodField()
 
@@ -42,6 +47,7 @@ class TicketSerializer(serializers.ModelSerializer):
             "assigned_to",
             "updated_by",
             "it_department",
+            "it_department_name",
             "employee_department",
             "subject",
             "description",
@@ -739,7 +745,7 @@ class PriorityRequestListSerializer(serializers.ModelSerializer):
     it_department = serializers.CharField(source="requested_by.it_support_profile.it_department.name", read_only=True)
 
     class Meta:
-        model = TicketRequest
+        model = TicketPriorityRequest
         fields = ["id", "ticket_id", "ticket_code", "subject", "current_priority", "requested_priority", "it_department", "requested_by_first_name", "requested_by_last_name", "reason", "status", "requested_at"]
 
 class PriorityRequestDetailSerializer(serializers.ModelSerializer):
@@ -773,7 +779,7 @@ class PriorityRequestDetailSerializer(serializers.ModelSerializer):
     submitted_by_role = serializers.CharField(source="ticket.submitted_by.role", read_only=True)
 
     class Meta:
-        model = TicketRequest
+        model = TicketPriorityRequest
         fields = [
             "id",
             "ticket_id",
@@ -824,78 +830,240 @@ class ReturnTicketSerializer(serializers.Serializer):
 
         return value
 
+
 class ReturnedTicketRequestListSerializer(serializers.ModelSerializer):
-    ticket_id = serializers.IntegerField(source="ticket.id",read_only=True)
-    ticket_code = serializers.CharField(source="ticket.ticket_code",read_only=True)
-    subject = serializers.CharField(source="ticket.subject",read_only=True)
-    requested_by_user_code = serializers.CharField(source="requested_by.user_code",read_only=True)
-    requested_by_first_name = serializers.CharField(source="requested_by.first_name",read_only=True)
-    requested_by_last_name = serializers.CharField(source="requested_by.last_name",read_only=True)
-    it_department = serializers.CharField(source="requested_by.it_support_profile.it_department.name",read_only=True)
-    office_location = serializers.CharField(source="requested_by.profile.office_location.name",read_only=True)
+    ticket_id = serializers.IntegerField(
+        source="ticket.id",
+        read_only=True,
+    )
+
+    ticket_code = serializers.CharField(
+        source="ticket.ticket_code",
+        read_only=True,
+    )
+
+    subject = serializers.CharField(
+        source="ticket.subject",
+        read_only=True,
+    )
+
+    returned_by_user_code = serializers.CharField(
+        source="returned_by.user_code",
+        read_only=True,
+    )
+
+    returned_by_first_name = serializers.CharField(
+        source="returned_by.first_name",
+        read_only=True,
+    )
+
+    returned_by_last_name = serializers.CharField(
+        source="returned_by.last_name",
+        read_only=True,
+    )
+
+    it_department = serializers.CharField(
+        source="returned_by.it_support_profile.it_department.name",
+        read_only=True,
+    )
+
+    office_location = serializers.CharField(
+        source="returned_by.profile.office_location.name",
+        read_only=True,
+    )
 
     class Meta:
-        model = TicketRequest
+        model = TicketReturn
+
         fields = [
             "id",
             "ticket_id",
             "ticket_code",
             "subject",
-
-            "requested_by_user_code",
-            "requested_by_first_name",
-            "requested_by_last_name",
+            "returned_by_user_code",
+            "returned_by_first_name",
+            "returned_by_last_name",
             "it_department",
             "office_location",
-
             "reason",
             "status",
             "requested_at",
         ]
 
+
 class ReturnedTicketDetailSerializer(serializers.ModelSerializer):
-    ticket_id = serializers.IntegerField(source="ticket.id", read_only=True)
-    ticket_code = serializers.CharField(source="ticket.ticket_code", read_only=True)
-    subject = serializers.CharField(source="ticket.subject", read_only=True)
-    description = serializers.CharField(source="ticket.description", read_only=True)
-    business_impact = serializers.CharField(source="ticket.business_impact", read_only=True)
-    affected_scope = serializers.CharField(source="ticket.get_affected_scope_display", read_only=True)
-    submitted_at = serializers.DateTimeField(source="ticket.created_at", read_only=True)
+    ticket_id = serializers.IntegerField(
+        source="ticket.id",
+        read_only=True,
+    )
 
-    submitted_by_first_name = serializers.CharField(source="ticket.submitted_by.first_name", read_only=True)
-    submitted_by_last_name = serializers.CharField(source="ticket.submitted_by.last_name", read_only=True)
-    submitted_by_user_code = serializers.CharField(source="ticket.submitted_by.user_code", read_only=True)
-    submitted_by_role = serializers.CharField(source="ticket.submitted_by.role", read_only=True)
+    ticket_code = serializers.CharField(
+        source="ticket.ticket_code",
+        read_only=True,
+    )
 
-    requested_by_first_name = serializers.CharField(source="requested_by.first_name", read_only=True)
-    requested_by_last_name = serializers.CharField(source="requested_by.last_name", read_only=True)
-    requested_by_user_code = serializers.CharField(source="requested_by.user_code", read_only=True)
-    requested_by_role = serializers.CharField(source="requested_by.role", read_only=True)
+    subject = serializers.CharField(
+        source="ticket.subject",
+        read_only=True,
+    )
 
-    reviewed_by_first_name = serializers.CharField(source="reviewed_by.first_name", read_only=True)
-    reviewed_by_last_name = serializers.CharField(source="reviewed_by.last_name", read_only=True)
-    reviewed_by_user_code = serializers.CharField(source="reviewed_by.user_code", read_only=True)
-    reviewed_by_role = serializers.CharField(source="reviewed_by.role", read_only=True)
+    description = serializers.CharField(
+        source="ticket.description",
+        read_only=True,
+    )
 
-    it_department = serializers.CharField(source="requested_by.it_support_profile.it_department.name", read_only=True)
-    employee_department = serializers.CharField(source="ticket.employee_department.name", read_only=True)
-    symptom_code = serializers.CharField(source="ticket.symptom_code.code", read_only=True)
-    category = serializers.CharField(source="ticket.category.name", read_only=True)
-    department = serializers.CharField(source="ticket.it_department.name", read_only=True)
+    business_impact = serializers.CharField(
+        source="ticket.business_impact",
+        read_only=True,
+    )
+
+    affected_scope = serializers.CharField(
+        source="ticket.get_affected_scope_display",
+        read_only=True,
+    )
+
+    submitted_at = serializers.DateTimeField(
+        source="ticket.created_at",
+        read_only=True,
+    )
+
+    submitted_by_first_name = serializers.CharField(
+        source="ticket.submitted_by.first_name",
+        read_only=True,
+    )
+
+    submitted_by_last_name = serializers.CharField(
+        source="ticket.submitted_by.last_name",
+        read_only=True,
+    )
+
+    submitted_by_user_code = serializers.CharField(
+        source="ticket.submitted_by.user_code",
+        read_only=True,
+    )
+
+    submitted_by_role = serializers.CharField(
+        source="ticket.submitted_by.role",
+        read_only=True,
+    )
+
+    returned_by_first_name = serializers.CharField(
+        source="returned_by.first_name",
+        read_only=True,
+    )
+
+    returned_by_last_name = serializers.CharField(
+        source="returned_by.last_name",
+        read_only=True,
+    )
+
+    returned_by_user_code = serializers.CharField(
+        source="returned_by.user_code",
+        read_only=True,
+    )
+
+    returned_by_role = serializers.CharField(
+        source="returned_by.role",
+        read_only=True,
+    )
+
+    reviewed_by_first_name = serializers.CharField(
+        source="reviewed_by.first_name",
+        read_only=True,
+    )
+
+    reviewed_by_last_name = serializers.CharField(
+        source="reviewed_by.last_name",
+        read_only=True,
+    )
+
+    reviewed_by_user_code = serializers.CharField(
+        source="reviewed_by.user_code",
+        read_only=True,
+    )
+
+    reviewed_by_role = serializers.CharField(
+        source="reviewed_by.role",
+        read_only=True,
+    )
+
+    it_department = serializers.CharField(
+        source="returned_by.it_support_profile.it_department.name",
+        read_only=True,
+    )
+
+    employee_department = serializers.CharField(
+        source="ticket.employee_department.name",
+        read_only=True,
+    )
+
+    symptom_code = serializers.CharField(
+        source="ticket.symptom_code.code",
+        read_only=True,
+    )
+
+    category = serializers.CharField(
+        source="ticket.category.name",
+        read_only=True,
+    )
+
+    department = serializers.CharField(
+        source="ticket.it_department.name",
+        read_only=True,
+    )
+
+    returned_at = serializers.DateTimeField(
+        source="requested_at",
+        read_only=True,
+    )
 
     class Meta:
-        model = TicketRequest
+        model = TicketReturn
+
         fields = [
-            "id", "reason", "status", "review_remarks", "requested_at", "reviewed_at",
-            "reviewed_by_first_name", "reviewed_by_last_name", "reviewed_by_user_code", "reviewed_by_role",
-            "ticket_id", "ticket_code", "subject", "description", "business_impact", "affected_scope", "submitted_at",
-            "submitted_by_first_name", "submitted_by_last_name", "submitted_by_user_code", "submitted_by_role",
-            "requested_by_first_name", "requested_by_last_name", "requested_by_user_code", "requested_by_role",
-            "it_department", "employee_department", "symptom_code", "category", "department",
+            "id",
+            "reason",
+            "status",
+            "review_remarks",
+            "returned_at",
+            "reviewed_at",
+
+            "reviewed_by_first_name",
+            "reviewed_by_last_name",
+            "reviewed_by_user_code",
+            "reviewed_by_role",
+
+            "ticket_id",
+            "ticket_code",
+            "subject",
+            "description",
+            "business_impact",
+            "affected_scope",
+            "submitted_at",
+
+            "submitted_by_first_name",
+            "submitted_by_last_name",
+            "submitted_by_user_code",
+            "submitted_by_role",
+
+            "returned_by_first_name",
+            "returned_by_last_name",
+            "returned_by_user_code",
+            "returned_by_role",
+
+            "it_department",
+            "employee_department",
+            "symptom_code",
+            "category",
+            "department",
         ]
 
+
 class ApproveReturnTicketSerializer(serializers.Serializer):
-    symptom_code_id = serializers.IntegerField(required=True)
+    symptom_code_id = serializers.IntegerField(
+        required=True,
+    )
+
     review_remarks = serializers.CharField(
         required=False,
         allow_blank=True,
@@ -906,6 +1074,13 @@ class ApproveReturnTicketSerializer(serializers.Serializer):
         return value.strip()
 
 
+class ServiceDeskDepartmentSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ITDepartment
+        fields = [
+            "id",
+            "name",
+        ]
 # class TicketSLASerializer(serializers.ModelSerializer):
 #     class Meta:
 #         model = TicketSLA

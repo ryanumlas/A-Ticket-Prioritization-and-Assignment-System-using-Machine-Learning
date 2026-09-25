@@ -31,9 +31,9 @@ export default function TicketReturnedDetailContent({ request }) {
         .filter(Boolean)
         .join(" ");
 
-    const requestedByName = [
-        request.requested_by_first_name,
-        request.requested_by_last_name,
+    const returnedByName = [
+        request.returned_by_first_name,
+        request.returned_by_last_name,
     ]
         .filter(Boolean)
         .join(" ");
@@ -52,10 +52,10 @@ export default function TicketReturnedDetailContent({ request }) {
         department: request.employee_department,
     };
 
-    const requestedBy = {
-        name: requestedByName,
-        user_code: request.requested_by_user_code,
-        role: request.requested_by_role,
+    const returnedBy = {
+        name: returnedByName,
+        user_code: request.returned_by_user_code,
+        role: request.returned_by_role,
         department: request.it_department,
     };
 
@@ -171,7 +171,7 @@ export default function TicketReturnedDetailContent({ request }) {
 
                                 <UserCard
                                     label="Return Requested By"
-                                    user={requestedBy}
+                                    user={returnedBy}
                                 />
                             </div>
 
@@ -184,10 +184,8 @@ export default function TicketReturnedDetailContent({ request }) {
                                 />
 
                                 <InfoRow
-                                    label="Return Requested At"
-                                    value={formatDate(
-                                        request.requested_at
-                                    )}
+                                    label="Returned At"
+                                    value={formatDate(request.returned_at)}
                                 />
                             </div>
                         </div>
@@ -235,7 +233,9 @@ export default function TicketReturnedDetailContent({ request }) {
                             <RoutingCard
                                 label="Proposed"
                                 symptom={selectedSymptomCode?.code}
-                                department={selectedSymptomCode?.department}
+                                department={
+                                    selectedSymptomCode?.department
+                                }
                                 proposed
                             />
                         </div>
@@ -265,7 +265,7 @@ export default function TicketReturnedDetailContent({ request }) {
                                     onClick={() =>
                                         setSymptomSheetOpen(true)
                                     }
-                                    className="mt-2 flex w-full items-center justify-between rounded-lg border border-gray-300 bg-white px-4 py-3 text-left transition hover:bg-gray-50 focus:border-[#4C4CF9] focus:ring-2 focus:ring-[#4C4CF9]/10"
+                                    className="mt-2 flex w-full items-center justify-between rounded-lg border border-gray-300 bg-white px-4 py-3 text-left transition hover:bg-gray-50 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/10"
                                 >
                                     <div className="min-w-0">
                                         <p className="truncate text-sm font-medium text-black">
@@ -372,7 +372,7 @@ export default function TicketReturnedDetailContent({ request }) {
                                     isReviewed
                                         ? "cursor-not-allowed bg-gray-200 text-gray-400"
                                         : selectedSymptomCode && !approving
-                                        ? "cursor-pointer bg-[#4C4CF9] text-white hover:bg-[#3f3fe0]"
+                                        ? "cursor-pointer bg-blue-600 text-white hover:bg-blue-700"
                                         : "cursor-not-allowed bg-gray-200 text-gray-400"
                                 }`}
                             >
@@ -537,7 +537,7 @@ export default function TicketReturnedDetailContent({ request }) {
                                 setReviewRemarks(e.target.value)
                             }
                             placeholder="Enter your remarks here..."
-                            className="w-full resize-none rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm text-black outline-none transition placeholder:text-gray-400 focus:border-[#4C4CF9] focus:ring-2 focus:ring-[#4C4CF9]/10"
+                            className="w-full resize-none rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm text-black outline-none transition placeholder:text-gray-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/10"
                         />
 
                         <div className="mt-1 text-right text-xs text-gray-400">
@@ -651,7 +651,7 @@ function Avatar({ name, size = "md" }) {
 
     return (
         <div
-            className={`flex shrink-0 items-center justify-center rounded-full bg-[#4C4CF9]/10 font-semibold text-[#4C4CF9] ${sizeClass}`}
+            className={`flex shrink-0 items-center justify-center rounded-full bg-blue-50 font-semibold text-blue-600 ${sizeClass}`}
         >
             {initials}
         </div>

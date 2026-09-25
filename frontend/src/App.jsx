@@ -23,7 +23,9 @@ import Notification from './pages/Notification'
 import UserList from './pages/UserList'
 import SystemAdUserCreate from "./pages/SystemAdUserCreate";
 import SystemUserDetails from './pages/SystemUserDetails'
+import ServiceDeskDepartmentQueue from './pages/ServiceDeskDepartmentQueue'
 import { User } from 'lucide-react'
+
 
 // function Logout() {
 //   localStorage.clear()
@@ -105,6 +107,16 @@ function App() {
                         allowedRoles={["IT Service Desk"]}
                     >
                         <FlaggedTicketDetails />
+                    </ProtectedRoute>
+                }
+            />
+            <Route
+                path="/service-desk/department/:departmentId"
+                element={
+                    <ProtectedRoute
+                        allowedRoles={["IT Service Desk"]}
+                    >
+                        <ServiceDeskDepartmentQueue />
                     </ProtectedRoute>
                 }
             />

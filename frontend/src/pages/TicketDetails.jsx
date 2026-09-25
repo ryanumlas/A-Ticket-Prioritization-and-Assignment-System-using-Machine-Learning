@@ -3,9 +3,8 @@ import { getCurrentUser } from "../utils/auth";
 import api from "../api";
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import {
-    ArrowLeft,
-} from "lucide-react";
+import { ArrowLeft } from "lucide-react";
+import TopBar from "../components/Topbar";
 
 import TicketDetailsEmployee from "../components/TicketDetailsEmployee";
 import TicketDetailsSupport from "../components/TicketDetailsSupport";
@@ -35,14 +34,11 @@ export default function TicketDetails() {
 
             if (user?.role === "Employee") {
                 endpoint = `/tickets/employee/detail/${ticketId}/`;
-            }
-            else if (user?.role === "IT Service Desk") {
+            } else if (user?.role === "IT Service Desk") {
                 endpoint = `/tickets/service-desk/detail/${ticketId}/`;
-            }
-            else if (user?.role === "IT Support Specialist") {
+            } else if (user?.role === "IT Support Specialist") {
                 endpoint = `/tickets/support/detail/${ticketId}/`;
-            }
-            else {
+            } else {
                 setError("Access Denied / Invalid Role");
                 return;
             }
@@ -50,18 +46,7 @@ export default function TicketDetails() {
             const response = await api.get(endpoint);
 
             setTicketDetails(response.data);
-
-            console.log(
-                "Fetched ticket details:",
-                response.data
-            );
-        }
-        catch (error) {
-            console.error(
-                "Error fetching ticket details:",
-                error.response?.data || error
-            );
-
+        } catch (error) {
             setError(
                 error.response?.data?.error ||
                 "Failed to load ticket details."
@@ -75,8 +60,7 @@ export default function TicketDetails() {
                 setLoading(true);
 
                 await fetchTicketDetails();
-            }
-            finally {
+            } finally {
                 setLoading(false);
             }
         };
@@ -102,11 +86,9 @@ export default function TicketDetails() {
                 <Sidebar />
 
                 <div className="flex h-screen flex-1 flex-col">
-
-                    <div className="h-14 shrink-0 border-b border-gray-300 bg-white" />
+                    <TopBar />
 
                     <main className="flex min-h-0 flex-1 flex-col p-4">
-
                         <button
                             type="button"
                             onClick={() => navigate(-1)}
@@ -121,9 +103,7 @@ export default function TicketDetails() {
                                 {error}
                             </p>
                         </div>
-
                     </main>
-
                 </div>
             </div>
         );
@@ -142,17 +122,14 @@ export default function TicketDetails() {
                 ticketDetails={ticketDetails}
             />
         );
-    }
-
-    else if (user?.role === "IT Support Specialist") {
+    } else if (user?.role === "IT Support Specialist") {
         MainContent = (
             <TicketDetailsSupport
                 ticketDetails={ticketDetails}
                 onTicketUpdated={fetchTicketDetails}
             />
         );
-    }
-    else {
+    } else {
         MainContent = (
             <div className="p-6">
                 Access Denied / Invalid Role
@@ -162,17 +139,13 @@ export default function TicketDetails() {
 
     return (
         <div className="flex h-screen w-screen overflow-hidden bg-gray-50">
-
             <Sidebar />
 
             <div className="flex h-screen flex-1 flex-col">
-
-                <div className="h-14 shrink-0 border-b border-gray-300 bg-white" />
+                <TopBar />
 
                 <main className="flex min-h-0 flex-1 flex-col p-4">
-
                     <div className="mb-3 flex h-9 shrink-0 items-center justify-between">
-
                         <button
                             type="button"
                             onClick={() => navigate(-1)}
@@ -183,21 +156,24 @@ export default function TicketDetails() {
                         </button>
 
                         {isAssignedSupport && (
-                                <ManageTicketDropdown 
-                                onPriorityRequest={() => setPriorityModalOpen(true)} 
-                                onReturnTicket={() => setReturnModalOpen(true)}
-                                onRequestAssistance={() => setAssistanceModalOpen(true)}
+                            <ManageTicketDropdown
+                                onPriorityRequest={() =>
+                                    setPriorityModalOpen(true)
+                                }
+                                onReturnTicket={() =>
+                                    setReturnModalOpen(true)
+                                }
+                                onRequestAssistance={() =>
+                                    setAssistanceModalOpen(true)
+                                }
                             />
                         )}
-
                     </div>
 
                     <div className="min-h-0 flex-1">
                         {MainContent}
                     </div>
-
                 </main>
-
             </div>
 
             <RequestPriorityModal
@@ -213,11 +189,11 @@ export default function TicketDetails() {
                 onClose={() => setReturnModalOpen(false)}
                 ticketId={ticketDetails.id}
             />
+
             <RequestAssistanceModal
                 open={assistanceModalOpen}
                 onClose={() => setAssistanceModalOpen(false)}
             />
         </div>
-        
     );
 }

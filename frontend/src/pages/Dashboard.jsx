@@ -18,20 +18,15 @@ export default function Dashboard() {
                 Please log in to view the dashboard.
             </div>
         );
-    }
-    else if (user.role === "Employee") {
+    } else if (user.role === "Employee") {
         MainContent = <EmployeeDashboard />;
-    }
-    else if (user.role === "IT Support Specialist") {
+    } else if (user.role === "IT Support Specialist") {
         MainContent = <SupportDashboard />;
-    }
-    else if (user.role === "IT Service Desk") {
+    } else if (user.role === "IT Service Desk") {
         MainContent = <ServiceDeskDashboard />;
-    }
-    else if (user.role === "System Administrator") {
+    } else if (user.role === "System Administrator") {
         MainContent = <SystemAdminDashboard />;
-    }
-    else {
+    } else {
         MainContent = (
             <div className="p-6">
                 Access Denied / Invalid Role
@@ -43,28 +38,30 @@ export default function Dashboard() {
         <div className="flex h-screen w-screen overflow-hidden bg-gray-50">
             <Sidebar />
 
-            <div className="flex h-screen flex-1 flex-col overflow-y-auto">
+            <div className="flex h-screen min-w-0 flex-1 flex-col overflow-hidden">
+                <div className="shrink-0">
+                    <Topbar />
+                </div>
 
-                <Topbar/>
-
-                <motion.main
-                    initial={{
-                        opacity: 0,
-                        y: 12,
-                    }}
-                    animate={{
-                        opacity: 1,
-                        y: 0,
-                    }}
-                    transition={{
-                        duration: 0.4,
-                        ease: "easeOut",
-                    }}
-                    className="p-6"
-                >
-                    {MainContent}
-                </motion.main>
-
+                <main className="min-h-0 flex-1 overflow-y-auto">
+                    <motion.div
+                        initial={{
+                            opacity: 0,
+                            y: 12,
+                        }}
+                        animate={{
+                            opacity: 1,
+                            y: 0,
+                        }}
+                        transition={{
+                            duration: 0.4,
+                            ease: "easeOut",
+                        }}
+                        className="p-6"
+                    >
+                        {MainContent}
+                    </motion.div>
+                </main>
             </div>
         </div>
     );

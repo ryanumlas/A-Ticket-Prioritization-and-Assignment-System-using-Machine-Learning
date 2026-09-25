@@ -15,20 +15,32 @@ export default function SupportDashboard() {
         const fetchTicketList = async () => {
             try {
                 setLoading(true);
-                const response = await api.get("/tickets/support-specialist/list/");
+
+                const response = await api.get(
+                    "/tickets/support-specialist/list/"
+                );
+
                 setTicketList(response.data.results);
             } catch (error) {
-                console.error(error);
+                setTicketList([]);
             } finally {
                 setLoading(false);
             }
         };
-        fetchTicketList()
+
+        fetchTicketList();
     }, []);
 
-    if (!ticketList) {
-        return <div>Loading...</div>;
+    if (loading) {
+        return (
+            <div className="flex items-center justify-center py-12">
+                <p className="text-sm text-gray-500">
+                    Loading dashboard...
+                </p>
+            </div>
+        );
     }
+
     return (
         <div className="space-y-4">
 
@@ -37,8 +49,18 @@ export default function SupportDashboard() {
 
             <div className="grid grid-cols-12 gap-4">
 
-                {/* MY ACTIVE TICKETS */}
+                {/* TICKETS NEEDING ATTENTION */}
                 <div className="col-span-7">
+                    <TicketNeedingAttention />
+                </div>
+
+                {/* SLA OVERVIEW */}
+                <div className="col-span-5">
+                    <SLAOverview />
+                </div>
+
+                {/* MY ACTIVE TICKETS */}
+                <div className="col-span-12">
                     <div className="overflow-hidden rounded-xl border border-gray-300 bg-white">
 
                         <div className="flex items-center justify-between border-b border-gray-300 px-4 py-4">
@@ -55,7 +77,7 @@ export default function SupportDashboard() {
 
                             <Link
                                 to="/tickets"
-                                className="group flex cursor-pointer items-center gap-2 rounded-md bg-[#4C4CF9] px-6 py-2 text-sm text-white transition hover:bg-[#3f3fe6]"
+                                className="group flex cursor-pointer items-center gap-2 rounded-md bg-[#2563EB] px-6 py-2 text-sm text-white transition hover:bg-[#1D4ED8]"
                             >
                                 View All
                                 <ArrowRight size={16} />
@@ -70,16 +92,6 @@ export default function SupportDashboard() {
                         />
 
                     </div>
-                </div>
-
-                {/* SLA OVERVIEW */}
-                <div className="col-span-5">
-                    <SLAOverview />
-                </div>
-
-                {/* TICKETS NEEDING ATTENTION */}
-                <div className="col-span-12">
-                    <TicketNeedingAttention />
                 </div>
 
             </div>

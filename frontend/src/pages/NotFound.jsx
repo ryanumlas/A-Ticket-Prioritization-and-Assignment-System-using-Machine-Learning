@@ -1,67 +1,143 @@
+import { motion } from "motion/react";
 import { ArrowLeft, Headphones, Home, SearchX } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
 export default function NotFound() {
     const navigate = useNavigate();
 
+    const containerVariants = {
+        hidden: {},
+        visible: {
+            transition: {
+                staggerChildren: 0.1,
+            },
+        },
+    };
+
+    const itemVariants = {
+        hidden: {
+            opacity: 0,
+            y: 18,
+        },
+        visible: {
+            opacity: 1,
+            y: 0,
+            transition: {
+                duration: 0.5,
+                ease: "easeOut",
+            },
+        },
+    };
+
     return (
         <div className="flex min-h-screen items-center justify-center bg-gray-50 px-6">
-            <div className="w-full max-w-2xl text-center">
+            <motion.div
+                variants={containerVariants}
+                initial="hidden"
+                animate="visible"
+                className="w-full max-w-2xl text-center"
+            >
                 {/* Corporate Icon */}
-                <div className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-2xl bg-blue-50">
-                    <Headphones
-                        size={30}
-                        strokeWidth={1.8}
-                        className="text-[#2563EB]"
-                    />
-                </div>
+                <motion.div
+                    variants={itemVariants}
+                    className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-2xl bg-blue-50"
+                >
+                    <motion.div
+                        animate={{
+                            y: [0, -4, 0],
+                        }}
+                        transition={{
+                            duration: 3,
+                            repeat: Infinity,
+                            ease: "easeInOut",
+                        }}
+                    >
+                        <Headphones
+                            size={30}
+                            strokeWidth={1.8}
+                            className="text-[#2563EB]"
+                        />
+                    </motion.div>
+                </motion.div>
 
                 {/* Error Code */}
-                <p className="text-sm font-semibold uppercase tracking-[0.2em] text-[#2563EB]">
+                <motion.p
+                    variants={itemVariants}
+                    className="text-sm font-semibold uppercase tracking-[0.2em] text-[#2563EB]"
+                >
                     Error 404
-                </p>
+                </motion.p>
 
                 {/* Title */}
-                <h1 className="mt-3 text-4xl font-semibold tracking-tight text-gray-900 sm:text-5xl">
+                <motion.h1
+                    variants={itemVariants}
+                    className="mt-3 text-4xl font-semibold tracking-tight text-gray-900 sm:text-5xl"
+                >
                     Page not found
-                </h1>
+                </motion.h1>
 
                 {/* Description */}
-                <p className="mx-auto mt-4 max-w-lg text-sm leading-6 text-gray-500 sm:text-base">
+                <motion.p
+                    variants={itemVariants}
+                    className="mx-auto mt-4 max-w-lg text-sm leading-6 text-gray-500 sm:text-base"
+                >
                     The page you are looking for may have been moved,
                     removed, or is temporarily unavailable. Please
                     check the URL or return to your workspace.
-                </p>
+                </motion.p>
 
                 {/* Actions */}
-                <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
-                    <button
+                <motion.div
+                    variants={itemVariants}
+                    className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row"
+                >
+                    <motion.button
                         type="button"
                         onClick={() => navigate(-1)}
+                        whileHover={{
+                            y: -2,
+                        }}
+                        whileTap={{
+                            scale: 0.97,
+                        }}
                         className="inline-flex min-h-[42px] cursor-pointer items-center justify-center gap-2 rounded-lg border border-gray-300 bg-white px-5 py-2.5 text-sm font-medium text-gray-700 transition hover:bg-gray-50"
                     >
                         <ArrowLeft size={17} />
                         Go Back
-                    </button>
+                    </motion.button>
 
-                    <button
+                    <motion.button
                         type="button"
                         onClick={() => navigate("/")}
+                        whileHover={{
+                            y: -2,
+                        }}
+                        whileTap={{
+                            scale: 0.97,
+                        }}
                         className="inline-flex min-h-[42px] cursor-pointer items-center justify-center gap-2 rounded-lg bg-[#2563EB] px-5 py-2.5 text-sm font-medium text-white transition hover:bg-[#1D4ED8]"
                     >
                         <Home size={17} />
                         Go to Dashboard
-                    </button>
-                </div>
+                    </motion.button>
+                </motion.div>
 
                 {/* Support Reference */}
-                <div className="mx-auto mt-12 flex max-w-md items-center gap-3 border-t border-gray-200 pt-5 text-left">
-                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-gray-100">
+                <motion.div
+                    variants={itemVariants}
+                    className="mx-auto mt-12 flex max-w-md items-center gap-3 border-t border-gray-200 pt-5 text-left"
+                >
+                    <motion.div
+                        whileHover={{
+                            scale: 1.05,
+                        }}
+                        className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-gray-100"
+                    >
                         <SearchX
                             size={17}
                             className="text-gray-500"
                         />
-                    </div>
+                    </motion.div>
 
                     <div>
                         <p className="text-xs font-medium text-gray-700">
@@ -73,8 +149,8 @@ export default function NotFound() {
                             this page should be available.
                         </p>
                     </div>
-                </div>
-            </div>
+                </motion.div>
+            </motion.div>
         </div>
     );
 }

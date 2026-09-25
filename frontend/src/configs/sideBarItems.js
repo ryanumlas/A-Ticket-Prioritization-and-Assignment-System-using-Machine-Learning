@@ -17,6 +17,10 @@ import {
     Stethoscope,
     ShieldCheck,
     FileClock,
+    Headphones,
+    Network,
+    AppWindow,
+    MonitorCog,
 } from "lucide-react";
 
 export const sidebarItems = {
@@ -52,32 +56,32 @@ export const sidebarItems = {
             type: "link",
             name: "Dashboard",
             path: "/dashboard",
-            icon: LayoutDashboard
+            icon: LayoutDashboard,
         },
         {
             type: "link",
             name: "Ticket Queue",
             path: "/ticket-queue",
-            icon: ListTodo
+            icon: ListTodo,
         },
         {
             type: "link",
             name: "Assigned Tickets",
             path: "/tickets",
-            icon: ClipboardCheck
+            icon: ClipboardCheck,
         },
         {
             type: "link",
             name: "Create Ticket",
             path: "/",
-            icon: TicketPlus
+            icon: TicketPlus,
         },
         {
             type: "link",
             name: "Notifications",
             path: "/notifications",
-            icon: Bell
-        }
+            icon: Bell,
+        },
     ],
 
     "IT Service Desk": [
@@ -109,20 +113,9 @@ export const sidebarItems = {
             path: "/priority-requests",
             icon: ArrowUpDown
         },
-        {
-            type: "link",
-            name: "Network Team",
-            path: "/",
-        },
-        {
-            type: "link",
-            name: "Software Team",
-            path: "/",
-        },
-        {
-            type: "link",
-            name: "Hardware Team",
-            path: "/",
+                {
+            type: "section",
+            title: "TEAMS",
         },
     ],
 

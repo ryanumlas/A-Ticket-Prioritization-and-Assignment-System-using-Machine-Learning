@@ -75,6 +75,38 @@ export default function Topbar() {
         fetchNotifications();
     }, []);
 
+    const formatNotificationDate = (date) => {
+        if (!date) {
+            return "";
+        }
+
+        const formattedDate = new Date(date);
+
+        if (Number.isNaN(formattedDate.getTime())) {
+            return "";
+        }
+
+        const datePart = formattedDate.toLocaleDateString(
+            "en-US",
+            {
+                month: "short",
+                day: "numeric",
+                year: "numeric",
+            }
+        );
+
+        const timePart = formattedDate.toLocaleTimeString(
+            "en-US",
+            {
+                hour: "numeric",
+                minute: "2-digit",
+                hour12: true,
+            }
+        );
+
+        return `${datePart} • ${timePart}`;
+    };
+
     const handleNotificationClick = async (notification) => {
         if (!notification.is_read) {
             try {
@@ -279,6 +311,14 @@ export default function Topbar() {
                                                                     notification.ticket_code
                                                                 }
                                                             </span>
+                                                        )}
+
+                                                        {notification.created_at && (
+                                                            <p className="mt-1 text-[10px] text-gray-400">
+                                                                {formatNotificationDate(
+                                                                    notification.created_at
+                                                                )}
+                                                            </p>
                                                         )}
                                                     </div>
                                                 </button>
