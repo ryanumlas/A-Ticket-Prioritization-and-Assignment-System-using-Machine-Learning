@@ -503,78 +503,62 @@ class TicketDetailEmployeeSerializer(serializers.ModelSerializer):
 class TicketDetailSupportSerializer(serializers.ModelSerializer):
     status = serializers.CharField(
         source="get_status_display",
-        read_only=True,
+        read_only=True
     )
-
     priority = serializers.CharField(
         source="priority.priority_level",
-        read_only=True,
+        read_only=True
     )
-
     affected_scope = serializers.CharField(
         source="get_affected_scope_display",
-        read_only=True,
+        read_only=True
     )
-
     assigned_to = serializers.SerializerMethodField()
-
     is_under_review = serializers.BooleanField(
-        read_only=True,
+        read_only=True
     )
-
     first_name = serializers.CharField(
         source="submitted_by.first_name",
-        read_only=True,
+        read_only=True
     )
-
     last_name = serializers.CharField(
         source="submitted_by.last_name",
-        read_only=True,
+        read_only=True
     )
-
     user_code = serializers.CharField(
         source="submitted_by.user_code",
-        read_only=True,
+        read_only=True
     )
-
     employee_department = serializers.CharField(
         source="employee_department.name",
-        read_only=True,
+        read_only=True
     )
-
     office_location = serializers.CharField(
         source="office_location.name",
-        read_only=True,
+        read_only=True
     )
-
     category = serializers.CharField(
         source="category.name",
-        read_only=True,
+        read_only=True
     )
-
     symptom_code = serializers.CharField(
         source="symptom_code.code",
-        read_only=True,
+        read_only=True
     )
-
     required_specialization = serializers.CharField(
         source="symptom_code.required_specialization.name",
-        read_only=True,
+        read_only=True
     )
-
     classification_source = serializers.SerializerMethodField()
     classification_confidence = serializers.SerializerMethodField()
-
     it_department = serializers.CharField(
         source="it_department.name",
-        read_only=True,
+        read_only=True
     )
-
     automation = serializers.SerializerMethodField()
 
     class Meta:
         model = Ticket
-
         fields = [
             "id",
             "ticket_code",
@@ -623,11 +607,7 @@ class TicketDetailSupportSerializer(serializers.ModelSerializer):
         }
 
     def get_classification_source(self, obj):
-        analysis = getattr(
-            obj,
-            "ai_prediction",
-            None,
-        )
+        analysis = getattr(obj, "ai_prediction", None)
 
         if not analysis:
             return None
@@ -638,26 +618,16 @@ class TicketDetailSupportSerializer(serializers.ModelSerializer):
         if analysis.model_type == TicketAnalysis.ModelType.RULE_BASED:
             return "Rule-Based"
 
-        if (
-            analysis.model_type
-            == TicketAnalysis.ModelType.MACHINE_LEARNING
-        ):
+        if analysis.model_type == TicketAnalysis.ModelType.MACHINE_LEARNING:
             return "Machine Learning"
 
-        if (
-            analysis.model_type
-            == TicketAnalysis.ModelType.MANUAL_OVERRIDE
-        ):
+        if analysis.model_type == TicketAnalysis.ModelType.MANUAL_OVERRIDE:
             return "Manual Override"
 
         return "System Classified"
 
     def get_classification_confidence(self, obj):
-        analysis = getattr(
-            obj,
-            "ai_prediction",
-            None,
-        )
+        analysis = getattr(obj, "ai_prediction", None)
 
         if not analysis:
             return None
@@ -665,17 +635,8 @@ class TicketDetailSupportSerializer(serializers.ModelSerializer):
         return analysis.confidence
 
     def get_automation(self, obj):
-        ai_analysis = getattr(
-            obj,
-            "ai_analysis",
-            None,
-        )
-
-        ticket_analysis = getattr(
-            obj,
-            "ai_prediction",
-            None,
-        )
+        ai_analysis = getattr(obj, "ai_analysis", None)
+        ticket_analysis = getattr(obj, "ai_prediction", None)
 
         technicians = []
 
@@ -687,9 +648,7 @@ class TicketDetailSupportSerializer(serializers.ModelSerializer):
         required_specialization_id = None
 
         if obj.symptom_code:
-            specialization = (
-                obj.symptom_code.required_specialization
-            )
+            specialization = obj.symptom_code.required_specialization
 
             if specialization:
                 required_specialization = specialization.name
@@ -701,14 +660,14 @@ class TicketDetailSupportSerializer(serializers.ModelSerializer):
             profiles = (
                 ITSupportProfile.objects
                 .filter(
-                    it_department=obj.it_department,
+                    it_department=obj.it_department
                 )
                 .select_related(
                     "user",
                     "it_department",
                 )
                 .prefetch_related(
-                    "specializations__specialization",
+                    "specializations__specialization"
                 )
                 .order_by("id")
             )
@@ -738,8 +697,7 @@ class TicketDetailSupportSerializer(serializers.ModelSerializer):
 
             specializations = [
                 specialization.specialization.name
-                for specialization
-                in profile.specializations.all()
+                for specialization in profile.specializations.all()
                 if specialization.specialization
             ]
 
@@ -768,8 +726,8 @@ class TicketDetailSupportSerializer(serializers.ModelSerializer):
 
             if eligible:
                 eligibility_reason = (
-                    "Eligible: available, within workload "
-                    "limit, and specialization matched."
+                    "Eligible: available, within workload limit, "
+                    "and specialization matched."
                 )
             elif not availability:
                 eligibility_reason = (
@@ -785,9 +743,7 @@ class TicketDetailSupportSerializer(serializers.ModelSerializer):
                     "Not eligible: workload limit reached."
                 )
             else:
-                eligibility_reason = (
-                    "Not eligible."
-                )
+                eligibility_reason = "Not eligible."
 
             selected = (
                 obj.assigned_to_id == profile.user_id
@@ -795,35 +751,28 @@ class TicketDetailSupportSerializer(serializers.ModelSerializer):
                 else False
             )
 
-            technicians.append(
-                {
-                    "id": profile.id,
-                    "profileId": profile.id,
-                    "user_id": profile.user_id,
-                    "name": (
-                        f"{profile.user.first_name} "
-                        f"{profile.user.last_name}"
-                    ).strip()
-                    or profile.user.username,
-                    "availability": (
-                        profile.availability_status
-                    ),
-                    "current_workload": workload,
-                    "workload_limit": workload_limit,
-                    "workload_available": workload_available,
-                    "specializations": specializations,
-                    "specialization_match": specialization_match,
-                    "eligible": eligible,
-                    "eligibility_reason": eligibility_reason,
-                    "selected": selected,
-                }
-            )
-
-        assignment_status = (
-            "assigned"
-            if obj.assigned_to
-            else "unassigned"
-        )
+            technicians.append({
+                "id": profile.id,
+                "profileId": profile.id,
+                "user_id": profile.user_id,
+                "name": (
+                    f"{profile.user.first_name} "
+                    f"{profile.user.last_name}"
+                ).strip() or profile.user.username,
+                "availability": profile.availability_status,
+                "current_workload": workload,
+                "workload_limit": workload_limit,
+                "last_assigned": (
+                    profile.last_assigned_at.isoformat()
+                    if profile.last_assigned_at
+                    else None
+                ),
+                "specializations": specializations,
+                "specialization_match": specialization_match,
+                "eligible": eligible,
+                "eligibility_reason": eligibility_reason,
+                "selected": selected,
+            })
 
         if obj.assigned_to:
             assigned_name = (
@@ -833,9 +782,7 @@ class TicketDetailSupportSerializer(serializers.ModelSerializer):
 
             assigned_profile = (
                 ITSupportProfile.objects
-                .filter(
-                    user=obj.assigned_to,
-                )
+                .filter(user=obj.assigned_to)
                 .first()
             )
 
@@ -868,13 +815,17 @@ class TicketDetailSupportSerializer(serializers.ModelSerializer):
                     "current_workload": current_workload,
                     "workload_limit": workload_limit,
                     "workload_ratio": workload_ratio,
+                    "last_assigned": (
+                        assigned_profile.last_assigned_at.isoformat()
+                        if assigned_profile
+                        and assigned_profile.last_assigned_at
+                        else None
+                    ),
                 },
                 "reason": (
-                    "Ticket is currently assigned "
-                    "to this technician."
+                    "Ticket is currently assigned to this technician."
                 ),
             }
-
         else:
             if exact_specialization_matches == 0:
                 reason = (
@@ -900,15 +851,11 @@ class TicketDetailSupportSerializer(serializers.ModelSerializer):
 
         if ticket_analysis:
             if ticket_analysis.model_type:
-                processing_method = (
-                    ticket_analysis.model_type
-                )
+                processing_method = ticket_analysis.model_type
             else:
                 processing_method = "rule_based"
-
         elif ai_analysis:
             processing_method = "ai_assisted"
-
         else:
             processing_method = None
 
@@ -922,36 +869,101 @@ class TicketDetailSupportSerializer(serializers.ModelSerializer):
         return {
             "status": processing_status,
             "method": processing_method,
+
             "symptom_code": (
                 obj.symptom_code.code
                 if obj.symptom_code
                 else None
             ),
-            "required_specialization": (
-                required_specialization
-            ),
-            "required_specialization_id": (
-                required_specialization_id
-            ),
+
+            "required_specialization": required_specialization,
+            "required_specialization_id": required_specialization_id,
+
             "department": (
                 obj.it_department.name
                 if obj.it_department
                 else None
             ),
+
             "priority": (
                 obj.priority.priority_level
                 if obj.priority
                 else None
             ),
-            "department_candidates": (
-                department_candidates
-            ),
-            "available_candidates": (
-                available_candidates
-            ),
+
+            "department_candidates": department_candidates,
+            "available_candidates": available_candidates,
             "exact_specialization_matches": (
                 exact_specialization_matches
             ),
+
+            "classification": {
+                "method": processing_method,
+                "model_used": (
+                    ticket_analysis.model_used
+                    if ticket_analysis
+                    else None
+                ),
+                "confidence": (
+                    ticket_analysis.confidence
+                    if ticket_analysis
+                    else None
+                ),
+                "second_confidence": (
+                    ticket_analysis.second_confidence
+                    if ticket_analysis
+                    else None
+                ),
+                "confidence_margin": (
+                    ticket_analysis.confidence_margin
+                    if ticket_analysis
+                    else None
+                ),
+                "was_overridden": (
+                    ticket_analysis.was_overridden
+                    if ticket_analysis
+                    else False
+                ),
+            },
+
+            "ai_analysis": {
+                "summary": (
+                    ai_analysis.summary
+                    if ai_analysis
+                    else None
+                ),
+                "cleaned_text": (
+                    ai_analysis.cleaned_text
+                    if ai_analysis
+                    else None
+                ),
+                "keywords": (
+                    ai_analysis.keywords
+                    if ai_analysis
+                    else None
+                ),
+                "business_critical": (
+                    ai_analysis.business_critical
+                    if ai_analysis
+                    else False
+                ),
+                "is_unclear": (
+                    ai_analysis.is_unclear
+                    if ai_analysis
+                    else False
+                ),
+                "is_time_critical": (
+                    ai_analysis.is_time_critical
+                    if ai_analysis
+                    else False
+                ),
+                "model_version": (
+                    ai_analysis.model_version
+                    if ai_analysis
+                    else None
+                ),
+            },
+
             "technicians_considered": technicians,
             "assignment": assignment,
         }
