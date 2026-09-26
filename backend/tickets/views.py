@@ -33,13 +33,30 @@ class CreateTicketView(generics.CreateAPIView):
     permission_classes = [IsAuthenticated]
 
     def create(self, request, *args, **kwargs):
-        super().create(request, *args, **kwargs)
+        serializer = self.get_serializer(data=request.data)
+
+        serializer.is_valid(raise_exception=True)
+
+        self.perform_create(serializer)
+
+        ticket = serializer.instance
+
+        automation_result = getattr(
+            ticket,
+            "_automation_result",
+            None,
+        )
+
+        response_data = {
+            "success": True,
+            "message": "Ticket submitted successfully!",
+            "ticket_id": ticket.id,
+            "ticket_code": ticket.ticket_code,
+            "automation": automation_result,
+        }
 
         return Response(
-            {
-                "success": True,
-                "message": "Ticket submitted successfully!",
-            },
+            response_data,
             status=status.HTTP_201_CREATED,
         )
 
@@ -55,11 +72,15 @@ class CreateTicketView(generics.CreateAPIView):
 
         TicketStatusHistory.objects.create(
             ticket=ticket,
-            event_type=TicketStatusHistory.EventType.CREATED,
+            event_type=(
+                TicketStatusHistory.EventType.CREATED
+            ),
             new_value=ticket.status,
             changed_by=self.request.user,
             created_by=self.request.user,
-            visibility=TicketStatusHistory.Visibility.ALL,
+            visibility=(
+                TicketStatusHistory.Visibility.ALL
+            ),
         )
 
         analysis = analyze_ticket(ticket)
@@ -67,9 +88,18 @@ class CreateTicketView(generics.CreateAPIView):
         TicketAIAnalysis.objects.update_or_create(
             ticket=ticket,
             defaults={
-                "cleaned_text": analysis.get("cleaned_text", ""),
-                "summary": analysis.get("summary", ""),
-                "keywords": analysis.get("keywords", []),
+                "cleaned_text": analysis.get(
+                    "cleaned_text",
+                    "",
+                ),
+                "summary": analysis.get(
+                    "summary",
+                    "",
+                ),
+                "keywords": analysis.get(
+                    "keywords",
+                    [],
+                ),
                 "model_version": "gemini-2.5-flash",
                 "business_critical": analysis.get(
                     "business_critical",
@@ -85,38 +115,74 @@ class CreateTicketView(generics.CreateAPIView):
         if analysis.get("is_unclear", False):
             ReviewFlags.objects.create(
                 ticket=ticket,
-                reason=ReviewFlags.Reasons.UNCLEAR_DESCRIPTION,
+                reason=(
+                    ReviewFlags.Reasons.UNCLEAR_DESCRIPTION
+                ),
                 status=ReviewFlags.Status.PENDING,
-                source_type=ReviewFlags.SourceType.SYSTEM_GENERATED,
+                source_type=(
+                    ReviewFlags.SourceType.SYSTEM_GENERATED
+                ),
             )
 
             old_status = ticket.status
 
             ticket.is_under_review = True
-            ticket.status = Ticket.TicketStatus.UNDER_REVIEW
+            ticket.status = (
+                Ticket.TicketStatus.UNDER_REVIEW
+            )
+
             ticket.save()
 
             if old_status != ticket.status:
                 TicketStatusHistory.objects.create(
                     ticket=ticket,
-                    event_type=TicketStatusHistory.EventType.STATUS_CHANGED,
+                    event_type=(
+                        TicketStatusHistory.EventType.STATUS_CHANGED
+                    ),
                     old_value=old_status,
                     new_value=ticket.status,
                     changed_by=self.request.user,
                     created_by=self.request.user,
-                    visibility=TicketStatusHistory.Visibility.ALL,
+                    visibility=(
+                        TicketStatusHistory.Visibility.ALL
+                    ),
                 )
 
             create_notification(
                 user=ticket.submitted_by,
                 ticket=ticket,
-                notification_type=Notifications.NotificationType.REVIEW_REQUIRED,
+                notification_type=(
+                    Notifications.NotificationType.REVIEW_REQUIRED
+                ),
                 message=(
                     f"Your ticket {ticket.ticket_code} requires "
                     f"Service Desk review before it can be assigned."
                 ),
                 created_by=self.request.user,
             )
+
+            ticket._automation_result = {
+                "status": "completed",
+                "method": "rule_based",
+                "symptom_code": None,
+                "required_specialization": None,
+                "required_specialization_id": None,
+                "department": None,
+                "priority": None,
+                "processing_time": 0,
+                "assignment": {
+                    "status": "unassigned",
+                    "technician": None,
+                    "reason": (
+                        "Ticket requires Service Desk review "
+                        "because the description is unclear."
+                    ),
+                },
+                "department_candidates": 0,
+                "available_candidates": 0,
+                "exact_specialization_matches": 0,
+                "technicians_considered": [],
+            }
 
             return
 
@@ -140,15 +206,21 @@ class CreateTicketView(generics.CreateAPIView):
             if not symptom:
                 ReviewFlags.objects.create(
                     ticket=ticket,
-                    reason=ReviewFlags.Reasons.SYMPTOM_NOT_DETECTED,
+                    reason=(
+                        ReviewFlags.Reasons.SYMPTOM_NOT_DETECTED
+                    ),
                     status=ReviewFlags.Status.PENDING,
-                    source_type=ReviewFlags.SourceType.SYSTEM_GENERATED,
+                    source_type=(
+                        ReviewFlags.SourceType.SYSTEM_GENERATED
+                    ),
                 )
 
                 old_status = ticket.status
 
                 ticket.is_under_review = True
-                ticket.status = Ticket.TicketStatus.UNDER_REVIEW
+                ticket.status = (
+                    Ticket.TicketStatus.UNDER_REVIEW
+                )
 
                 ticket.save(
                     update_fields=[
@@ -160,24 +232,53 @@ class CreateTicketView(generics.CreateAPIView):
                 if old_status != ticket.status:
                     TicketStatusHistory.objects.create(
                         ticket=ticket,
-                        event_type=TicketStatusHistory.EventType.STATUS_CHANGED,
+                        event_type=(
+                            TicketStatusHistory.EventType.STATUS_CHANGED
+                        ),
                         old_value=old_status,
                         new_value=ticket.status,
                         changed_by=self.request.user,
                         created_by=self.request.user,
-                        visibility=TicketStatusHistory.Visibility.ALL,
+                        visibility=(
+                            TicketStatusHistory.Visibility.ALL
+                        ),
                     )
 
                 create_notification(
                     user=ticket.submitted_by,
                     ticket=ticket,
-                    notification_type=Notifications.NotificationType.REVIEW_REQUIRED,
+                    notification_type=(
+                        Notifications.NotificationType.REVIEW_REQUIRED
+                    ),
                     message=(
                         f"Your ticket {ticket.ticket_code} requires "
                         f"Service Desk review before it can be assigned."
                     ),
                     created_by=self.request.user,
                 )
+
+                ticket._automation_result = {
+                    "status": "completed",
+                    "method": "rule_based",
+                    "symptom_code": None,
+                    "required_specialization": None,
+                    "required_specialization_id": None,
+                    "department": None,
+                    "priority": None,
+                    "processing_time": 0,
+                    "assignment": {
+                        "status": "unassigned",
+                        "technician": None,
+                        "reason": (
+                            "No symptom code could be identified. "
+                            "Ticket requires Service Desk review."
+                        ),
+                    },
+                    "department_candidates": 0,
+                    "available_candidates": 0,
+                    "exact_specialization_matches": 0,
+                    "technicians_considered": [],
+                }
 
                 return
 
@@ -185,7 +286,9 @@ class CreateTicketView(generics.CreateAPIView):
                 old_status = ticket.status
 
                 ticket.is_under_review = True
-                ticket.status = Ticket.TicketStatus.UNDER_REVIEW
+                ticket.status = (
+                    Ticket.TicketStatus.UNDER_REVIEW
+                )
 
                 ticket.save(
                     update_fields=[
@@ -197,18 +300,24 @@ class CreateTicketView(generics.CreateAPIView):
                 if old_status != ticket.status:
                     TicketStatusHistory.objects.create(
                         ticket=ticket,
-                        event_type=TicketStatusHistory.EventType.STATUS_CHANGED,
+                        event_type=(
+                            TicketStatusHistory.EventType.STATUS_CHANGED
+                        ),
                         old_value=old_status,
                         new_value=ticket.status,
                         changed_by=self.request.user,
                         created_by=self.request.user,
-                        visibility=TicketStatusHistory.Visibility.ALL,
+                        visibility=(
+                            TicketStatusHistory.Visibility.ALL
+                        ),
                     )
 
                 create_notification(
                     user=ticket.submitted_by,
                     ticket=ticket,
-                    notification_type=Notifications.NotificationType.REVIEW_REQUIRED,
+                    notification_type=(
+                        Notifications.NotificationType.REVIEW_REQUIRED
+                    ),
                     message=(
                         f"Your ticket {ticket.ticket_code} requires "
                         f"Service Desk review before it can be assigned."
@@ -216,46 +325,137 @@ class CreateTicketView(generics.CreateAPIView):
                     created_by=self.request.user,
                 )
 
+                ticket._automation_result = {
+                    "status": "completed",
+                    "method": "machine_learning",
+                    "symptom_code": symptom.code,
+                    "required_specialization": (
+                        str(symptom.required_specialization)
+                        if symptom.required_specialization
+                        else None
+                    ),
+                    "required_specialization_id": (
+                        getattr(
+                            symptom.required_specialization,
+                            "id",
+                            None,
+                        )
+                        if symptom.required_specialization
+                        else None
+                    ),
+                    "department": None,
+                    "priority": None,
+                    "processing_time": 0,
+                    "assignment": {
+                        "status": "unassigned",
+                        "technician": None,
+                        "reason": (
+                            "Ticket classification requires "
+                            "Service Desk review."
+                        ),
+                    },
+                    "department_candidates": 0,
+                    "available_candidates": 0,
+                    "exact_specialization_matches": 0,
+                    "technicians_considered": [],
+                }
+
                 return
 
         category = symptom.category if symptom else None
-        department = category.it_department if category else None
+        department = (
+            category.it_department
+            if category
+            else None
+        )
 
         if not department:
             ReviewFlags.objects.create(
                 ticket=ticket,
-                reason=ReviewFlags.Reasons.MISSING_DEPARTMENT,
+                reason=(
+                    ReviewFlags.Reasons.MISSING_DEPARTMENT
+                ),
                 status=ReviewFlags.Status.PENDING,
-                source_type=ReviewFlags.SourceType.SYSTEM_GENERATED,
+                source_type=(
+                    ReviewFlags.SourceType.SYSTEM_GENERATED
+                ),
             )
 
             old_status = ticket.status
 
             ticket.is_under_review = True
-            ticket.status = Ticket.TicketStatus.UNDER_REVIEW
+            ticket.status = (
+                Ticket.TicketStatus.UNDER_REVIEW
+            )
+
             ticket.save()
 
             if old_status != ticket.status:
                 TicketStatusHistory.objects.create(
                     ticket=ticket,
-                    event_type=TicketStatusHistory.EventType.STATUS_CHANGED,
+                    event_type=(
+                        TicketStatusHistory.EventType.STATUS_CHANGED
+                    ),
                     old_value=old_status,
                     new_value=ticket.status,
                     changed_by=self.request.user,
                     created_by=self.request.user,
-                    visibility=TicketStatusHistory.Visibility.ALL,
+                    visibility=(
+                        TicketStatusHistory.Visibility.ALL
+                    ),
                 )
 
             create_notification(
                 user=ticket.submitted_by,
                 ticket=ticket,
-                notification_type=Notifications.NotificationType.REVIEW_REQUIRED,
+                notification_type=(
+                    Notifications.NotificationType.REVIEW_REQUIRED
+                ),
                 message=(
                     f"Your ticket {ticket.ticket_code} requires "
                     f"Service Desk review before it can be assigned."
                 ),
                 created_by=self.request.user,
             )
+
+            ticket._automation_result = {
+                "status": "completed",
+                "method": (
+                    "machine_learning"
+                    if used_ml
+                    else "rule_based"
+                ),
+                "symptom_code": symptom.code,
+                "required_specialization": (
+                    str(symptom.required_specialization)
+                    if symptom.required_specialization
+                    else None
+                ),
+                "required_specialization_id": (
+                    getattr(
+                        symptom.required_specialization,
+                        "id",
+                        None,
+                    )
+                    if symptom.required_specialization
+                    else None
+                ),
+                "department": None,
+                "priority": None,
+                "processing_time": 0,
+                "assignment": {
+                    "status": "unassigned",
+                    "technician": None,
+                    "reason": (
+                        "No IT department could be determined. "
+                        "Ticket requires Service Desk review."
+                    ),
+                },
+                "department_candidates": 0,
+                "available_candidates": 0,
+                "exact_specialization_matches": 0,
+                "technicians_considered": [],
+            }
 
             return
 
@@ -267,7 +467,9 @@ class CreateTicketView(generics.CreateAPIView):
             TicketAnalysis.objects.update_or_create(
                 ticket=ticket,
                 defaults={
-                    "model_type": TicketAnalysis.ModelType.RULE_BASED,
+                    "model_type": (
+                        TicketAnalysis.ModelType.RULE_BASED
+                    ),
                     "model_used": "Rule-Based Classifier",
                     "predicted_symptom_code": symptom,
                     "created_by": self.request.user,
@@ -277,8 +479,14 @@ class CreateTicketView(generics.CreateAPIView):
         final_priority = calculate_priority(
             symptom.based_priority,
             ticket.affected_scope,
-            analysis.get("business_critical", False),
-            analysis.get("is_time_critical", False),
+            analysis.get(
+                "business_critical",
+                False,
+            ),
+            analysis.get(
+                "is_time_critical",
+                False,
+            ),
         )
 
         sla_rule = SLARules.objects.filter(
@@ -300,11 +508,20 @@ class CreateTicketView(generics.CreateAPIView):
 
         ticket.is_under_review = False
         ticket.status = Ticket.TicketStatus.OPEN
+
         ticket.save()
 
         update_sla(ticket)
 
-        assigned_profile = assign_ticket_automatically(ticket)
+        assigned_profile = assign_ticket_automatically(
+            ticket
+        )
+
+        automation_result = getattr(
+            ticket,
+            "_automation_result",
+            None,
+        )
 
         if assigned_profile:
             technician_name = (
@@ -315,7 +532,9 @@ class CreateTicketView(generics.CreateAPIView):
             create_notification(
                 user=ticket.submitted_by,
                 ticket=ticket,
-                notification_type=Notifications.NotificationType.TICKET_CREATED,
+                notification_type=(
+                    Notifications.NotificationType.TICKET_CREATED
+                ),
                 message=(
                     f"Your ticket {ticket.ticket_code} has been "
                     f"submitted and assigned to {technician_name}."
@@ -326,12 +545,17 @@ class CreateTicketView(generics.CreateAPIView):
             create_notification(
                 user=assigned_profile.user,
                 ticket=ticket,
-                notification_type=Notifications.NotificationType.TICKET_ASSIGNED,
+                notification_type=(
+                    Notifications.NotificationType.TICKET_ASSIGNED
+                ),
                 message=(
-                    f"Ticket {ticket.ticket_code} has been assigned to you."
+                    f"Ticket {ticket.ticket_code} has been "
+                    f"assigned to you."
                 ),
                 created_by=self.request.user,
             )
+
+        ticket._automation_result = automation_result
 class ManualOverrideTicketView(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -1450,26 +1674,51 @@ class TicketDetailSupportView(APIView):
             support_profile = user.it_support_profile
         except ITSupportProfile.DoesNotExist:
             return Response(
-                {"error": "You do not have an IT Support profile."},
-                status=status.HTTP_403_FORBIDDEN
+                {
+                    "error": "You do not have an IT Support profile."
+                },
+                status=status.HTTP_403_FORBIDDEN,
             )
 
         try:
-            ticket = Ticket.objects.get(
-                id=ticket_id,
-                it_department=support_profile.it_department
+            ticket = (
+                Ticket.objects
+                .select_related(
+                    "submitted_by",
+                    "priority",
+                    "category",
+                    "symptom_code",
+                    "symptom_code__required_specialization",
+                    "it_department",
+                    "employee_department",
+                    "office_location",
+                    "assigned_to",
+                    "resolved_by",
+                    "ai_prediction",
+                    "ai_analysis",
+                )
+                .get(
+                    id=ticket_id,
+                    it_department=support_profile.it_department,
+                )
             )
+
         except Ticket.DoesNotExist:
             return Response(
                 {
-                    "error": "Ticket not found or you do not have permission to view this ticket."
+                    "error": (
+                        "Ticket not found or you do not have "
+                        "permission to view this ticket."
+                    )
                 },
-                status=status.HTTP_404_NOT_FOUND
+                status=status.HTTP_404_NOT_FOUND,
             )
 
         serializer = TicketDetailSupportSerializer(
             ticket,
-            context={"request": request}
+            context={
+                "request": request,
+            },
         )
 
         return Response(serializer.data)

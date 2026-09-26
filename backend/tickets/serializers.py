@@ -1,5 +1,7 @@
 from rest_framework import serializers
 from .models import Ticket, Category, SymptomCode, TicketComments, SLARules, ReviewFlags, TicketAssistance, Keyword, TicketStatusHistory, TicketReturn, TicketPriorityRequest
+from users.models import  ITSupportProfile
+from ai.models import TicketAnalysis, TicketAIAnalysis
 from departments.models import ITDepartment
 from django.utils import timezone
 from datetime import timedelta
@@ -499,44 +501,112 @@ class TicketDetailEmployeeSerializer(serializers.ModelSerializer):
             ),
         }
 class TicketDetailSupportSerializer(serializers.ModelSerializer):
-    status = serializers.CharField(source='get_status_display', read_only=True)
-    priority = serializers.CharField(source='priority.priority_level', read_only=True)
-    affected_scope = serializers.CharField(source='get_affected_scope_display', read_only=True)
+    status = serializers.CharField(
+        source="get_status_display",
+        read_only=True,
+    )
+
+    priority = serializers.CharField(
+        source="priority.priority_level",
+        read_only=True,
+    )
+
+    affected_scope = serializers.CharField(
+        source="get_affected_scope_display",
+        read_only=True,
+    )
+
     assigned_to = serializers.SerializerMethodField()
-    is_under_review = serializers.BooleanField(read_only=True)
-    first_name = serializers.CharField(source='submitted_by.first_name', read_only=True)
-    last_name = serializers.CharField(source='submitted_by.last_name', read_only=True)
-    user_code = serializers.CharField(source='submitted_by.user_code', read_only=True)
-    employee_department = serializers.CharField(source='employee_department.name', read_only=True)
-    office_location = serializers.CharField(source='office_location.name', read_only=True)
+
+    is_under_review = serializers.BooleanField(
+        read_only=True,
+    )
+
+    first_name = serializers.CharField(
+        source="submitted_by.first_name",
+        read_only=True,
+    )
+
+    last_name = serializers.CharField(
+        source="submitted_by.last_name",
+        read_only=True,
+    )
+
+    user_code = serializers.CharField(
+        source="submitted_by.user_code",
+        read_only=True,
+    )
+
+    employee_department = serializers.CharField(
+        source="employee_department.name",
+        read_only=True,
+    )
+
+    office_location = serializers.CharField(
+        source="office_location.name",
+        read_only=True,
+    )
+
     category = serializers.CharField(
         source="category.name",
-        read_only=True
+        read_only=True,
     )
 
     symptom_code = serializers.CharField(
         source="symptom_code.code",
-        read_only=True
+        read_only=True,
     )
 
     required_specialization = serializers.CharField(
         source="symptom_code.required_specialization.name",
-        read_only=True
+        read_only=True,
     )
+
     classification_source = serializers.SerializerMethodField()
     classification_confidence = serializers.SerializerMethodField()
+
     it_department = serializers.CharField(
         source="it_department.name",
-        read_only=True
+        read_only=True,
     )
+
+    automation = serializers.SerializerMethodField()
+
     class Meta:
         model = Ticket
 
-        fields = ['id','ticket_code', 'status', 'priority', 'subject', 'is_under_review','description', 'assigned_to', 'business_impact', 
-                  'affected_scope', 'updated_at', 'created_at', 'response_deadline', 'resolution_deadline', 'office_location', 
-                  'workstation','employee_department', 'first_name', 'last_name', 'user_code', 'is_escalated', 'resolved_at', 
-                  'resolved_by', 'category', 'symptom_code', 'required_specialization', 'classification_source', 'classification_confidence', 'it_department']
-
+        fields = [
+            "id",
+            "ticket_code",
+            "status",
+            "priority",
+            "subject",
+            "is_under_review",
+            "description",
+            "assigned_to",
+            "business_impact",
+            "affected_scope",
+            "updated_at",
+            "created_at",
+            "response_deadline",
+            "resolution_deadline",
+            "office_location",
+            "workstation",
+            "employee_department",
+            "first_name",
+            "last_name",
+            "user_code",
+            "is_escalated",
+            "resolved_at",
+            "resolved_by",
+            "category",
+            "symptom_code",
+            "required_specialization",
+            "classification_source",
+            "classification_confidence",
+            "it_department",
+            "automation",
+        ]
 
     def get_assigned_to(self, obj):
         if not obj.assigned_to:
@@ -546,10 +616,18 @@ class TicketDetailSupportSerializer(serializers.ModelSerializer):
             "id": obj.assigned_to.id,
             "first_name": obj.assigned_to.first_name,
             "last_name": obj.assigned_to.last_name,
-            "full_name": f"{obj.assigned_to.first_name} {obj.assigned_to.last_name}".strip(),
+            "full_name": (
+                f"{obj.assigned_to.first_name} "
+                f"{obj.assigned_to.last_name}"
+            ).strip(),
         }
+
     def get_classification_source(self, obj):
-        analysis = getattr(obj, "ticket_analysis", None)
+        analysis = getattr(
+            obj,
+            "ai_prediction",
+            None,
+        )
 
         if not analysis:
             return None
@@ -557,16 +635,326 @@ class TicketDetailSupportSerializer(serializers.ModelSerializer):
         if analysis.was_overridden:
             return "Service Desk Reviewed"
 
+        if analysis.model_type == TicketAnalysis.ModelType.RULE_BASED:
+            return "Rule-Based"
+
+        if (
+            analysis.model_type
+            == TicketAnalysis.ModelType.MACHINE_LEARNING
+        ):
+            return "Machine Learning"
+
+        if (
+            analysis.model_type
+            == TicketAnalysis.ModelType.MANUAL_OVERRIDE
+        ):
+            return "Manual Override"
+
         return "System Classified"
 
-
     def get_classification_confidence(self, obj):
-        analysis = getattr(obj, "ticket_analysis", None)
+        analysis = getattr(
+            obj,
+            "ai_prediction",
+            None,
+        )
 
         if not analysis:
             return None
 
         return analysis.confidence
+
+    def get_automation(self, obj):
+        ai_analysis = getattr(
+            obj,
+            "ai_analysis",
+            None,
+        )
+
+        ticket_analysis = getattr(
+            obj,
+            "ai_prediction",
+            None,
+        )
+
+        technicians = []
+
+        department_candidates = 0
+        available_candidates = 0
+        exact_specialization_matches = 0
+
+        required_specialization = None
+        required_specialization_id = None
+
+        if obj.symptom_code:
+            specialization = (
+                obj.symptom_code.required_specialization
+            )
+
+            if specialization:
+                required_specialization = specialization.name
+                required_specialization_id = specialization.id
+
+        profiles = []
+
+        if obj.it_department:
+            profiles = (
+                ITSupportProfile.objects
+                .filter(
+                    it_department=obj.it_department,
+                )
+                .select_related(
+                    "user",
+                    "it_department",
+                )
+                .prefetch_related(
+                    "specializations__specialization",
+                )
+                .order_by("id")
+            )
+
+        department_candidates = len(profiles)
+
+        for profile in profiles:
+            workload = Ticket.objects.filter(
+                assigned_to=profile.user,
+                status__in=[
+                    Ticket.TicketStatus.IN_PROGRESS,
+                    Ticket.TicketStatus.REOPENED,
+                ],
+            ).count()
+
+            workload_limit = profile.workload_limit
+
+            workload_available = (
+                workload_limit > 0
+                and workload < workload_limit
+            )
+
+            availability = (
+                profile.availability_status
+                == ITSupportProfile.AvailabilityStatus.available
+            )
+
+            specializations = [
+                specialization.specialization.name
+                for specialization
+                in profile.specializations.all()
+                if specialization.specialization
+            ]
+
+            specialization_match = (
+                required_specialization_id is not None
+                and any(
+                    specialization.specialization_id
+                    == required_specialization_id
+                    for specialization
+                    in profile.specializations.all()
+                    if specialization.specialization
+                )
+            )
+
+            if availability:
+                available_candidates += 1
+
+            if specialization_match:
+                exact_specialization_matches += 1
+
+            eligible = (
+                availability
+                and specialization_match
+                and workload_available
+            )
+
+            if eligible:
+                eligibility_reason = (
+                    "Eligible: available, within workload "
+                    "limit, and specialization matched."
+                )
+            elif not availability:
+                eligibility_reason = (
+                    "Not eligible: technician is unavailable."
+                )
+            elif not specialization_match:
+                eligibility_reason = (
+                    "Not eligible: required specialization "
+                    "does not match."
+                )
+            elif not workload_available:
+                eligibility_reason = (
+                    "Not eligible: workload limit reached."
+                )
+            else:
+                eligibility_reason = (
+                    "Not eligible."
+                )
+
+            selected = (
+                obj.assigned_to_id == profile.user_id
+                if obj.assigned_to_id
+                else False
+            )
+
+            technicians.append(
+                {
+                    "id": profile.id,
+                    "profileId": profile.id,
+                    "user_id": profile.user_id,
+                    "name": (
+                        f"{profile.user.first_name} "
+                        f"{profile.user.last_name}"
+                    ).strip()
+                    or profile.user.username,
+                    "availability": (
+                        profile.availability_status
+                    ),
+                    "current_workload": workload,
+                    "workload_limit": workload_limit,
+                    "workload_available": workload_available,
+                    "specializations": specializations,
+                    "specialization_match": specialization_match,
+                    "eligible": eligible,
+                    "eligibility_reason": eligibility_reason,
+                    "selected": selected,
+                }
+            )
+
+        assignment_status = (
+            "assigned"
+            if obj.assigned_to
+            else "unassigned"
+        )
+
+        if obj.assigned_to:
+            assigned_name = (
+                f"{obj.assigned_to.first_name} "
+                f"{obj.assigned_to.last_name}"
+            ).strip() or obj.assigned_to.username
+
+            assigned_profile = (
+                ITSupportProfile.objects
+                .filter(
+                    user=obj.assigned_to,
+                )
+                .first()
+            )
+
+            current_workload = Ticket.objects.filter(
+                assigned_to=obj.assigned_to,
+                status__in=[
+                    Ticket.TicketStatus.IN_PROGRESS,
+                    Ticket.TicketStatus.REOPENED,
+                ],
+            ).count()
+
+            workload_limit = (
+                assigned_profile.workload_limit
+                if assigned_profile
+                else 0
+            )
+
+            workload_ratio = (
+                current_workload / workload_limit
+                if workload_limit > 0
+                else 0
+            )
+
+            assignment = {
+                "status": "assigned",
+                "technician": {
+                    "id": obj.assigned_to.id,
+                    "user_id": obj.assigned_to.id,
+                    "name": assigned_name,
+                    "current_workload": current_workload,
+                    "workload_limit": workload_limit,
+                    "workload_ratio": workload_ratio,
+                },
+                "reason": (
+                    "Ticket is currently assigned "
+                    "to this technician."
+                ),
+            }
+
+        else:
+            if exact_specialization_matches == 0:
+                reason = (
+                    "No technician in the department matched "
+                    "the required specialization."
+                )
+            elif available_candidates == 0:
+                reason = (
+                    "No available technician was found "
+                    "in the department."
+                )
+            else:
+                reason = (
+                    "No technician is currently assigned "
+                    "to this ticket."
+                )
+
+            assignment = {
+                "status": "unassigned",
+                "technician": None,
+                "reason": reason,
+            }
+
+        if ticket_analysis:
+            if ticket_analysis.model_type:
+                processing_method = (
+                    ticket_analysis.model_type
+                )
+            else:
+                processing_method = "rule_based"
+
+        elif ai_analysis:
+            processing_method = "ai_assisted"
+
+        else:
+            processing_method = None
+
+        if ai_analysis:
+            processing_status = "completed"
+        elif obj.is_under_review:
+            processing_status = "review_required"
+        else:
+            processing_status = "completed"
+
+        return {
+            "status": processing_status,
+            "method": processing_method,
+            "symptom_code": (
+                obj.symptom_code.code
+                if obj.symptom_code
+                else None
+            ),
+            "required_specialization": (
+                required_specialization
+            ),
+            "required_specialization_id": (
+                required_specialization_id
+            ),
+            "department": (
+                obj.it_department.name
+                if obj.it_department
+                else None
+            ),
+            "priority": (
+                obj.priority.priority_level
+                if obj.priority
+                else None
+            ),
+            "department_candidates": (
+                department_candidates
+            ),
+            "available_candidates": (
+                available_candidates
+            ),
+            "exact_specialization_matches": (
+                exact_specialization_matches
+            ),
+            "technicians_considered": technicians,
+            "assignment": assignment,
+        }
 
 class TicketStatusHistorySerializer(serializers.ModelSerializer):
     message = serializers.SerializerMethodField()

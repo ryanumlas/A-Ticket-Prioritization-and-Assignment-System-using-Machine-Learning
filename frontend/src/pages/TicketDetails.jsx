@@ -23,6 +23,8 @@ export default function TicketDetails() {
     const [automatedModalOpen, setAutomatedModalOpen] = useState(false);
 
     const [ticketDetails, setTicketDetails] = useState(null);
+    const [automationData, setAutomationData] = useState(null);
+
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState("");
 
@@ -49,6 +51,7 @@ export default function TicketDetails() {
             const response = await api.get(endpoint);
 
             setTicketDetails(response.data);
+            setAutomationData(response.data?.automation || null);
         } catch (error) {
             setError(
                 error.response?.data?.error ||
@@ -170,7 +173,6 @@ export default function TicketDetails() {
                                         size={16}
                                         className="text-[#2563EB]"
                                     />
-
                                     Automated Details
                                 </button>
 
@@ -217,6 +219,7 @@ export default function TicketDetails() {
             <AutomatedProcessingModal
                 open={automatedModalOpen}
                 onClose={() => setAutomatedModalOpen(false)}
+                automation={automationData}
             />
         </div>
     );

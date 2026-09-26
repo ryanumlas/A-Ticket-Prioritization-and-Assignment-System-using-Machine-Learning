@@ -5,7 +5,7 @@ from users.models import ITSupportProfile
 from ai.models import TicketAIAnalysis, TicketAnalysis
 from machine_learning.predictor import predict_symptom_code
 from django.utils import timezone
-
+import time
 import re
 
 
@@ -584,36 +584,6 @@ def get_last_assigned_at(profile):
 
 
 def get_eligible_technicians(ticket):
-    print("\n[AUTO-ASSIGN] ================================")
-    print("[AUTO-ASSIGN] CHECKING ELIGIBLE TECHNICIANS")
-    print(f"[AUTO-ASSIGN] Ticket ID: {ticket.id}")
-    print(f"[AUTO-ASSIGN] Ticket Code: {ticket.ticket_code}")
-    print(f"[AUTO-ASSIGN] Ticket Status: {ticket.status}")
-    print(
-        f"[AUTO-ASSIGN] IT Department: "
-        f"{ticket.it_department.name if ticket.it_department else None}"
-    )
-    print(
-        f"[AUTO-ASSIGN] IT Department ID: "
-        f"{ticket.it_department_id}"
-    )
-
-    if ticket.symptom_code:
-        print(
-            f"[AUTO-ASSIGN] Symptom Code: "
-            f"{ticket.symptom_code.code}"
-        )
-        print(
-            f"[AUTO-ASSIGN] Required Specialization: "
-            f"{ticket.symptom_code.required_specialization}"
-        )
-        print(
-            f"[AUTO-ASSIGN] Required Specialization ID: "
-            f"{ticket.symptom_code.required_specialization_id}"
-        )
-    else:
-        print("[AUTO-ASSIGN] Symptom Code: NONE")
-
     required_specialization = (
         ticket.symptom_code.required_specialization
         if ticket.symptom_code
@@ -621,90 +591,10 @@ def get_eligible_technicians(ticket):
     )
 
     if not ticket.it_department:
-        print(
-            "[AUTO-ASSIGN] STOP: Ticket has no IT department."
-        )
         return []
 
     if not ticket.symptom_code:
-        print(
-            "[AUTO-ASSIGN] STOP: Ticket has no symptom code."
-        )
         return []
-
-    print("\n[AUTO-ASSIGN] ---- ALL IT SUPPORT PROFILES ----")
-
-    all_profiles = (
-        ITSupportProfile.objects
-        .filter(
-            it_department=ticket.it_department
-        )
-        .select_related("user", "it_department")
-        .prefetch_related("specializations__specialization")
-    )
-
-    print(
-        f"[AUTO-ASSIGN] Profiles in department: "
-        f"{all_profiles.count()}"
-    )
-
-    for profile in all_profiles:
-        full_name = (
-            f"{profile.user.first_name} "
-            f"{profile.user.last_name}"
-        ).strip() or profile.user.username
-
-        print(
-            f"[AUTO-ASSIGN] TECH: {full_name} "
-            f"| User ID={profile.user_id} "
-            f"| Profile ID={profile.id}"
-        )
-
-        print(
-            f"[AUTO-ASSIGN]   Department="
-            f"{profile.it_department.name if profile.it_department else None}"
-        )
-
-        print(
-            f"[AUTO-ASSIGN]   Availability="
-            f"{profile.availability_status}"
-        )
-
-        print(
-            f"[AUTO-ASSIGN]   Workload Limit="
-            f"{profile.workload_limit}"
-        )
-
-        print(
-            f"[AUTO-ASSIGN]   Last Assigned="
-            f"{profile.last_assigned_at}"
-        )
-
-        specializations = list(
-            profile.specializations.all()
-        )
-
-        if not specializations:
-            print(
-                "[AUTO-ASSIGN]   Specializations=NONE"
-            )
-        else:
-            for specialization in specializations:
-                print(
-                    "[AUTO-ASSIGN]   Specialization="
-                    f"{specialization.specialization}"
-                    f" | ID="
-                    f"{specialization.specialization_id}"
-                )
-
-        workload = get_current_workload(profile)
-
-        print(
-            f"[AUTO-ASSIGN]   Current Workload="
-            f"{workload}"
-        )
-
-    print("\n[AUTO-ASSIGN] ---- FILTERED CANDIDATES ----")
 
     profiles = (
         ITSupportProfile.objects
@@ -721,48 +611,16 @@ def get_eligible_technicians(ticket):
         .select_related("user", "it_department")
     )
 
-    print(
-        f"[AUTO-ASSIGN] Matching department + "
-        f"availability + specialization: "
-        f"{profiles.count()}"
-    )
-
     eligible = []
 
     for profile in profiles:
         workload = get_current_workload(profile)
 
-        full_name = (
-            f"{profile.user.first_name} "
-            f"{profile.user.last_name}"
-        ).strip() or profile.user.username
-
-        print(
-            f"[AUTO-ASSIGN] Candidate: {full_name}"
-        )
-
-        print(
-            f"[AUTO-ASSIGN]   Workload: "
-            f"{workload}/{profile.workload_limit}"
-        )
-
         if profile.workload_limit <= 0:
-            print(
-                "[AUTO-ASSIGN]   REJECTED: "
-                "Workload limit is 0."
-            )
             continue
 
         if workload >= profile.workload_limit:
-            print(
-                "[AUTO-ASSIGN]   REJECTED: "
-                "Workload limit reached."
-            )
             continue
-
-        print(
-            "[AUTO-ASSIGN]   ACCEPTED"
-        )
 
         eligible.append({
             "profile": profile,
@@ -770,28 +628,371 @@ def get_eligible_technicians(ticket):
             "workload_ratio": (
                 workload / profile.workload_limit
             ),
-            "last_assigned_at": get_last_assigned_at(
-                profile
-            ),
+            "last_assigned_at": get_last_assigned_at(profile),
         })
-
-    print(
-        f"\n[AUTO-ASSIGN] FINAL ELIGIBLE COUNT: "
-        f"{len(eligible)}"
-    )
 
     return eligible
 
 
-def find_best_technician(ticket):
-    print("\n[AUTO-ASSIGN] FINDING BEST TECHNICIAN")
+def _get_technician_specializations(profile):
+    specializations = []
 
+    try:
+        for item in profile.specializations.all():
+            specialization = getattr(item, "specialization", None)
+
+            if specialization:
+                specializations.append(str(specialization))
+    except Exception:
+        pass
+
+    return specializations
+
+
+def _build_technician_evaluation(
+    ticket,
+    profiles,
+    required_specialization,
+    eligible_profiles,
+):
+    eligible_profile_ids = {
+        item["profile"].id
+        for item in eligible_profiles
+    }
+
+    required_specialization_id = (
+        getattr(required_specialization, "id", None)
+        if required_specialization
+        else None
+    )
+
+    technicians = []
+
+    available_count = 0
+    exact_specialization_count = 0
+
+    for profile in profiles:
+        is_available = (
+            profile.availability_status
+            == ITSupportProfile.AvailabilityStatus.available
+        )
+
+        if is_available:
+            available_count += 1
+
+        specialization_match = False
+
+        try:
+            for item in profile.specializations.all():
+                specialization = getattr(
+                    item,
+                    "specialization",
+                    None,
+                )
+
+                if not specialization:
+                    continue
+
+                if required_specialization_id is not None:
+                    if getattr(
+                        specialization,
+                        "id",
+                        None,
+                    ) == required_specialization_id:
+                        specialization_match = True
+                        break
+                elif required_specialization is not None:
+                    if specialization == required_specialization:
+                        specialization_match = True
+                        break
+        except Exception:
+            specialization_match = False
+
+        if specialization_match:
+            exact_specialization_count += 1
+
+        current_workload = get_current_workload(profile)
+
+        workload_limit = profile.workload_limit or 0
+
+        workload_ratio = (
+            current_workload / workload_limit
+            if workload_limit > 0
+            else None
+        )
+
+        workload_available = (
+            workload_limit > 0
+            and current_workload < workload_limit
+        )
+
+        is_eligible = profile.id in eligible_profile_ids
+
+        if is_eligible:
+            eligibility_reason = "Eligible"
+        elif not is_available:
+            eligibility_reason = "Unavailable"
+        elif not specialization_match:
+            eligibility_reason = (
+                "Required specialization does not match"
+            )
+        elif not workload_available:
+            eligibility_reason = "Workload limit reached"
+        elif workload_limit <= 0:
+            eligibility_reason = "No workload capacity configured"
+        else:
+            eligibility_reason = "Not eligible"
+
+        full_name = (
+            f"{profile.user.first_name} "
+            f"{profile.user.last_name}"
+        ).strip() or profile.user.username
+
+        technicians.append({
+            "id": profile.id,
+            "user_id": profile.user.id,
+            "name": full_name,
+            "availability": (
+                "Available"
+                if is_available
+                else str(profile.availability_status)
+            ),
+            "specializations": _get_technician_specializations(
+                profile
+            ),
+            "specialization_match": specialization_match,
+            "current_workload": current_workload,
+            "workload_limit": workload_limit,
+            "workload_ratio": workload_ratio,
+            "workload_available": workload_available,
+            "eligible": is_eligible,
+            "eligibility_reason": eligibility_reason,
+        })
+
+    return {
+        "department_candidates": len(profiles),
+        "available_candidates": available_count,
+        "exact_specialization_matches": (
+            exact_specialization_count
+        ),
+        "technicians_considered": technicians,
+    }
+
+
+def find_best_technician(ticket):
     eligible = get_eligible_technicians(ticket)
 
     if not eligible:
-        print(
-            "[AUTO-ASSIGN] STOP: No eligible technicians."
+        return None
+
+    eligible.sort(
+        key=lambda tech: (
+            tech["workload_ratio"],
+            tech["current_workload"],
+            tech["last_assigned_at"],
+            tech["profile"].id,
         )
+    )
+
+    return eligible[0]
+
+
+def assign_ticket_automatically(ticket):
+    started_at = time.perf_counter()
+
+    automation = {
+        "status": "completed",
+        "method": "rule_based",
+        "symptom_code": (
+            ticket.symptom_code.code
+            if ticket.symptom_code
+            else None
+        ),
+        "required_specialization": None,
+        "required_specialization_id": None,
+        "department": (
+            ticket.it_department.name
+            if ticket.it_department
+            else None
+        ),
+        "priority": (
+            ticket.priority.priority_level
+            if ticket.priority
+            else None
+        ),
+        "processing_time": 0,
+        "assignment": {
+            "status": "unassigned",
+            "technician": None,
+            "reason": None,
+        },
+        "department_candidates": 0,
+        "available_candidates": 0,
+        "exact_specialization_matches": 0,
+        "technicians_considered": [],
+    }
+
+    required_specialization = (
+        ticket.symptom_code.required_specialization
+        if ticket.symptom_code
+        else None
+    )
+
+    if required_specialization:
+        automation["required_specialization"] = str(
+            required_specialization
+        )
+
+        automation["required_specialization_id"] = getattr(
+            required_specialization,
+            "id",
+            None,
+        )
+
+    ticket._automation_result = automation
+
+    if ticket.is_under_review:
+        automation["assignment"]["reason"] = (
+            "Ticket requires Service Desk review."
+        )
+        automation["processing_time"] = round(
+            time.perf_counter() - started_at,
+            3,
+        )
+        return None
+
+    if ticket.status == Ticket.TicketStatus.UNDER_REVIEW:
+        automation["assignment"]["reason"] = (
+            "Ticket is currently under Service Desk review."
+        )
+        automation["processing_time"] = round(
+            time.perf_counter() - started_at,
+            3,
+        )
+        return None
+
+    if ticket.assigned_to:
+        automation["assignment"]["status"] = "already_assigned"
+        automation["assignment"]["reason"] = (
+            "Ticket is already assigned."
+        )
+        automation["processing_time"] = round(
+            time.perf_counter() - started_at,
+            3,
+        )
+        return None
+
+    if ticket.status in [
+        Ticket.TicketStatus.RESOLVED,
+        Ticket.TicketStatus.CLOSED,
+        Ticket.TicketStatus.CANCELLED,
+        Ticket.TicketStatus.RETURNED,
+    ]:
+        automation["assignment"]["reason"] = (
+            "Ticket status does not allow automatic assignment."
+        )
+        automation["processing_time"] = round(
+            time.perf_counter() - started_at,
+            3,
+        )
+        return None
+
+    if not ticket.it_department:
+        automation["assignment"]["reason"] = (
+            "No IT department was identified for this ticket."
+        )
+        automation["processing_time"] = round(
+            time.perf_counter() - started_at,
+            3,
+        )
+        return None
+
+    if not ticket.symptom_code:
+        automation["assignment"]["reason"] = (
+            "No symptom code was identified for this ticket."
+        )
+        automation["processing_time"] = round(
+            time.perf_counter() - started_at,
+            3,
+        )
+        return None
+
+    all_profiles = (
+        ITSupportProfile.objects
+        .filter(
+            it_department=ticket.it_department,
+        )
+        .select_related(
+            "user",
+            "it_department",
+        )
+        .prefetch_related(
+            "specializations__specialization",
+        )
+    )
+
+    all_profiles = list(all_profiles)
+
+    eligible = get_eligible_technicians(ticket)
+
+    eligible_profile_ids = {
+        item["profile"].id
+        for item in eligible
+    }
+
+    evaluation = _build_technician_evaluation(
+        ticket=ticket,
+        profiles=all_profiles,
+        required_specialization=required_specialization,
+        eligible_profiles=eligible,
+    )
+
+    automation.update({
+        "department_candidates": evaluation[
+            "department_candidates"
+        ],
+        "available_candidates": evaluation[
+            "available_candidates"
+        ],
+        "exact_specialization_matches": evaluation[
+            "exact_specialization_matches"
+        ],
+        "technicians_considered": evaluation[
+            "technicians_considered"
+        ],
+    })
+
+    if not eligible:
+        if evaluation["department_candidates"] == 0:
+            reason = (
+                "No technicians are available in the "
+                "assigned IT department."
+            )
+        elif evaluation["available_candidates"] == 0:
+            reason = (
+                "No available technician was found "
+                "in the assigned IT department."
+            )
+        elif evaluation["exact_specialization_matches"] == 0:
+            reason = (
+                "No eligible technician matched the "
+                "required specialization."
+            )
+        else:
+            reason = (
+                "No technician met all automatic "
+                "assignment requirements."
+            )
+
+        automation["assignment"]["reason"] = reason
+
+        automation["processing_time"] = round(
+            time.perf_counter() - started_at,
+            3,
+        )
+
+        ticket._automation_result = automation
+
         return None
 
     eligible.sort(
@@ -807,89 +1008,7 @@ def find_best_technician(ticket):
 
     profile = best["profile"]
 
-    full_name = (
-        f"{profile.user.first_name} "
-        f"{profile.user.last_name}"
-    ).strip() or profile.user.username
-
-    print(
-        f"[AUTO-ASSIGN] SELECTED: {full_name}"
-    )
-    print(
-        f"[AUTO-ASSIGN] User ID: {profile.user_id}"
-    )
-    print(
-        f"[AUTO-ASSIGN] Profile ID: {profile.id}"
-    )
-
-    return best
-
-
-def assign_ticket_automatically(ticket):
-    print("\n[AUTO-ASSIGN] ################################")
-    print("[AUTO-ASSIGN] START AUTO ASSIGNMENT")
-    print(f"[AUTO-ASSIGN] Ticket ID={ticket.id}")
-    print(f"[AUTO-ASSIGN] Ticket Code={ticket.ticket_code}")
-    print(f"[AUTO-ASSIGN] Status={ticket.status}")
-    print(
-        f"[AUTO-ASSIGN] Assigned To="
-        f"{ticket.assigned_to_id}"
-    )
-    print(
-        f"[AUTO-ASSIGN] Under Review="
-        f"{ticket.is_under_review}"
-    )
-
-    if ticket.is_under_review:
-        print(
-            "[AUTO-ASSIGN] STOP: Ticket is under review."
-        )
-        return None
-
-    if ticket.status == Ticket.TicketStatus.UNDER_REVIEW:
-        print(
-            "[AUTO-ASSIGN] STOP: Ticket status is "
-            "UNDER_REVIEW."
-        )
-        return None
-
-    if ticket.assigned_to:
-        print(
-            "[AUTO-ASSIGN] STOP: Ticket already has "
-            f"assigned_to={ticket.assigned_to_id}"
-        )
-        return None
-
-    if ticket.status in [
-        Ticket.TicketStatus.RESOLVED,
-        Ticket.TicketStatus.CLOSED,
-        Ticket.TicketStatus.CANCELLED,
-        Ticket.TicketStatus.RETURNED,
-    ]:
-        print(
-            "[AUTO-ASSIGN] STOP: Ticket status does not "
-            "allow assignment."
-        )
-        return None
-
-    best = find_best_technician(ticket)
-
-    if not best:
-        print(
-            "[AUTO-ASSIGN] STOP: No eligible technician "
-            "was found."
-        )
-        print("[AUTO-ASSIGN] ################################\n")
-        return None
-
-    profile = best["profile"]
-
     old_status = ticket.status
-
-    print(
-        f"[AUTO-ASSIGN] ASSIGNING USER ID="
-        f"{profile.user_id}"
-    )
 
     ticket.assigned_to = profile.user
     ticket.status = Ticket.TicketStatus.IN_PROGRESS
@@ -917,9 +1036,7 @@ def assign_ticket_automatically(ticket):
 
     TicketStatusHistory.objects.create(
         ticket=ticket,
-        event_type=(
-            TicketStatusHistory.EventType.ASSIGNED
-        ),
+        event_type=TicketStatusHistory.EventType.ASSIGNED,
         old_value=None,
         new_value=full_name,
         changed_by=None,
@@ -929,22 +1046,42 @@ def assign_ticket_automatically(ticket):
     if old_status != ticket.status:
         TicketStatusHistory.objects.create(
             ticket=ticket,
-            event_type=(
-                TicketStatusHistory.EventType.STATUS_CHANGED
-            ),
+            event_type=TicketStatusHistory.EventType.STATUS_CHANGED,
             old_value=old_status,
             new_value=ticket.status,
             changed_by=None,
             created_by=None,
         )
 
-    print(
-        f"[AUTO-ASSIGN] SUCCESS: Assigned to {full_name}"
+    for technician in automation["technicians_considered"]:
+        if technician["id"] == profile.id:
+            technician["selected"] = True
+        else:
+            technician["selected"] = False
+
+    automation["assignment"] = {
+        "status": "assigned",
+        "technician": {
+            "id": profile.id,
+            "user_id": profile.user.id,
+            "name": full_name,
+            "current_workload": best["current_workload"],
+            "workload_limit": profile.workload_limit,
+            "workload_ratio": best["workload_ratio"],
+        },
+        "reason": (
+            "Technician matched the assignment requirements "
+            "and was selected using the existing workload "
+            "and last-assigned sorting rules."
+        ),
+    }
+
+    automation["processing_time"] = round(
+        time.perf_counter() - started_at,
+        3,
     )
-    print(
-        f"[AUTO-ASSIGN] New Status={ticket.status}"
-    )
-    print("[AUTO-ASSIGN] ################################\n")
+
+    ticket._automation_result = automation
 
     return profile
 # WAG NA TO PANGET PAG SCORING
