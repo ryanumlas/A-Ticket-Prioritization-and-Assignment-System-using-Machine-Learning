@@ -2,7 +2,8 @@ from django.urls import path
 from .views import (CreateITSupportProfileView, RegisterView, UserListView, CreateITSupportProfileView, UserUpdateView, UserRoleCreateView, UserRoleDeleteView, 
 UserRoleListView, EmployeeOverviewAPIView, UserProfileUpdateView, SpecializationCreateView, ITSupportProfileCreateView, 
 ITSupportSpecializationCreateView, ITSupportProfileUpdateView, NotificationListView, NotificationMarkReadView, NotificationUnreadCountView, AdminUserListView, 
-ITDepartmentOptionsView, EmployeeDepartmentOptionsView, OfficeLocationOptionsView, UserRoleOptionsView, AdminUserCreateView, SpecializationOptionsView, AdminUserDetailView)
+ITDepartmentOptionsView, EmployeeDepartmentOptionsView, OfficeLocationOptionsView, 
+UserRoleOptionsView, AdminUserCreateView, SpecializationOptionsView, AdminUserDetailView, AdminAuditLogListView)
 
 urlpatterns = [
     path('list/', UserListView.as_view(), name='user-list'),
@@ -27,6 +28,8 @@ urlpatterns = [
     path("admin/create-options/office-locations/",OfficeLocationOptionsView.as_view(),name="office-location-options",),
 
     path("admin/create-options/roles/", UserRoleOptionsView.as_view(), name="user-role-options",),
+
+    path("audit-logs/admin/list/",AdminAuditLogListView.as_view(),name="admin-audit-log-list",),
 
     # --- Notifications ---
     path("notifications/list/",NotificationListView.as_view(), name="notification-list",),

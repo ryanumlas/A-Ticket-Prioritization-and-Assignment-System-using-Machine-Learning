@@ -11,6 +11,8 @@ import SubmitTicket from './pages/SubmitTicket'
 import NotFound from './pages/NotFound'
 import ProtectedRoute from './components/ProtectedRoute'
 import FlaggedTickets from './pages/FlaggedTickets'
+import AuditLogs from './pages/AuditLogs'
+import EscalatedTicket from './pages/EscalatedTicket'
 import { Toaster } from "sonner";
 import TicketQueue from './pages/TicketQueue'
 import TicketDetails from './pages/TicketDetails'
@@ -191,6 +193,16 @@ function App() {
                 }
             />
             <Route
+                path="/audit-logs"
+                element={
+                    <ProtectedRoute
+                        allowedRoles={["System Administrator"]}
+                    >
+                        <AuditLogs/>
+                    </ProtectedRoute>
+                }
+            />
+            <Route
                 path="/user-management/create"
                 element={
                     <ProtectedRoute
@@ -207,6 +219,18 @@ function App() {
                         allowedRoles={["System Administrator"]}
                     >
                         <SystemUserDetails />
+                    </ProtectedRoute>
+                }
+            />
+
+            {/* Supervisor */}
+            <Route
+                path="/supervisor/escalated-tickets"
+                element={
+                    <ProtectedRoute
+                        allowedRoles={["Supervisor"]}
+                    >
+                        <EscalatedTicket />
                     </ProtectedRoute>
                 }
             />

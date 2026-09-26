@@ -4,6 +4,7 @@ import EmployeeDashboard from "../pages/EmployeeDashboard";
 import SupportDashboard from "../pages/SupportDashboard";
 import ServiceDeskDashboard from "../pages/ServiceDeskDashboard";
 import SystemAdminDashboard from "../pages/SystemAdminDashboard";
+import SupervisorDashboard from "../pages/SupervisorDashboard"
 import { motion } from "motion/react";
 import Topbar from "../components/Topbar";
 
@@ -26,6 +27,8 @@ export default function Dashboard() {
         MainContent = <ServiceDeskDashboard />;
     } else if (user.role === "System Administrator") {
         MainContent = <SystemAdminDashboard />;
+    } else if (user.role === "Supervisor") {
+        MainContent = <SupervisorDashboard />;
     } else {
         MainContent = (
             <div className="p-6">

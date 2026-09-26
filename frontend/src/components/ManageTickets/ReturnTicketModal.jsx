@@ -75,10 +75,10 @@ export default function ReturnTicketModal({
 
                     <div className="flex items-start gap-3">
 
-                        <div className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-gray-100">
+                        <div className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-orange-50">
                             <Undo2
                                 size={18}
-                                className="text-gray-500"
+                                className="text-orange-500"
                             />
                         </div>
 

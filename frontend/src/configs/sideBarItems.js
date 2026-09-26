@@ -21,6 +21,8 @@ import {
     Network,
     AppWindow,
     MonitorCog,
+    FileText,
+    BarChart3,
 } from "lucide-react";
 
 export const sidebarItems = {
@@ -195,5 +197,69 @@ export const sidebarItems = {
             path: "/notifications",
             icon: Bell
         }
-    ]
+    ],
+    Supervisor: [
+        {
+            type: "link",
+            name: "Dashboard",
+            path: "/dashboard",
+            icon: LayoutDashboard,
+        },
+
+        {
+            type: "section",
+            title: "Tickets",
+        },
+        {
+            type: "link",
+            name: "Escalated Tickets",
+            path: "/supervisor/escalated-tickets",
+            icon: Flag,
+        },
+
+        {
+            type: "section",
+            title: "Monitoring",
+        },
+        {
+            type: "link",
+            name: "SLA Monitoring",
+            path: "/sla-monitoring",
+            icon: FileClock,
+        },
+        {
+            type: "link",
+            name: "Team Workload",
+            path: "/team-workload",
+            icon: Users,
+        },
+
+        {
+            type: "section",
+            title: "Reports",
+        },
+        {
+            type: "link",
+            name: "Ticket Reports",
+            path: "/ticket-reports",
+            icon: FileText,
+        },
+        {
+            type: "link",
+            name: "SLA Reports",
+            path: "/sla-reports",
+            icon: BarChart3,
+        },
+
+        {
+            type: "section",
+            title: "System",
+        },
+        {
+            type: "link",
+            name: "Notifications",
+            path: "/notifications",
+            icon: Bell,
+        },
+    ],
 };

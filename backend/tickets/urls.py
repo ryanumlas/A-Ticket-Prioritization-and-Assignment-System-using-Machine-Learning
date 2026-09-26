@@ -7,7 +7,8 @@ AcceptRecommendationView, ApproveOverrideView, ManuallyClassifyView, SupportOver
 SLAPerformanceView, TicketsByCategoryView, TicketDetailSupportView, TicketStatusHistoryView, TicketCommentListCreateView, 
 PriorityChangeRequestView, PriorityChangeRequestListView, PriorityRequestDetailView, ApprovePriorityRequestView, ReturnTicketView, 
 ReturnedTicketRequestListView, ReturnedTicketDetailRetrieve, ApproveReturnTicketView, PendingPriorityRequestCountView, PendingReturnTicketRequestCountView, 
-ServiceDeskDepartmentQueueView, ServiceDeskDepartmentSymptomCodesView, ServiceDeskDepartmentListView, RejectReturnTicketView, RejectPriorityRequestView, EmployeeCurrentActiveTicketView)
+ServiceDeskDepartmentQueueView, EscalateTicketView,
+ServiceDeskDepartmentSymptomCodesView, ServiceDeskDepartmentListView, RejectReturnTicketView, RejectPriorityRequestView, EmployeeCurrentActiveTicketView, SupervisorEscalatedTicketsView)
 
 urlpatterns = [
     # --- Ticket URLs ---
@@ -57,6 +58,8 @@ urlpatterns = [
 
     path("employee/current-active/",EmployeeCurrentActiveTicketView.as_view(), name="employee-current-active-ticket",),
 
+    path("escalate/<int:pk>/", EscalateTicketView.as_view(), name="escalate-ticket"),
+    path("supervisor/escalated/list/",SupervisorEscalatedTicketsView.as_view(), name="escalated-ticket-list"),
     # --- Category URLs ---
     path('categories/create/', CreateCategoryView.as_view(), name='create-category'),
     path('categories/update/<int:pk>/', UpdateCategoryView.as_view(), name='update-category'),

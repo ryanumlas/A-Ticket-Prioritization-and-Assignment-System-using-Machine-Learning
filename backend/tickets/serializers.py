@@ -3,6 +3,10 @@ from .models import Ticket, Category, SymptomCode, TicketComments, SLARules, Rev
 from users.models import  ITSupportProfile
 from ai.models import TicketAnalysis, TicketAIAnalysis
 from departments.models import ITDepartment
+from tickets.services import (
+    normalize_text,
+    phrase_matches,
+)
 from django.utils import timezone
 from datetime import timedelta
 from rest_framework import serializers
@@ -607,7 +611,11 @@ class TicketDetailSupportSerializer(serializers.ModelSerializer):
         }
 
     def get_classification_source(self, obj):
-        analysis = getattr(obj, "ai_prediction", None)
+        analysis = getattr(
+            obj,
+            "ai_prediction",
+            None
+        )
 
         if not analysis:
             return None
@@ -615,28 +623,133 @@ class TicketDetailSupportSerializer(serializers.ModelSerializer):
         if analysis.was_overridden:
             return "Service Desk Reviewed"
 
-        if analysis.model_type == TicketAnalysis.ModelType.RULE_BASED:
+        if (
+            analysis.model_type
+            == TicketAnalysis.ModelType.RULE_BASED
+        ):
             return "Rule-Based"
 
-        if analysis.model_type == TicketAnalysis.ModelType.MACHINE_LEARNING:
+        if (
+            analysis.model_type
+            == TicketAnalysis.ModelType.MACHINE_LEARNING
+        ):
             return "Machine Learning"
 
-        if analysis.model_type == TicketAnalysis.ModelType.MANUAL_OVERRIDE:
+        if (
+            analysis.model_type
+            == TicketAnalysis.ModelType.MANUAL_OVERRIDE
+        ):
             return "Manual Override"
 
         return "System Classified"
 
     def get_classification_confidence(self, obj):
-        analysis = getattr(obj, "ai_prediction", None)
+        analysis = getattr(
+            obj,
+            "ai_prediction",
+            None
+        )
 
         if not analysis:
             return None
 
         return analysis.confidence
 
+    def calculate_rule_based_score(
+        self,
+        obj,
+        ai_analysis
+    ):
+        if not ai_analysis:
+            return None
+
+        keywords = ai_analysis.keywords or []
+
+        subject_text = normalize_text(
+            obj.subject or ""
+        )
+
+        description_text = normalize_text(
+            obj.description or ""
+        )
+
+        db_keywords = (
+            Keyword.objects
+            .select_related("symptom_code")
+            .all()
+        )
+
+        scores = {}
+
+        for gemini_kw in keywords:
+            gemini_kw = normalize_text(
+                gemini_kw
+            )
+
+            if not gemini_kw:
+                continue
+
+            for match in db_keywords:
+                db_kw = normalize_text(
+                    match.keyword
+                )
+
+                if not phrase_matches(
+                    db_kw,
+                    gemini_kw
+                ):
+                    continue
+
+                if not match.symptom_code:
+                    continue
+
+                code = match.symptom_code.code
+
+                base_weight = match.weight or 0
+
+                specificity_bonus = len(
+                    db_kw.split()
+                )
+
+                weight = (
+                    base_weight
+                    + specificity_bonus
+                )
+
+                if phrase_matches(
+                    db_kw,
+                    subject_text
+                ):
+                    weight *= 3
+
+                elif phrase_matches(
+                    db_kw,
+                    description_text
+                ):
+                    weight *= 1
+
+                scores[code] = (
+                    scores.get(code, 0)
+                    + weight
+                )
+
+        if not scores:
+            return 0
+
+        return max(scores.values())
+
     def get_automation(self, obj):
-        ai_analysis = getattr(obj, "ai_analysis", None)
-        ticket_analysis = getattr(obj, "ai_prediction", None)
+        ai_analysis = getattr(
+            obj,
+            "ai_analysis",
+            None
+        )
+
+        ticket_analysis = getattr(
+            obj,
+            "ai_prediction",
+            None
+        )
 
         technicians = []
 
@@ -648,11 +761,18 @@ class TicketDetailSupportSerializer(serializers.ModelSerializer):
         required_specialization_id = None
 
         if obj.symptom_code:
-            specialization = obj.symptom_code.required_specialization
+            specialization = (
+                obj.symptom_code.required_specialization
+            )
 
             if specialization:
-                required_specialization = specialization.name
-                required_specialization_id = specialization.id
+                required_specialization = (
+                    specialization.name
+                )
+
+                required_specialization_id = (
+                    specialization.id
+                )
 
         profiles = []
 
@@ -683,7 +803,9 @@ class TicketDetailSupportSerializer(serializers.ModelSerializer):
                 ],
             ).count()
 
-            workload_limit = profile.workload_limit
+            workload_limit = (
+                profile.workload_limit
+            )
 
             workload_available = (
                 workload_limit > 0
@@ -697,7 +819,8 @@ class TicketDetailSupportSerializer(serializers.ModelSerializer):
 
             specializations = [
                 specialization.specialization.name
-                for specialization in profile.specializations.all()
+                for specialization
+                in profile.specializations.all()
                 if specialization.specialization
             ]
 
@@ -726,8 +849,8 @@ class TicketDetailSupportSerializer(serializers.ModelSerializer):
 
             if eligible:
                 eligibility_reason = (
-                    "Eligible: available, within workload limit, "
-                    "and specialization matched."
+                    "Eligible: available, within workload "
+                    "limit, and specialization matched."
                 )
             elif not availability:
                 eligibility_reason = (
@@ -743,10 +866,13 @@ class TicketDetailSupportSerializer(serializers.ModelSerializer):
                     "Not eligible: workload limit reached."
                 )
             else:
-                eligibility_reason = "Not eligible."
+                eligibility_reason = (
+                    "Not eligible."
+                )
 
             selected = (
-                obj.assigned_to_id == profile.user_id
+                obj.assigned_to_id
+                == profile.user_id
                 if obj.assigned_to_id
                 else False
             )
@@ -758,8 +884,11 @@ class TicketDetailSupportSerializer(serializers.ModelSerializer):
                 "name": (
                     f"{profile.user.first_name} "
                     f"{profile.user.last_name}"
-                ).strip() or profile.user.username,
-                "availability": profile.availability_status,
+                ).strip()
+                or profile.user.username,
+                "availability": (
+                    profile.availability_status
+                ),
                 "current_workload": workload,
                 "workload_limit": workload_limit,
                 "last_assigned": (
@@ -768,9 +897,13 @@ class TicketDetailSupportSerializer(serializers.ModelSerializer):
                     else None
                 ),
                 "specializations": specializations,
-                "specialization_match": specialization_match,
+                "specialization_match": (
+                    specialization_match
+                ),
                 "eligible": eligible,
-                "eligibility_reason": eligibility_reason,
+                "eligibility_reason": (
+                    eligibility_reason
+                ),
                 "selected": selected,
             })
 
@@ -782,17 +915,21 @@ class TicketDetailSupportSerializer(serializers.ModelSerializer):
 
             assigned_profile = (
                 ITSupportProfile.objects
-                .filter(user=obj.assigned_to)
+                .filter(
+                    user=obj.assigned_to
+                )
                 .first()
             )
 
-            current_workload = Ticket.objects.filter(
-                assigned_to=obj.assigned_to,
-                status__in=[
-                    Ticket.TicketStatus.IN_PROGRESS,
-                    Ticket.TicketStatus.REOPENED,
-                ],
-            ).count()
+            current_workload = (
+                Ticket.objects.filter(
+                    assigned_to=obj.assigned_to,
+                    status__in=[
+                        Ticket.TicketStatus.IN_PROGRESS,
+                        Ticket.TicketStatus.REOPENED,
+                    ],
+                ).count()
+            )
 
             workload_limit = (
                 assigned_profile.workload_limit
@@ -812,31 +949,43 @@ class TicketDetailSupportSerializer(serializers.ModelSerializer):
                     "id": obj.assigned_to.id,
                     "user_id": obj.assigned_to.id,
                     "name": assigned_name,
-                    "current_workload": current_workload,
-                    "workload_limit": workload_limit,
-                    "workload_ratio": workload_ratio,
+                    "current_workload": (
+                        current_workload
+                    ),
+                    "workload_limit": (
+                        workload_limit
+                    ),
+                    "workload_ratio": (
+                        workload_ratio
+                    ),
                     "last_assigned": (
                         assigned_profile.last_assigned_at.isoformat()
-                        if assigned_profile
-                        and assigned_profile.last_assigned_at
+                        if (
+                            assigned_profile
+                            and assigned_profile.last_assigned_at
+                        )
                         else None
                     ),
                 },
                 "reason": (
-                    "Ticket is currently assigned to this technician."
+                    "Ticket is currently assigned "
+                    "to this technician."
                 ),
             }
+
         else:
             if exact_specialization_matches == 0:
                 reason = (
-                    "No technician in the department matched "
-                    "the required specialization."
+                    "No technician in the department "
+                    "matched the required specialization."
                 )
+
             elif available_candidates == 0:
                 reason = (
                     "No available technician was found "
                     "in the department."
                 )
+
             else:
                 reason = (
                     "No technician is currently assigned "
@@ -851,23 +1000,44 @@ class TicketDetailSupportSerializer(serializers.ModelSerializer):
 
         if ticket_analysis:
             if ticket_analysis.model_type:
-                processing_method = ticket_analysis.model_type
+                processing_method = (
+                    ticket_analysis.model_type
+                )
             else:
                 processing_method = "rule_based"
+
         elif ai_analysis:
             processing_method = "ai_assisted"
+
         else:
             processing_method = None
 
         if ai_analysis:
             processing_status = "completed"
+
         elif obj.is_under_review:
             processing_status = "review_required"
+
         else:
             processing_status = "completed"
 
+        rule_based_score = None
+
+        if (
+            ticket_analysis
+            and ticket_analysis.model_type
+            == TicketAnalysis.ModelType.RULE_BASED
+        ):
+            rule_based_score = (
+                self.calculate_rule_based_score(
+                    obj,
+                    ai_analysis
+                )
+            )
+
         return {
             "status": processing_status,
+
             "method": processing_method,
 
             "symptom_code": (
@@ -876,8 +1046,13 @@ class TicketDetailSupportSerializer(serializers.ModelSerializer):
                 else None
             ),
 
-            "required_specialization": required_specialization,
-            "required_specialization_id": required_specialization_id,
+            "required_specialization": (
+                required_specialization
+            ),
+
+            "required_specialization_id": (
+                required_specialization_id
+            ),
 
             "department": (
                 obj.it_department.name
@@ -891,38 +1066,53 @@ class TicketDetailSupportSerializer(serializers.ModelSerializer):
                 else None
             ),
 
-            "department_candidates": department_candidates,
-            "available_candidates": available_candidates,
+            "department_candidates": (
+                department_candidates
+            ),
+
+            "available_candidates": (
+                available_candidates
+            ),
+
             "exact_specialization_matches": (
                 exact_specialization_matches
             ),
 
             "classification": {
                 "method": processing_method,
+
                 "model_used": (
                     ticket_analysis.model_used
                     if ticket_analysis
                     else None
                 ),
+
                 "confidence": (
                     ticket_analysis.confidence
                     if ticket_analysis
                     else None
                 ),
+
                 "second_confidence": (
                     ticket_analysis.second_confidence
                     if ticket_analysis
                     else None
                 ),
+
                 "confidence_margin": (
                     ticket_analysis.confidence_margin
                     if ticket_analysis
                     else None
                 ),
+
                 "was_overridden": (
                     ticket_analysis.was_overridden
                     if ticket_analysis
                     else False
+                ),
+
+                "rule_based_score": (
+                    rule_based_score
                 ),
             },
 
@@ -932,31 +1122,37 @@ class TicketDetailSupportSerializer(serializers.ModelSerializer):
                     if ai_analysis
                     else None
                 ),
+
                 "cleaned_text": (
                     ai_analysis.cleaned_text
                     if ai_analysis
                     else None
                 ),
+
                 "keywords": (
                     ai_analysis.keywords
                     if ai_analysis
                     else None
                 ),
+
                 "business_critical": (
                     ai_analysis.business_critical
                     if ai_analysis
                     else False
                 ),
+
                 "is_unclear": (
                     ai_analysis.is_unclear
                     if ai_analysis
                     else False
                 ),
+
                 "is_time_critical": (
                     ai_analysis.is_time_critical
                     if ai_analysis
                     else False
                 ),
+
                 "model_version": (
                     ai_analysis.model_version
                     if ai_analysis
@@ -964,7 +1160,10 @@ class TicketDetailSupportSerializer(serializers.ModelSerializer):
                 ),
             },
 
-            "technicians_considered": technicians,
+            "technicians_considered": (
+                technicians
+            ),
+
             "assignment": assignment,
         }
 
@@ -1555,6 +1754,173 @@ class EmployeeCurrentActiveTicketSerializer(serializers.ModelSerializer):
             return f"{hours}h {minutes}m"
 
         return f"{minutes}m"
+
+# --- Escalation ---
+from django.utils import timezone
+from rest_framework import serializers
+
+
+class SupervisorEscalatedTicketSerializer(serializers.ModelSerializer):
+    submitted_by_name = serializers.SerializerMethodField()
+    submitted_by_department = serializers.SerializerMethodField()
+    assigned_to_name = serializers.SerializerMethodField()
+    department_name = serializers.SerializerMethodField()
+    status = serializers.CharField(
+        source="get_status_display",
+        read_only=True,
+    )
+    priority = serializers.CharField(
+        source="priority.priority_level",
+        read_only=True,
+    )
+
+    response_time_remaining = serializers.SerializerMethodField()
+    resolution_time_remaining = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Ticket
+
+        fields = [
+            "id",
+            "ticket_code",
+            "subject",
+            "status",
+            "priority",
+            "submitted_by_name",
+            "submitted_by_department",
+            "assigned_to_name",
+            "department_name",
+            "response_deadline",
+            "response_time_remaining",
+            "resolution_deadline",
+            "resolution_time_remaining",
+            "escalated_at",
+            "updated_at",
+        ]
+
+    def get_submitted_by_name(self, obj):
+        if not obj.submitted_by:
+            return "-"
+
+        return (
+            obj.submitted_by.get_full_name()
+            or obj.submitted_by.username
+        )
+
+    def get_submitted_by_department(self, obj):
+        if not obj.submitted_by:
+            return "-"
+
+        profile = getattr(
+            obj.submitted_by,
+            "profile",
+            None,
+        )
+
+        if not profile:
+            return "-"
+
+        department = getattr(
+            profile,
+            "employee_department",
+            None,
+        )
+
+        if not department:
+            return "-"
+
+        return department.name
+
+    def get_assigned_to_name(self, obj):
+        if not obj.assigned_to:
+            return "-"
+
+        return (
+            obj.assigned_to.get_full_name()
+            or obj.assigned_to.username
+        )
+
+    def get_department_name(self, obj):
+        if not obj.it_department:
+            return "-"
+
+        return obj.it_department.name
+
+    def get_response_time_remaining(self, obj):
+        if obj.response_at:
+            if obj.response_sla_status:
+                return obj.response_sla_status.upper()
+
+            if (
+                obj.response_deadline
+                and obj.response_at <= obj.response_deadline
+            ):
+                return "MET"
+
+            return "BREACHED"
+
+        if not obj.response_deadline:
+            return "-"
+
+        remaining = obj.response_deadline - timezone.now()
+
+        if remaining.total_seconds() <= 0:
+            return "OVERDUE"
+
+        total_seconds = int(remaining.total_seconds())
+
+        days, remainder = divmod(total_seconds, 86400)
+        hours, remainder = divmod(remainder, 3600)
+        minutes, seconds = divmod(remainder, 60)
+
+        if days > 0:
+            return f"{days}d {hours}h {minutes}m"
+
+        if hours > 0:
+            return f"{hours}h {minutes}m"
+
+        if minutes > 0:
+            return f"{minutes}m {seconds}s"
+
+        return f"{seconds}s"
+
+    def get_resolution_time_remaining(self, obj):
+        if obj.resolved_at:
+            if obj.resolution_sla_status:
+                return obj.resolution_sla_status.upper()
+
+            if (
+                obj.resolution_deadline
+                and obj.resolved_at <= obj.resolution_deadline
+            ):
+                return "MET"
+
+            return "BREACHED"
+
+        if not obj.resolution_deadline:
+            return "-"
+
+        remaining = obj.resolution_deadline - timezone.now()
+
+        if remaining.total_seconds() <= 0:
+            return "OVERDUE"
+
+        total_seconds = int(remaining.total_seconds())
+
+        days, remainder = divmod(total_seconds, 86400)
+        hours, remainder = divmod(remainder, 3600)
+        minutes, seconds = divmod(remainder, 60)
+
+        if days > 0:
+            return f"{days}d {hours}h {minutes}m"
+
+        if hours > 0:
+            return f"{hours}h {minutes}m"
+
+        if minutes > 0:
+            return f"{minutes}m {seconds}s"
+
+        return f"{seconds}s"
 # class TicketSLASerializer(serializers.ModelSerializer):
 #     class Meta:
 #         model = TicketSLA

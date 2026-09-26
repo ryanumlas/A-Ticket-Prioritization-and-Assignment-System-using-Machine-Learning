@@ -82,12 +82,22 @@ export default function LeftSidePanel({ ticketDetails }) {
             <div className="px-5 pb-5">
                 <div className="space-y-3">
                     <DetailRow icon={CircleDot} label="Status">
-                        <span className={`inline-flex whitespace-nowrap rounded-md px-2.5 py-1 text-xs font-medium ${
-                            statusColor[ticketDetails.status] ||
-                            "border border-gray-300 bg-gray-100 text-gray-700"
-                        }`}>
-                            {ticketDetails.status || "-"}
-                        </span>
+                        <div className="flex flex-wrap items-center gap-2">
+                            <span
+                                className={`inline-flex whitespace-nowrap rounded-md px-2.5 py-1 text-xs font-medium ${
+                                    statusColor[ticketDetails.status] ||
+                                    "border border-gray-300 bg-gray-100 text-gray-700"
+                                }`}
+                            >
+                                {ticketDetails.status || "-"}
+                            </span>
+
+                            {ticketDetails.is_escalated && (
+                                <span className="inline-flex whitespace-nowrap rounded-md border border-orange-200 bg-orange-50 px-2.5 py-1 text-xs font-semibold text-orange-600">
+                                    Escalated
+                                </span>
+                            )}
+                        </div>
                     </DetailRow>
 
                     <DetailRow icon={CircleAlert} label="Priority">

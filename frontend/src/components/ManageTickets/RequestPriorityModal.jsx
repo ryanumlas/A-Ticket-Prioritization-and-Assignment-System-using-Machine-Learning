@@ -58,12 +58,6 @@ export default function RequestPriorityModal({
                     reason: reason.trim(),
                 }
             );
-
-            console.log(
-                "Priority change request:",
-                response.data
-            );
-
             setRequestedPriority("");
             setReason("");
 
@@ -74,11 +68,6 @@ export default function RequestPriorityModal({
             onClose();
         }
         catch (error) {
-            console.error(
-                "Priority request error:",
-                error.response?.data || error
-            );
-
             setError(
                 error.response?.data?.error ||
                 error.response?.data?.requested_priority?.[0] ||
@@ -102,13 +91,12 @@ export default function RequestPriorityModal({
 
                     <div className="flex items-start gap-3">
 
-                        <div className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-gray-100">
+                        <div className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-amber-50">
                             <ArrowUpDown
                                 size={18}
-                                className="text-gray-500"
+                                className="text-amber-500"
                             />
                         </div>
-
                         <div>
                             <h2 className="text-base font-semibold text-black">
                                 Request Priority Change

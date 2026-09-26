@@ -15,8 +15,8 @@ SLARulesUpdateSerializer, KeywordSerializer, KeywordUpdateSerializer, UpdateSymp
 TicketCreateSerializer, TicketUpdateSerializer, TicketDetailEmployeeSerializer, CategoryUpdateSerializer, FlaggedTicketsListSerializer, 
 FlaggedTicketDetailSerializer, TicketDetailSupportSerializer, TicketStatusHistorySerializer, PriorityChangeRequestSerializer, PriorityRequestListSerializer, 
 PriorityRequestDetailSerializer, ReturnTicketSerializer, ReturnedTicketRequestListSerializer, ReturnedTicketDetailSerializer, ApproveReturnTicketSerializer, 
-ServiceDeskDepartmentSerializer, RejectReturnTicketSerializer, EmployeeCurrentActiveTicketSerializer)
-from users.models import User, ITSupportProfile, Notifications
+ServiceDeskDepartmentSerializer, RejectReturnTicketSerializer, EmployeeCurrentActiveTicketSerializer, SupervisorEscalatedTicketSerializer)
+from users.models import User, ITSupportProfile, Notifications, AuditLogs
 from users.services import create_notification
 from .services import predict_ticket, assign_ticket_automatically
 from ai.models import TicketAnalysis, TicketAIAnalysis
@@ -784,6 +784,12 @@ class UpdateTicketStatusView(APIView):
 
         update_sla(ticket)
 
+        old_status_label = dict(
+            Ticket.TicketStatus.choices
+        ).get(old_status, old_status)
+
+        new_status_label = ticket.get_status_display()
+
         TicketStatusHistoryModel.objects.create(
             ticket=ticket,
             event_type=TicketStatusHistoryModel.EventType.STATUS_CHANGED,
@@ -793,6 +799,18 @@ class UpdateTicketStatusView(APIView):
             changed_by=request.user,
             created_by=request.user,
             visibility=TicketStatusHistoryModel.Visibility.ALL,
+        )
+
+        AuditLogs.objects.create(
+            user=request.user,
+            module="Tickets",
+            action="STATUS_CHANGED",
+            reference_id=str(ticket.id),
+            remarks=(
+                f"{ticket.ticket_code} · "
+                f"{old_status_label} → {new_status_label}"
+            ),
+            created_by=request.user,
         )
 
         if ticket.status == Ticket.TicketStatus.RESOLVED:
@@ -4125,6 +4143,244 @@ class EmployeeCurrentActiveTicketView(APIView):
             "ticket": serializer.data
         })
 
+# --- Escalation --- 
+class EscalateTicketView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, pk):
+        try:
+            ticket = (
+                Ticket.objects
+                .select_related(
+                    "submitted_by",
+                    "assigned_to",
+                )
+                .get(pk=pk)
+            )
+        except Ticket.DoesNotExist:
+            return Response(
+                {"error": "Ticket not found."},
+                status=404,
+            )
+
+        reason = str(
+            request.data.get("reason", "")
+        ).strip()
+
+        if not reason:
+            return Response(
+                {
+                    "error": (
+                        "Escalation reason is required."
+                    )
+                },
+                status=400,
+            )
+
+        if len(reason) > 500:
+            return Response(
+                {
+                    "error": (
+                        "Escalation reason must not "
+                        "exceed 500 characters."
+                    )
+                },
+                status=400,
+            )
+
+        if ticket.is_escalated:
+            return Response(
+                {
+                    "error": (
+                        "This ticket has already "
+                        "been escalated."
+                    )
+                },
+                status=400,
+            )
+
+        if ticket.status in [
+            Ticket.TicketStatus.CLOSED,
+            Ticket.TicketStatus.CANCELLED,
+        ]:
+            return Response(
+                {
+                    "error": (
+                        "Closed or cancelled tickets "
+                        "cannot be escalated."
+                    )
+                },
+                status=400,
+            )
+
+        now = timezone.now()
+
+        ticket.is_escalated = True
+        ticket.escalated_at = now
+        ticket.updated_by = request.user
+
+        ticket.save(
+            update_fields=[
+                "is_escalated",
+                "escalated_at",
+                "updated_by",
+                "updated_at",
+            ]
+        )
+        TicketStatusHistory.objects.create(
+            ticket=ticket,
+            event_type=(
+                TicketStatusHistory
+                .EventType
+                .ESCALATED
+            ),
+            old_value=ticket.status,
+            new_value=ticket.status,
+            remarks=reason,
+            changed_by=request.user,
+            created_by=request.user,
+            visibility=(
+                TicketStatusHistory
+                .Visibility
+                .ALL
+            ),
+        )
+
+        AuditLogs.objects.create(
+            user=request.user,
+            module="Tickets",
+            action="Ticket Escalated",
+            reference_id=str(ticket.id),
+            remarks=reason,
+            created_by=request.user,
+        )
+        supervisors = User.objects.filter(
+            role__name="Supervisor",
+            is_active=True,
+        )
+
+        notifications = [
+            Notifications(
+                user=supervisor,
+                ticket=ticket,
+                message=(
+                    f"Ticket {ticket.ticket_code} "
+                    "has been escalated and requires "
+                    "your review."
+                ),
+                notification_type=(
+                    Notifications
+                    .NotificationType
+                    .TICKET_ESCALATED
+                ),
+                created_by=request.user,
+            )
+            for supervisor in supervisors
+        ]
+
+        if notifications:
+            Notifications.objects.bulk_create(
+                notifications
+            )
+
+        return Response(
+            {
+                "message": (
+                    "Ticket has been escalated "
+                    "successfully."
+                ),
+                "ticket_id": ticket.id,
+                "ticket_code": ticket.ticket_code,
+                "is_escalated": ticket.is_escalated,
+                "escalated_at": ticket.escalated_at,
+            },
+            status=200,
+        )
+
+class SupervisorEscalatedTicketsView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        tickets = (
+            Ticket.objects
+            .filter(is_escalated=True)
+            .select_related(
+                "submitted_by",
+                "assigned_to",
+                "it_department",
+                "employee_department",
+                "category",
+                "symptom_code",
+                "priority",
+            )
+            .order_by("-escalated_at")
+        )
+
+        search = request.query_params.get(
+            "search",
+            "",
+        ).strip()
+
+        status = request.query_params.get(
+            "status",
+            "",
+        ).strip()
+
+        priority = request.query_params.get(
+            "priority",
+            "",
+        ).strip()
+
+        if search:
+            tickets = tickets.filter(
+                Q(ticket_code__icontains=search)
+                | Q(subject__icontains=search)
+                | Q(
+                    submitted_by__first_name__icontains=search
+                )
+                | Q(
+                    submitted_by__last_name__icontains=search
+                )
+                | Q(
+                    submitted_by__username__icontains=search
+                )
+                | Q(
+                    assigned_to__first_name__icontains=search
+                )
+                | Q(
+                    assigned_to__last_name__icontains=search
+                )
+                | Q(
+                    assigned_to__username__icontains=search
+                )
+            )
+
+        if status:
+            tickets = tickets.filter(
+                status=status
+            )
+
+        if priority:
+            tickets = tickets.filter(
+                priority__name=priority
+            )
+
+        paginator = TicketPagination()
+
+        page = paginator.paginate_queryset(
+            tickets,
+            request,
+            view=self,
+        )
+
+        serializer = SupervisorEscalatedTicketSerializer(
+            page,
+            many=True,
+        )
+
+        return paginator.get_paginated_response(
+            serializer.data
+        )
 # class AddTicketAssigneeView(generics.CreateAPIView):
 #     permission_classes = [IsAuthenticated]
 

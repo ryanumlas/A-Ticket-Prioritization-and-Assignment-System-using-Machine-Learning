@@ -12,7 +12,7 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.exceptions import TokenError
 from rest_framework.permissions import AllowAny, IsAuthenticated
 
-from .models import Specializations, User, ITSupportProfile, UserRoles, UserProfile, ITSupportSpecialization, Notifications
+from .models import Specializations, User, ITSupportProfile, UserRoles, UserProfile, ITSupportSpecialization, Notifications, AuditLogs
 from tickets.models import Ticket
 from departments.models import OfficeLocation, EmployeeDepartment, ITDepartment
 from .serializers import (UserSerializer, ITSupportSpecializationCreateSerializer, ITSupportProfileSerializer,
@@ -20,7 +20,7 @@ from .serializers import (UserSerializer, ITSupportSpecializationCreateSerialize
                           UserProfileUpdateSerializer, SpecializationSerializer, ITSupportProfileUpdateSerializer, NotificationSerializer, AdminUserListSerializer,
                               EmployeeDepartmentOptionSerializer,
     ITDepartmentOptionSerializer,
-    OfficeLocationOptionSerializer, UserRoleOptionSerializer, AdminUserCreateSerializer, SpecializationOptionSerializer, AdminUserDetailSerializer)
+    OfficeLocationOptionSerializer, UserRoleOptionSerializer, AdminUserCreateSerializer, SpecializationOptionSerializer, AdminUserDetailSerializer, AuditLogSerializer)
 
 class RegisterView(generics.CreateAPIView):
     queryset = User.objects.all()
@@ -166,6 +166,15 @@ class LogoutView(APIView):
             token = RefreshToken(refresh_token)
             token.blacklist()
 
+            AuditLogs.objects.create(
+                user=request.user,
+                module="Authentication",
+                action="LOGOUT",
+                reference_id=str(request.user.id),
+                remarks="User logged out successfully.",
+                created_by=request.user,
+            )
+
             return Response(
                 {
                     "success": True,
@@ -179,6 +188,87 @@ class LogoutView(APIView):
                 {"error": "Invalid or expired refresh token."},
                 status=status.HTTP_400_BAD_REQUEST,
             )
+
+
+class AdminAuditLogListView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        if (
+            not request.user.role
+            or request.user.role.name != "System Administrator"
+        ):
+            return Response(
+                {
+                    "detail": "You do not have permission to view audit logs."
+                },
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
+        logs = (
+            AuditLogs.objects
+            .select_related("user", "created_by")
+            .order_by("-created_at")
+        )
+
+        action = request.query_params.get("action", "").strip()
+
+        if action:
+            logs = logs.filter(action=action)
+
+        search = request.query_params.get("search", "").strip()
+
+        if search:
+            logs = logs.filter(
+                Q(user__username__icontains=search)
+                | Q(user__first_name__icontains=search)
+                | Q(user__last_name__icontains=search)
+                | Q(module__icontains=search)
+                | Q(action__icontains=search)
+                | Q(reference_id__icontains=search)
+                | Q(remarks__icontains=search)
+            )
+
+        page_size = request.query_params.get(
+            "page_size",
+            15,
+        )
+
+        try:
+            page_size = int(page_size)
+        except (TypeError, ValueError):
+            page_size = 15
+
+        page_size = max(1, min(page_size, 100))
+
+        page = request.query_params.get("page", 1)
+
+        try:
+            page = int(page)
+        except (TypeError, ValueError):
+            page = 1
+
+        page = max(page, 1)
+
+        total_count = logs.count()
+
+        start = (page - 1) * page_size
+        end = start + page_size
+
+        results = logs[start:end]
+
+        serializer = AuditLogSerializer(
+            results,
+            many=True,
+        )
+
+        return Response(
+            {
+                "count": total_count,
+                "results": serializer.data,
+            },
+            status=status.HTTP_200_OK,
+        )
 class UserListView(generics.ListAPIView):
     queryset = User.objects.all()
     serializer_class = UserListSerializer   

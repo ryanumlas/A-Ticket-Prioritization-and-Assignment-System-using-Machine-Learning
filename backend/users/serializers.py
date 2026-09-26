@@ -5,7 +5,8 @@ from django.contrib.auth import get_user_model
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from django.contrib.auth import authenticate
 from django.db import transaction
-from .models import ITSupportSpecialization, User, ITSupportProfile, UserRoles, UserProfile, Specializations, Notifications, ITServiceDeskProfile, ITSupervisorProfile, SystemAdministratorProfile
+from django.utils import timezone
+from .models import ITSupportSpecialization, User, ITSupportProfile, UserRoles, UserProfile, Specializations, Notifications, AuditLogs,ITServiceDeskProfile, ITSupervisorProfile, SystemAdministratorProfile
 from departments.models import ITDepartment, OfficeLocation, EmployeeDepartment
 
 class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
@@ -20,29 +21,33 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
         token["first_name"] = user.first_name
         token["last_name"] = user.last_name
         token["user_code"] = user.user_code
+
         token["employee_department"] = (
             user.profile.employee_department.name
             if user.profile.employee_department
             else None
         )
+
         token["office_location"] = (
             user.profile.office_location.name
             if user.profile.office_location
             else None
         )
+
         token["employee_department_id"] = (
             user.profile.employee_department.id
             if user.profile.employee_department
             else None
         )
+
         token["office_location_id"] = (
             user.profile.office_location.id
             if user.profile.office_location
             else None
         )
- 
+
         return token
-    
+
     def validate(self, attrs):
         username = attrs.get("username")
         password = attrs.get("password")
@@ -67,14 +72,105 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
                         "password": "Incorrect Password"
                     }
                 )
+
         if not user.is_active:
             raise serializers.ValidationError(
                 {
                     "account": "Account is inactive"
                 }
             )
+
+        user.last_login = timezone.now()
+        user.save(update_fields=["last_login"])
+
+        AuditLogs.objects.create(
+            user=user,
+            module="Authentication",
+            action="LOGIN",
+            reference_id=str(user.id),
+            remarks="User logged in successfully.",
+            created_by=user,
+        )
+
         return super().validate(attrs)
 
+class AuditLogSerializer(serializers.ModelSerializer):
+    user_code = serializers.SerializerMethodField()
+    first_name = serializers.SerializerMethodField()
+    last_name = serializers.SerializerMethodField()
+    email = serializers.SerializerMethodField()
+    role = serializers.SerializerMethodField()
+    department = serializers.SerializerMethodField()
+
+    class Meta:
+        model = AuditLogs
+        fields = [
+            "id",
+            "user_code",
+            "first_name",
+            "last_name",
+            "email",
+            "role",
+            "department",
+            "module",
+            "action",
+            "reference_id",
+            "remarks",
+            "created_at",
+        ]
+
+    def get_user_code(self, obj):
+        if not obj.user:
+            return None
+
+        return obj.user.user_code
+
+    def get_first_name(self, obj):
+        if not obj.user:
+            return None
+
+        return obj.user.first_name
+
+    def get_last_name(self, obj):
+        if not obj.user:
+            return None
+
+        return obj.user.last_name
+
+    def get_email(self, obj):
+        if not obj.user:
+            return None
+
+        return obj.user.email
+
+    def get_role(self, obj):
+        if not obj.user or not obj.user.role:
+            return None
+
+        return obj.user.role.name
+
+    def get_department(self, obj):
+        user = obj.user
+
+        if not user or not user.role:
+            return None
+
+        role_name = user.role.name
+
+        if role_name == "Employee":
+            profile = getattr(user, "profile", None)
+
+            if not profile or not profile.employee_department:
+                return None
+
+            return profile.employee_department.name
+
+        it_profile = getattr(user, "it_support_profile", None)
+
+        if not it_profile or not it_profile.it_department:
+            return None
+
+        return it_profile.it_department.name
    
 class ITSupportProfileSerializer(serializers.ModelSerializer):
     class Meta:

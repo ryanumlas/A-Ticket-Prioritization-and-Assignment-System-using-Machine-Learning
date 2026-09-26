@@ -12,6 +12,7 @@ export default function ManageTicketDropdown({
     onPriorityRequest,
     onReturnTicket,
     onRequestAssistance,
+    onEscalateTicket,
     onAutomated,
 }) {
     const [isOpen, setIsOpen] = useState(false);
@@ -142,7 +143,10 @@ export default function ManageTicketDropdown({
 
                         <button
                             type="button"
-                            onClick={() => setIsOpen(false)}
+                            onClick={() => {
+                                setIsOpen(false);
+                                onEscalateTicket?.();
+                            }}
                             className="flex w-full cursor-pointer items-start gap-3 rounded-md px-3 py-2.5 text-left transition-colors hover:bg-gray-50"
                         >
                             <ArrowUp

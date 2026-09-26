@@ -11,6 +11,7 @@ import TicketDetailsSupport from "../components/TicketDetailsSupport";
 import ManageTicketDropdown from "../components/ManageTickets/ManageTicketDropdown";
 import RequestPriorityModal from "../components/ManageTickets/RequestPriorityModal";
 import ReturnTicketModal from "../components/ManageTickets/ReturnTicketModal";
+import EscalateTicketModal from "../components/ManageTickets/EscalateTicketModal";
 import RequestAssistanceModal from "../components/ManageTickets/RequestAssistanceModal";
 import AutomatedProcessingModal from "../components/AutomatedProcessingModal";
 
@@ -21,7 +22,7 @@ export default function TicketDetails() {
     const [priorityModalOpen, setPriorityModalOpen] = useState(false);
     const [returnModalOpen, setReturnModalOpen] = useState(false);
     const [automatedModalOpen, setAutomatedModalOpen] = useState(false);
-
+    const [escalateModalOpen, setEscalateModalOpen] = useState(false);
     const [ticketDetails, setTicketDetails] = useState(null);
     const [automationData, setAutomationData] = useState(null);
 
@@ -186,6 +187,7 @@ export default function TicketDetails() {
                                     onRequestAssistance={() =>
                                         setAssistanceModalOpen(true)
                                     }
+                                    onEscalateTicket={() => setEscalateModalOpen(true)}
                                 />
                             </div>
                         )}
@@ -220,6 +222,12 @@ export default function TicketDetails() {
                 open={automatedModalOpen}
                 onClose={() => setAutomatedModalOpen(false)}
                 automation={automationData}
+            />
+            <EscalateTicketModal
+                open={escalateModalOpen}
+                onClose={() => setEscalateModalOpen(false)}
+                ticketId={ticketDetails?.id}
+                onEscalationSubmitted={fetchTicketDetails}
             />
         </div>
     );

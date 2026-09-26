@@ -10,10 +10,13 @@ import {
     ChevronDown,
     ChevronUp,
 } from "lucide-react";
+
 import {
     priorityLabel,
     priorityColor,
 } from "../utils/priority";
+
+import { formatDate } from "../utils/formatDate";
 
 function SpecializationList({
     specializations = [],
@@ -38,11 +41,11 @@ function SpecializationList({
     );
 
     return (
-        <div className="flex flex-col items-start gap-1">
+        <div className="flex flex-col items-start gap-0.5">
             {visibleSpecializations.map((specialization) => (
                 <span
                     key={specialization}
-                    className="block max-w-full break-words rounded-md bg-blue-50 px-2 py-0.5 text-xs font-medium leading-4 text-blue-700"
+                    className="block max-w-full break-words rounded-md bg-blue-50 px-2 py-1 text-xs font-medium leading-4 text-blue-700"
                 >
                     {specialization}
                 </span>
@@ -52,16 +55,16 @@ function SpecializationList({
                 <button
                     type="button"
                     onClick={onToggle}
-                    className="inline-flex cursor-pointer items-center gap-1 rounded-md border border-gray-200 bg-gray-50 px-2 py-0.5 text-xs font-medium text-gray-600 transition-colors hover:border-gray-300 hover:bg-gray-100 hover:text-gray-800"
+                    className="inline-flex cursor-pointer items-center gap-0.5 rounded-md border border-gray-200 bg-gray-50 px-1 py-0.5 text-[10px] font-medium text-gray-600 transition-colors hover:border-gray-300 hover:bg-gray-100 hover:text-gray-800"
                 >
                     {expanded ? (
                         <>
-                            <ChevronUp size={13} />
+                            <ChevronUp size={11} />
                             Show less
                         </>
                     ) : (
                         <>
-                            <ChevronDown size={13} />
+                            <ChevronDown size={11} />
                             +{remainingCount} more
                         </>
                     )}
@@ -75,11 +78,6 @@ function normalizeTechnician(technician) {
     return {
         id: technician.id,
         name: technician.name || "-",
-        profileId:
-            technician.profileId ??
-            technician.profile_id ??
-            technician.id ??
-            "-",
         availability:
             technician.availability || "Unavailable",
         workload:
@@ -125,24 +123,6 @@ function formatAvailability(value) {
     );
 }
 
-function formatLastAssigned(value) {
-    if (!value) {
-        return "Never assigned";
-    }
-
-    const date = new Date(value);
-
-    if (Number.isNaN(date.getTime())) {
-        return "Never assigned";
-    }
-
-    return date.toLocaleDateString("en-US", {
-        month: "short",
-        day: "numeric",
-        year: "numeric",
-    });
-}
-
 function formatWorkload(technician) {
     const workload = Number(technician.workload) || 0;
     const limit = Number(technician.workloadLimit) || 0;
@@ -176,28 +156,44 @@ function getAvailabilityClasses(availability) {
 
 function getEvaluationClasses(technician) {
     if (technician.selected) {
-        return "bg-green-50 text-green-700";
+        return "border border-green-200 bg-green-50 text-green-700";
     }
 
     if (technician.eligible) {
-        return "bg-blue-50 text-blue-700";
+        return "border border-blue-200 bg-blue-50 text-blue-700";
     }
 
-    return "bg-gray-100 text-gray-600";
+    return "border border-gray-200 bg-gray-100 text-gray-600";
 }
 
-function getStaticClassificationValue(method) {
+function getClassificationValue(
+    method,
+    classification
+) {
     if (method === "machine_learning") {
+        const confidence = Number(
+            classification?.confidence
+        );
+
         return {
             label: "Confidence",
-            value: "92%",
+            value: Number.isFinite(confidence)
+                ? `${(confidence * 100).toFixed(0)}%`
+                : "-",
         };
     }
 
     if (method === "rule_based") {
+        const score =
+            classification?.rule_based_score;
+
         return {
             label: "Score",
-            value: "4 / 5",
+            value:
+                score !== null &&
+                score !== undefined
+                    ? `${score} / 15`
+                    : "-",
         };
     }
 
@@ -209,9 +205,15 @@ function getStaticClassificationValue(method) {
     }
 
     if (method === "ai_assisted") {
+        const confidence = Number(
+            classification?.confidence
+        );
+
         return {
             label: "Confidence",
-            value: "92%",
+            value: Number.isFinite(confidence)
+                ? `${(confidence * 100).toFixed(0)}%`
+                : "-",
         };
     }
 
@@ -248,7 +250,8 @@ export default function AutomatedProcessingModal({
     const toggleSpecializations = (technicianId) => {
         setExpandedSpecializations((current) => ({
             ...current,
-            [technicianId]: !current[technicianId],
+            [technicianId]:
+                !current[technicianId],
         }));
     };
 
@@ -270,24 +273,30 @@ export default function AutomatedProcessingModal({
     const methodLabel =
         processingMethod === "machine_learning"
             ? "Machine Learning"
-            : processingMethod === "manual_override"
+            : processingMethod ===
+              "manual_override"
             ? "Manual Override"
             : processingMethod === "ai_assisted"
             ? "AI Assisted"
             : "Rule-Based";
 
     const classificationValue =
-        getStaticClassificationValue(processingMethod);
+        getClassificationValue(
+            processingMethod,
+            automation?.classification
+        );
 
     const assignment = automation?.assignment;
 
     const selectedTechnician =
         technicians.find(
-            (technician) => technician.selected
+            (technician) =>
+                technician.selected
         ) || null;
 
     const assignmentTechnician =
-        assignment?.technician || selectedTechnician;
+        assignment?.technician ||
+        selectedTechnician;
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-3 sm:p-5">
@@ -304,8 +313,9 @@ export default function AutomatedProcessingModal({
                             </h2>
 
                             <p className="mt-0.5 text-sm text-gray-500">
-                                Review the automated classification,
-                                priority, and technician assignment.
+                                Review the automated
+                                classification, priority,
+                                and technician assignment.
                             </p>
                         </div>
                     </div>
@@ -320,7 +330,7 @@ export default function AutomatedProcessingModal({
                     </button>
                 </div>
 
-                <div className="min-h-0 flex-1 overflow-y-auto">
+                <div className="min-h-0 flex-1 overflow-y-auto [&::-webkit-scrollbar]:w-1 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-transparent hover:[&::-webkit-scrollbar-thumb]:bg-gray-300">
                     <div className="space-y-5 p-4 sm:p-6">
                         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
                             <div className="rounded-lg border border-gray-200 bg-white p-4">
@@ -392,7 +402,8 @@ export default function AutomatedProcessingModal({
                                 </div>
 
                                 <p className="break-words text-sm font-semibold text-gray-900">
-                                    {automation?.symptom_code || "-"}
+                                    {automation?.symptom_code ||
+                                        "-"}
                                 </p>
                             </div>
 
@@ -409,7 +420,8 @@ export default function AutomatedProcessingModal({
                                 </div>
 
                                 <p className="break-words text-sm font-semibold text-gray-900">
-                                    {automation?.department || "-"}
+                                    {automation?.department ||
+                                        "-"}
                                 </p>
                             </div>
                         </div>
@@ -479,8 +491,9 @@ export default function AutomatedProcessingModal({
                                         </h3>
 
                                         <p className="mt-0.5 text-sm text-gray-500">
-                                            Values determined during
-                                            automated ticket processing.
+                                            Values determined
+                                            during automated
+                                            ticket processing.
                                         </p>
                                     </div>
 
@@ -488,13 +501,15 @@ export default function AutomatedProcessingModal({
                                         <span
                                             className={`inline-flex w-fit items-center rounded-md px-2.5 py-1 text-xs font-semibold ${
                                                 priorityColor[
-                                                    automation.priority
+                                                    automation
+                                                        .priority
                                                 ] ||
                                                 "border border-gray-300 bg-gray-100 text-gray-700"
                                             }`}
                                         >
                                             {priorityLabel[
-                                                automation.priority
+                                                automation
+                                                    .priority
                                             ] ||
                                                 automation.priority}
                                         </span>
@@ -504,7 +519,8 @@ export default function AutomatedProcessingModal({
                                 <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-3">
                                     <div>
                                         <p className="text-xs font-medium uppercase tracking-wide text-gray-500">
-                                            Classification Method
+                                            Classification
+                                            Method
                                         </p>
 
                                         <p className="mt-1 text-sm font-semibold text-gray-900">
@@ -524,9 +540,6 @@ export default function AutomatedProcessingModal({
                                                 processingMethod ===
                                                 "machine_learning"
                                                     ? "text-[#2563EB]"
-                                                    : processingMethod ===
-                                                      "rule_based"
-                                                    ? "text-gray-900"
                                                     : "text-gray-900"
                                             }`}
                                         >
@@ -538,7 +551,8 @@ export default function AutomatedProcessingModal({
 
                                     <div>
                                         <p className="text-xs font-medium uppercase tracking-wide text-gray-500">
-                                            Required Specialization
+                                            Required
+                                            Specialization
                                         </p>
 
                                         <p className="mt-1 break-words text-sm font-semibold text-gray-900">
@@ -553,13 +567,16 @@ export default function AutomatedProcessingModal({
                         <div className="rounded-lg border border-gray-200 bg-white">
                             <div className="flex flex-col gap-2 border-b border-gray-200 px-4 py-4 sm:px-5">
                                 <h3 className="text-base font-semibold text-gray-900">
-                                    Technician Evaluation
+                                    IT Support Evaluation
                                 </h3>
 
                                 <p className="text-sm text-gray-500">
-                                    Technicians considered for the ticket
-                                    based on department, specialization,
-                                    availability, and workload.
+                                    IT Support considered for
+                                    the ticket based on
+                                    department,
+                                    specialization,
+                                    availability, and
+                                    workload.
                                 </p>
                             </div>
 
@@ -572,27 +589,29 @@ export default function AutomatedProcessingModal({
                                         />
 
                                         <p className="mt-3 text-sm font-medium text-gray-600">
-                                            No technicians were considered.
+                                            No IT Support
+                                            were considered.
                                         </p>
 
                                         <p className="mt-1 text-xs text-gray-400">
-                                            There are no technician records
-                                            available for this department.
+                                            There are no IT Support
+                                            records available
+                                            for this department.
                                         </p>
                                     </div>
                                 </div>
                             ) : (
                                 <>
                                     <div className="hidden overflow-hidden rounded-b-lg md:block">
-                                        <div className="w-full overflow-x-auto">
-                                            <table className="w-full min-w-[1000px] border-collapse">
+                                        <div className="w-full overflow-x-auto [&::-webkit-scrollbar]:h-1 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-transparent hover:[&::-webkit-scrollbar-thumb]:bg-gray-300">
+                                            <table className="w-full min-w-[960px] border-collapse">
                                                 <thead>
                                                     <tr className="border-b border-gray-200 bg-gray-50">
                                                         <th className="w-[180px] min-w-[180px] px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">
-                                                            Technician
+                                                            Support
                                                         </th>
 
-                                                        <th className="w-[260px] min-w-[260px] px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">
+                                                        <th className="w-[200px] min-w-[200px] px-2 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">
                                                             Specializations
                                                         </th>
 
@@ -600,7 +619,7 @@ export default function AutomatedProcessingModal({
                                                             Workload
                                                         </th>
 
-                                                        <th className="w-[125px] min-w-[125px] px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">
+                                                        <th className="w-[150px] min-w-[150px] px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">
                                                             Last Assigned
                                                         </th>
 
@@ -634,17 +653,10 @@ export default function AutomatedProcessingModal({
                                                                                 technician.name
                                                                             }
                                                                         </p>
-
-                                                                        <p className="mt-1 text-xs text-gray-500">
-                                                                            Profile #
-                                                                            {
-                                                                                technician.profileId
-                                                                            }
-                                                                        </p>
                                                                     </div>
                                                                 </td>
 
-                                                                <td className="w-[260px] min-w-[260px] px-4 py-3">
+                                                                <td className="w-[200px] min-w-[200px] px-2 py-2">
                                                                     <SpecializationList
                                                                         specializations={
                                                                             technician.specializations
@@ -673,15 +685,17 @@ export default function AutomatedProcessingModal({
 
                                                                 <td className="px-4 py-3">
                                                                     <span className="whitespace-nowrap text-sm font-medium text-gray-900">
-                                                                        {formatLastAssigned(
-                                                                            technician.lastAssigned
-                                                                        )}
+                                                                        {technician.lastAssigned
+                                                                            ? formatDate(
+                                                                                  technician.lastAssigned
+                                                                              )
+                                                                            : "Never assigned"}
                                                                     </span>
                                                                 </td>
 
                                                                 <td className="px-4 py-3">
                                                                     <span
-                                                                        className={`inline-flex items-center rounded-full px-2.5 py-1 text-xs font-medium ${getAvailabilityClasses(
+                                                                        className={`inline-flex items-center rounded-md px-2.5 py-1 text-xs font-medium ${getAvailabilityClasses(
                                                                             technician.availability
                                                                         )}`}
                                                                     >
@@ -718,7 +732,9 @@ export default function AutomatedProcessingModal({
                                         {technicians.map(
                                             (technician) => (
                                                 <div
-                                                    key={technician.id}
+                                                    key={
+                                                        technician.id
+                                                    }
                                                     className={`rounded-lg border p-4 ${
                                                         technician.selected
                                                             ? "border-green-200 bg-green-50/50"
@@ -730,13 +746,6 @@ export default function AutomatedProcessingModal({
                                                             <p className="break-words text-sm font-semibold text-gray-900">
                                                                 {
                                                                     technician.name
-                                                                }
-                                                            </p>
-
-                                                            <p className="mt-1 text-xs text-gray-500">
-                                                                Profile #
-                                                                {
-                                                                    technician.profileId
                                                                 }
                                                             </p>
                                                         </div>
@@ -794,15 +803,17 @@ export default function AutomatedProcessingModal({
                                                             </p>
 
                                                             <p className="mt-1 break-words text-sm font-medium text-gray-900">
-                                                                {formatLastAssigned(
-                                                                    technician.lastAssigned
-                                                                )}
+                                                                {technician.lastAssigned
+                                                                    ? formatDate(
+                                                                          technician.lastAssigned
+                                                                      )
+                                                                    : "Never assigned"}
                                                             </p>
                                                         </div>
                                                     </div>
 
-                                                    <div className="mt-4">
-                                                        <p className="text-xs text-gray-500">
+                                                    <div className="mt-4 border-t border-gray-200 pt-4">
+                                                        <p className="text-xs font-medium text-gray-500">
                                                             Evaluation
                                                         </p>
 
@@ -843,7 +854,8 @@ export default function AutomatedProcessingModal({
                             </div>
 
                             <div className="p-4 sm:p-5">
-                                {assignment?.status === "assigned" &&
+                                {assignment?.status ===
+                                    "assigned" &&
                                 assignmentTechnician ? (
                                     <div className="flex flex-col gap-4 rounded-lg border border-green-200 bg-green-50 p-4 sm:flex-row sm:items-center sm:justify-between">
                                         <div className="flex min-w-0 items-start gap-3">
@@ -855,7 +867,8 @@ export default function AutomatedProcessingModal({
 
                                             <div className="min-w-0">
                                                 <p className="text-sm font-semibold text-green-800">
-                                                    Automatically Assigned
+                                                    Automatically
+                                                    Assigned
                                                 </p>
 
                                                 <p className="mt-1 break-words text-sm text-green-700">
@@ -890,7 +903,8 @@ export default function AutomatedProcessingModal({
 
                                         <div className="min-w-0">
                                             <p className="text-sm font-semibold text-amber-800">
-                                                No Technician Assigned
+                                                No Technician
+                                                Assigned
                                             </p>
 
                                             <p className="mt-1 break-words text-sm text-amber-700">

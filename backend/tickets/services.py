@@ -148,6 +148,8 @@ def classify_ticket(ticket):
     }
 
 
+
+
 def calculate_priority(
     based_priority,
     affected_scope,
