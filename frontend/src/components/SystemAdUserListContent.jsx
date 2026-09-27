@@ -590,7 +590,7 @@ function RoleBadge({ role }) {
         "IT Service Desk":
             "border-purple-300 bg-purple-50 text-purple-700",
 
-        Supervisor:
+        "IT Supervisor":
             "border-amber-300 bg-amber-50 text-amber-700",
 
         "System Administrator":
@@ -601,7 +601,7 @@ function RoleBadge({ role }) {
         Employee: "Employee",
         "IT Support Specialist": "IT Support",
         "IT Service Desk": "Service Desk",
-        Supervisor: "Supervisor",
+        "IT Supervisor": "IT Supervisor",
         "System Administrator": "Administrator",
     };
 

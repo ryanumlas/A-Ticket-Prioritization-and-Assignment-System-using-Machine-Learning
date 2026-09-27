@@ -114,7 +114,9 @@ class TicketStatusHistory(models.Model):
             "PRIORITY_REJECTED",
             "Priority Request Rejected",
         )
+        ACKNOWLEDGED = ("ACKNOWLEDGED","Escalation Acknowledged",)
         ESCALATED = "ESCALATED", "Escalated"
+        ESCALATION_COMPLETED = ("ESCALATION_COMPLETED", "Escalation Completed",)
         RESOLVED = "RESOLVED", "Resolved"
         CLOSED = "CLOSED", "Closed"
     class Visibility(models.TextChoices):
@@ -135,6 +137,92 @@ class TicketStatusHistory(models.Model):
     class Meta:
         db_table = 'ticket_status_history'
         ordering = ['-created_at']
+
+class TicketEscalation(models.Model):
+    class Status(models.TextChoices):
+        OPEN = "OPEN", "Open"
+        ACKNOWLEDGED = "ACKNOWLEDGED", "Acknowledged"
+        COMPLETED = "COMPLETED", "Completed"
+
+    class ResolutionType(models.TextChoices):
+        GUIDANCE_PROVIDED = (
+            "GUIDANCE_PROVIDED",
+            "Guidance Provided",
+        )
+        ASSISTED = (
+            "ASSISTED",
+            "Assisted",
+        )
+        SUPERVISOR_RESOLVED = (
+            "SUPERVISOR_RESOLVED",
+            "Supervisor Resolved",
+        )
+
+    ticket = models.ForeignKey(
+        Ticket,
+        on_delete=models.CASCADE,
+        related_name="escalations",
+    )
+
+    escalated_by = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        related_name="ticket_escalations",
+    )
+
+    reason = models.TextField()
+
+    escalated_at = models.DateTimeField(
+        auto_now_add=True
+    )
+
+    status = models.CharField(
+        max_length=20,
+        choices=Status.choices,
+        default=Status.OPEN,
+    )
+
+    acknowledged_by = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="acknowledged_ticket_escalations",
+    )
+
+    acknowledged_at = models.DateTimeField(
+        null=True,
+        blank=True,
+    )
+
+    resolution_type = models.CharField(
+        max_length=30,
+        choices=ResolutionType.choices,
+        null=True,
+        blank=True,
+    )
+
+    resolution_remarks = models.TextField(
+        blank=True,
+    )
+
+    resolved_by = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="resolved_ticket_escalations",
+    )
+
+    resolved_at = models.DateTimeField(
+        null=True,
+        blank=True,
+    )
+
+    class Meta:
+        db_table = "ticket_escalations"
+        ordering = ["-escalated_at"]
 
 class SLARules(models.Model):
     priority_level = models.CharField(max_length=20, unique=True)

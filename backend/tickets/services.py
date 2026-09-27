@@ -50,6 +50,7 @@ def classify_ticket(ticket):
     description_text = normalize_text(ticket.description or "")
 
     scores = {}
+    matched_keywords = []
 
     for gemini_kw in keywords:
         gemini_kw = normalize_text(gemini_kw)
@@ -88,6 +89,12 @@ def classify_ticket(ticket):
 
             scores[code] = scores.get(code, 0) + weight
 
+            matched_keywords.append({
+                "keyword": match.keyword,
+                "symptom_code": code,
+                "weight": weight,
+            })
+
             print(
                 f"Matched -> {match.keyword} | "
                 f"{code} | Weight={weight}"
@@ -103,6 +110,7 @@ def classify_ticket(ticket):
             "category": None,
             "scores": {},
             "best_score": 0,
+            "matched_keywords": [],
             "status": "No matching keywords found",
         }
 
@@ -121,6 +129,7 @@ def classify_ticket(ticket):
             "category": None,
             "scores": scores,
             "best_score": best_score,
+            "matched_keywords": matched_keywords,
             "status": "Rule-based confidence insufficient - ML fallback required"
         }
 
@@ -134,6 +143,7 @@ def classify_ticket(ticket):
             "category": None,
             "scores": scores,
             "best_score": best_score,
+            "matched_keywords": matched_keywords,
             "status": "Matched symptom code does not exist",
         }
 
@@ -144,10 +154,9 @@ def classify_ticket(ticket):
         "category": category.name if category else None,
         "scores": scores,
         "best_score": best_score,
+        "matched_keywords": matched_keywords,
         "status": "Classification successful",
     }
-
-
 
 
 def calculate_priority(

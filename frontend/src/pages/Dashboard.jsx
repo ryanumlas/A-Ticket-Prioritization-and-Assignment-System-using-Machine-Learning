@@ -27,7 +27,7 @@ export default function Dashboard() {
         MainContent = <ServiceDeskDashboard />;
     } else if (user.role === "System Administrator") {
         MainContent = <SystemAdminDashboard />;
-    } else if (user.role === "Supervisor") {
+    } else if (user.role === "IT Supervisor") {
         MainContent = <SupervisorDashboard />;
     } else {
         MainContent = (

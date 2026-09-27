@@ -228,7 +228,7 @@ function App() {
                 path="/supervisor/escalated-tickets"
                 element={
                     <ProtectedRoute
-                        allowedRoles={["Supervisor"]}
+                        allowedRoles={["IT Supervisor"]}
                     >
                         <EscalatedTicket />
                     </ProtectedRoute>

@@ -198,7 +198,7 @@ export const sidebarItems = {
             icon: Bell
         }
     ],
-    Supervisor: [
+    "IT Supervisor": [
         {
             type: "link",
             name: "Dashboard",

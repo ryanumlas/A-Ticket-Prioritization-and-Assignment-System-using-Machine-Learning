@@ -3,7 +3,7 @@ from .views import (CreateITSupportProfileView, RegisterView, UserListView, Crea
 UserRoleListView, EmployeeOverviewAPIView, UserProfileUpdateView, SpecializationCreateView, ITSupportProfileCreateView, 
 ITSupportSpecializationCreateView, ITSupportProfileUpdateView, NotificationListView, NotificationMarkReadView, NotificationUnreadCountView, AdminUserListView, 
 ITDepartmentOptionsView, EmployeeDepartmentOptionsView, OfficeLocationOptionsView, 
-UserRoleOptionsView, AdminUserCreateView, SpecializationOptionsView, AdminUserDetailView, AdminAuditLogListView)
+UserRoleOptionsView, AdminUserCreateView, SpecializationOptionsView, AdminUserDetailView, AdminAuditLogListView, UserRoleUpdateView)
 
 urlpatterns = [
     path('list/', UserListView.as_view(), name='user-list'),
@@ -11,6 +11,7 @@ urlpatterns = [
     path('update/<int:pk>/', UserUpdateView.as_view(), name='user-update'),
     path('roles/create/', UserRoleCreateView.as_view(), name='user-role-create'),
     path('roles/list/', UserRoleListView.as_view(), name='user-role-list'),
+    path('roles/update/<int:pk>/', UserRoleUpdateView.as_view(), name='user-role-update'),
     path('profile/update/<int:pk>/', UserProfileUpdateView.as_view(), name="profile-update"),
     path('employee/list/overview/', EmployeeOverviewAPIView.as_view(), name="overview-list"),
     path('roles/delete/<int:pk>/', UserRoleDeleteView.as_view(), name='user-role-delete'),

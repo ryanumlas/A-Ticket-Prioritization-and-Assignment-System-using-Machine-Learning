@@ -44,19 +44,19 @@ export default function AuditLogsListContent({
             <table className="w-full min-w-[1200px] table-fixed text-sm">
                 <thead className="sticky top-0 z-20 bg-gray-50">
                     <tr className="border-b border-gray-300 text-left">
-                        <th className="w-[10%] px-2.5 py-3.5 font-semibold text-black">
+                        <th className="w-[8%] px-2.5 py-3.5 font-semibold text-black">
                             User Code
                         </th>
 
-                        <th className="w-[15%] px-2.5 py-3.5 font-semibold text-black">
+                        <th className="w-[10%] px-2.5 py-3.5 font-semibold text-black">
                             User
                         </th>
 
-                        <th className="w-[12%] px-2.5 py-3.5 font-semibold text-black">
+                        <th className="w-[8%] px-2.5 py-3.5 font-semibold text-black">
                             Role
                         </th>
 
-                        <th className="w-[15%] px-2.5 py-3.5 font-semibold text-black">
+                        <th className="w-[10%] px-2.5 py-3.5 font-semibold text-black">
                             Department
                         </th>
 
@@ -64,11 +64,11 @@ export default function AuditLogsListContent({
                             Action
                         </th>
 
-                        <th className="w-[19%] px-2.5 py-3.5 font-semibold text-black">
+                        <th className="w-[15%] px-2.5 py-3.5 font-semibold text-black">
                             Details
                         </th>
 
-                        <th className="w-[18%] px-2.5 py-3.5 font-semibold text-black">
+                        <th className="w-[12%] px-2.5 py-3.5 font-semibold text-black">
                             Created
                         </th>
                     </tr>
@@ -234,30 +234,60 @@ function getDetails(log) {
     const action = log.action || "";
 
     const details = {
-        CREATE: "Ticket has been created.",
+        TICKET_CREATED: "Ticket has been created.",
+
         UPDATE: "Ticket information has been updated.",
-        STATUS_CHANGED: "Ticket status has been changed.",
-        ASSIGNED: "Ticket has been assigned.",
-        REASSIGNED: "Ticket has been reassigned.",
-        PRIORITY_CHANGED: "Ticket priority has been changed.",
-        RETURNED: "Ticket has been returned to the Service Desk.",
-        RETURN_APPROVED: "Ticket return request has been approved.",
-        RETURN_REJECTED: "Ticket return request has been rejected.",
-        REVIEW_COMPLETED: "Ticket review has been completed.",
+
+        STATUS_CHANGED:
+            "Ticket status has been changed.",
+
+        ASSIGNED:
+            "Ticket has been assigned.",
+
+        REASSIGNED:
+            "Ticket has been reassigned.",
+
+        PRIORITY_CHANGED:
+            "Ticket priority has been changed.",
+
+        RETURNED:
+            "Ticket has been returned to the Service Desk.",
+
+        RETURN_APPROVED:
+            "Ticket return request has been approved.",
+
+        RETURN_REJECTED:
+            "Ticket return request has been rejected.",
+
+        REVIEW_COMPLETED:
+            "Ticket review has been completed.",
+
         PRIORITY_REVIEW_REQUESTED:
             "Priority review has been requested.",
+
         PRIORITY_REVIEW:
             "Priority review has been requested.",
+
         PRIORITY_REJECTED:
             "Priority change request has been rejected.",
+
         ESCALATED:
             "Ticket has been escalated for Supervisor review.",
 
         "Ticket Escalated":
             "Ticket has been escalated for Supervisor review.",
 
-        LOGIN: "User has logged in.",
-        LOGOUT: "User has logged out.",
+        ESCALATION_ACKNOWLEDGED:
+            "Ticket escalation has been acknowledged by a Supervisor.",
+
+        ESCALATION_COMPLETED:
+            "Ticket escalation has been completed by the IT Supervisor.",
+
+        LOGIN:
+            "User has logged in.",
+
+        LOGOUT:
+            "User has logged out.",
     };
 
     return details[action] || "System activity recorded.";
@@ -265,7 +295,7 @@ function getDetails(log) {
 
 function ActionBadge({ action }) {
     const config = {
-        CREATE: {
+        TICKET_CREATED: {
             label: "Created",
             icon: <CheckCircle2 size={14} />,
             className:
@@ -363,6 +393,20 @@ function ActionBadge({ action }) {
                 "border-red-300 bg-red-50 text-red-700",
         },
 
+        ESCALATION_ACKNOWLEDGED: {
+            label: "Escalation Acknowledged",
+            icon: <CheckCircle2 size={14} />,
+            className:
+                "border-green-300 bg-green-50 text-green-700",
+        },
+
+        ESCALATION_COMPLETED: {
+            label: "Escalation Completed",
+            icon: <CheckCircle2 size={14} />,
+            className:
+                "border-green-300 bg-green-50 text-green-700",
+        },
+
         LOGIN: {
             label: "Login",
             icon: <Clock3 size={14} />,
@@ -426,7 +470,8 @@ function RoleBadge({ role }) {
         "IT Service Desk":
             "Service Desk",
 
-        Supervisor: "Supervisor",
+        Supervisor:
+            "Supervisor",
 
         "System Administrator":
             "Administrator",

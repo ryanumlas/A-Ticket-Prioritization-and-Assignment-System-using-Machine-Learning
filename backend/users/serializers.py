@@ -94,6 +94,10 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
 
         return super().validate(attrs)
 
+class UserRolesUpdateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = UserRoles
+        fields = ["id", "name"]
 class AuditLogSerializer(serializers.ModelSerializer):
     user_code = serializers.SerializerMethodField()
     first_name = serializers.SerializerMethodField()
@@ -152,25 +156,29 @@ class AuditLogSerializer(serializers.ModelSerializer):
     def get_department(self, obj):
         user = obj.user
 
-        if not user or not user.role:
+        if not user:
             return None
 
-        role_name = user.role.name
+        role_name = user.role.name if user.role else None
 
-        if role_name == "Employee":
-            profile = getattr(user, "profile", None)
+        profile_map = {
+            "IT Support Specialist": "it_support_profile",
+            "IT Service Desk": "it_service_desk_profile",
+            "IT Supervisor": "it_supervisor_profile",
+            "System Administrator": "system_administrator_profile",
+        }
 
-            if not profile or not profile.employee_department:
-                return None
+        profile_relation = profile_map.get(role_name)
 
-            return profile.employee_department.name
-
-        it_profile = getattr(user, "it_support_profile", None)
-
-        if not it_profile or not it_profile.it_department:
+        if not profile_relation:
             return None
 
-        return it_profile.it_department.name
+        profile = getattr(user, profile_relation, None)
+
+        if profile and profile.it_department:
+            return profile.it_department.name
+
+        return None
    
 class ITSupportProfileSerializer(serializers.ModelSerializer):
     class Meta:
@@ -249,14 +257,24 @@ class ITSupportSpecializationCreateSerializer(serializers.ModelSerializer):
 
 
 class NotificationSerializer(serializers.ModelSerializer):
-    ticket_code = serializers.CharField(source="ticket.ticket_code",read_only=True)
-    notification_type_display = serializers.CharField(source="get_notification_type_display",read_only=True)
+    ticket_id = serializers.IntegerField(
+        source="ticket.id",
+        read_only=True,
+    )
+    ticket_code = serializers.CharField(
+        source="ticket.ticket_code",
+        read_only=True,
+    )
+    notification_type_display = serializers.CharField(
+        source="get_notification_type_display",
+        read_only=True,
+    )
 
     class Meta:
         model = Notifications
         fields = [
             "id",
-            "ticket",
+            "ticket_id",
             "ticket_code",
             "message",
             "notification_type",
@@ -264,7 +282,6 @@ class NotificationSerializer(serializers.ModelSerializer):
             "is_read",
             "created_at",
         ]
-
 class AdminUserListSerializer(serializers.ModelSerializer):
     full_name = serializers.SerializerMethodField()
     role_name = serializers.CharField(
@@ -419,9 +436,9 @@ class OfficeLocationOptionSerializer(serializers.ModelSerializer):
 def get_user_code_prefix(role_name):
     prefixes = {
         "Employee": "EMP",
-        "IT Support Specialist": "ITS",
+        "IT Support Specialist": "ITSP",
         "IT Service Desk": "ITSD",
-        "Supervisor": "ITSUP",
+        "IT Supervisor": "ITSV",
         "System Administrator": "SYSAD",
     }
 
@@ -630,7 +647,6 @@ class AdminUserCreateSerializer(serializers.ModelSerializer):
                     "employee_department":
                         "Employee department is required."
                 })
-
         else:
             if not it_department:
                 raise serializers.ValidationError({
@@ -653,10 +669,10 @@ class AdminUserCreateSerializer(serializers.ModelSerializer):
 
         return attrs
 
-    def generate_user_code(self, role):
+    def generate_user_code(self, role, user_id):
         role_prefixes = {
             "Employee": "EMP",
-            "IT Support Specialist": "ITS",
+            "IT Support Specialist": "ITSP",
             "IT Service Desk": "ITSD",
             "IT Supervisor": "ITSV",
             "System Administrator": "SYSAD",
@@ -667,29 +683,7 @@ class AdminUserCreateSerializer(serializers.ModelSerializer):
             "USR",
         )
 
-        last_user = (
-            User.objects
-            .filter(
-                user_code__startswith=f"{prefix}-"
-            )
-            .order_by("-id")
-            .first()
-        )
-
-        if not last_user:
-            next_number = 1
-        else:
-            try:
-                last_number = int(
-                    last_user.user_code.split("-")[-1]
-                )
-
-                next_number = last_number + 1
-
-            except (ValueError, IndexError):
-                next_number = 1
-
-        return f"{prefix}-{next_number:04d}"
+        return f"{prefix}-{user_id:04d}"
 
     @transaction.atomic
     def create(self, validated_data):
@@ -732,17 +726,21 @@ class AdminUserCreateSerializer(serializers.ModelSerializer):
             "role"
         )
 
-        user_code = self.generate_user_code(
-            role
-        )
-
         user = User(
-            user_code=user_code,
             **validated_data,
         )
 
         user.set_password(password)
         user.save()
+
+        user.user_code = self.generate_user_code(
+            role,
+            user.id,
+        )
+
+        user.save(
+            update_fields=["user_code"]
+        )
 
         UserProfile.objects.create(
             user=user,
@@ -781,6 +779,27 @@ class AdminUserCreateSerializer(serializers.ModelSerializer):
                     )
                     for specialization in specializations
                 ]
+            )
+
+        elif role_name == "IT Service Desk":
+            ITServiceDeskProfile.objects.create(
+                user=user,
+                it_department=it_department,
+                office_location=office_location,
+            )
+
+        elif role_name == "IT Supervisor":
+            ITSupervisorProfile.objects.create(
+                user=user,
+                it_department=it_department,
+                office_location=office_location,
+            )
+
+        elif role_name == "System Administrator":
+            SystemAdministratorProfile.objects.create(
+                user=user,
+                it_department=it_department,
+                office_location=office_location,
             )
 
         return user

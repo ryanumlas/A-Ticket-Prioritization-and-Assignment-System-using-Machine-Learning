@@ -19,13 +19,18 @@ from .serializers import (UserSerializer, ITSupportSpecializationCreateSerialize
                           ITSupportProfileCreateSerializer, UserListSerializer, UserRolesSerializer, CustomTokenObtainPairSerializer, 
                           UserProfileUpdateSerializer, SpecializationSerializer, ITSupportProfileUpdateSerializer, NotificationSerializer, AdminUserListSerializer,
                               EmployeeDepartmentOptionSerializer,
-    ITDepartmentOptionSerializer,
+    ITDepartmentOptionSerializer, UserRolesUpdateSerializer,
     OfficeLocationOptionSerializer, UserRoleOptionSerializer, AdminUserCreateSerializer, SpecializationOptionSerializer, AdminUserDetailSerializer, AuditLogSerializer)
 
 class RegisterView(generics.CreateAPIView):
     queryset = User.objects.all()
     serializer_class = UserSerializer
     permission_classes = [AllowAny] 
+
+class UserRoleUpdateView(generics.UpdateAPIView):
+    queryset = UserRoles.objects.all()
+    serializer_class = UserRolesUpdateSerializer
+    permission_classes = [AllowAny]
 
 class AdminUserListView(APIView):
     permission_classes = [IsAuthenticated]

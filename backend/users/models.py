@@ -196,6 +196,14 @@ class Notifications(models.Model):
         TICKET_RESOLVED = 'ticket_resolved', 'Ticket Resolved'
         TICKET_CLOSED = 'ticket_closed', 'Ticket Closed'
         TICKET_ESCALATED = 'ticket_escalated', 'Ticket Escalated'
+        ESCALATION_ACKNOWLEDGED = (
+            "escalation_acknowledged",
+            "Escalation Acknowledged",
+        )
+        ESCALATION_COMPLETED = (
+            "escalation_completed",
+            "Escalation Completed",
+        )
     
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='notifications')
     ticket = models.ForeignKey('tickets.Ticket', on_delete=models.CASCADE, related_name='notifications')

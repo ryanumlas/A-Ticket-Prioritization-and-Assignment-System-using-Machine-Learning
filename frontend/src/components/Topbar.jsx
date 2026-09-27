@@ -133,8 +133,9 @@ export default function Topbar() {
             }
         }
 
-        if (notification.ticket) {
-            navigate(`/tickets/${notification.ticket}`);
+        if (notification.ticket_id) {
+            navigate(`/ticket/${notification.ticket_id}`);
+            setNotificationOpen(false);
         }
     };
 

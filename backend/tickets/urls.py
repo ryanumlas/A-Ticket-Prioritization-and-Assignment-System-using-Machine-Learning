@@ -8,13 +8,15 @@ SLAPerformanceView, TicketsByCategoryView, TicketDetailSupportView, TicketStatus
 PriorityChangeRequestView, PriorityChangeRequestListView, PriorityRequestDetailView, ApprovePriorityRequestView, ReturnTicketView, 
 ReturnedTicketRequestListView, ReturnedTicketDetailRetrieve, ApproveReturnTicketView, PendingPriorityRequestCountView, PendingReturnTicketRequestCountView, 
 ServiceDeskDepartmentQueueView, EscalateTicketView,
-ServiceDeskDepartmentSymptomCodesView, ServiceDeskDepartmentListView, RejectReturnTicketView, RejectPriorityRequestView, EmployeeCurrentActiveTicketView, SupervisorEscalatedTicketsView)
+ServiceDeskDepartmentSymptomCodesView, ServiceDeskDepartmentListView, RejectReturnTicketView, TicketDetailSupervisorView, AcknowledgeEscalationView, 
+RejectPriorityRequestView, EmployeeCurrentActiveTicketView, SupervisorEscalatedTicketsView, CompleteEscalationView)
 
 urlpatterns = [
     # --- Ticket URLs ---
     path('create/', CreateTicketView.as_view(), name='create-ticket'),
     path('list/', ListTicketView.as_view(), name='list-tickets'),
     path('detail/<int:pk>/', DetailTicketView.as_view(), name='detail-ticket'),
+    path("supervisor/detail/<int:ticket_id>/", TicketDetailSupervisorView.as_view(),),
     path('update/<int:pk>/', UpdateTicketView.as_view(), name='update-ticket'),
     path('update-status/<int:pk>/', UpdateTicketStatusView.as_view(), name='update-ticket-status'),
     path('manual-override/<int:pk>/', ManualOverrideTicketView.as_view(), name='manual-override-ticket'),
@@ -59,7 +61,9 @@ urlpatterns = [
     path("employee/current-active/",EmployeeCurrentActiveTicketView.as_view(), name="employee-current-active-ticket",),
 
     path("escalate/<int:pk>/", EscalateTicketView.as_view(), name="escalate-ticket"),
+    path("complete-escalation/<int:pk>/", CompleteEscalationView.as_view(), name="escalate-ticket-complete"),
     path("supervisor/escalated/list/",SupervisorEscalatedTicketsView.as_view(), name="escalated-ticket-list"),
+    path("acknowledge-escalation/<int:pk>/",AcknowledgeEscalationView.as_view(),),
     # --- Category URLs ---
     path('categories/create/', CreateCategoryView.as_view(), name='create-category'),
     path('categories/update/<int:pk>/', UpdateCategoryView.as_view(), name='update-category'),

@@ -171,18 +171,15 @@ export default function SystemAdUserList() {
                     </button>
                 </div>
 
-                {/* Role Tabs */}
                 <div className="border-b border-gray-200 bg-white px-5 py-3">
-                    <div className="flex flex-wrap gap-2">
+                    <div className="flex w-fit flex-wrap items-center gap-1 rounded-lg bg-gray-100 p-1">
                         <button
                             type="button"
-                            onClick={() =>
-                                handleRoleChange("")
-                            }
-                            className={`cursor-pointer rounded-lg px-3.5 py-2 text-sm font-medium transition ${
+                            onClick={() => handleRoleChange("")}
+                            className={`flex cursor-pointer items-center justify-center rounded-md px-4 py-2.5 text-sm font-medium transition ${
                                 selectedRole === ""
-                                    ? "bg-[#2563EB] text-white"
-                                    : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                                    ? "bg-[#4C4CF9] text-white shadow-sm"
+                                    : "text-gray-500 hover:bg-white hover:text-black"
                             }`}
                         >
                             All Users
@@ -192,13 +189,11 @@ export default function SystemAdUserList() {
                             <button
                                 key={role.id}
                                 type="button"
-                                onClick={() =>
-                                    handleRoleChange(role.name)
-                                }
-                                className={`cursor-pointer rounded-lg px-3.5 py-2 text-sm font-medium transition ${
+                                onClick={() => handleRoleChange(role.name)}
+                                className={`flex cursor-pointer items-center justify-center rounded-md px-4 py-2.5 text-sm font-medium transition ${
                                     selectedRole === role.name
-                                        ? "bg-[#2563EB] text-white"
-                                        : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                                        ? "bg-[#4C4CF9] text-white shadow-sm"
+                                        : "text-gray-500 hover:bg-white hover:text-black"
                                 }`}
                             >
                                 {role.name}

@@ -8,6 +8,7 @@ import TopBar from "../components/Topbar";
 
 import TicketDetailsEmployee from "../components/TicketDetailsEmployee";
 import TicketDetailsSupport from "../components/TicketDetailsSupport";
+import SupervisorTicketDetails from "./SupervisorTicketDetails";
 import ManageTicketDropdown from "../components/ManageTickets/ManageTicketDropdown";
 import RequestPriorityModal from "../components/ManageTickets/RequestPriorityModal";
 import ReturnTicketModal from "../components/ManageTickets/ReturnTicketModal";
@@ -23,6 +24,7 @@ export default function TicketDetails() {
     const [returnModalOpen, setReturnModalOpen] = useState(false);
     const [automatedModalOpen, setAutomatedModalOpen] = useState(false);
     const [escalateModalOpen, setEscalateModalOpen] = useState(false);
+
     const [ticketDetails, setTicketDetails] = useState(null);
     const [automationData, setAutomationData] = useState(null);
 
@@ -44,6 +46,8 @@ export default function TicketDetails() {
                 endpoint = `/tickets/service-desk/detail/${ticketId}/`;
             } else if (user?.role === "IT Support Specialist") {
                 endpoint = `/tickets/support/detail/${ticketId}/`;
+            } else if (user?.role === "IT Supervisor") {
+                endpoint = `/tickets/supervisor/detail/${ticketId}/`;
             } else {
                 setError("Access Denied / Invalid Role");
                 return;
@@ -120,6 +124,12 @@ export default function TicketDetails() {
         Number(ticketDetails?.assigned_to?.id) ===
             Number(user?.user_id);
 
+    const isSupervisor =
+        user?.role === "IT Supervisor";
+
+    const canUseTicketActions =
+        isAssignedSupport || isSupervisor;
+
     let MainContent;
 
     if (user?.role === "Employee") {
@@ -131,6 +141,13 @@ export default function TicketDetails() {
     } else if (user?.role === "IT Support Specialist") {
         MainContent = (
             <TicketDetailsSupport
+                ticketDetails={ticketDetails}
+                onTicketUpdated={fetchTicketDetails}
+            />
+        );
+    } else if (user?.role === "IT Supervisor") {
+        MainContent = (
+            <SupervisorTicketDetails
                 ticketDetails={ticketDetails}
                 onTicketUpdated={fetchTicketDetails}
             />
@@ -161,7 +178,7 @@ export default function TicketDetails() {
                             Back to Tickets
                         </button>
 
-                        {isAssignedSupport && (
+                        {canUseTicketActions && (
                             <div className="flex items-center gap-2">
                                 <button
                                     type="button"
@@ -178,6 +195,7 @@ export default function TicketDetails() {
                                 </button>
 
                                 <ManageTicketDropdown
+                                    role={user?.role}
                                     onPriorityRequest={() =>
                                         setPriorityModalOpen(true)
                                     }
@@ -187,7 +205,12 @@ export default function TicketDetails() {
                                     onRequestAssistance={() =>
                                         setAssistanceModalOpen(true)
                                     }
-                                    onEscalateTicket={() => setEscalateModalOpen(true)}
+                                    onEscalateTicket={
+                                        isAssignedSupport
+                                            ? () =>
+                                                setEscalateModalOpen(true)
+                                            : undefined
+                                    }
                                 />
                             </div>
                         )}
@@ -202,15 +225,15 @@ export default function TicketDetails() {
             <RequestPriorityModal
                 open={priorityModalOpen}
                 onClose={() => setPriorityModalOpen(false)}
-                ticketId={ticketDetails.id}
-                currentPriority={ticketDetails.priority}
+                ticketId={ticketDetails?.id}
+                currentPriority={ticketDetails?.priority}
                 onRequestSubmitted={fetchTicketDetails}
             />
 
             <ReturnTicketModal
                 open={returnModalOpen}
                 onClose={() => setReturnModalOpen(false)}
-                ticketId={ticketDetails.id}
+                ticketId={ticketDetails?.id}
             />
 
             <RequestAssistanceModal
@@ -223,6 +246,7 @@ export default function TicketDetails() {
                 onClose={() => setAutomatedModalOpen(false)}
                 automation={automationData}
             />
+
             <EscalateTicketModal
                 open={escalateModalOpen}
                 onClose={() => setEscalateModalOpen(false)}

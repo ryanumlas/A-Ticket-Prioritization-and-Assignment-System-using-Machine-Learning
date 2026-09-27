@@ -25,11 +25,12 @@ export default function LeftSidePanel({ ticketDetails }) {
 
     const canViewClassification =
         user?.role === "IT Service Desk" ||
-        user?.role === "IT Support Specialist";
+        user?.role === "IT Support Specialist" ||
+        user?.role === "IT Supervisor";
 
     const canEditTicket =
-        user?.role === "IT Service Desk" ||
-        user?.role === "IT Support Specialist";
+        user?.role === "IT Support Specialist" ||
+        user?.role === "IT Supervisor";
 
     const requesterName = `${ticketDetails.first_name || ""} ${ticketDetails.last_name || ""}`.trim() || "Unknown User";
     const assignedName = ticketDetails.assigned_to?.full_name || "Unassigned";

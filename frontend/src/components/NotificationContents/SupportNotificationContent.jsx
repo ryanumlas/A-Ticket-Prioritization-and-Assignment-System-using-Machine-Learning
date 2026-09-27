@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import {
     Bell,
     CheckCheck,
@@ -62,6 +63,8 @@ function getNotificationIcon(type) {
         case "status_updated":
         case "comment_added":
         case "review_required":
+        case "ticket_escalated":
+        case "escalation_acknowledged":
         default:
             return (
                 <Bell
@@ -79,6 +82,8 @@ function getIconStyle(isRead) {
 }
 
 export default function SupportNotificationContent() {
+    const navigate = useNavigate();
+
     const [notifications, setNotifications] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState("");
@@ -109,36 +114,43 @@ export default function SupportNotificationContent() {
         fetchNotifications();
     }, []);
 
-    const handleMarkAsRead = async (notification) => {
-        if (
-            notification.is_read ||
-            markingId === notification.id
-        ) {
-            return;
-        }
-
+    const handleNotificationClick = async (notification) => {
         try {
-            setMarkingId(notification.id);
+            if (!notification.is_read) {
+                setMarkingId(notification.id);
 
-            await api.patch(
-                `/users/notifications/${notification.id}/read/`
-            );
+                await api.patch(
+                    `/users/notifications/${notification.id}/read/`
+                );
 
-            setNotifications((current) =>
-                current.map((item) =>
-                    item.id === notification.id
-                        ? {
-                              ...item,
-                              is_read: true,
-                          }
-                        : item
-                )
-            );
+                setNotifications((current) =>
+                    current.map((item) =>
+                        item.id === notification.id
+                            ? {
+                                  ...item,
+                                  is_read: true,
+                              }
+                            : item
+                    )
+                );
+            }
+
+            if (notification.ticket_id) {
+                navigate(
+                    `/ticket/${notification.ticket_id}`
+                );
+            }
         } catch (err) {
             setError(
                 err.response?.data?.error ||
                     "Failed to mark notification as read."
             );
+
+            if (notification.ticket_id) {
+                navigate(
+                    `/ticket/${notification.ticket_id}`
+                );
+            }
         } finally {
             setMarkingId(null);
         }
@@ -253,19 +265,20 @@ export default function SupportNotificationContent() {
                                 const isUnread =
                                     !notification.is_read;
 
+                                const isMarking =
+                                    markingId ===
+                                    notification.id;
+
                                 return (
                                     <button
                                         key={notification.id}
                                         type="button"
                                         onClick={() =>
-                                            handleMarkAsRead(
+                                            handleNotificationClick(
                                                 notification
                                             )
                                         }
-                                        disabled={
-                                            markingId ===
-                                            notification.id
-                                        }
+                                        disabled={isMarking}
                                         className={`flex w-full cursor-pointer items-start gap-4 border-b border-gray-100 px-5 py-4 text-left transition last:border-b-0 ${
                                             isUnread
                                                 ? "bg-blue-50/[0.35] hover:bg-blue-50"

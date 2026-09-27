@@ -21,7 +21,7 @@ export default function Ticket() {
     else if (user?.role === "IT Service Desk") {
         MainContent = <ServiceDeskTicket/>;
     }
-    else if (user?.role === "Supervisor") {
+    else if (user?.role === "IT Supervisor") {
         MainContent = <ServiceDeskTicket/>;
     }
     else if (user?.role === "System Administrator") {

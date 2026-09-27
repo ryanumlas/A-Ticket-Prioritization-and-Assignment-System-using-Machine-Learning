@@ -8,7 +8,8 @@ export default function EscalatedTicket() {
 
     let MainContent;
 
-    if (user?.role === "Supervisor") {
+
+    if (user?.role === "IT Supervisor") {
         MainContent = <SupervisorEscalatedTicket/>;
     }
     else {

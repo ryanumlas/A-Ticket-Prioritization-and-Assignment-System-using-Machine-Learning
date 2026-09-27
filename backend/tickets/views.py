@@ -8,7 +8,7 @@ from rest_framework.response import Response
 from rest_framework import viewsets, generics, status
 from rest_framework.views import APIView
 from rest_framework.permissions import IsAuthenticated, AllowAny
-from .models import Ticket, Category, SymptomCode, TicketComments, SLARules, ReviewFlags, TicketAssistance, Keyword, TicketStatusHistory as TicketStatusHistoryModel, TicketReturn, TicketPriorityRequest
+from .models import Ticket, Category, SymptomCode, TicketComments, SLARules, ReviewFlags, TicketAssistance, Keyword, TicketStatusHistory as TicketStatusHistoryModel, TicketReturn, TicketPriorityRequest, TicketEscalation
 from .serializers import (SymptomCodeSerializer, TicketSerializer, CategorySerializer, 
 TicketAssistanceSerializer, TicketCommentSerializer, TicketStatusHistory, SLARulesSerializer, 
 SLARulesUpdateSerializer, KeywordSerializer, KeywordUpdateSerializer, UpdateSymptomCodeSerializer, CreateSymptomCodeSerializer,
@@ -16,7 +16,7 @@ TicketCreateSerializer, TicketUpdateSerializer, TicketDetailEmployeeSerializer, 
 FlaggedTicketDetailSerializer, TicketDetailSupportSerializer, TicketStatusHistorySerializer, PriorityChangeRequestSerializer, PriorityRequestListSerializer, 
 PriorityRequestDetailSerializer, ReturnTicketSerializer, ReturnedTicketRequestListSerializer, ReturnedTicketDetailSerializer, ApproveReturnTicketSerializer, 
 ServiceDeskDepartmentSerializer, RejectReturnTicketSerializer, EmployeeCurrentActiveTicketSerializer, SupervisorEscalatedTicketSerializer)
-from users.models import User, ITSupportProfile, Notifications, AuditLogs
+from users.models import User, ITSupportProfile, Notifications, AuditLogs, ITServiceDeskProfile, ITSupervisorProfile, SystemAdministratorProfile
 from users.services import create_notification
 from .services import predict_ticket, assign_ticket_automatically
 from ai.models import TicketAnalysis, TicketAIAnalysis
@@ -68,6 +68,16 @@ class CreateTicketView(generics.CreateAPIView):
             submitted_by=self.request.user,
             employee_department=profile.employee_department,
             office_location=profile.office_location,
+        )
+
+        # Audit log for ticket creation
+        AuditLogs.objects.create(
+            user=self.request.user,
+            module="Tickets",
+            action="TICKET_CREATED",
+            reference_id=ticket.ticket_code,
+            remarks="Ticket submitted successfully.",
+            created_by=self.request.user,
         )
 
         TicketStatusHistory.objects.create(
@@ -170,6 +180,8 @@ class CreateTicketView(generics.CreateAPIView):
                 "department": None,
                 "priority": None,
                 "processing_time": 0,
+                "matched_keywords": [],
+                "best_score": 0,
                 "assignment": {
                     "status": "unassigned",
                     "technician": None,
@@ -266,6 +278,14 @@ class CreateTicketView(generics.CreateAPIView):
                     "department": None,
                     "priority": None,
                     "processing_time": 0,
+                    "matched_keywords": result.get(
+                        "matched_keywords",
+                        [],
+                    ),
+                    "best_score": result.get(
+                        "best_score",
+                        0,
+                    ),
                     "assignment": {
                         "status": "unassigned",
                         "technician": None,
@@ -346,6 +366,14 @@ class CreateTicketView(generics.CreateAPIView):
                     "department": None,
                     "priority": None,
                     "processing_time": 0,
+                    "matched_keywords": result.get(
+                        "matched_keywords",
+                        [],
+                    ),
+                    "best_score": result.get(
+                        "best_score",
+                        0,
+                    ),
                     "assignment": {
                         "status": "unassigned",
                         "technician": None,
@@ -362,7 +390,12 @@ class CreateTicketView(generics.CreateAPIView):
 
                 return
 
-        category = symptom.category if symptom else None
+        category = (
+            symptom.category
+            if symptom
+            else None
+        )
+
         department = (
             category.it_department
             if category
@@ -443,6 +476,14 @@ class CreateTicketView(generics.CreateAPIView):
                 "department": None,
                 "priority": None,
                 "processing_time": 0,
+                "matched_keywords": result.get(
+                    "matched_keywords",
+                    [],
+                ),
+                "best_score": result.get(
+                    "best_score",
+                    0,
+                ),
                 "assignment": {
                     "status": "unassigned",
                     "technician": None,
@@ -522,6 +563,17 @@ class CreateTicketView(generics.CreateAPIView):
             "_automation_result",
             None,
         )
+
+        if automation_result is not None:
+            automation_result["matched_keywords"] = result.get(
+                "matched_keywords",
+                [],
+            )
+
+            automation_result["best_score"] = result.get(
+                "best_score",
+                0,
+            )
 
         if assigned_profile:
             technician_name = (
@@ -692,18 +744,23 @@ class TicketStatusHistoryView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request, pk):
-        history = TicketStatusHistoryModel.objects.filter(
-            ticket_id=pk
-        ).order_by("-created_at")
+        history = (
+            TicketStatusHistory.objects
+            .filter(ticket_id=pk)
+            .select_related(
+                "changed_by",
+                "changed_by__it_support_profile",
+                "changed_by__it_support_profile__it_department",
+            )
+            .order_by("-created_at")
+        )
 
         serializer = TicketStatusHistorySerializer(
             history,
-            many=True
+            many=True,
         )
 
         return Response(serializer.data)
-
-
 class UpdateTicketStatusView(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -1740,6 +1797,65 @@ class TicketDetailSupportView(APIView):
         )
 
         return Response(serializer.data)
+
+class TicketDetailSupervisorView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, ticket_id):
+        user = request.user
+
+        try:
+            supervisor_profile = user.it_supervisor_profile
+        except ITSupervisorProfile.DoesNotExist:
+            return Response(
+                {
+                    "error": "You do not have an IT Supervisor profile."
+                },
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
+        try:
+            ticket = (
+                Ticket.objects
+                .select_related(
+                    "submitted_by",
+                    "priority",
+                    "category",
+                    "symptom_code",
+                    "symptom_code__required_specialization",
+                    "it_department",
+                    "employee_department",
+                    "office_location",
+                    "assigned_to",
+                    "resolved_by",
+                    "ai_prediction",
+                    "ai_analysis",
+                )
+                .get(
+                    id=ticket_id,
+                    is_escalated=True,
+                )
+            )
+
+        except Ticket.DoesNotExist:
+            return Response(
+                {
+                    "error": (
+                        "Ticket not found or you do not have "
+                        "permission to view this ticket."
+                    )
+                },
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        serializer = TicketDetailSupportSerializer(
+            ticket,
+            context={
+                "request": request,
+            },
+        )
+
+        return Response(serializer.data)
 # --- End --- 
 
 #
@@ -2541,12 +2657,45 @@ class PriorityChangeRequestView(APIView):
                 status=status.HTTP_404_NOT_FOUND,
             )
 
-        # Only the assigned IT Support Specialist
-        # can request a priority change.
-        if ticket.assigned_to_id != request.user.id:
+        role_name = (
+            request.user.role.name
+            if request.user.role
+            else None
+        )
+
+        # IT Support Specialists must be assigned to the ticket.
+        if role_name == "IT Support Specialist":
+            if ticket.assigned_to_id != request.user.id:
+                return Response(
+                    {
+                        "error": (
+                            "You are not assigned to this ticket."
+                        )
+                    },
+                    status=status.HTTP_403_FORBIDDEN,
+                )
+
+        # Supervisors can manage escalated tickets regardless
+        # of their IT department or ticket assignment.
+        elif role_name == "IT Supervisor":
+            if not ticket.is_escalated:
+                return Response(
+                    {
+                        "error": (
+                            "IT Supervisor can only manage "
+                            "escalated tickets."
+                        )
+                    },
+                    status=status.HTTP_403_FORBIDDEN,
+                )
+
+        else:
             return Response(
                 {
-                    "error": "You are not assigned to this ticket."
+                    "error": (
+                        "You do not have permission to "
+                        "request a priority change."
+                    )
                 },
                 status=status.HTTP_403_FORBIDDEN,
             )
@@ -2565,7 +2714,8 @@ class PriorityChangeRequestView(APIView):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        # IT Support can only request P1-P3.
+        # Priority change requests are only required
+        # for P1, P2, or P3.
         if requested_priority.priority_level not in [
             "P1",
             "P2",
@@ -2588,7 +2738,9 @@ class PriorityChangeRequestView(APIView):
         ):
             return Response(
                 {
-                    "error": "The ticket already has this priority."
+                    "error": (
+                        "The ticket already has this priority."
+                    )
                 },
                 status=status.HTTP_400_BAD_REQUEST,
             )
@@ -2629,7 +2781,8 @@ class PriorityChangeRequestView(APIView):
         TicketStatusHistory.objects.create(
             ticket=ticket,
             event_type=(
-                TicketStatusHistory.EventType.PRIORITY_REVIEW_REQUESTED
+                TicketStatusHistory.EventType
+                .PRIORITY_REVIEW_REQUESTED
             ),
             old_value=current_priority,
             new_value=requested_priority.priority_level,
@@ -2652,7 +2805,8 @@ class PriorityChangeRequestView(APIView):
                 user=service_desk_user,
                 ticket=ticket,
                 notification_type=(
-                    Notifications.NotificationType.REVIEW_REQUIRED
+                    Notifications.NotificationType
+                    .REVIEW_REQUIRED
                 ),
                 message=(
                     f"Ticket {ticket.ticket_code} has a priority "
@@ -3346,9 +3500,46 @@ class ReturnTicketView(APIView):
                 status=status.HTTP_404_NOT_FOUND,
             )
 
-        if ticket.assigned_to_id != request.user.id:
+        role_name = (
+            request.user.role.name
+            if request.user.role
+            else None
+        )
+
+        # IT Support Specialists must be assigned to the ticket.
+        if role_name == "IT Support Specialist":
+            if ticket.assigned_to_id != request.user.id:
+                return Response(
+                    {
+                        "error": (
+                            "You are not assigned to this ticket."
+                        )
+                    },
+                    status=status.HTTP_403_FORBIDDEN,
+                )
+
+        # Supervisors can return escalated tickets
+        # regardless of assignment.
+        elif role_name == "IT Supervisor":
+            if not ticket.is_escalated:
+                return Response(
+                    {
+                        "error": (
+                            "IT Supervisor can only manage "
+                            "escalated tickets."
+                        )
+                    },
+                    status=status.HTTP_403_FORBIDDEN,
+                )
+
+        else:
             return Response(
-                {"error": "You are not assigned to this ticket."},
+                {
+                    "error": (
+                        "You do not have permission "
+                        "to return this ticket."
+                    )
+                },
                 status=status.HTTP_403_FORBIDDEN,
             )
 
@@ -3356,7 +3547,8 @@ class ReturnTicketView(APIView):
             return Response(
                 {
                     "error": (
-                        "This ticket is already under Service Desk review."
+                        "This ticket is already under "
+                        "Service Desk review."
                     )
                 },
                 status=status.HTTP_400_BAD_REQUEST,
@@ -3371,7 +3563,8 @@ class ReturnTicketView(APIView):
             return Response(
                 {
                     "error": (
-                        "This ticket already has a pending return request."
+                        "This ticket already has a pending "
+                        "return request."
                     )
                 },
                 status=status.HTTP_400_BAD_REQUEST,
@@ -3447,6 +3640,196 @@ class ReturnTicketView(APIView):
                 },
             },
             status=status.HTTP_201_CREATED,
+        )
+
+class AcknowledgeEscalationView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    @transaction.atomic
+    def post(self, request, pk):
+        ticket = (
+            Ticket.objects
+            .select_for_update()
+            .filter(pk=pk)
+            .first()
+        )
+
+        if not ticket:
+            return Response(
+                {"error": "Ticket not found."},
+                status=404,
+            )
+
+        role_name = (
+            request.user.role.name
+            if request.user.role
+            else None
+        )
+
+        if role_name != "IT Supervisor":
+            return Response(
+                {
+                    "error": (
+                        "Only IT Supervisor can acknowledge "
+                        "ticket escalations."
+                    )
+                },
+                status=403,
+            )
+
+        if not ticket.is_escalated:
+            return Response(
+                {
+                    "error": (
+                        "This ticket has not been escalated."
+                    )
+                },
+                status=400,
+            )
+
+        escalation = (
+            TicketEscalation.objects
+            .select_for_update()
+            .filter(ticket=ticket)
+            .first()
+        )
+
+        if not escalation:
+            return Response(
+                {
+                    "error": (
+                        "No escalation record exists "
+                        "for this ticket."
+                    )
+                },
+                status=400,
+            )
+
+        if (
+            escalation.status
+            == TicketEscalation.Status.ACKNOWLEDGED
+        ):
+            return Response(
+                {
+                    "error": (
+                        "This ticket escalation has "
+                        "already been acknowledged."
+                    )
+                },
+                status=400,
+            )
+
+        if (
+            escalation.status
+            == TicketEscalation.Status.COMPLETED
+        ):
+            return Response(
+                {
+                    "error": (
+                        "This ticket escalation has "
+                        "already been completed."
+                    )
+                },
+                status=400,
+            )
+
+        if (
+            escalation.status
+            != TicketEscalation.Status.OPEN
+        ):
+            return Response(
+                {
+                    "error": (
+                        "This ticket escalation cannot "
+                        "be acknowledged."
+                    )
+                },
+                status=400,
+            )
+
+        now = timezone.now()
+
+        escalation.status = (
+            TicketEscalation.Status.ACKNOWLEDGED
+        )
+
+        escalation.acknowledged_by = request.user
+        escalation.acknowledged_at = now
+
+        escalation.save(
+            update_fields=[
+                "status",
+                "acknowledged_by",
+                "acknowledged_at",
+            ]
+        )
+
+        TicketStatusHistory.objects.create(
+            ticket=ticket,
+            event_type=(
+                TicketStatusHistory.EventType.ACKNOWLEDGED
+            ),
+            old_value=ticket.status,
+            new_value=ticket.status,
+            remarks=(
+                "Escalation acknowledged by "
+                "IT Supervisor."
+            ),
+            created_by=request.user,
+            changed_by=request.user,
+            visibility=(
+                TicketStatusHistory.Visibility.INTERNAL
+            ),
+        )
+
+        AuditLogs.objects.create(
+            user=request.user,
+            module="Tickets",
+            action="ESCALATION_ACKNOWLEDGED",
+            reference_id=ticket.ticket_code,
+            remarks=(
+                "Ticket escalation acknowledged by "
+                "IT Supervisor."
+            ),
+            created_by=request.user,
+        )
+
+        if ticket.assigned_to:
+            Notifications.objects.create(
+                user=ticket.assigned_to,
+                ticket=ticket,
+                message=(
+                    f"Escalation for ticket "
+                    f"{ticket.ticket_code} has been "
+                    "acknowledged by the IT Supervisor."
+                ),
+                notification_type=(
+                    Notifications.NotificationType
+                    .ESCALATION_ACKNOWLEDGED
+                ),
+                created_by=request.user,
+            )
+
+        return Response(
+            {
+                "success": True,
+                "message": (
+                    "Ticket escalation acknowledged "
+                    "successfully."
+                ),
+                "ticket_id": ticket.id,
+                "ticket_code": ticket.ticket_code,
+                "escalation_id": escalation.id,
+                "escalation_status": escalation.status,
+                "is_escalated": ticket.is_escalated,
+                "acknowledged": True,
+                "acknowledged_by": request.user.user_code,
+                "acknowledged_at": (
+                    escalation.acknowledged_at
+                ),
+                "ticket_status": ticket.status,
+            },
+            status=200,
         )
 class ApproveReturnTicketView(APIView):
     permission_classes = [IsAuthenticated]
@@ -4144,9 +4527,236 @@ class EmployeeCurrentActiveTicketView(APIView):
         })
 
 # --- Escalation --- 
+from django.db import transaction
+class CompleteEscalationView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    @transaction.atomic
+    def post(self, request, pk):
+        ticket = (
+            Ticket.objects
+            .select_for_update()
+            .filter(pk=pk)
+            .first()
+        )
+
+        if not ticket:
+            return Response(
+                {
+                    "error": "Ticket not found."
+                },
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        role_name = (
+            request.user.role.name
+            if request.user.role
+            else None
+        )
+
+        if role_name != "IT Supervisor":
+            return Response(
+                {
+                    "error": (
+                        "Only IT Supervisors can complete "
+                        "ticket escalations."
+                    )
+                },
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
+        if not ticket.is_escalated:
+            return Response(
+                {
+                    "error": "This ticket has not been escalated."
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        escalation = (
+            TicketEscalation.objects
+            .select_for_update()
+            .filter(ticket=ticket)
+            .first()
+        )
+
+        if not escalation:
+            return Response(
+                {
+                    "error": (
+                        "No escalation record exists "
+                        "for this ticket."
+                    )
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        if (
+            escalation.status
+            != TicketEscalation.Status.ACKNOWLEDGED
+        ):
+            return Response(
+                {
+                    "error": (
+                        "The escalation must be acknowledged "
+                        "before it can be completed."
+                    )
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        resolution_type = request.data.get(
+            "resolution_type"
+        )
+
+        resolution_remarks = request.data.get(
+            "resolution_remarks",
+            "",
+        ).strip()
+
+        valid_resolution_types = {
+            choice[0]
+            for choice in TicketEscalation.ResolutionType.choices
+        }
+
+        if resolution_type not in valid_resolution_types:
+            return Response(
+                {
+                    "error": (
+                        "Please select a valid resolution type."
+                    )
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        if not resolution_remarks:
+            return Response(
+                {
+                    "error": (
+                        "Resolution remarks are required."
+                    )
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        if len(resolution_remarks) > 1000:
+            return Response(
+                {
+                    "error": (
+                        "Resolution remarks cannot exceed "
+                        "1000 characters."
+                    )
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        now = timezone.now()
+
+        escalation.status = (
+            TicketEscalation.Status.COMPLETED
+        )
+
+        escalation.resolution_type = resolution_type
+
+        escalation.resolution_remarks = resolution_remarks
+
+        escalation.resolved_by = request.user
+
+        escalation.resolved_at = now
+
+        escalation.save(
+            update_fields=[
+                "status",
+                "resolution_type",
+                "resolution_remarks",
+                "resolved_by",
+                "resolved_at",
+            ]
+        )
+
+        resolution_display = (
+            escalation.get_resolution_type_display()
+        )
+
+        TicketStatusHistory.objects.create(
+            ticket=ticket,
+            event_type=(
+                TicketStatusHistory.EventType.ESCALATION_COMPLETED
+            ),
+            old_value=ticket.status,
+            new_value=ticket.status,
+            remarks=(
+                "Ticket escalation completed by "
+                "IT Supervisor. "
+                f"Resolution type: {resolution_display}. "
+                f"Remarks: {resolution_remarks}"
+            ),
+            created_by=request.user,
+            changed_by=request.user,
+            visibility=(
+                TicketStatusHistory.Visibility.INTERNAL
+            ),
+        )
+
+        AuditLogs.objects.create(
+            user=request.user,
+            module="Tickets",
+            action="ESCALATION_COMPLETED",
+            reference_id=ticket.ticket_code,
+            remarks=(
+                "Ticket escalation completed by "
+                "IT Supervisor. "
+                f"Resolution type: {resolution_display}. "
+                f"Remarks: {resolution_remarks}"
+            ),
+            created_by=request.user,
+        )
+
+        if ticket.assigned_to:
+            Notifications.objects.create(
+                user=ticket.assigned_to,
+                ticket=ticket,
+                message=(
+                    f"Escalation for ticket "
+                    f"{ticket.ticket_code} has been "
+                    "completed by the IT Supervisor."
+                ),
+                notification_type=(
+                    Notifications.NotificationType
+                    .ESCALATION_COMPLETED
+                ),
+                created_by=request.user,
+            )
+
+        return Response(
+            {
+                "success": True,
+                "message": (
+                    "Ticket escalation completed successfully."
+                ),
+                "ticket_id": ticket.id,
+                "ticket_code": ticket.ticket_code,
+                "escalation_id": escalation.id,
+                "escalation_status": escalation.status,
+                "resolution_type": escalation.resolution_type,
+                "resolution_type_display": (
+                    resolution_display
+                ),
+                "resolution_remarks": (
+                    escalation.resolution_remarks
+                ),
+                "resolved_by": request.user.user_code,
+                "resolved_at": escalation.resolved_at,
+                "ticket_status": ticket.status,
+                "is_escalated": ticket.is_escalated,
+            },
+            status=status.HTTP_200_OK,
+        )
+
 class EscalateTicketView(APIView):
     permission_classes = [IsAuthenticated]
 
+    @transaction.atomic
     def post(self, request, pk):
         try:
             ticket = (
@@ -4215,6 +4825,13 @@ class EscalateTicketView(APIView):
 
         now = timezone.now()
 
+        escalation = TicketEscalation.objects.create(
+            ticket=ticket,
+            escalated_by=request.user,
+            reason=reason,
+            status=TicketEscalation.Status.OPEN,
+        )
+
         ticket.is_escalated = True
         ticket.escalated_at = now
         ticket.updated_by = request.user
@@ -4227,6 +4844,7 @@ class EscalateTicketView(APIView):
                 "updated_at",
             ]
         )
+
         TicketStatusHistory.objects.create(
             ticket=ticket,
             event_type=(
@@ -4254,8 +4872,9 @@ class EscalateTicketView(APIView):
             remarks=reason,
             created_by=request.user,
         )
+
         supervisors = User.objects.filter(
-            role__name="Supervisor",
+            role__name="IT Supervisor",
             is_active=True,
         )
 
@@ -4291,12 +4910,13 @@ class EscalateTicketView(APIView):
                 ),
                 "ticket_id": ticket.id,
                 "ticket_code": ticket.ticket_code,
+                "escalation_id": escalation.id,
                 "is_escalated": ticket.is_escalated,
+                "escalation_status": escalation.status,
                 "escalated_at": ticket.escalated_at,
             },
             status=200,
         )
-
 class SupervisorEscalatedTicketsView(APIView):
     permission_classes = [IsAuthenticated]
 

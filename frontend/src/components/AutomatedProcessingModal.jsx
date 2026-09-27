@@ -42,20 +42,22 @@ function SpecializationList({
 
     return (
         <div className="flex flex-col items-start gap-0.5">
-            {visibleSpecializations.map((specialization) => (
-                <span
-                    key={specialization}
-                    className="block max-w-full break-words rounded-md bg-blue-50 px-2 py-1 text-xs font-medium leading-4 text-blue-700"
-                >
-                    {specialization}
-                </span>
-            ))}
+            {visibleSpecializations.map(
+                (specialization) => (
+                    <span
+                        key={specialization}
+                        className="block max-w-full break-words rounded-md bg-blue-50 px-2 py-1 text-xs font-medium leading-4 text-blue-700"
+                    >
+                        {specialization}
+                    </span>
+                )
+            )}
 
             {remainingCount > 0 && (
                 <button
                     type="button"
                     onClick={onToggle}
-                    className="inline-flex cursor-pointer items-center gap-0.5 rounded-md border border-gray-200 bg-gray-50 px-1 py-0.5 text-[10px] font-medium text-gray-600 transition-colors hover:border-gray-300 hover:bg-gray-100 hover:text-gray-800"
+                    className="inline-flex cursor-pointer items-center gap-0.5 rounded-md border border-gray-200 bg-gray-50 px-1.5 py-1 text-[10px] font-medium text-gray-600 transition-colors hover:border-gray-300 hover:bg-gray-100 hover:text-gray-800"
                 >
                     {expanded ? (
                         <>
@@ -74,12 +76,154 @@ function SpecializationList({
     );
 }
 
+function MatchedKeywordList({
+    matchedKeywords = [],
+    expanded,
+    onToggle,
+}) {
+    const visibleKeywords = expanded
+        ? matchedKeywords
+        : matchedKeywords.slice(0, 5);
+
+    const remainingCount = Math.max(
+        matchedKeywords.length - 5,
+        0
+    );
+
+    return (
+        <div className="mt-4">
+            <div className="hidden overflow-hidden rounded-lg border border-gray-200 sm:block">
+                <div className="grid grid-cols-[minmax(0,1fr)_140px_80px] border-b border-gray-200 bg-gray-50 px-3 py-2.5 lg:grid-cols-[minmax(0,1fr)_160px_100px]">
+                    <p className="text-[11px] font-semibold uppercase tracking-wide text-gray-500">
+                        Matched Keyword
+                    </p>
+
+                    <p className="text-[11px] font-semibold uppercase tracking-wide text-gray-500">
+                        Symptom Code
+                    </p>
+
+                    <p className="text-right text-[11px] font-semibold uppercase tracking-wide text-gray-500">
+                        Weight
+                    </p>
+                </div>
+
+                <div
+                    className={`divide-y divide-gray-200 ${
+                        expanded && matchedKeywords.length > 10
+                            ? "max-h-[360px] overflow-y-auto"
+                            : ""
+                    } [&::-webkit-scrollbar]:w-1 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-transparent hover:[&::-webkit-scrollbar-thumb]:bg-gray-300`}
+                >
+                    {visibleKeywords.map(
+                        (match, index) => (
+                            <div
+                                key={`${match.keyword}-${match.symptom_code}-${index}`}
+                                className="grid grid-cols-[minmax(0,1fr)_140px_80px] items-center gap-2 px-3 py-3 lg:grid-cols-[minmax(0,1fr)_160px_100px]"
+                            >
+                                <div className="min-w-0">
+                                    <p
+                                        className="break-words text-sm font-medium text-gray-900"
+                                        title={match.keyword}
+                                    >
+                                        {match.keyword}
+                                    </p>
+                                </div>
+
+                                <div className="min-w-0">
+                                    <span className="inline-flex max-w-full break-all rounded-md bg-blue-50 px-2 py-1 text-xs font-medium text-blue-700">
+                                        {match.symptom_code ||
+                                            "-"}
+                                    </span>
+                                </div>
+
+                                <div className="text-right">
+                                    <span className="text-sm font-semibold text-gray-900">
+                                        +
+                                        {Number(
+                                            match.weight
+                                        ) || 0}
+                                    </span>
+                                </div>
+                            </div>
+                        )
+                    )}
+                </div>
+            </div>
+
+            <div className="space-y-2 sm:hidden">
+                <div
+                    className={`space-y-2 ${
+                        expanded &&
+                        matchedKeywords.length > 10
+                            ? "max-h-[360px] overflow-y-auto pr-1"
+                            : ""
+                    } [&::-webkit-scrollbar]:w-1 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-transparent hover:[&::-webkit-scrollbar-thumb]:bg-gray-300`}
+                >
+                    {visibleKeywords.map(
+                        (match, index) => (
+                            <div
+                                key={`${match.keyword}-${match.symptom_code}-${index}`}
+                                className="rounded-lg border border-gray-200 bg-white p-3"
+                            >
+                                <div className="flex min-w-0 items-start justify-between gap-3">
+                                    <div className="min-w-0">
+                                        <p className="break-words text-sm font-medium text-gray-900">
+                                            {match.keyword}
+                                        </p>
+                                    </div>
+
+                                    <span className="shrink-0 text-sm font-semibold text-gray-900">
+                                        +
+                                        {Number(
+                                            match.weight
+                                        ) || 0}
+                                    </span>
+                                </div>
+
+                                <div className="mt-2">
+                                    <span className="inline-flex max-w-full break-all rounded-md bg-blue-50 px-2 py-1 text-xs font-medium text-blue-700">
+                                        {match.symptom_code ||
+                                            "-"}
+                                    </span>
+                                </div>
+                            </div>
+                        )
+                    )}
+                </div>
+            </div>
+
+            {remainingCount > 0 && (
+                <div className="mt-3 flex justify-center">
+                    <button
+                        type="button"
+                        onClick={onToggle}
+                        className="inline-flex min-h-9 cursor-pointer items-center gap-1.5 rounded-md border border-gray-200 bg-white px-3 py-1.5 text-xs font-medium text-gray-600 transition-colors hover:border-gray-300 hover:bg-gray-50 hover:text-gray-800"
+                    >
+                        {expanded ? (
+                            <>
+                                <ChevronUp size={14} />
+                                Show less
+                            </>
+                        ) : (
+                            <>
+                                <ChevronDown size={14} />
+                                +{remainingCount} more keywords
+                            </>
+                        )}
+                    </button>
+                </div>
+            )}
+        </div>
+    );
+}
+
 function normalizeTechnician(technician) {
     return {
         id: technician.id,
         name: technician.name || "-",
         availability:
-            technician.availability || "Unavailable",
+            technician.availability ||
+            "Unavailable",
         workload:
             technician.workload ??
             technician.current_workload ??
@@ -124,8 +268,11 @@ function formatAvailability(value) {
 }
 
 function formatWorkload(technician) {
-    const workload = Number(technician.workload) || 0;
-    const limit = Number(technician.workloadLimit) || 0;
+    const workload =
+        Number(technician.workload) || 0;
+
+    const limit =
+        Number(technician.workloadLimit) || 0;
 
     if (limit > 0) {
         return `${workload} / ${limit}`;
@@ -135,7 +282,9 @@ function formatWorkload(technician) {
 }
 
 function getAvailabilityClasses(availability) {
-    const normalized = String(availability || "")
+    const normalized = String(
+        availability || ""
+    )
         .toLowerCase()
         .replaceAll("_", " ")
         .trim();
@@ -184,16 +333,15 @@ function getClassificationValue(
     }
 
     if (method === "rule_based") {
-        const score =
-            classification?.rule_based_score;
+        const score = Number(
+            classification?.rule_based_score
+        );
 
         return {
-            label: "Score",
-            value:
-                score !== null &&
-                score !== undefined
-                    ? `${score} / 15`
-                    : "-",
+            label: "Match Score",
+            value: Number.isFinite(score)
+                ? score
+                : "-",
         };
     }
 
@@ -233,9 +381,15 @@ export default function AutomatedProcessingModal({
         setExpandedSpecializations,
     ] = useState({});
 
+    const [
+        expandedKeywords,
+        setExpandedKeywords,
+    ] = useState(false);
+
     useEffect(() => {
         if (!open) {
             setExpandedSpecializations({});
+            setExpandedKeywords(false);
         }
     }, [open]);
 
@@ -247,12 +401,42 @@ export default function AutomatedProcessingModal({
         ).map(normalizeTechnician);
     }, [automation]);
 
-    const toggleSpecializations = (technicianId) => {
-        setExpandedSpecializations((current) => ({
-            ...current,
-            [technicianId]:
-                !current[technicianId],
-        }));
+    const matchedKeywords = useMemo(() => {
+        return Array.isArray(
+            automation?.classification?.matched_keywords
+        )
+            ? automation.classification.matched_keywords
+            : [];
+    }, [automation]);
+
+    const ruleBasedThreshold = 15;
+
+    const calculatedRuleBasedScore = Number(
+        automation?.classification?.rule_based_score
+    );
+
+    const ruleBasedScore = Number.isFinite(
+        calculatedRuleBasedScore
+    )
+        ? calculatedRuleBasedScore
+        : 0;
+
+    const toggleSpecializations = (
+        technicianId
+    ) => {
+        setExpandedSpecializations(
+            (current) => ({
+                ...current,
+                [technicianId]:
+                    !current[technicianId],
+            })
+        );
+    };
+
+    const toggleKeywords = () => {
+        setExpandedKeywords(
+            (current) => !current
+        );
     };
 
     if (!open) {
@@ -271,12 +455,14 @@ export default function AutomatedProcessingModal({
             : "Completed";
 
     const methodLabel =
-        processingMethod === "machine_learning"
+        processingMethod ===
+        "machine_learning"
             ? "Machine Learning"
             : processingMethod ===
               "manual_override"
             ? "Manual Override"
-            : processingMethod === "ai_assisted"
+            : processingMethod ===
+              "ai_assisted"
             ? "AI Assisted"
             : "Rule-Based";
 
@@ -286,7 +472,8 @@ export default function AutomatedProcessingModal({
             automation?.classification
         );
 
-    const assignment = automation?.assignment;
+    const assignment =
+        automation?.assignment;
 
     const selectedTechnician =
         technicians.find(
@@ -299,8 +486,8 @@ export default function AutomatedProcessingModal({
         selectedTechnician;
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-3 sm:p-5">
-            <div className="flex max-h-[92vh] w-full max-w-7xl flex-col overflow-hidden rounded-xl border border-gray-200 bg-white shadow-xl">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-2 sm:p-4">
+            <div className="flex max-h-[94vh] w-full max-w-7xl flex-col overflow-hidden rounded-xl border border-gray-200 bg-white shadow-xl">
                 <div className="flex shrink-0 items-start justify-between border-b border-gray-200 px-4 py-4 sm:px-6">
                     <div className="flex min-w-0 items-start gap-3">
                         <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-blue-50 text-[#2563EB]">
@@ -312,7 +499,7 @@ export default function AutomatedProcessingModal({
                                 Automated Processing
                             </h2>
 
-                            <p className="mt-0.5 text-sm text-gray-500">
+                            <p className="mt-0.5 max-w-2xl text-sm text-gray-500">
                                 Review the automated
                                 classification, priority,
                                 and technician assignment.
@@ -331,7 +518,7 @@ export default function AutomatedProcessingModal({
                 </div>
 
                 <div className="min-h-0 flex-1 overflow-y-auto [&::-webkit-scrollbar]:w-1 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-transparent hover:[&::-webkit-scrollbar-thumb]:bg-gray-300">
-                    <div className="space-y-5 p-4 sm:p-6">
+                    <div className="space-y-5 p-3 sm:p-5 lg:p-6">
                         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
                             <div className="rounded-lg border border-gray-200 bg-white p-4">
                                 <div className="mb-2 flex items-center gap-2">
@@ -384,7 +571,7 @@ export default function AutomatedProcessingModal({
                                     </span>
                                 </div>
 
-                                <p className="text-sm font-semibold text-gray-900">
+                                <p className="break-words text-sm font-semibold text-gray-900">
                                     {methodLabel}
                                 </p>
                             </div>
@@ -485,7 +672,7 @@ export default function AutomatedProcessingModal({
                         <div className="rounded-lg border border-gray-200 bg-white">
                             <div className="border-b border-gray-200 px-4 py-4 sm:px-5">
                                 <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-                                    <div>
+                                    <div className="min-w-0">
                                         <h3 className="text-base font-semibold text-gray-900">
                                             Classification & Priority
                                         </h3>
@@ -499,7 +686,7 @@ export default function AutomatedProcessingModal({
 
                                     {automation?.priority && (
                                         <span
-                                            className={`inline-flex w-fit items-center rounded-md px-2.5 py-1 text-xs font-semibold ${
+                                            className={`inline-flex w-fit shrink-0 items-center rounded-md px-2.5 py-1 text-xs font-semibold ${
                                                 priorityColor[
                                                     automation
                                                         .priority
@@ -516,38 +703,59 @@ export default function AutomatedProcessingModal({
                                     )}
                                 </div>
 
-                                <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-3">
+                                <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
                                     <div>
                                         <p className="text-xs font-medium uppercase tracking-wide text-gray-500">
                                             Classification
                                             Method
                                         </p>
 
-                                        <p className="mt-1 text-sm font-semibold text-gray-900">
+                                        <p className="mt-1 break-words text-sm font-semibold text-gray-900">
                                             {methodLabel}
                                         </p>
                                     </div>
 
-                                    <div>
-                                        <p className="text-xs font-medium uppercase tracking-wide text-gray-500">
-                                            {
-                                                classificationValue.label
-                                            }
-                                        </p>
+                                    {processingMethod ===
+                                    "machine_learning" ? (
+                                        <div>
+                                            <p className="text-xs font-medium uppercase tracking-wide text-gray-500">
+                                                Confidence
+                                            </p>
 
-                                        <p
-                                            className={`mt-1 text-sm font-semibold ${
-                                                processingMethod ===
-                                                "machine_learning"
-                                                    ? "text-[#2563EB]"
-                                                    : "text-gray-900"
-                                            }`}
-                                        >
-                                            {
-                                                classificationValue.value
-                                            }
-                                        </p>
-                                    </div>
+                                            <p className="mt-1 text-sm font-semibold text-[#2563EB]">
+                                                {
+                                                    classificationValue.value
+                                                }
+                                            </p>
+                                        </div>
+                                    ) : processingMethod ===
+                                      "rule_based" ? (
+                                        <div>
+                                            <p className="text-xs font-medium uppercase tracking-wide text-gray-500">
+                                                Total Match Score
+                                            </p>
+
+                                            <p className="mt-1 text-sm font-semibold text-gray-900">
+                                                {
+                                                    ruleBasedScore
+                                                }
+                                            </p>
+                                        </div>
+                                    ) : (
+                                        <div>
+                                            <p className="text-xs font-medium uppercase tracking-wide text-gray-500">
+                                                {
+                                                    classificationValue.label
+                                                }
+                                            </p>
+
+                                            <p className="mt-1 text-sm font-semibold text-gray-900">
+                                                {
+                                                    classificationValue.value
+                                                }
+                                            </p>
+                                        </div>
+                                    )}
 
                                     <div>
                                         <p className="text-xs font-medium uppercase tracking-wide text-gray-500">
@@ -562,6 +770,115 @@ export default function AutomatedProcessingModal({
                                     </div>
                                 </div>
                             </div>
+
+                            {processingMethod ===
+                                "rule_based" && (
+                                <div className="border-t border-gray-200 px-4 py-4 sm:px-5">
+                                    <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                                        <div className="min-w-0">
+                                            <h4 className="text-sm font-semibold text-gray-900">
+                                                Rule-Based Keyword Matching
+                                            </h4>
+
+                                            <p className="mt-0.5 max-w-3xl text-xs leading-5 text-gray-500">
+                                                Database keywords
+                                                matched against
+                                                the ticket content
+                                                and their
+                                                contribution to
+                                                the classification
+                                                score.
+                                            </p>
+                                        </div>
+
+                                        <div className="flex shrink-0 items-center gap-2">
+                                            <span className="text-xs font-medium text-gray-500">
+                                                Minimum required
+                                            </span>
+
+                                            <span className="inline-flex items-center rounded-md border border-blue-200 bg-blue-50 px-2.5 py-1 text-xl font-semibold text-blue-700">
+                                                {
+                                                    ruleBasedThreshold
+                                                }
+                                            </span>
+                                        </div>
+                                    </div>
+
+                                    {matchedKeywords.length ===
+                                    0 ? (
+                                        <div className="mt-4 rounded-lg border border-gray-200 bg-gray-50 px-4 py-5 text-center">
+                                            <p className="text-sm font-medium text-gray-600">
+                                                No database keyword
+                                                matches found.
+                                            </p>
+
+                                            <p className="mt-1 text-xs text-gray-400">
+                                                The rule-based
+                                                classifier did not
+                                                find any matching
+                                                keywords for this
+                                                ticket.
+                                            </p>
+                                        </div>
+                                    ) : (
+                                        <MatchedKeywordList
+                                            matchedKeywords={
+                                                matchedKeywords
+                                            }
+                                            expanded={
+                                                expandedKeywords
+                                            }
+                                            onToggle={
+                                                toggleKeywords
+                                            }
+                                        />
+                                    )}
+
+                                    {matchedKeywords.length >
+                                        0 && (
+                                        <div className="mt-3 flex flex-col gap-3 rounded-lg border border-gray-200 bg-gray-50 px-3 py-3 sm:flex-row sm:items-center sm:justify-between">
+                                            <div className="min-w-0">
+                                                <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">
+                                                    Total Match
+                                                    Score
+                                                </p>
+
+                                                <p className="mt-0.5 text-xs text-gray-400">
+                                                    Minimum required
+                                                    score:{" "}
+                                                    {
+                                                        ruleBasedThreshold
+                                                    }
+                                                </p>
+                                            </div>
+
+                                            <span className="text-xl font-bold text-gray-900">
+                                                {
+                                                    ruleBasedScore
+                                                }
+                                            </span>
+                                        </div>
+                                    )}
+
+                                    <div className="mt-3 rounded-lg border border-blue-100 bg-blue-50 px-3 py-3">
+                                        <p className="text-xs leading-5 text-blue-800">
+                                            The match score is the
+                                            combined weight of the
+                                            matched database
+                                            keywords. Keywords found
+                                            in the ticket subject
+                                            receive stronger
+                                            weighting. A score of{" "}
+                                            {
+                                                ruleBasedThreshold
+                                            }{" "}
+                                            or higher meets the
+                                            rule-based classification
+                                            threshold.
+                                        </p>
+                                    </div>
+                                </div>
+                            )}
                         </div>
 
                         <div className="rounded-lg border border-gray-200 bg-white">
@@ -580,7 +897,8 @@ export default function AutomatedProcessingModal({
                                 </p>
                             </div>
 
-                            {technicians.length === 0 ? (
+                            {technicians.length ===
+                            0 ? (
                                 <div className="flex min-h-[180px] items-center justify-center px-5 py-8">
                                     <div className="text-center">
                                         <Users
@@ -635,7 +953,9 @@ export default function AutomatedProcessingModal({
 
                                                 <tbody className="divide-y divide-gray-200">
                                                     {technicians.map(
-                                                        (technician) => (
+                                                        (
+                                                            technician
+                                                        ) => (
                                                             <tr
                                                                 key={
                                                                     technician.id
@@ -730,7 +1050,9 @@ export default function AutomatedProcessingModal({
 
                                     <div className="space-y-3 p-4 md:hidden">
                                         {technicians.map(
-                                            (technician) => (
+                                            (
+                                                technician
+                                            ) => (
                                                 <div
                                                     key={
                                                         technician.id
@@ -923,7 +1245,7 @@ export default function AutomatedProcessingModal({
                     <button
                         type="button"
                         onClick={onClose}
-                        className="inline-flex h-10 cursor-pointer items-center justify-center rounded-md bg-[#2563EB] px-5 text-sm font-medium text-white transition-colors hover:bg-[#1D4ED8]"
+                        className="inline-flex h-10 w-full cursor-pointer items-center justify-center rounded-md bg-[#2563EB] px-5 text-sm font-medium text-white transition-colors hover:bg-[#1D4ED8] sm:w-auto"
                     >
                         Close
                     </button>

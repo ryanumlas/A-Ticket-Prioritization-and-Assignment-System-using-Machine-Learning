@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Ticket, Category, SymptomCode, TicketComments, SLARules, ReviewFlags, TicketAssistance, Keyword, TicketStatusHistory, TicketReturn, TicketPriorityRequest
+from .models import Ticket, Category, SymptomCode, TicketComments, SLARules, ReviewFlags, TicketAssistance, Keyword, TicketStatusHistory, TicketReturn, TicketPriorityRequest, TicketEscalation
 from users.models import  ITSupportProfile
 from ai.models import TicketAnalysis, TicketAIAnalysis
 from departments.models import ITDepartment
@@ -34,12 +34,14 @@ class TicketSerializer(serializers.ModelSerializer):
         source="priority.priority_level",
         read_only=True,
     )
+
     it_department_name = serializers.CharField(
         source="it_department.name",
         read_only=True,
     )
 
     created_at_formatted = serializers.SerializerMethodField()
+
 
     class Meta:
         model = Ticket
@@ -404,12 +406,6 @@ class TicketCommentSerializer(serializers.ModelSerializer):
 
         return obj.commented_by.role.name if obj.commented_by.role else None
         
-class TicketStatusHistorySerializer(serializers.ModelSerializer):
-    class Meta:
-        model = TicketStatusHistory
-        fields = ['id', 'ticket', 'previous_status', 'new_status', 'remarks', 'created_by', 'created_at']
-        read_only_fields = ['created_at', 'created_by', 'updated_at', 'updated_by']
-
 class TicketDetailEmployeeSerializer(serializers.ModelSerializer):
     status = serializers.CharField(
         source="get_status_display",
@@ -560,6 +556,7 @@ class TicketDetailSupportSerializer(serializers.ModelSerializer):
         read_only=True
     )
     automation = serializers.SerializerMethodField()
+    escalation = serializers.SerializerMethodField()
 
     class Meta:
         model = Ticket
@@ -594,6 +591,7 @@ class TicketDetailSupportSerializer(serializers.ModelSerializer):
             "classification_confidence",
             "it_department",
             "automation",
+            "escalation",
         ]
 
     def get_assigned_to(self, obj):
@@ -609,6 +607,27 @@ class TicketDetailSupportSerializer(serializers.ModelSerializer):
                 f"{obj.assigned_to.last_name}"
             ).strip(),
         }
+
+    def get_escalation(self, obj):
+        escalation = (
+            obj.escalations
+            .select_related(
+                "escalated_by",
+                "escalated_by__it_support_profile",
+                "escalated_by__it_support_profile__it_department",
+                "acknowledged_by",
+                "resolved_by",
+            )
+            .first()
+        )
+
+        if not escalation:
+            return None
+
+        return TicketEscalationSerializer(
+            escalation,
+            context=self.context,
+        ).data
 
     def get_classification_source(self, obj):
         analysis = getattr(
@@ -661,7 +680,10 @@ class TicketDetailSupportSerializer(serializers.ModelSerializer):
         ai_analysis
     ):
         if not ai_analysis:
-            return None
+            return {
+                "best_score": None,
+                "matched_keywords": [],
+            }
 
         keywords = ai_analysis.keywords or []
 
@@ -680,6 +702,7 @@ class TicketDetailSupportSerializer(serializers.ModelSerializer):
         )
 
         scores = {}
+        matched_keywords = []
 
         for gemini_kw in keywords:
             gemini_kw = normalize_text(
@@ -733,10 +756,22 @@ class TicketDetailSupportSerializer(serializers.ModelSerializer):
                     + weight
                 )
 
-        if not scores:
-            return 0
+                matched_keywords.append({
+                    "keyword": match.keyword,
+                    "symptom_code": code,
+                    "weight": weight,
+                })
 
-        return max(scores.values())
+        if not scores:
+            return {
+                "best_score": 0,
+                "matched_keywords": matched_keywords,
+            }
+
+        return {
+            "best_score": max(scores.values()),
+            "matched_keywords": matched_keywords,
+        }
 
     def get_automation(self, obj):
         ai_analysis = getattr(
@@ -1021,14 +1056,17 @@ class TicketDetailSupportSerializer(serializers.ModelSerializer):
         else:
             processing_status = "completed"
 
-        rule_based_score = None
+        rule_based_result = {
+            "best_score": None,
+            "matched_keywords": [],
+        }
 
         if (
             ticket_analysis
             and ticket_analysis.model_type
             == TicketAnalysis.ModelType.RULE_BASED
         ):
-            rule_based_score = (
+            rule_based_result = (
                 self.calculate_rule_based_score(
                     obj,
                     ai_analysis
@@ -1112,7 +1150,11 @@ class TicketDetailSupportSerializer(serializers.ModelSerializer):
                 ),
 
                 "rule_based_score": (
-                    rule_based_score
+                    rule_based_result["best_score"]
+                ),
+
+                "matched_keywords": (
+                    rule_based_result["matched_keywords"]
                 ),
             },
 
@@ -1169,6 +1211,23 @@ class TicketDetailSupportSerializer(serializers.ModelSerializer):
 
 class TicketStatusHistorySerializer(serializers.ModelSerializer):
     message = serializers.SerializerMethodField()
+
+    changed_by_first_name = serializers.CharField(
+        source="changed_by.first_name",
+        read_only=True,
+    )
+
+    changed_by_last_name = serializers.CharField(
+        source="changed_by.last_name",
+        read_only=True,
+    )
+
+    changed_by_department = serializers.CharField(
+        source="changed_by.it_support_profile.it_department.name",
+        read_only=True,
+        allow_null=True,
+    )
+
     class Meta:
         model = TicketStatusHistory
         fields = [
@@ -1178,6 +1237,9 @@ class TicketStatusHistorySerializer(serializers.ModelSerializer):
             "new_value",
             "remarks",
             "changed_by",
+            "changed_by_first_name",
+            "changed_by_last_name",
+            "changed_by_department",
             "created_at",
             "message",
         ]
@@ -1251,6 +1313,7 @@ class TicketStatusHistorySerializer(serializers.ModelSerializer):
             return "Ticket was escalated."
 
         return "Ticket was updated."
+    
 # --- SLA Rules Serializer ---
 class SLARulesSerializer(serializers.ModelSerializer):
     class Meta:
@@ -1756,9 +1819,69 @@ class EmployeeCurrentActiveTicketSerializer(serializers.ModelSerializer):
         return f"{minutes}m"
 
 # --- Escalation ---
-from django.utils import timezone
-from rest_framework import serializers
+class TicketEscalationSerializer(serializers.ModelSerializer):
+    escalated_by_name = serializers.SerializerMethodField()
+    escalated_by_department = serializers.CharField(
+        source="escalated_by.it_support_profile.it_department.name",
+        read_only=True,
+        allow_null=True,
+    )
 
+    acknowledged_by_name = serializers.SerializerMethodField()
+    resolved_by_name = serializers.SerializerMethodField()
+
+    resolution_type_display = serializers.CharField(
+        source="get_resolution_type_display",
+        read_only=True,
+    )
+
+    class Meta:
+        model = TicketEscalation
+        fields = [
+            "id",
+            "status",
+            "reason",
+            "escalated_at",
+            "escalated_by",
+            "escalated_by_name",
+            "escalated_by_department",
+            "acknowledged_by",
+            "acknowledged_by_name",
+            "acknowledged_at",
+            "resolution_type",
+            "resolution_type_display",
+            "resolution_remarks",
+            "resolved_by",
+            "resolved_by_name",
+            "resolved_at",
+        ]
+
+    def get_escalated_by_name(self, obj):
+        if not obj.escalated_by:
+            return None
+
+        return (
+            f"{obj.escalated_by.first_name} "
+            f"{obj.escalated_by.last_name}"
+        ).strip()
+
+    def get_acknowledged_by_name(self, obj):
+        if not obj.acknowledged_by:
+            return None
+
+        return (
+            f"{obj.acknowledged_by.first_name} "
+            f"{obj.acknowledged_by.last_name}"
+        ).strip()
+
+    def get_resolved_by_name(self, obj):
+        if not obj.resolved_by:
+            return None
+
+        return (
+            f"{obj.resolved_by.first_name} "
+            f"{obj.resolved_by.last_name}"
+        ).strip()
 
 class SupervisorEscalatedTicketSerializer(serializers.ModelSerializer):
     submitted_by_name = serializers.SerializerMethodField()
