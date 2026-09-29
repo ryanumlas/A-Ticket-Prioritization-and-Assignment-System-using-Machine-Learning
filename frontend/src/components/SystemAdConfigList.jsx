@@ -55,6 +55,7 @@ const sections = {
                     { key: "category", label: "Category" },
                     { key: "department", label: "IT Department" },
                     { key: "based_priority", label: "Base Priority" },
+                    { key: "created_at", label: "Created", format: "date" },
                 ],
             },
         ],
@@ -68,6 +69,7 @@ const sections = {
                 endpoint: "/users/admin/create-options/specializations/",
                 columns: [
                     { key: "name", label: "Specialization" },
+                    { key: "created_at_formatted", label: "Created" },
                 ],
             },
         ],
@@ -83,6 +85,7 @@ const sections = {
                     { key: "priority_level", label: "Priority" },
                     { key: "response_time", label: "Response Time" },
                     { key: "resolution_time", label: "Resolution Time" },
+                    { key: "created_at", label: "Created", format: "date" },
                     { key: "updated_at", label: "Last Updated", format: "date" },
                 ],
             },
