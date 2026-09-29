@@ -284,7 +284,6 @@ function App() {
                     </ProtectedRoute>
                 }
             />
-
             <Route
                 path="/user-management/:id/edit"
                 element={

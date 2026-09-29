@@ -803,6 +803,292 @@ class AdminUserCreateSerializer(serializers.ModelSerializer):
             )
 
         return user
+class AdminUserUpdateSerializer(serializers.ModelSerializer):
+    email = serializers.EmailField(
+        required=False,
+        allow_blank=True,
+        allow_null=True,
+    )
+    role = serializers.PrimaryKeyRelatedField(
+        queryset=UserRoles.objects.all(),
+        required=False,
+    )
+    employee_department = serializers.PrimaryKeyRelatedField(
+        queryset=EmployeeDepartment.objects.all(),
+        required=False,
+        allow_null=True,
+    )
+    it_department = serializers.PrimaryKeyRelatedField(
+        queryset=ITDepartment.objects.all(),
+        required=False,
+        allow_null=True,
+    )
+    office_location = serializers.PrimaryKeyRelatedField(
+        queryset=OfficeLocation.objects.all(),
+        required=False,
+        allow_null=True,
+    )
+    specializations = serializers.PrimaryKeyRelatedField(
+        queryset=Specializations.objects.all(),
+        many=True,
+        required=False,
+    )
+
+    class Meta:
+        model = User
+        fields = [
+            "first_name",
+            "last_name",
+            "email",
+            "role",
+            "employee_department",
+            "it_department",
+            "office_location",
+            "specializations",
+        ]
+
+    def validate_email(self, value):
+        if value is None:
+            return ""
+
+        value = value.strip()
+        duplicate = User.objects.filter(email__iexact=value).exclude(
+            pk=self.instance.pk
+        )
+        if value and duplicate.exists():
+            raise serializers.ValidationError(
+                "Email address is already in use."
+            )
+        return value
+
+    def validate(self, attrs):
+        user = self.instance
+        role = attrs.get("role", user.role)
+        role_name = role.name if role else ""
+        profile = getattr(user, "profile", None)
+        request = self.context.get("request")
+
+        if (
+            request
+            and request.user.pk == user.pk
+            and role_name != "System Administrator"
+        ):
+            raise serializers.ValidationError({
+                "role": "You cannot remove your own System Administrator role."
+            })
+
+        employee_department = attrs.get(
+            "employee_department",
+            getattr(profile, "employee_department", None),
+        )
+        it_department = attrs.get(
+            "it_department",
+            self._current_it_department(user),
+        )
+        office_location = attrs.get(
+            "office_location",
+            self._current_office_location(user),
+        )
+
+        if role_name == "Employee" and not employee_department:
+            raise serializers.ValidationError({
+                "employee_department": "Employee department is required."
+            })
+
+        if role_name != "Employee" and not it_department:
+            raise serializers.ValidationError({
+                "it_department": "IT department is required."
+            })
+
+        if not office_location:
+            raise serializers.ValidationError({
+                "office_location": "Office location is required."
+            })
+
+        selected_specializations = attrs.get(
+            "specializations",
+            self._current_specializations(user)
+            if role_name == "IT Support Specialist"
+            else [],
+        )
+        attrs.update({
+            "role": role,
+            "employee_department": employee_department,
+            "it_department": it_department,
+            "office_location": office_location,
+            "specializations": (
+                selected_specializations
+                if role_name == "IT Support Specialist"
+                else []
+            ),
+        })
+        return attrs
+
+    def _current_it_department(self, user):
+        for profile_name in (
+            "it_support_profile",
+            "it_service_desk_profile",
+            "it_supervisor_profile",
+            "system_administrator_profile",
+        ):
+            profile = getattr(user, profile_name, None)
+            if profile and profile.it_department:
+                return profile.it_department
+        return None
+
+    def _current_office_location(self, user):
+        profile = getattr(user, "profile", None)
+        if profile and profile.office_location:
+            return profile.office_location
+
+        for profile_name in (
+            "it_service_desk_profile",
+            "it_supervisor_profile",
+            "system_administrator_profile",
+        ):
+            role_profile = getattr(user, profile_name, None)
+            if role_profile and role_profile.office_location:
+                return role_profile.office_location
+        return None
+
+    def _current_specializations(self, user):
+        profile = getattr(user, "it_support_profile", None)
+        if not profile:
+            return []
+        return [
+            item.specialization
+            for item in profile.specializations.select_related(
+                "specialization"
+            )
+        ]
+
+    @transaction.atomic
+    def update(self, instance, validated_data):
+        request = self.context.get("request")
+        actor = request.user if request else None
+        role = validated_data.pop("role")
+        employee_department = validated_data.pop("employee_department")
+        it_department = validated_data.pop("it_department")
+        office_location = validated_data.pop("office_location")
+        specializations = validated_data.pop("specializations")
+
+        instance.first_name = validated_data.get(
+            "first_name",
+            instance.first_name,
+        ).strip()
+        instance.last_name = validated_data.get(
+            "last_name",
+            instance.last_name,
+        ).strip()
+        instance.email = validated_data.get("email", instance.email) or ""
+        instance.role = role
+        if actor:
+            instance.updated_by = actor
+        instance.save()
+
+        UserProfile.objects.update_or_create(
+            user=instance,
+            defaults={
+                "employee_department": employee_department,
+                "office_location": office_location,
+            },
+        )
+
+        role_name = role.name
+        support_profile = getattr(
+            instance,
+            "it_support_profile",
+            None,
+        )
+        if role_name == "IT Support Specialist":
+            self._delete_other_role_profiles(
+                instance,
+                "IT Support Specialist",
+            )
+            if support_profile is None:
+                support_profile = ITSupportProfile.objects.create(
+                    user=instance,
+                    it_department=it_department,
+                    created_by=actor,
+                    updated_by=actor,
+                )
+            else:
+                support_profile.it_department = it_department
+                if actor:
+                    support_profile.updated_by = actor
+                support_profile.save()
+
+            selected_ids = {item.id for item in specializations}
+            support_profile.specializations.exclude(
+                specialization_id__in=selected_ids
+            ).delete()
+            for specialization in specializations:
+                link, created = ITSupportSpecialization.objects.get_or_create(
+                    it_support_profile=support_profile,
+                    specialization=specialization,
+                    defaults={
+                        "created_by": actor,
+                        "updated_by": actor,
+                    },
+                )
+                if not created and actor:
+                    link.updated_by = actor
+                    link.save(update_fields=["updated_by", "updated_at"])
+        else:
+            if support_profile:
+                support_profile.delete()
+            self._sync_role_profile(
+                instance,
+                role_name,
+                it_department,
+                office_location,
+            )
+
+        AuditLogs.objects.create(
+            user=instance,
+            module="User Management",
+            action="USER_UPDATED",
+            reference_id=instance.user_code or str(instance.id),
+            remarks="User account details were updated.",
+            created_by=actor,
+        )
+        return instance
+
+    def _delete_other_role_profiles(self, user, role_name):
+        profile_models = {
+            "IT Support Specialist": ITSupportProfile,
+            "IT Service Desk": ITServiceDeskProfile,
+            "IT Supervisor": ITSupervisorProfile,
+            "System Administrator": SystemAdministratorProfile,
+        }
+        for existing_role, model in profile_models.items():
+            if existing_role != role_name:
+                model.objects.filter(user=user).delete()
+
+    def _sync_role_profile(
+        self,
+        user,
+        role_name,
+        it_department,
+        office_location,
+    ):
+        self._delete_other_role_profiles(user, role_name)
+        profile_models = {
+            "IT Service Desk": ITServiceDeskProfile,
+            "IT Supervisor": ITSupervisorProfile,
+            "System Administrator": SystemAdministratorProfile,
+        }
+        profile_model = profile_models.get(role_name)
+        if profile_model:
+            profile_model.objects.update_or_create(
+                user=user,
+                defaults={
+                    "it_department": it_department,
+                    "office_location": office_location,
+                },
+            )
+
+
 class UserRoleOptionSerializer(serializers.ModelSerializer):
     class Meta:
         model = UserRoles
@@ -818,6 +1104,7 @@ class SpecializationOptionSerializer(serializers.ModelSerializer):
 
 class AdminUserDetailSerializer(serializers.ModelSerializer):
     full_name = serializers.SerializerMethodField()
+    role_id = serializers.IntegerField(read_only=True)
     role_name = serializers.CharField(
         source="role.name",
         read_only=True,
@@ -825,6 +1112,7 @@ class AdminUserDetailSerializer(serializers.ModelSerializer):
 
     employee_department = serializers.SerializerMethodField()
     office_location = serializers.SerializerMethodField()
+    office_location_id = serializers.SerializerMethodField()
 
     it_department = serializers.SerializerMethodField()
     it_department_id = serializers.SerializerMethodField()
@@ -844,11 +1132,13 @@ class AdminUserDetailSerializer(serializers.ModelSerializer):
             "last_name",
             "full_name",
             "email",
+            "role_id",
             "role_name",
             "is_active",
 
             "employee_department",
             "office_location",
+            "office_location_id",
 
             "it_department",
             "it_department_id",
@@ -887,6 +1177,21 @@ class AdminUserDetailSerializer(serializers.ModelSerializer):
             "id": profile.office_location.id,
             "name": profile.office_location.name,
         }
+
+    def get_office_location_id(self, obj):
+        location = self.get_office_location(obj)
+        if location:
+            return location["id"]
+
+        for profile_name in (
+            "it_service_desk_profile",
+            "it_supervisor_profile",
+            "system_administrator_profile",
+        ):
+            profile = getattr(obj, profile_name, None)
+            if profile and profile.office_location:
+                return profile.office_location_id
+        return None
 
     def get_it_department(self, obj):
         profile = getattr(

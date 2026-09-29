@@ -20,7 +20,9 @@ from .serializers import (UserSerializer, ITSupportSpecializationCreateSerialize
                           UserProfileUpdateSerializer, SpecializationSerializer, ITSupportProfileUpdateSerializer, NotificationSerializer, AdminUserListSerializer,
                               EmployeeDepartmentOptionSerializer,
     ITDepartmentOptionSerializer, UserRolesUpdateSerializer,
-    OfficeLocationOptionSerializer, UserRoleOptionSerializer, AdminUserCreateSerializer, SpecializationOptionSerializer, AdminUserDetailSerializer, AuditLogSerializer)
+    OfficeLocationOptionSerializer, UserRoleOptionSerializer, AdminUserCreateSerializer,
+    AdminUserUpdateSerializer, SpecializationOptionSerializer,
+    AdminUserDetailSerializer, AuditLogSerializer)
 
 class RegisterView(generics.CreateAPIView):
     queryset = User.objects.all()
@@ -467,6 +469,15 @@ class AdminUserDetailView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request, user_id):
+        if (
+            not request.user.role
+            or request.user.role.name != "System Administrator"
+        ):
+            return Response(
+                {"detail": "You do not have permission to view user details."},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
         user = get_object_or_404(
             User.objects.select_related(
                 "role",
@@ -493,6 +504,32 @@ class AdminUserDetailView(APIView):
         serializer = AdminUserDetailSerializer(user)
 
         return Response(serializer.data)
+
+
+class AdminUserUpdateView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def patch(self, request, user_id):
+        if (
+            not request.user.role
+            or request.user.role.name != "System Administrator"
+        ):
+            return Response(
+                {"detail": "You do not have permission to update users."},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
+        user = get_object_or_404(User, id=user_id)
+        serializer = AdminUserUpdateSerializer(
+            user,
+            data=request.data,
+            partial=True,
+            context={"request": request},
+        )
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+
+        return Response({"message": "User updated successfully."})
 
 class EmployeeDepartmentOptionsView(APIView):
     permission_classes = [IsAuthenticated]

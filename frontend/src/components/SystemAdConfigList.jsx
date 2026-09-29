@@ -55,7 +55,6 @@ const sections = {
                     { key: "category", label: "Category" },
                     { key: "department", label: "IT Department" },
                     { key: "based_priority", label: "Base Priority" },
-                    { key: "created_at", label: "Created", format: "date" },
                 ],
             },
         ],
@@ -69,7 +68,6 @@ const sections = {
                 endpoint: "/users/admin/create-options/specializations/",
                 columns: [
                     { key: "name", label: "Specialization" },
-                    { key: "created_at_formatted", label: "Created" },
                 ],
             },
         ],
@@ -85,7 +83,6 @@ const sections = {
                     { key: "priority_level", label: "Priority" },
                     { key: "response_time", label: "Response Time" },
                     { key: "resolution_time", label: "Resolution Time" },
-                    { key: "created_at", label: "Created", format: "date" },
                     { key: "updated_at", label: "Last Updated", format: "date" },
                 ],
             },
@@ -290,11 +287,7 @@ export default function SystemAdConfigList({ sectionKey }) {
                         type="button"
                         disabled={page <= 1 || loading}
                         onClick={() => setPage((current) => Math.max(current - 1, 1))}
-                        className={`rounded-lg border px-3 py-2 text-sm font-medium transition ${
-                            page <= 1 || loading
-                                ? "cursor-not-allowed border-gray-200 bg-gray-100 text-gray-400"
-                                : "cursor-pointer border-[#2563EB] bg-[#2563EB] text-white hover:bg-[#1D4ED8]"
-                        }`}
+                        className="rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-700 transition enabled:hover:bg-gray-50 disabled:cursor-not-allowed disabled:text-gray-400"
                     >
                         Previous
                     </button>
@@ -305,11 +298,7 @@ export default function SystemAdConfigList({ sectionKey }) {
                         type="button"
                         disabled={page >= totalPages || loading}
                         onClick={() => setPage((current) => Math.min(current + 1, totalPages))}
-                        className={`rounded-lg border px-3 py-2 text-sm font-medium transition ${
-                            page >= totalPages || loading
-                                ? "cursor-not-allowed border-gray-200 bg-gray-100 text-gray-400"
-                                : "cursor-pointer border-[#2563EB] bg-[#2563EB] text-white hover:bg-[#1D4ED8]"
-                        }`}
+                        className="rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-700 transition enabled:hover:bg-gray-50 disabled:cursor-not-allowed disabled:text-gray-400"
                     >
                         Next
                     </button>

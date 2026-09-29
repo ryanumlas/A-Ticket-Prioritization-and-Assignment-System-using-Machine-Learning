@@ -3194,6 +3194,11 @@ class CreateCategoryView(generics.CreateAPIView):
     serializer_class = CategorySerializer
     permission_classes = [AllowAny]
 
+class CategoryListView(generics.ListAPIView):
+    queryset = Category.objects.select_related("it_department").order_by("name")
+    serializer_class = CategorySerializer
+    permission_classes = [IsAuthenticated]
+
 class UpdateCategoryView(generics.UpdateAPIView):
     queryset = Category.objects.all()
     serializer_class = CategoryUpdateSerializer
@@ -3267,9 +3272,10 @@ class SLARulesCreateView(generics.CreateAPIView):
     permission_classes = [AllowAny]
 
 class SLARulesListView(generics.ListAPIView):
-    queryset = SLARules.objects.all()
+    queryset = SLARules.objects.all().order_by("priority_level")
     serializer_class = SLARulesSerializer
-    permission_classes = [AllowAny]
+    permission_classes = [IsAuthenticated]
+
 class SLARulesUpdateView(generics.UpdateAPIView):
     queryset = SLARules.objects.all()
     serializer_class = SLARulesUpdateSerializer
