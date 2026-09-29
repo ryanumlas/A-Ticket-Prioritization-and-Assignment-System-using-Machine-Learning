@@ -1,0 +1,167 @@
+ backend/ai/__pycache__/__init__.cpython-312.pyc    |  Bin [31m0[m -> [32m237[m bytes
+ backend/ai/__pycache__/admin.cpython-312.pyc       |  Bin [31m0[m -> [32m281[m bytes
+ backend/ai/__pycache__/apps.cpython-312.pyc        |  Bin [31m0[m -> [32m474[m bytes
+ backend/ai/__pycache__/models.cpython-312.pyc      |  Bin [31m0[m -> [32m4472[m bytes
+ backend/ai/__pycache__/services.cpython-312.pyc    |  Bin [31m0[m -> [32m10946[m bytes
+ backend/ai/__pycache__/services.cpython-313.pyc    |  Bin [31m9789[m -> [32m10913[m bytes
+ backend/ai/__pycache__/urls.cpython-312.pyc        |  Bin [31m0[m -> [32m472[m bytes
+ backend/ai/__pycache__/views.cpython-312.pyc       |  Bin [31m0[m -> [32m1637[m bytes
+ .../__pycache__/0001_initial.cpython-312.pyc       |  Bin [31m0[m -> [32m2975[m bytes
+ ...ted_secondary_category_and_more.cpython-312.pyc |  Bin [31m0[m -> [32m1804[m bytes
+ ...ction_estimated_resolution_time.cpython-312.pyc |  Bin [31m0[m -> [32m966[m bytes
+ ...ion_predicted_category_and_more.cpython-312.pyc |  Bin [31m0[m -> [32m2956[m bytes
+ ...sis_predicted_priority_and_more.cpython-312.pyc |  Bin [31m0[m -> [32m2798[m bytes
+ ...6_ticketanalysis_was_overridden.cpython-312.pyc |  Bin [31m0[m -> [32m871[m bytes
+ .../0007_ticketaianalysis.cpython-312.pyc          |  Bin [31m0[m -> [32m1960[m bytes
+ ...sis_predicted_category_and_more.cpython-312.pyc |  Bin [31m0[m -> [32m846[m bytes
+ ...imated_resolution_time_and_more.cpython-312.pyc |  Bin [31m0[m -> [32m898[m bytes
+ .../0010_ticketanalysis_model_type.cpython-312.pyc |  Bin [31m0[m -> [32m1039[m bytes
+ ...ysis_business_critical_and_more.cpython-312.pyc |  Bin [31m0[m -> [32m998[m bytes
+ ...ketanalysis_confidence_and_more.cpython-312.pyc |  Bin [31m0[m -> [32m1705[m bytes
+ ...cketaianalysis_is_time_critical.cpython-312.pyc |  Bin [31m0[m -> [32m897[m bytes
+ .../__pycache__/__init__.cpython-312.pyc           |  Bin [31m0[m -> [32m248[m bytes
+ backend/ai/services.py                             |   80 [32m+[m[31m-[m
+ backend/core/__pycache__/__init__.cpython-312.pyc  |  Bin [31m0[m -> [32m313[m bytes
+ backend/core/__pycache__/celery.cpython-312.pyc    |  Bin [31m0[m -> [32m662[m bytes
+ backend/core/__pycache__/settings.cpython-312.pyc  |  Bin [31m0[m -> [32m4010[m bytes
+ backend/core/__pycache__/urls.cpython-312.pyc      |  Bin [31m0[m -> [32m1753[m bytes
+ backend/core/__pycache__/wsgi.cpython-312.pyc      |  Bin [31m0[m -> [32m720[m bytes
+ .../__pycache__/__init__.cpython-312.pyc           |  Bin [31m0[m -> [32m246[m bytes
+ .../departments/__pycache__/admin.cpython-312.pyc  |  Bin [31m0[m -> [32m290[m bytes
+ .../departments/__pycache__/apps.cpython-312.pyc   |  Bin [31m0[m -> [32m501[m bytes
+ .../departments/__pycache__/models.cpython-312.pyc |  Bin [31m0[m -> [32m3643[m bytes
+ .../__pycache__/serializers.cpython-312.pyc        |  Bin [31m0[m -> [32m1824[m bytes
+ .../departments/__pycache__/urls.cpython-312.pyc   |  Bin [31m0[m -> [32m1568[m bytes
+ .../departments/__pycache__/views.cpython-312.pyc  |  Bin [31m0[m -> [32m3079[m bytes
+ .../__pycache__/0001_initial.cpython-312.pyc       |  Bin [31m0[m -> [32m1117[m bytes
+ ..._department_created_by_and_more.cpython-312.pyc |  Bin [31m0[m -> [32m2118[m bytes
+ ..._department_created_by_and_more.cpython-312.pyc |  Bin [31m0[m -> [32m4250[m bytes
+ .../0004_delete_department.cpython-312.pyc         |  Bin [31m0[m -> [32m935[m bytes
+ .../__pycache__/__init__.cpython-312.pyc           |  Bin [31m0[m -> [32m257[m bytes
+ .../__pycache__/__init__.cpython-312.pyc           |  Bin [31m0[m -> [32m251[m bytes
+ .../__pycache__/predictor.cpython-312.pyc          |  Bin [31m0[m -> [32m2316[m bytes
+ .../tickets/__pycache__/__init__.cpython-312.pyc   |  Bin [31m0[m -> [32m242[m bytes
+ backend/tickets/__pycache__/admin.cpython-312.pyc  |  Bin [31m0[m -> [32m286[m bytes
+ backend/tickets/__pycache__/apps.cpython-312.pyc   |  Bin [31m0[m -> [32m489[m bytes
+ backend/tickets/__pycache__/models.cpython-312.pyc |  Bin [31m0[m -> [32m25325[m bytes
+ .../tickets/__pycache__/pagination.cpython-312.pyc |  Bin [31m0[m -> [32m592[m bytes
+ .../__pycache__/serializers.cpython-312.pyc        |  Bin [31m0[m -> [32m63504[m bytes
+ .../__pycache__/serializers.cpython-313.pyc        |  Bin [31m67239[m -> [32m64744[m bytes
+ .../tickets/__pycache__/services.cpython-312.pyc   |  Bin [31m0[m -> [32m23875[m bytes
+ .../tickets/__pycache__/services.cpython-313.pyc   |  Bin [31m25906[m -> [32m24266[m bytes
+ backend/tickets/__pycache__/urls.cpython-312.pyc   |  Bin [31m0[m -> [32m10657[m bytes
+ backend/tickets/__pycache__/urls.cpython-313.pyc   |  Bin [31m10095[m -> [32m9761[m bytes
+ backend/tickets/__pycache__/views.cpython-312.pyc  |  Bin [31m0[m -> [32m138205[m bytes
+ backend/tickets/__pycache__/views.cpython-313.pyc  |  Bin [31m154616[m -> [32m138091[m bytes
+ .../__pycache__/0001_initial.cpython-312.pyc       |  Bin [31m0[m -> [32m5159[m bytes
+ ..._category_alter_ticket_category.cpython-312.pyc |  Bin [31m0[m -> [32m1867[m bytes
+ ...et_needs_manual_review_and_more.cpython-312.pyc |  Bin [31m0[m -> [32m2778[m bytes
+ .../0004_ticket_secondary_category.cpython-312.pyc |  Bin [31m0[m -> [32m1160[m bytes
+ ...5_ticket_actual_resolution_time.cpython-312.pyc |  Bin [31m0[m -> [32m921[m bytes
+ .../0006_ticketassignee.cpython-312.pyc            |  Bin [31m0[m -> [32m1850[m bytes
+ ...move_ticket_attachment_and_more.cpython-312.pyc |  Bin [31m0[m -> [32m2724[m bytes
+ ...signee_unique_together_and_more.cpython-312.pyc |  Bin [31m0[m -> [32m17137[m bytes
+ ...y_remove_keyword_score_and_more.cpython-312.pyc |  Bin [31m0[m -> [32m1430[m bytes
+ ...e_active_flag_keyword_is_active.cpython-312.pyc |  Bin [31m0[m -> [32m815[m bytes
+ .../0011_rename_keyword_keywords.cpython-312.pyc   |  Bin [31m0[m -> [32m919[m bytes
+ .../0012_rename_keywords_keyword.cpython-312.pyc   |  Bin [31m0[m -> [32m905[m bytes
+ .../0013_slarules_resolution_time.cpython-312.pyc  |  Bin [31m0[m -> [32m860[m bytes
+ ...emove_keyword_category_and_more.cpython-312.pyc |  Bin [31m0[m -> [32m951[m bytes
+ ...0015_symptomcode_priority_level.cpython-312.pyc |  Bin [31m0[m -> [32m890[m bytes
+ ...evel_symptomcode_based_priority.cpython-312.pyc |  Bin [31m0[m -> [32m811[m bytes
+ ...017_alter_ticket_affected_scope.cpython-312.pyc |  Bin [31m0[m -> [32m1045[m bytes
+ ...reviewflags_prediction_and_more.cpython-312.pyc |  Bin [31m0[m -> [32m1575[m bytes
+ ...imated_resolution_time_and_more.cpython-312.pyc |  Bin [31m0[m -> [32m1341[m bytes
+ ...20_alter_ticket_business_impact.cpython-312.pyc |  Bin [31m0[m -> [32m860[m bytes
+ .../0021_ticket_ticket_code.cpython-312.pyc        |  Bin [31m0[m -> [32m886[m bytes
+ .../0022_alter_ticket_ticket_code.cpython-312.pyc  |  Bin [31m0[m -> [32m874[m bytes
+ ...move_ticket_department_and_more.cpython-312.pyc |  Bin [31m0[m -> [32m2471[m bytes
+ ...ketcomments_created_by_and_more.cpython-312.pyc |  Bin [31m0[m -> [32m1417[m bytes
+ ...ter_reviewflags_reason_and_more.cpython-312.pyc |  Bin [31m0[m -> [32m1461[m bytes
+ ...assigned_at_ticket_escalated_at.cpython-312.pyc |  Bin [31m0[m -> [32m1036[m bytes
+ ...tus_ticket_response_at_and_more.cpython-312.pyc |  Bin [31m0[m -> [32m1377[m bytes
+ ...cket_response_deadline_and_more.cpython-312.pyc |  Bin [31m0[m -> [32m1463[m bytes
+ ..._ticket_required_specialization.cpython-312.pyc |  Bin [31m0[m -> [32m1257[m bytes
+ ...equired_specialization_and_more.cpython-312.pyc |  Bin [31m0[m -> [32m1342[m bytes
+ ...reason_alter_reviewflags_status.cpython-312.pyc |  Bin [31m0[m -> [32m1446[m bytes
+ ...reviewflags_created_by_and_more.cpython-312.pyc |  Bin [31m0[m -> [32m2006[m bytes
+ ...dwed_at_reviewflags_reviewed_at.cpython-312.pyc |  Bin [31m0[m -> [32m814[m bytes
+ ...tstatushistory_options_and_more.cpython-312.pyc |  Bin [31m0[m -> [32m4180[m bytes
+ ..._ticketstatushistory_event_type.cpython-312.pyc |  Bin [31m0[m -> [32m1137[m bytes
+ ..._ticketstatushistory_event_type.cpython-312.pyc |  Bin [31m0[m -> [32m1215[m bytes
+ .../0037_alter_ticket_status.cpython-312.pyc       |  Bin [31m0[m -> [32m1109[m bytes
+ ..._ticketstatushistory_event_type.cpython-312.pyc |  Bin [31m0[m -> [32m1238[m bytes
+ ..._ticketstatushistory_event_type.cpython-312.pyc |  Bin [31m0[m -> [32m1294[m bytes
+ .../0040_alter_ticket_status.cpython-312.pyc       |  Bin [31m0[m -> [32m1089[m bytes
+ ...uest_delete_ticketreturnrequest.cpython-312.pyc |  Bin [31m0[m -> [32m3694[m bytes
+ ..._ticketrequest_current_priority.cpython-312.pyc |  Bin [31m0[m -> [32m1163[m bytes
+ ...ketrequest_reviewed_at_and_more.cpython-312.pyc |  Bin [31m0[m -> [32m1010[m bytes
+ ..._ticketstatushistory_event_type.cpython-312.pyc |  Bin [31m0[m -> [32m1400[m bytes
+ ...tassistance_created_by_and_more.cpython-312.pyc |  Bin [31m0[m -> [32m5273[m bytes
+ .../0046_alter_ticketreturn_status.cpython-312.pyc |  Bin [31m0[m -> [32m988[m bytes
+ ..._ticketstatushistory_visibility.cpython-312.pyc |  Bin [31m0[m -> [32m951[m bytes
+ ..._ticketstatushistory_event_type.cpython-312.pyc |  Bin [31m0[m -> [32m1423[m bytes
+ ...atushistory_event_type_and_more.cpython-312.pyc |  Bin [31m0[m -> [32m4084[m bytes
+ ..._ticketstatushistory_event_type.cpython-312.pyc |  Bin [31m0[m -> [32m1526[m bytes
+ .../0051_ticketcommentread.cpython-312.pyc         |  Bin [31m0[m -> [32m2232[m bytes
+ ...reason_alter_reviewflags_status.cpython-312.pyc |  Bin [31m0[m -> [32m1237[m bytes
+ .../__pycache__/__init__.cpython-312.pyc           |  Bin [31m0[m -> [32m253[m bytes
+ backend/tickets/serializers.py                     |  320 [32m+[m[31m---[m
+ backend/tickets/services.py                        |  162 [32m+[m[31m-[m
+ backend/tickets/urls.py                            |    7 [32m+[m[31m-[m
+ backend/tickets/views.py                           |  602 [32m+[m[31m-------[m
+ backend/users/__pycache__/__init__.cpython-312.pyc |  Bin [31m0[m -> [32m240[m bytes
+ backend/users/__pycache__/admin.cpython-312.pyc    |  Bin [31m0[m -> [32m284[m bytes
+ backend/users/__pycache__/apps.cpython-312.pyc     |  Bin [31m0[m -> [32m483[m bytes
+ backend/users/__pycache__/models.cpython-312.pyc   |  Bin [31m0[m -> [32m16385[m bytes
+ backend/users/__pycache__/models.cpython-313.pyc   |  Bin [31m16476[m -> [32m16410[m bytes
+ .../users/__pycache__/pagination.cpython-312.pyc   |  Bin [31m0[m -> [32m588[m bytes
+ .../users/__pycache__/serializers.cpython-312.pyc  |  Bin [31m0[m -> [32m44455[m bytes
+ backend/users/__pycache__/services.cpython-312.pyc |  Bin [31m0[m -> [32m607[m bytes
+ backend/users/__pycache__/tests.cpython-312.pyc    |  Bin [31m0[m -> [32m6462[m bytes
+ backend/users/__pycache__/urls.cpython-312.pyc     |  Bin [31m0[m -> [32m4481[m bytes
+ backend/users/__pycache__/views.cpython-312.pyc    |  Bin [31m0[m -> [32m23253[m bytes
+ .../0018_alter_notifications_notification_type.py  |   18 [31m-[m
+ .../__pycache__/0001_initial.cpython-312.pyc       |  Bin [31m0[m -> [32m4269[m bytes
+ ...r_user_options_alter_user_table.cpython-312.pyc |  Bin [31m0[m -> [32m818[m bytes
+ ..._user_username_alter_user_email.cpython-312.pyc |  Bin [31m0[m -> [32m975[m bytes
+ ...r_managers_administratorprofile.cpython-312.pyc |  Bin [31m0[m -> [32m1905[m bytes
+ ...rtment_user_created_at_and_more.cpython-312.pyc |  Bin [31m0[m -> [32m14139[m bytes
+ .../0006_alter_userroles_name.cpython-312.pyc      |  Bin [31m0[m -> [32m876[m bytes
+ ...portprofile_department_and_more.cpython-312.pyc |  Bin [31m0[m -> [32m1317[m bytes
+ .../__pycache__/0008_userprofile.cpython-312.pyc   |  Bin [31m0[m -> [32m2243[m bytes
+ ..._remove_userprofile_workstation.cpython-312.pyc |  Bin [31m0[m -> [32m736[m bytes
+ ...portprofile_created_by_and_more.cpython-312.pyc |  Bin [31m0[m -> [32m1564[m bytes
+ ...supportprofile_current_workload.cpython-312.pyc |  Bin [31m0[m -> [32m788[m bytes
+ ...supportprofile_last_assigned_at.cpython-312.pyc |  Bin [31m0[m -> [32m892[m bytes
+ ...e_auditlogs_updated_at_and_more.cpython-312.pyc |  Bin [31m0[m -> [32m3704[m bytes
+ .../0014_alter_user_user_code.cpython-312.pyc      |  Bin [31m0[m -> [32m887[m bytes
+ ...rvicedeskprofile_table_and_more.cpython-312.pyc |  Bin [31m0[m -> [32m997[m bytes
+ ...notifications_notification_type.cpython-312.pyc |  Bin [31m0[m -> [32m1253[m bytes
+ ...notifications_notification_type.cpython-312.pyc |  Bin [31m0[m -> [32m1295[m bytes
+ ...notifications_notification_type.cpython-313.pyc |  Bin [31m1302[m -> [32m0[m bytes
+ .../__pycache__/__init__.cpython-312.pyc           |  Bin [31m0[m -> [32m251[m bytes
+ backend/users/models.py                            |    1 [31m-[m
+ backend/users/serializers.py                       |  305 [32m++++[m
+ backend/users/tests.py                             |  116 [32m+[m[31m-[m
+ backend/users/urls.py                              |    5 [32m+[m[31m-[m
+ backend/users/views.py                             |   39 [32m+[m[31m-[m
+ frontend/.env.production                           |    1 [31m-[m
+ frontend/src/App.jsx                               |   57 [32m+[m[31m-[m
+ .../src/components/AutomatedProcessingModal.jsx    |  630 [32m+[m[31m-------[m
+ .../components/FlagReason/LowConfidenceReview.jsx  |   71 [32m+[m[31m-[m
+ .../FlagReason/PriorityAssessmentReview.jsx        | 1568 [32m+++++++[m[31m-------------[m
+ frontend/src/components/RemarksModal.jsx           |    3 [32m+[m
+ frontend/src/components/SystemAdConfigList.jsx     |  320 [32m++++[m
+ frontend/src/components/SystemAdUserEditForm.jsx   |  407 [32m+++++[m
+ frontend/src/configs/sideBarItems.js               |    6 [32m+[m
+ frontend/src/pages/Notification.jsx                |    6 [32m+[m[31m-[m
+ .../NotificationPages/ServiceDeskNotification.jsx  |   19 [32m+[m
+ .../NotificationPages/SupervisorNotification.jsx   |   19 [32m+[m
+ frontend/src/pages/SystemAdCategories.jsx          |   17 [32m+[m
+ frontend/src/pages/SystemAdDepartments.jsx         |   17 [32m+[m
+ frontend/src/pages/SystemAdSLARules.jsx            |   17 [32m+[m
+ frontend/src/pages/SystemAdSpecializations.jsx     |   17 [32m+[m
+ frontend/src/pages/SystemAdSymptomCodes.jsx        |   17 [32m+[m
+ frontend/src/pages/SystemAdUserEdit.jsx            |   51 [32m+[m
+ 166 files changed, 2183 insertions(+), 2715 deletions(-)
