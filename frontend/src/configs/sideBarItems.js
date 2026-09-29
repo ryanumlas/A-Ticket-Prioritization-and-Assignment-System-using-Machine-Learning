@@ -115,6 +115,12 @@ export const sidebarItems = {
             path: "/priority-requests",
             icon: ArrowUpDown
         },
+        {
+            type: "link",
+            name: "Notifications",
+            path: "/notifications",
+            icon: Bell
+        },
                 {
             type: "section",
             title: "TEAMS",
