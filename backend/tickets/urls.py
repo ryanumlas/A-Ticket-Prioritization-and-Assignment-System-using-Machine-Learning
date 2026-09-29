@@ -7,7 +7,7 @@ AcceptRecommendationView, ApproveOverrideView, ManuallyClassifyView, SupportOver
 SLAPerformanceView, TicketsByCategoryView, TicketDetailSupportView, TicketStatusHistoryView, TicketCommentListCreateView, 
 PriorityChangeRequestView, PriorityChangeRequestListView, PriorityRequestDetailView, ApprovePriorityRequestView, ReturnTicketView, 
 ReturnedTicketRequestListView, ReturnedTicketDetailRetrieve, ApproveReturnTicketView, PendingPriorityRequestCountView, PendingReturnTicketRequestCountView, 
-ServiceDeskDepartmentQueueView, EscalateTicketView, AcceptPriorityView, OverridePriorityView,
+ServiceDeskDepartmentQueueView, EscalateTicketView, AcceptPriorityView, OverridePriorityView,SLARulesListView, CategoryListView,
 ServiceDeskDepartmentSymptomCodesView, ServiceDeskDepartmentListView, RejectReturnTicketView, TicketDetailSupervisorView, AcknowledgeEscalationView, 
 RejectPriorityRequestView, EmployeeCurrentActiveTicketView, SupervisorEscalatedTicketsView, CompleteEscalationView, TicketCommentMarkReadView, TicketDetailServiceDeskView)
 
@@ -70,6 +70,7 @@ urlpatterns = [
 
     path("<int:pk>/comments/mark-read/", TicketCommentMarkReadView.as_view(),name="ticket-comment-mark-read",),
     # --- Category URLs ---
+    path('categories/list/', CategoryListView.as_view(), name='list-category'),
     path('categories/create/', CreateCategoryView.as_view(), name='create-category'),
     path('categories/update/<int:pk>/', UpdateCategoryView.as_view(), name='update-category'),
     path("tickets-by-category/", TicketsByCategoryView.as_view(), name="tickets-by-category",),
@@ -80,6 +81,7 @@ urlpatterns = [
     path("symptom-codes/ticket-queue/", DepartmentSymptomCodesView.as_view(), name="ticket-queue-symptom-codes",),
 
     # --- SLA Rules URLs ---
+    path('sla-rules/list/', SLARulesListView.as_view(), name='list-sla-rules'),
     path('sla-rules/create/', SLARulesCreateView.as_view(), name='create-sla-rules'),
     path('sla-rules/update/<int:pk>/', SLARulesUpdateView.as_view(), name='update-sla-rules'),
 

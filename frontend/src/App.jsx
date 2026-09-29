@@ -1,6 +1,5 @@
 import './App.css'
-import react from 'react'
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
+import { Routes, Route, Navigate } from 'react-router-dom'
 import Login from './pages/Login'
 import Sidebar from './components/Sidebar'
 import Dashboard from "./pages/Dashboard";
@@ -25,7 +24,12 @@ import UserList from './pages/UserList'
 import SystemAdUserCreate from "./pages/SystemAdUserCreate";
 import SystemUserDetails from './pages/SystemUserDetails'
 import ServiceDeskDepartmentQueue from './pages/ServiceDeskDepartmentQueue'
-import { User } from 'lucide-react'
+import SystemAdUserEdit from './pages/SystemAdUserEdit'
+import SystemAdDepartments from './pages/SystemAdDepartments'
+import SystemAdCategories from './pages/SystemAdCategories'
+import SystemAdSymptomCodes from './pages/SystemAdSymptomCodes'
+import SystemAdSpecializations from './pages/SystemAdSpecializations'
+import SystemAdSLARules from './pages/SystemAdSLARules'
 
 
 // function Logout() {
@@ -192,6 +196,7 @@ function App() {
                     </ProtectedRoute>
                 }
             />
+
             <Route
                 path="/audit-logs"
                 element={
@@ -202,6 +207,62 @@ function App() {
                     </ProtectedRoute>
                 }
             />
+
+            <Route
+                path="/departments"
+                element={
+                    <ProtectedRoute
+                        allowedRoles={["System Administrator"]}
+                    >
+                        <SystemAdDepartments />
+                    </ProtectedRoute>
+                }
+            />
+
+            <Route
+                path="/categories"
+                element={
+                    <ProtectedRoute
+                        allowedRoles={["System Administrator"]}
+                    >
+                        <SystemAdCategories />
+                    </ProtectedRoute>
+                }
+            />
+
+            <Route
+                path="/symptom-codes"
+                element={
+                    <ProtectedRoute
+                        allowedRoles={["System Administrator"]}
+                    >
+                        <SystemAdSymptomCodes />
+                    </ProtectedRoute>
+                }
+            />
+
+            <Route
+                path="/specializations"
+                element={
+                    <ProtectedRoute
+                        allowedRoles={["System Administrator"]}
+                    >
+                        <SystemAdSpecializations />
+                    </ProtectedRoute>
+                }
+            />
+
+            <Route
+                path="/sla-rules"
+                element={
+                    <ProtectedRoute
+                        allowedRoles={["System Administrator"]}
+                    >
+                        <SystemAdSLARules />
+                    </ProtectedRoute>
+                }
+            />
+
             <Route
                 path="/user-management/create"
                 element={
@@ -212,6 +273,7 @@ function App() {
                     </ProtectedRoute>
                 }
             />
+
             <Route
                 path="/user-management/:id"
                 element={
@@ -219,6 +281,17 @@ function App() {
                         allowedRoles={["System Administrator"]}
                     >
                         <SystemUserDetails />
+                    </ProtectedRoute>
+                }
+            />
+
+            <Route
+                path="/user-management/:id/edit"
+                element={
+                    <ProtectedRoute
+                        allowedRoles={["System Administrator"]}
+                    >
+                        <SystemAdUserEdit />
                     </ProtectedRoute>
                 }
             />

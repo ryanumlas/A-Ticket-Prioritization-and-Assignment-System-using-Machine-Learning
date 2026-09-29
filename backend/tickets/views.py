@@ -3266,6 +3266,10 @@ class SLARulesCreateView(generics.CreateAPIView):
     serializer_class = SLARulesSerializer
     permission_classes = [AllowAny]
 
+class SLARulesListView(generics.ListAPIView):
+    queryset = SLARules.objects.all()
+    serializer_class = SLARulesSerializer
+    permission_classes = [AllowAny]
 class SLARulesUpdateView(generics.UpdateAPIView):
     queryset = SLARules.objects.all()
     serializer_class = SLARulesUpdateSerializer
@@ -3308,7 +3312,10 @@ class TicketsByCategoryView(APIView):
 
         return Response(data)
 
-
+class CategoryListView(generics.ListAPIView):
+    queryset = Category.objects.all()
+    serializer_class = CategorySerializer
+    permission_classes = [AllowAny]
 class PriorityChangeRequestView(APIView):
     permission_classes = [IsAuthenticated]
 
