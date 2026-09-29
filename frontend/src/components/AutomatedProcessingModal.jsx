@@ -371,6 +371,112 @@ function getClassificationValue(
     };
 }
 
+function formatAffectedScope(value) {
+    if (!value) {
+        return "-";
+    }
+
+    const labels = {
+        individual: "Individual",
+        group: "Group",
+        department: "Department",
+        organization_wide: "Organization Wide",
+    };
+
+    return (
+        labels[value] ||
+        String(value)
+            .replaceAll("_", " ")
+            .replace(/\b\w/g, (letter) =>
+                letter.toUpperCase()
+            )
+    );
+}
+
+function formatImpact(value) {
+    if (!value) {
+        return "-";
+    }
+
+    const labels = {
+        LOW: "Low",
+        MEDIUM: "Medium",
+        HIGH: "High",
+        CRITICAL: "Critical",
+    };
+
+    return labels[value] || value;
+}
+
+function formatUrgency(value) {
+    if (!value) {
+        return "-";
+    }
+
+    const labels = {
+        LOW: "Low",
+        MEDIUM: "Medium",
+        HIGH: "High",
+    };
+
+    return labels[value] || value;
+}
+
+function formatBoolean(value) {
+    return value ? "Yes" : "No";
+}
+
+function getPriorityBadgeClasses(priority) {
+    return (
+        priorityColor[priority] ||
+        "border border-gray-300 bg-gray-100 text-gray-700"
+    );
+}
+
+function getPriorityLabel(priority) {
+    return (
+        priorityLabel[priority] ||
+        priority ||
+        "-"
+    );
+}
+
+function getPriorityDecisionText(
+    basePriority,
+    contextualPriority,
+    finalPriority
+) {
+    if (!finalPriority) {
+        return "The final priority could not be determined.";
+    }
+
+    if (
+        basePriority &&
+        contextualPriority &&
+        basePriority === contextualPriority
+    ) {
+        return `The contextual assessment results in the same priority as the symptom's base priority.`;
+    }
+
+    if (
+        basePriority &&
+        contextualPriority &&
+        finalPriority === contextualPriority
+    ) {
+        return `The final priority follows the contextual priority because it is more urgent than the symptom's base priority.`;
+    }
+
+    if (
+        basePriority &&
+        contextualPriority &&
+        finalPriority === basePriority
+    ) {
+        return `The final priority remains at the symptom's base priority because it is more urgent than the contextual priority.`;
+    }
+
+    return "The final priority is determined by comparing the symptom base priority with the contextual priority.";
+}
+
 export default function AutomatedProcessingModal({
     open,
     onClose,
@@ -484,6 +590,49 @@ export default function AutomatedProcessingModal({
     const assignmentTechnician =
         assignment?.technician ||
         selectedTechnician;
+
+    const priorityAssessment =
+        automation?.priority_assessment || null;
+
+    const basePriority =
+        priorityAssessment?.base_priority ||
+        null;
+
+    const affectedScope =
+        priorityAssessment?.affected_scope ||
+        null;
+
+    const impact =
+        priorityAssessment?.impact ||
+        null;
+
+    const businessCritical =
+        priorityAssessment?.business_critical ??
+        null;
+
+    const timeCritical =
+        priorityAssessment?.time_critical ??
+        null;
+
+    const urgency =
+        priorityAssessment?.urgency ||
+        null;
+
+    const contextualPriority =
+        priorityAssessment?.contextual_priority ||
+        null;
+
+    const finalPriority =
+        priorityAssessment?.final_priority ||
+        automation?.priority ||
+        null;
+
+    const priorityDecisionText =
+        getPriorityDecisionText(
+            basePriority,
+            contextualPriority,
+            finalPriority
+        );
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-2 sm:p-4">
@@ -684,21 +833,15 @@ export default function AutomatedProcessingModal({
                                         </p>
                                     </div>
 
-                                    {automation?.priority && (
+                                    {finalPriority && (
                                         <span
-                                            className={`inline-flex w-fit shrink-0 items-center rounded-md px-2.5 py-1 text-xs font-semibold ${
-                                                priorityColor[
-                                                    automation
-                                                        .priority
-                                                ] ||
-                                                "border border-gray-300 bg-gray-100 text-gray-700"
-                                            }`}
+                                            className={`inline-flex w-fit shrink-0 items-center rounded-md px-2.5 py-1 text-xs font-semibold ${getPriorityBadgeClasses(
+                                                finalPriority
+                                            )}`}
                                         >
-                                            {priorityLabel[
-                                                automation
-                                                    .priority
-                                            ] ||
-                                                automation.priority}
+                                            {getPriorityLabel(
+                                                finalPriority
+                                            )}
                                         </span>
                                     )}
                                 </div>
@@ -786,149 +929,450 @@ export default function AutomatedProcessingModal({
                                         </p>
                                     </div>
 
-                                    <span className="inline-flex w-fit shrink-0 items-center rounded-md border border-orange-300 bg-orange-50 px-2.5 py-1 text-xs font-semibold text-orange-700">
-                                        P2 — High
-                                    </span>
+                                    {finalPriority && (
+                                        <span
+                                            className={`inline-flex w-fit shrink-0 items-center rounded-md px-2.5 py-1 text-xs font-semibold ${getPriorityBadgeClasses(
+                                                finalPriority
+                                            )}`}
+                                        >
+                                            {getPriorityLabel(
+                                                finalPriority
+                                            )}
+                                        </span>
+                                    )}
                                 </div>
 
-                                <div className="mt-4 overflow-hidden rounded-lg border border-gray-200">
-                                    <div className="grid grid-cols-[minmax(0,1fr)_150px_120px] border-b border-gray-200 bg-gray-50 px-3 py-2.5 sm:grid-cols-[minmax(0,1fr)_180px_140px]">
-                                        <p className="text-[11px] font-semibold uppercase tracking-wide text-gray-500">
-                                            Factor
+                                {!priorityAssessment ? (
+                                    <div className="mt-4 rounded-lg border border-gray-200 bg-gray-50 px-4 py-5">
+                                        <p className="text-sm font-medium text-gray-600">
+                                            Priority assessment details are not available.
                                         </p>
 
-                                        <p className="text-[11px] font-semibold uppercase tracking-wide text-gray-500">
-                                            Detected Value
-                                        </p>
-
-                                        <p className="text-right text-[11px] font-semibold uppercase tracking-wide text-gray-500">
-                                            Effect
+                                        <p className="mt-1 text-xs leading-5 text-gray-400">
+                                            The ticket priority was not calculated in the current automated processing result.
                                         </p>
                                     </div>
+                                ) : (
+                                    <>
+                                        <div className="mt-4 hidden overflow-hidden rounded-lg border border-gray-200 sm:block">
+                                            <div className="grid grid-cols-[minmax(0,1fr)_180px_180px] border-b border-gray-200 bg-gray-50 px-3 py-2.5 lg:grid-cols-[minmax(0,1fr)_200px_200px]">
+                                                <p className="text-[11px] font-semibold uppercase tracking-wide text-gray-500">
+                                                    Factor
+                                                </p>
 
-                                    <div className="divide-y divide-gray-200">
-                                        <div className="grid grid-cols-[minmax(0,1fr)_150px_120px] items-center gap-2 px-3 py-3 sm:grid-cols-[minmax(0,1fr)_180px_140px]">
-                                            <div className="min-w-0">
-                                                <p className="text-sm font-medium text-gray-900">
+                                                <p className="text-[11px] font-semibold uppercase tracking-wide text-gray-500">
+                                                    Detected Value
+                                                </p>
+
+                                                <p className="text-right text-[11px] font-semibold uppercase tracking-wide text-gray-500">
+                                                    Assessment
+                                                </p>
+                                            </div>
+
+                                            <div className="divide-y divide-gray-200">
+                                                <div className="grid grid-cols-[minmax(0,1fr)_180px_180px] items-center gap-2 px-3 py-3 lg:grid-cols-[minmax(0,1fr)_200px_200px]">
+                                                    <div className="min-w-0">
+                                                        <p className="text-sm font-medium text-gray-900">
+                                                            Base Priority
+                                                        </p>
+
+                                                        <p className="mt-0.5 text-xs text-gray-500">
+                                                            Priority assigned
+                                                            from the detected
+                                                            symptom.
+                                                        </p>
+                                                    </div>
+
+                                                    <span
+                                                        className={`inline-flex w-fit rounded-md px-2 py-1 text-xs font-semibold ${getPriorityBadgeClasses(
+                                                            basePriority
+                                                        )}`}
+                                                    >
+                                                        {getPriorityLabel(
+                                                            basePriority
+                                                        )}
+                                                    </span>
+
+                                                    <p className="text-right text-xs font-medium text-gray-500">
+                                                        Starting priority
+                                                    </p>
+                                                </div>
+
+                                                <div className="grid grid-cols-[minmax(0,1fr)_180px_180px] items-center gap-2 px-3 py-3 lg:grid-cols-[minmax(0,1fr)_200px_200px]">
+                                                    <div className="min-w-0">
+                                                        <p className="text-sm font-medium text-gray-900">
+                                                            Affected Scope
+                                                        </p>
+
+                                                        <p className="mt-0.5 text-xs text-gray-500">
+                                                            Scope of users or
+                                                            organizational area
+                                                            affected.
+                                                        </p>
+                                                    </div>
+
+                                                    <span className="inline-flex w-fit rounded-md border border-orange-200 bg-orange-50 px-2 py-1 text-xs font-medium text-orange-700">
+                                                        {formatAffectedScope(
+                                                            affectedScope
+                                                        )}
+                                                    </span>
+
+                                                    <p className="text-right text-xs font-medium text-gray-500">
+                                                        {formatImpact(
+                                                            impact
+                                                        )}{" "}
+                                                        impact
+                                                    </p>
+                                                </div>
+
+                                                <div className="grid grid-cols-[minmax(0,1fr)_180px_180px] items-center gap-2 px-3 py-3 lg:grid-cols-[minmax(0,1fr)_200px_200px]">
+                                                    <div className="min-w-0">
+                                                        <p className="text-sm font-medium text-gray-900">
+                                                            Impact
+                                                        </p>
+
+                                                        <p className="mt-0.5 text-xs text-gray-500">
+                                                            Impact level derived
+                                                            from the affected
+                                                            scope.
+                                                        </p>
+                                                    </div>
+
+                                                    <span className="inline-flex w-fit rounded-md border border-orange-200 bg-orange-50 px-2 py-1 text-xs font-medium text-orange-700">
+                                                        {formatImpact(
+                                                            impact
+                                                        )}
+                                                    </span>
+
+                                                    <p className="text-right text-xs font-medium text-gray-500">
+                                                        Scope-based impact
+                                                    </p>
+                                                </div>
+
+                                                <div className="grid grid-cols-[minmax(0,1fr)_180px_180px] items-center gap-2 px-3 py-3 lg:grid-cols-[minmax(0,1fr)_200px_200px]">
+                                                    <div className="min-w-0">
+                                                        <p className="text-sm font-medium text-gray-900">
+                                                            Business Critical
+                                                        </p>
+
+                                                        <p className="mt-0.5 text-xs text-gray-500">
+                                                            Essential business
+                                                            operations are
+                                                            affected.
+                                                        </p>
+                                                    </div>
+
+                                                    <span
+                                                        className={`inline-flex w-fit rounded-md px-2 py-1 text-xs font-medium ${
+                                                            businessCritical
+                                                                ? "border border-orange-200 bg-orange-50 text-orange-700"
+                                                                : "border border-gray-200 bg-gray-100 text-gray-600"
+                                                        }`}
+                                                    >
+                                                        {formatBoolean(
+                                                            businessCritical
+                                                        )}
+                                                    </span>
+
+                                                    <p className="text-right text-xs font-medium text-gray-500">
+                                                        {businessCritical
+                                                            ? "Contributes to urgency"
+                                                            : "No contribution"}
+                                                    </p>
+                                                </div>
+
+                                                <div className="grid grid-cols-[minmax(0,1fr)_180px_180px] items-center gap-2 px-3 py-3 lg:grid-cols-[minmax(0,1fr)_200px_200px]">
+                                                    <div className="min-w-0">
+                                                        <p className="text-sm font-medium text-gray-900">
+                                                            Time Critical
+                                                        </p>
+
+                                                        <p className="mt-0.5 text-xs text-gray-500">
+                                                            The issue requires
+                                                            urgent attention.
+                                                        </p>
+                                                    </div>
+
+                                                    <span
+                                                        className={`inline-flex w-fit rounded-md px-2 py-1 text-xs font-medium ${
+                                                            timeCritical
+                                                                ? "border border-orange-200 bg-orange-50 text-orange-700"
+                                                                : "border border-gray-200 bg-gray-100 text-gray-600"
+                                                        }`}
+                                                    >
+                                                        {formatBoolean(
+                                                            timeCritical
+                                                        )}
+                                                    </span>
+
+                                                    <p className="text-right text-xs font-medium text-gray-500">
+                                                        {timeCritical
+                                                            ? "Contributes to urgency"
+                                                            : "No contribution"}
+                                                    </p>
+                                                </div>
+
+                                                <div className="grid grid-cols-[minmax(0,1fr)_180px_180px] items-center gap-2 px-3 py-3 lg:grid-cols-[minmax(0,1fr)_200px_200px]">
+                                                    <div className="min-w-0">
+                                                        <p className="text-sm font-medium text-gray-900">
+                                                            Urgency
+                                                        </p>
+
+                                                        <p className="mt-0.5 text-xs text-gray-500">
+                                                            Derived from the
+                                                            business and time
+                                                            critical indicators.
+                                                        </p>
+                                                    </div>
+
+                                                    <span className="inline-flex w-fit rounded-md border border-purple-200 bg-purple-50 px-2 py-1 text-xs font-medium text-purple-700">
+                                                        {formatUrgency(
+                                                            urgency
+                                                        )}
+                                                    </span>
+
+                                                    <p className="text-right text-xs font-medium text-gray-500">
+                                                        Contextual factor
+                                                    </p>
+                                                </div>
+
+                                                <div className="grid grid-cols-[minmax(0,1fr)_180px_180px] items-center gap-2 bg-gray-50 px-3 py-3 lg:grid-cols-[minmax(0,1fr)_200px_200px]">
+                                                    <div className="min-w-0">
+                                                        <p className="text-sm font-medium text-gray-900">
+                                                            Contextual Priority
+                                                        </p>
+
+                                                        <p className="mt-0.5 text-xs text-gray-500">
+                                                            Priority produced by
+                                                            the impact and
+                                                            urgency matrix.
+                                                        </p>
+                                                    </div>
+
+                                                    <span
+                                                        className={`inline-flex w-fit rounded-md px-2 py-1 text-xs font-semibold ${getPriorityBadgeClasses(
+                                                            contextualPriority
+                                                        )}`}
+                                                    >
+                                                        {getPriorityLabel(
+                                                            contextualPriority
+                                                        )}
+                                                    </span>
+
+                                                    <p className="text-right text-xs font-medium text-gray-500">
+                                                        Matrix result
+                                                    </p>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div className="mt-4 space-y-2 sm:hidden">
+                                            <div className="rounded-lg border border-gray-200 bg-gray-50 p-3">
+                                                <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">
                                                     Base Priority
                                                 </p>
 
-                                                <p className="mt-0.5 text-xs text-gray-500">
-                                                    Priority assigned
-                                                    from the detected
-                                                    symptom.
-                                                </p>
+                                                <div className="mt-2 flex items-center justify-between gap-3">
+                                                    <span className="text-sm text-gray-600">
+                                                        Symptom priority
+                                                    </span>
+
+                                                    <span
+                                                        className={`inline-flex rounded-md px-2 py-1 text-xs font-semibold ${getPriorityBadgeClasses(
+                                                            basePriority
+                                                        )}`}
+                                                    >
+                                                        {getPriorityLabel(
+                                                            basePriority
+                                                        )}
+                                                    </span>
+                                                </div>
                                             </div>
 
-                                            <span className="inline-flex w-fit rounded-md border border-yellow-300 bg-yellow-50 px-2 py-1 text-xs font-semibold text-yellow-700">
-                                                P3 — Medium
-                                            </span>
-
-                                            <p className="text-right text-xs font-medium text-gray-500">
-                                                Starting point
-                                            </p>
-                                        </div>
-
-                                        <div className="grid grid-cols-[minmax(0,1fr)_150px_120px] items-center gap-2 px-3 py-3 sm:grid-cols-[minmax(0,1fr)_180px_140px]">
-                                            <div className="min-w-0">
-                                                <p className="text-sm font-medium text-gray-900">
+                                            <div className="rounded-lg border border-gray-200 bg-gray-50 p-3">
+                                                <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">
                                                     Affected Scope
                                                 </p>
 
-                                                <p className="mt-0.5 text-xs text-gray-500">
-                                                    Number or scope of
-                                                    users affected.
-                                                </p>
+                                                <div className="mt-2 flex items-center justify-between gap-3">
+                                                    <span className="text-sm text-gray-600">
+                                                        Scope
+                                                    </span>
+
+                                                    <span className="text-right text-sm font-semibold text-gray-900">
+                                                        {formatAffectedScope(
+                                                            affectedScope
+                                                        )}
+                                                    </span>
+                                                </div>
+
+                                                <div className="mt-2 flex items-center justify-between gap-3">
+                                                    <span className="text-sm text-gray-600">
+                                                        Impact
+                                                    </span>
+
+                                                    <span className="text-sm font-semibold text-orange-700">
+                                                        {formatImpact(
+                                                            impact
+                                                        )}
+                                                    </span>
+                                                </div>
                                             </div>
 
-                                            <span className="inline-flex w-fit rounded-md border border-orange-200 bg-orange-50 px-2 py-1 text-xs font-medium text-orange-700">
-                                                Department
-                                            </span>
+                                            <div className="rounded-lg border border-gray-200 bg-gray-50 p-3">
+                                                <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">
+                                                    Criticality
+                                                </p>
 
-                                            <p className="text-right text-xs font-semibold text-orange-700">
-                                                Increases
-                                            </p>
+                                                <div className="mt-2 grid grid-cols-2 gap-3">
+                                                    <div>
+                                                        <p className="text-xs text-gray-500">
+                                                            Business Critical
+                                                        </p>
+
+                                                        <p
+                                                            className={`mt-1 text-sm font-semibold ${
+                                                                businessCritical
+                                                                    ? "text-orange-700"
+                                                                    : "text-gray-600"
+                                                            }`}
+                                                        >
+                                                            {formatBoolean(
+                                                                businessCritical
+                                                            )}
+                                                        </p>
+                                                    </div>
+
+                                                    <div>
+                                                        <p className="text-xs text-gray-500">
+                                                            Time Critical
+                                                        </p>
+
+                                                        <p
+                                                            className={`mt-1 text-sm font-semibold ${
+                                                                timeCritical
+                                                                    ? "text-orange-700"
+                                                                    : "text-gray-600"
+                                                            }`}
+                                                        >
+                                                            {formatBoolean(
+                                                                timeCritical
+                                                            )}
+                                                        </p>
+                                                    </div>
+                                                </div>
+
+                                                <div className="mt-3 border-t border-gray-200 pt-3">
+                                                    <p className="text-xs text-gray-500">
+                                                        Urgency
+                                                    </p>
+
+                                                    <p className="mt-1 text-sm font-semibold text-purple-700">
+                                                        {formatUrgency(
+                                                            urgency
+                                                        )}
+                                                    </p>
+                                                </div>
+                                            </div>
+
+                                            <div className="rounded-lg border border-blue-200 bg-blue-50 p-3">
+                                                <div className="flex items-center justify-between gap-3">
+                                                    <div>
+                                                        <p className="text-xs font-semibold uppercase tracking-wide text-blue-700">
+                                                            Contextual Priority
+                                                        </p>
+
+                                                        <p className="mt-0.5 text-xs text-blue-600">
+                                                            Impact + urgency matrix
+                                                        </p>
+                                                    </div>
+
+                                                    <span
+                                                        className={`inline-flex shrink-0 rounded-md px-2 py-1 text-xs font-semibold ${getPriorityBadgeClasses(
+                                                            contextualPriority
+                                                        )}`}
+                                                    >
+                                                        {getPriorityLabel(
+                                                            contextualPriority
+                                                        )}
+                                                    </span>
+                                                </div>
+                                            </div>
                                         </div>
 
-                                        <div className="grid grid-cols-[minmax(0,1fr)_150px_120px] items-center gap-2 px-3 py-3 sm:grid-cols-[minmax(0,1fr)_180px_140px]">
+                                        <div
+                                            className={`mt-4 flex flex-col gap-3 rounded-lg border-2 px-4 py-4 sm:flex-row sm:items-center sm:justify-between ${
+                                                finalPriority === "P1"
+                                                    ? "border-red-200 bg-red-50"
+                                                    : finalPriority === "P2"
+                                                    ? "border-orange-200 bg-orange-50"
+                                                    : "border-blue-200 bg-blue-50"
+                                            }`}
+                                        >
                                             <div className="min-w-0">
-                                                <p className="text-sm font-medium text-gray-900">
-                                                    Business Critical
+                                                <p
+                                                    className={`text-xs font-semibold uppercase tracking-wide ${
+                                                        finalPriority === "P1"
+                                                            ? "text-red-700"
+                                                            : finalPriority === "P2"
+                                                            ? "text-orange-700"
+                                                            : "text-blue-700"
+                                                    }`}
+                                                >
+                                                    Final Priority
                                                 </p>
 
-                                                <p className="mt-0.5 text-xs text-gray-500">
-                                                    Essential business
-                                                    operations are
-                                                    affected.
+                                                <p className="mt-1 text-lg font-bold text-gray-900">
+                                                    {getPriorityLabel(
+                                                        finalPriority
+                                                    )}
+                                                </p>
+
+                                                <p
+                                                    className={`mt-1 text-xs leading-5 ${
+                                                        finalPriority === "P1"
+                                                            ? "text-red-800"
+                                                            : finalPriority === "P2"
+                                                            ? "text-orange-800"
+                                                            : "text-blue-800"
+                                                    }`}
+                                                >
+                                                    {priorityDecisionText}
                                                 </p>
                                             </div>
 
-                                            <span className="inline-flex w-fit rounded-md border border-orange-200 bg-orange-50 px-2 py-1 text-xs font-medium text-orange-700">
-                                                Yes
-                                            </span>
-
-                                            <p className="text-right text-xs font-semibold text-orange-700">
-                                                Increases
-                                            </p>
-                                        </div>
-
-                                        <div className="grid grid-cols-[minmax(0,1fr)_150px_120px] items-center gap-2 px-3 py-3 sm:grid-cols-[minmax(0,1fr)_180px_140px]">
-                                            <div className="min-w-0">
-                                                <p className="text-sm font-medium text-gray-900">
-                                                    Time Critical
-                                                </p>
-
-                                                <p className="mt-0.5 text-xs text-gray-500">
-                                                    The issue requires
-                                                    urgent attention.
-                                                </p>
+                                            <div
+                                                className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-full border bg-white text-sm font-bold ${
+                                                    finalPriority === "P1"
+                                                        ? "border-red-300 text-red-700"
+                                                        : finalPriority === "P2"
+                                                        ? "border-orange-300 text-orange-700"
+                                                        : "border-blue-300 text-blue-700"
+                                                }`}
+                                            >
+                                                {finalPriority || "-"}
                                             </div>
+                                        </div>
 
-                                            <span className="inline-flex w-fit rounded-md border border-orange-200 bg-orange-50 px-2 py-1 text-xs font-medium text-orange-700">
-                                                Yes
-                                            </span>
-
-                                            <p className="text-right text-xs font-semibold text-orange-700">
-                                                Increases
+                                        <div className="mt-3 rounded-lg border border-blue-100 bg-blue-50 px-3 py-3">
+                                            <p className="text-xs leading-5 text-blue-800">
+                                                The system starts with
+                                                the symptom&apos;s base
+                                                priority, converts the
+                                                affected scope into an
+                                                impact level, determines
+                                                urgency from business and
+                                                time criticality, and then
+                                                uses the priority matrix to
+                                                determine the contextual
+                                                priority. The final priority
+                                                is the more urgent result
+                                                between the base and
+                                                contextual priorities.
                                             </p>
                                         </div>
-                                    </div>
-                                </div>
-
-                                <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between rounded-lg border-2 border-orange-200 bg-orange-50 px-4 py-4">
-                                    <div className="min-w-0">
-                                        <p className="text-xs font-semibold uppercase tracking-wide text-orange-700">
-                                            Final Priority
-                                        </p>
-
-                                        <p className="mt-1 text-lg font-bold text-gray-900">
-                                            P2 — High
-                                        </p>
-
-                                        <p className="mt-1 text-xs leading-5 text-orange-800">
-                                            Priority increased from
-                                            P3 because the ticket
-                                            affects a department and
-                                            has business and time
-                                            critical impact.
-                                        </p>
-                                    </div>
-
-                                    <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full border border-orange-300 bg-white text-sm font-bold text-orange-700">
-                                        P2
-                                    </div>
-                                </div>
-
-                                <div className="mt-3 rounded-lg border border-blue-100 bg-blue-50 px-3 py-3">
-                                    <p className="text-xs leading-5 text-blue-800">
-                                        The system starts with the
-                                        symptom&apos;s base priority,
-                                        then evaluates affected scope,
-                                        business criticality, and time
-                                        criticality to determine the
-                                        final priority.
-                                    </p>
-                                </div>
+                                    </>
+                                )}
                             </div>
 
                             {processingMethod ===

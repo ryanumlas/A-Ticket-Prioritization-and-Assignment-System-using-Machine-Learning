@@ -7,6 +7,7 @@ from departments.models import ITDepartment
 from tickets.services import (
     normalize_text,
     phrase_matches,
+    calculate_priority_details
 )
 from django.utils import timezone
 from datetime import timedelta
@@ -833,6 +834,7 @@ class TicketDetailSupportSerializer(serializers.ModelSerializer):
     automation = serializers.SerializerMethodField()
     escalation = serializers.SerializerMethodField()
     resolution_remarks = serializers.SerializerMethodField()
+
     class Meta:
         model = Ticket
         fields = [
@@ -898,6 +900,7 @@ class TicketDetailSupportSerializer(serializers.ModelSerializer):
         )
 
         return history.remarks if history else None
+
     def get_escalation(self, obj):
         escalation = (
             obj.escalations
@@ -1363,6 +1366,27 @@ class TicketDetailSupportSerializer(serializers.ModelSerializer):
                 )
             )
 
+        priority_assessment = None
+
+        if obj.symptom_code:
+            base_priority = obj.symptom_code.based_priority
+
+            if base_priority:
+                priority_assessment = calculate_priority_details(
+                    based_priority=base_priority,
+                    affected_scope=obj.affected_scope,
+                    business_critical=(
+                        ai_analysis.business_critical
+                        if ai_analysis
+                        else False
+                    ),
+                    time_critical=(
+                        ai_analysis.is_time_critical
+                        if ai_analysis
+                        else False
+                    ),
+                )
+
         return {
             "status": processing_status,
 
@@ -1393,6 +1417,8 @@ class TicketDetailSupportSerializer(serializers.ModelSerializer):
                 if obj.priority
                 else None
             ),
+
+            "priority_assessment": priority_assessment,
 
             "department_candidates": (
                 department_candidates

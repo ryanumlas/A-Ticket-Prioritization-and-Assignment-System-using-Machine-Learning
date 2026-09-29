@@ -244,6 +244,121 @@ def calculate_priority(
 
     return PRIORITY_LABELS[priority_number]
 
+def calculate_priority_details(
+    based_priority,
+    affected_scope,
+    business_critical,
+    time_critical,
+):
+    PRIORITY_ORDER = {
+        "P5": 5,
+        "P4": 4,
+        "P3": 3,
+        "P2": 2,
+        "P1": 1,
+    }
+
+    PRIORITY_LABELS = {
+        5: "P5",
+        4: "P4",
+        3: "P3",
+        2: "P2",
+        1: "P1",
+    }
+
+    priority_number = PRIORITY_ORDER.get(based_priority)
+
+    if priority_number is None:
+        based_priority = "P5"
+        priority_number = 5
+
+    if affected_scope == Ticket.AffectedScope.INDIVIDUAL:
+        impact = "LOW"
+
+    elif affected_scope == Ticket.AffectedScope.GROUP:
+        impact = "MEDIUM"
+
+    elif affected_scope == Ticket.AffectedScope.DEPARTMENT:
+        impact = "HIGH"
+
+    elif affected_scope == Ticket.AffectedScope.ORGANIZATION_WIDE:
+        impact = "CRITICAL"
+
+    else:
+        raise ValueError(
+            f"Invalid affected_scope: {affected_scope}"
+        )
+
+    if business_critical and time_critical:
+        urgency = "HIGH"
+
+    elif business_critical or time_critical:
+        urgency = "MEDIUM"
+
+    else:
+        urgency = "LOW"
+
+    PRIORITY_MATRIX = {
+        "CRITICAL": {
+            "LOW": 3,
+            "MEDIUM": 2,
+            "HIGH": 1,
+        },
+        "HIGH": {
+            "LOW": 4,
+            "MEDIUM": 3,
+            "HIGH": 2,
+        },
+        "MEDIUM": {
+            "LOW": 5,
+            "MEDIUM": 4,
+            "HIGH": 3,
+        },
+        "LOW": {
+            "LOW": 5,
+            "MEDIUM": 4,
+            "HIGH": 3,
+        },
+    }
+
+    contextual_priority_number = PRIORITY_MATRIX[impact][urgency]
+
+    final_priority_number = min(
+        priority_number,
+        contextual_priority_number,
+    )
+
+    return {
+        "base_priority": based_priority,
+        "affected_scope": affected_scope,
+        "impact": impact,
+        "business_critical": bool(business_critical),
+        "time_critical": bool(time_critical),
+        "urgency": urgency,
+        "contextual_priority": PRIORITY_LABELS[
+            contextual_priority_number
+        ],
+        "final_priority": PRIORITY_LABELS[
+            final_priority_number
+        ],
+    }
+
+
+def calculate_priority(
+    based_priority,
+    affected_scope,
+    business_critical,
+    time_critical,
+):
+    details = calculate_priority_details(
+        based_priority,
+        affected_scope,
+        business_critical,
+        time_critical,
+    )
+
+    return details["final_priority"]
+
 def calculate_status(remaining, total_duration):
     WARNING_THRESHOLD = 50
     CRITICAL_THRESHOLD = 25

@@ -22,7 +22,7 @@ from .services import predict_ticket, assign_ticket_automatically
 from ai.models import TicketAnalysis, TicketAIAnalysis
 from ai.services import analyze_ticket
 from departments.models import ITDepartment
-from tickets.services import classify_ticket, calculate_priority, update_sla, finalize_ticket_classification
+from tickets.services import classify_ticket, calculate_priority, update_sla, finalize_ticket_classification, calculate_priority_details
 
 # Create your views here.
 
@@ -38,7 +38,11 @@ class CreateTicketView(generics.CreateAPIView):
         self.perform_create(serializer)
         ticket = serializer.instance
 
-        automation_result = getattr(ticket, "_automation_result", None)
+        automation_result = getattr(
+            ticket,
+            "_automation_result",
+            None,
+        )
 
         response_data = {
             "success": True,
@@ -100,9 +104,18 @@ class CreateTicketView(generics.CreateAPIView):
         TicketAIAnalysis.objects.update_or_create(
             ticket=ticket,
             defaults={
-                "cleaned_text": analysis.get("cleaned_text", ""),
-                "summary": analysis.get("summary", ""),
-                "keywords": analysis.get("keywords", []),
+                "cleaned_text": analysis.get(
+                    "cleaned_text",
+                    "",
+                ),
+                "summary": analysis.get(
+                    "summary",
+                    "",
+                ),
+                "keywords": analysis.get(
+                    "keywords",
+                    [],
+                ),
                 "model_version": "gemini-2.5-flash",
                 "business_critical": analysis.get(
                     "business_critical",
@@ -168,6 +181,7 @@ class CreateTicketView(generics.CreateAPIView):
                 "required_specialization_id": None,
                 "department": None,
                 "priority": None,
+                "priority_assessment": None,
                 "processing_time": 0,
                 "matched_keywords": [],
                 "best_score": 0,
@@ -262,6 +276,7 @@ class CreateTicketView(generics.CreateAPIView):
                     "required_specialization_id": None,
                     "department": None,
                     "priority": None,
+                    "priority_assessment": None,
                     "processing_time": 0,
                     "matched_keywords": result.get(
                         "matched_keywords",
@@ -350,6 +365,7 @@ class CreateTicketView(generics.CreateAPIView):
                     ),
                     "department": None,
                     "priority": None,
+                    "priority_assessment": None,
                     "processing_time": 0,
                     "matched_keywords": result.get(
                         "matched_keywords",
@@ -448,6 +464,7 @@ class CreateTicketView(generics.CreateAPIView):
                 ),
                 "department": None,
                 "priority": None,
+                "priority_assessment": None,
                 "processing_time": 0,
                 "matched_keywords": result.get(
                     "matched_keywords",
@@ -488,12 +505,14 @@ class CreateTicketView(generics.CreateAPIView):
                 },
             )
 
-        final_priority = calculate_priority(
+        priority_details = calculate_priority_details(
             symptom.based_priority,
             ticket.affected_scope,
             analysis.get("business_critical", False),
             analysis.get("is_time_critical", False),
         )
+
+        final_priority = priority_details["final_priority"]
 
         sla_rule = SLARules.objects.filter(
             priority_level=final_priority
@@ -592,6 +611,7 @@ class CreateTicketView(generics.CreateAPIView):
                     else None
                 ),
                 "priority": final_priority,
+                "priority_assessment": priority_details,
                 "processing_time": 0,
                 "matched_keywords": result.get(
                     "matched_keywords",
@@ -641,6 +661,7 @@ class CreateTicketView(generics.CreateAPIView):
                 "best_score",
                 0,
             )
+            automation_result["priority_assessment"] = priority_details
 
         if assigned_profile:
             technician_name = (
