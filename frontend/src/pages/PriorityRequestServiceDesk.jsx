@@ -102,25 +102,92 @@ export default function PriorityRequestServiceDesk() {
 
     return (
         <div className="min-h-full bg-gray-50">
-            <div className="border-b border-gray-200 px-5 py-4">
-                <h1 className="text-xl font-semibold text-gray-900">
+            {/* PAGE HEADER */}
+            <div
+                className="
+                    border-b
+                    border-gray-200
+                    px-5
+                    py-4
+                    min-[1280px]:max-[1365px]:px-4
+                    min-[1280px]:max-[1365px]:py-3
+                    min-[1366px]:max-[1537px]:px-4
+                    min-[1366px]:max-[1537px]:py-3.5
+                "
+            >
+                <h1
+                    className="
+                        text-xl
+                        font-semibold
+                        text-gray-900
+                        min-[1280px]:max-[1365px]:text-lg
+                        min-[1366px]:max-[1537px]:text-lg
+                    "
+                >
                     Priority Requests
                 </h1>
 
-                <p className="mt-1 text-sm text-gray-500">
-                    Review and process priority change requests from IT Support.
+                <p
+                    className="
+                        mt-1
+                        text-sm
+                        text-gray-500
+                        min-[1280px]:max-[1365px]:text-[11px]
+                        min-[1366px]:max-[1537px]:text-xs
+                    "
+                >
+                    Review and process priority change requests from IT
+                    Support.
                 </p>
             </div>
 
-            <div className="border-b border-gray-200 bg-white px-5 py-3">
-                <div className="flex items-center justify-between gap-4">
+            {/* TOOLBAR */}
+            <div
+                className="
+                    border-b
+                    border-gray-200
+                    bg-white
+                    px-5
+                    py-3
+                    min-[1280px]:max-[1365px]:px-4
+                    min-[1280px]:max-[1365px]:py-2.5
+                    min-[1366px]:max-[1537px]:px-4
+                    min-[1366px]:max-[1537px]:py-2.5
+                "
+            >
+                <div
+                    className="
+                        flex
+                        items-center
+                        justify-between
+                        gap-4
+                        min-[1280px]:max-[1365px]:gap-3
+                        min-[1366px]:max-[1537px]:gap-3
+                    "
+                >
                     <form
                         onSubmit={handleSearch}
-                        className="relative w-full max-w-[320px]"
+                        className="
+                            relative
+                            w-full
+                            max-w-[320px]
+                            min-[1280px]:max-[1365px]:max-w-[280px]
+                            min-[1366px]:max-[1537px]:max-w-[300px]
+                        "
                     >
                         <Search
                             size={17}
-                            className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
+                            className="
+                                absolute
+                                left-3
+                                top-1/2
+                                -translate-y-1/2
+                                text-gray-400
+                                min-[1280px]:max-[1365px]:left-2.5
+                                min-[1280px]:max-[1365px]:size-3.5
+                                min-[1366px]:max-[1537px]:left-2.5
+                                min-[1366px]:max-[1537px]:size-3.5
+                            "
                         />
 
                         <input
@@ -132,25 +199,103 @@ export default function PriorityRequestServiceDesk() {
                                 )
                             }
                             placeholder="Search ticket ID or subject..."
-                            className="h-10 w-full rounded-md border border-gray-300 bg-white pl-9 pr-9 text-sm text-gray-700 outline-none placeholder:text-gray-400 focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+                            className="
+                                h-10
+                                w-full
+                                rounded-md
+                                border
+                                border-gray-300
+                                bg-white
+                                pl-9
+                                pr-9
+                                text-sm
+                                text-gray-700
+                                outline-none
+                                placeholder:text-gray-400
+                                focus:border-blue-500
+                                focus:ring-1
+                                focus:ring-blue-500
+                                min-[1280px]:max-[1365px]:h-9
+                                min-[1280px]:max-[1365px]:pl-8
+                                min-[1280px]:max-[1365px]:pr-8
+                                min-[1280px]:max-[1365px]:text-[11px]
+                                min-[1366px]:max-[1537px]:h-9
+                                min-[1366px]:max-[1537px]:pl-8
+                                min-[1366px]:max-[1537px]:pr-8
+                                min-[1366px]:max-[1537px]:text-xs
+                            "
                         />
 
                         {searchInput && (
                             <button
                                 type="button"
                                 onClick={clearSearch}
-                                className="absolute right-2 top-1/2 flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded-md text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-600"
+                                className="
+                                    absolute
+                                    right-2
+                                    top-1/2
+                                    flex
+                                    h-7
+                                    w-7
+                                    -translate-y-1/2
+                                    items-center
+                                    justify-center
+                                    rounded-md
+                                    text-gray-400
+                                    transition-colors
+                                    hover:bg-gray-100
+                                    hover:text-gray-600
+                                    min-[1280px]:max-[1365px]:right-1.5
+                                    min-[1280px]:max-[1365px]:h-6
+                                    min-[1280px]:max-[1365px]:w-6
+                                    min-[1366px]:max-[1537px]:right-1.5
+                                    min-[1366px]:max-[1537px]:h-6
+                                    min-[1366px]:max-[1537px]:w-6
+                                "
                             >
-                                <X size={15} />
+                                <X
+                                    size={15}
+                                    className="
+                                        min-[1280px]:max-[1365px]:size-3.5
+                                        min-[1366px]:max-[1537px]:size-3.5
+                                    "
+                                />
                             </button>
                         )}
                     </form>
 
-                    <div className="flex items-center gap-3">
+                    <div
+                        className="
+                            flex
+                            items-center
+                            gap-3
+                            min-[1280px]:max-[1365px]:gap-2
+                            min-[1366px]:max-[1537px]:gap-2.5
+                        "
+                    >
                         <select
                             value={status}
                             onChange={handleStatusChange}
-                            className="h-10 rounded-md border border-gray-300 bg-white px-3 text-sm text-gray-700 outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+                            className="
+                                h-10
+                                rounded-md
+                                border
+                                border-gray-300
+                                bg-white
+                                px-3
+                                text-sm
+                                text-gray-700
+                                outline-none
+                                focus:border-blue-500
+                                focus:ring-1
+                                focus:ring-blue-500
+                                min-[1280px]:max-[1365px]:h-9
+                                min-[1280px]:max-[1365px]:px-2.5
+                                min-[1280px]:max-[1365px]:text-[11px]
+                                min-[1366px]:max-[1537px]:h-9
+                                min-[1366px]:max-[1537px]:px-2.5
+                                min-[1366px]:max-[1537px]:text-xs
+                            "
                         >
                             <option value="">
                                 All Statuses
@@ -169,8 +314,23 @@ export default function PriorityRequestServiceDesk() {
                             </option>
                         </select>
 
-                        <div className="flex items-center gap-2">
-                            <span className="text-sm text-gray-600">
+                        <div
+                            className="
+                                flex
+                                items-center
+                                gap-2
+                                min-[1280px]:max-[1365px]:gap-1.5
+                                min-[1366px]:max-[1537px]:gap-1.5
+                            "
+                        >
+                            <span
+                                className="
+                                    text-sm
+                                    text-gray-600
+                                    min-[1280px]:max-[1365px]:text-[11px]
+                                    min-[1366px]:max-[1537px]:text-xs
+                                "
+                            >
                                 Show
                             </span>
 
@@ -179,7 +339,26 @@ export default function PriorityRequestServiceDesk() {
                                 onChange={
                                     handlePageSizeChange
                                 }
-                                className="h-10 rounded-md border border-gray-300 bg-white px-3 text-sm text-gray-700 outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+                                className="
+                                    h-10
+                                    rounded-md
+                                    border
+                                    border-gray-300
+                                    bg-white
+                                    px-3
+                                    text-sm
+                                    text-gray-700
+                                    outline-none
+                                    focus:border-blue-500
+                                    focus:ring-1
+                                    focus:ring-blue-500
+                                    min-[1280px]:max-[1365px]:h-9
+                                    min-[1280px]:max-[1365px]:px-2.5
+                                    min-[1280px]:max-[1365px]:text-[11px]
+                                    min-[1366px]:max-[1537px]:h-9
+                                    min-[1366px]:max-[1537px]:px-2.5
+                                    min-[1366px]:max-[1537px]:text-xs
+                                "
                             >
                                 <option value={10}>
                                     10
@@ -202,6 +381,7 @@ export default function PriorityRequestServiceDesk() {
                 </div>
             </div>
 
+            {/* TABLE */}
             <div className="bg-white">
                 <PriorityRequestTable
                     requests={priorityRequests}
@@ -209,8 +389,31 @@ export default function PriorityRequestServiceDesk() {
                 />
             </div>
 
-            <div className="flex items-center justify-between border-t border-gray-200 bg-white px-5 py-3">
-                <p className="text-sm text-gray-500">
+            {/* PAGINATION */}
+            <div
+                className="
+                    flex
+                    items-center
+                    justify-between
+                    border-t
+                    border-gray-200
+                    bg-white
+                    px-5
+                    py-3
+                    min-[1280px]:max-[1365px]:px-4
+                    min-[1280px]:max-[1365px]:py-2.5
+                    min-[1366px]:max-[1537px]:px-4
+                    min-[1366px]:max-[1537px]:py-2.5
+                "
+            >
+                <p
+                    className="
+                        text-sm
+                        text-gray-500
+                        min-[1280px]:max-[1365px]:text-[11px]
+                        min-[1366px]:max-[1537px]:text-xs
+                    "
+                >
                     Showing{" "}
                     <span className="font-medium text-gray-700">
                         {startItem}
@@ -226,7 +429,15 @@ export default function PriorityRequestServiceDesk() {
                     requests
                 </p>
 
-                <div className="flex items-center gap-2">
+                <div
+                    className="
+                        flex
+                        items-center
+                        gap-2
+                        min-[1280px]:max-[1365px]:gap-1.5
+                        min-[1366px]:max-[1537px]:gap-1.5
+                    "
+                >
                     <button
                         type="button"
                         onClick={() =>
@@ -241,12 +452,42 @@ export default function PriorityRequestServiceDesk() {
                             page === 1 ||
                             loading
                         }
-                        className="h-9 rounded-md border border-gray-300 bg-white px-3 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
+                        className="
+                            h-9
+                            rounded-md
+                            border
+                            border-gray-300
+                            bg-white
+                            px-3
+                            text-sm
+                            font-medium
+                            text-gray-700
+                            transition-colors
+                            hover:bg-gray-50
+                            disabled:cursor-not-allowed
+                            disabled:opacity-50
+                            min-[1280px]:max-[1365px]:h-8
+                            min-[1280px]:max-[1365px]:px-2.5
+                            min-[1280px]:max-[1365px]:text-[11px]
+                            min-[1366px]:max-[1537px]:h-8
+                            min-[1366px]:max-[1537px]:px-2.5
+                            min-[1366px]:max-[1537px]:text-xs
+                        "
                     >
                         Previous
                     </button>
 
-                    <span className="px-2 text-sm text-gray-600">
+                    <span
+                        className="
+                            px-2
+                            text-sm
+                            text-gray-600
+                            min-[1280px]:max-[1365px]:px-1.5
+                            min-[1280px]:max-[1365px]:text-[11px]
+                            min-[1366px]:max-[1537px]:px-1.5
+                            min-[1366px]:max-[1537px]:text-xs
+                        "
+                    >
                         Page {page} of {totalPages}
                     </span>
 
@@ -264,7 +505,25 @@ export default function PriorityRequestServiceDesk() {
                             page >= totalPages ||
                             loading
                         }
-                        className="h-9 rounded-md bg-[#2563EB] px-3 text-sm font-medium text-white transition-colors hover:bg-[#1D4ED8] disabled:cursor-not-allowed disabled:opacity-50"
+                        className="
+                            h-9
+                            rounded-md
+                            bg-[#2563EB]
+                            px-3
+                            text-sm
+                            font-medium
+                            text-white
+                            transition-colors
+                            hover:bg-[#1D4ED8]
+                            disabled:cursor-not-allowed
+                            disabled:opacity-50
+                            min-[1280px]:max-[1365px]:h-8
+                            min-[1280px]:max-[1365px]:px-2.5
+                            min-[1280px]:max-[1365px]:text-[11px]
+                            min-[1366px]:max-[1537px]:h-8
+                            min-[1366px]:max-[1537px]:px-2.5
+                            min-[1366px]:max-[1537px]:text-xs
+                        "
                     >
                         Next
                     </button>

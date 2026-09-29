@@ -179,8 +179,9 @@ export default function Topbar() {
         unreadCount > 99 ? "99+" : unreadCount;
 
     return (
-        <header className="sticky top-0 z-40 flex h-16 shrink-0 items-center justify-end border-b border-gray-200 bg-white px-6">
-            <div className="flex items-center gap-4">
+        <header className="sticky top-0 z-40 flex h-16 shrink-0 items-center justify-end border-b border-gray-200 bg-white px-3 sm:px-4 lg:px-6">
+            <div className="flex items-center gap-1.5 sm:gap-3 lg:gap-4">
+
                 {/* Notifications */}
                 <div className="relative">
                     <button
@@ -203,9 +204,11 @@ export default function Topbar() {
                     </button>
 
                     {notificationOpen && (
-                        <div className="absolute right-0 top-11 z-50 w-96 overflow-hidden rounded-xl border border-gray-200 bg-white shadow-lg">
-                            <div className="flex items-center justify-between border-b border-gray-100 px-4 py-3">
-                                <div>
+                        <div className="fixed left-3 right-3 top-[68px] z-50 max-h-[calc(100vh-80px)] overflow-hidden rounded-xl border border-gray-200 bg-white shadow-lg sm:absolute sm:left-auto sm:right-0 sm:top-11 sm:w-[360px] sm:max-h-none">
+
+                            {/* Notification Header */}
+                            <div className="flex items-center justify-between gap-3 border-b border-gray-100 px-3 py-3 sm:px-4">
+                                <div className="min-w-0">
                                     <h3 className="text-sm font-semibold text-gray-900">
                                         Notifications
                                     </h3>
@@ -224,13 +227,14 @@ export default function Topbar() {
                                             "/notifications"
                                         )
                                     }
-                                    className="cursor-pointer text-xs font-medium text-[#2563EB] hover:underline"
+                                    className="shrink-0 cursor-pointer text-xs font-medium text-[#2563EB] hover:underline"
                                 >
                                     View all
                                 </button>
                             </div>
 
-                            <div className="max-h-96 overflow-y-auto">
+                            {/* Notification List */}
+                            <div className="max-h-[calc(100vh-150px)] overflow-y-auto sm:max-h-96">
                                 {notifications.length === 0 ? (
                                     <div className="px-4 py-8 text-center">
                                         <Bell
@@ -259,12 +263,13 @@ export default function Topbar() {
                                                             notification
                                                         )
                                                     }
-                                                    className={`flex w-full cursor-pointer items-start gap-3 border-b border-gray-100 px-4 py-3 text-left transition ${
+                                                    className={`flex w-full cursor-pointer items-start gap-2.5 border-b border-gray-100 px-3 py-3 text-left transition sm:gap-3 sm:px-4 ${
                                                         notification.is_read
                                                             ? "bg-white hover:bg-gray-50"
                                                             : "bg-blue-50 hover:bg-blue-100"
                                                     }`}
                                                 >
+                                                    {/* Notification Icon */}
                                                     <div
                                                         className={`mt-1 flex h-7 w-7 shrink-0 items-center justify-center rounded-full ${
                                                             notification.is_read
@@ -287,10 +292,11 @@ export default function Topbar() {
                                                         )}
                                                     </div>
 
+                                                    {/* Notification Content */}
                                                     <div className="min-w-0 flex-1">
-                                                        <div className="flex items-start justify-between gap-2">
+                                                        <div className="flex min-w-0 items-start justify-between gap-2">
                                                             <p
-                                                                className={`text-xs leading-5 ${
+                                                                className={`min-w-0 break-words text-xs leading-5 ${
                                                                     notification.is_read
                                                                         ? "font-normal text-gray-600"
                                                                         : "font-medium text-gray-900"
@@ -307,7 +313,7 @@ export default function Topbar() {
                                                         </div>
 
                                                         {notification.ticket_code && (
-                                                            <span className="mt-1 inline-block rounded bg-gray-100 px-1.5 py-0.5 text-[10px] font-medium text-gray-500">
+                                                            <span className="mt-1 inline-block max-w-full truncate rounded bg-gray-100 px-1.5 py-0.5 text-[10px] font-medium text-gray-500">
                                                                 {
                                                                     notification.ticket_code
                                                                 }
@@ -315,7 +321,7 @@ export default function Topbar() {
                                                         )}
 
                                                         {notification.created_at && (
-                                                            <p className="mt-1 text-[10px] text-gray-400">
+                                                            <p className="mt-1 break-words text-[10px] text-gray-400">
                                                                 {formatNotificationDate(
                                                                     notification.created_at
                                                                 )}
@@ -328,8 +334,9 @@ export default function Topbar() {
                                 )}
                             </div>
 
+                            {/* View All Footer */}
                             {notifications.length > 8 && (
-                                <div className="border-t border-gray-100 px-4 py-2">
+                                <div className="border-t border-gray-100 px-3 py-2 sm:px-4">
                                     <button
                                         type="button"
                                         onClick={() =>
@@ -357,25 +364,25 @@ export default function Topbar() {
                             );
                             setNotificationOpen(false);
                         }}
-                        className="flex cursor-pointer items-center gap-2 rounded-lg px-2 py-1.5 transition hover:bg-gray-100"
+                        className="flex cursor-pointer items-center gap-1.5 rounded-lg px-1.5 py-1.5 transition hover:bg-gray-100 sm:gap-2 sm:px-2"
                     >
-                        <div className="flex h-8 w-8 items-center justify-center rounded-full bg-[#2563EB] text-xs font-semibold text-white">
+                        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#2563EB] text-xs font-semibold text-white">
                             {initials}
                         </div>
 
                         <div className="hidden text-left sm:block">
-                            <p className="text-sm font-medium text-gray-900">
+                            <p className="max-w-[160px] truncate text-sm font-medium text-gray-900">
                                 {fullName}
                             </p>
 
-                            <p className="text-xs text-gray-500">
+                            <p className="max-w-[160px] truncate text-xs text-gray-500">
                                 {displayRole}
                             </p>
                         </div>
 
                         <ChevronDown
                             size={16}
-                            className="text-gray-500"
+                            className="shrink-0 text-gray-500"
                         />
                     </button>
 

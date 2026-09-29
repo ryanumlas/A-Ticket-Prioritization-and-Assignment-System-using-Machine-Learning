@@ -9,7 +9,7 @@ PriorityChangeRequestView, PriorityChangeRequestListView, PriorityRequestDetailV
 ReturnedTicketRequestListView, ReturnedTicketDetailRetrieve, ApproveReturnTicketView, PendingPriorityRequestCountView, PendingReturnTicketRequestCountView, 
 ServiceDeskDepartmentQueueView, EscalateTicketView,
 ServiceDeskDepartmentSymptomCodesView, ServiceDeskDepartmentListView, RejectReturnTicketView, TicketDetailSupervisorView, AcknowledgeEscalationView, 
-RejectPriorityRequestView, EmployeeCurrentActiveTicketView, SupervisorEscalatedTicketsView, CompleteEscalationView)
+RejectPriorityRequestView, EmployeeCurrentActiveTicketView, SupervisorEscalatedTicketsView, CompleteEscalationView, TicketCommentMarkReadView, TicketDetailServiceDeskView)
 
 urlpatterns = [
     # --- Ticket URLs ---
@@ -39,6 +39,7 @@ urlpatterns = [
     path('service-desk/list/', TicketListServiceDeskView.as_view(), name="ticket-list-service-desk"),
     path('service-desk/overview/', ServiceDeskOverviewView.as_view(), name="service-desk-overview"),
     path('service-desk/classified-results/', ServiceDeskClassifiedResultsView.as_view(), name="service-desk-classified-results"),
+    path('service-desk/detail/<int:ticket_id>/', TicketDetailServiceDeskView.as_view(), name="service-desk-detail"),
     path('flagged/list/', FlaggedTicketsListView.as_view(), name='flagged-tickets'),
     path('flagged-detail/<int:pk>/', FlaggedTicketDetailView.as_view(), name='flagged-ticket-detail'),
     path("flagged/<int:pk>/accept-recommendation/", AcceptRecommendationView.as_view(), name="accept-recommendation"),
@@ -64,6 +65,8 @@ urlpatterns = [
     path("complete-escalation/<int:pk>/", CompleteEscalationView.as_view(), name="escalate-ticket-complete"),
     path("supervisor/escalated/list/",SupervisorEscalatedTicketsView.as_view(), name="escalated-ticket-list"),
     path("acknowledge-escalation/<int:pk>/",AcknowledgeEscalationView.as_view(),),
+
+    path("<int:pk>/comments/mark-read/", TicketCommentMarkReadView.as_view(),name="ticket-comment-mark-read",),
     # --- Category URLs ---
     path('categories/create/', CreateCategoryView.as_view(), name='create-category'),
     path('categories/update/<int:pk>/', UpdateCategoryView.as_view(), name='update-category'),

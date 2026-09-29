@@ -16,8 +16,20 @@ export default function AuditLogsListContent({
 }) {
     if (loading) {
         return (
-            <div className="flex h-[510px] items-center justify-center bg-white">
-                <p className="text-sm text-gray-500">
+            <div
+                className="
+                    flex h-[510px] items-center justify-center bg-white
+                    min-[1280px]:max-[1365px]:h-[450px]
+                    min-[1366px]:max-[1537px]:h-[500px]
+                "
+            >
+                <p
+                    className="
+                        text-sm text-gray-500
+                        min-[1280px]:max-[1365px]:text-[11px]
+                        min-[1366px]:max-[1537px]:text-xs
+                    "
+                >
                     Loading audit logs...
                 </p>
             </div>
@@ -33,42 +45,134 @@ export default function AuditLogsListContent({
                 w-full
                 overflow-auto
                 bg-white
-                [&::-webkit-scrollbar]:w-[3px]
-                [&::-webkit-scrollbar]:h-[3px]
+                [&::-webkit-scrollbar]:w-px
+                [&::-webkit-scrollbar]:h-px
                 [&::-webkit-scrollbar-track]:bg-transparent
                 [&::-webkit-scrollbar-thumb]:rounded-full
-                [&::-webkit-scrollbar-thumb]:bg-gray-300
-                hover:[&::-webkit-scrollbar-thumb]:bg-gray-400
+                [&::-webkit-scrollbar-thumb]:bg-transparent
+                hover:[&::-webkit-scrollbar-thumb]:bg-gray-300
             "
         >
-            <table className="w-full min-w-[1200px] table-fixed text-sm">
+            <table
+                className="
+                    w-full
+                    table-fixed
+                    text-sm
+                    min-[1280px]:max-[1365px]:text-[11px]
+                    min-[1366px]:max-[1537px]:text-xs
+                "
+            >
                 <thead className="sticky top-0 z-20 bg-gray-50">
                     <tr className="border-b border-gray-300 text-left">
-                        <th className="w-[8%] px-2.5 py-3.5 font-semibold text-black">
+                        <th
+                            className="
+                                w-[8%]
+                                px-2.5
+                                py-3.5
+                                font-semibold
+                                text-black
+                                min-[1280px]:max-[1365px]:px-2
+                                min-[1280px]:max-[1365px]:py-2.5
+                                min-[1366px]:max-[1537px]:px-2
+                                min-[1366px]:max-[1537px]:py-3
+                            "
+                        >
                             User Code
                         </th>
 
-                        <th className="w-[10%] px-2.5 py-3.5 font-semibold text-black">
+                        <th
+                            className="
+                                w-[10%]
+                                px-2.5
+                                py-3.5
+                                font-semibold
+                                text-black
+                                min-[1280px]:max-[1365px]:px-2
+                                min-[1280px]:max-[1365px]:py-2.5
+                                min-[1366px]:max-[1537px]:px-2
+                                min-[1366px]:max-[1537px]:py-3
+                            "
+                        >
                             User
                         </th>
 
-                        <th className="w-[8%] px-2.5 py-3.5 font-semibold text-black">
+                        <th
+                            className="
+                                w-[8%]
+                                px-2.5
+                                py-3.5
+                                font-semibold
+                                text-black
+                                min-[1280px]:max-[1365px]:px-2
+                                min-[1280px]:max-[1365px]:py-2.5
+                                min-[1366px]:max-[1537px]:px-2
+                                min-[1366px]:max-[1537px]:py-3
+                            "
+                        >
                             Role
                         </th>
 
-                        <th className="w-[10%] px-2.5 py-3.5 font-semibold text-black">
+                        <th
+                            className="
+                                w-[10%]
+                                px-2.5
+                                py-3.5
+                                font-semibold
+                                text-black
+                                min-[1280px]:max-[1365px]:px-2
+                                min-[1280px]:max-[1365px]:py-2.5
+                                min-[1366px]:max-[1537px]:px-2
+                                min-[1366px]:max-[1537px]:py-3
+                            "
+                        >
                             Department
                         </th>
 
-                        <th className="w-[11%] px-2.5 py-3.5 font-semibold text-black">
+                        <th
+                            className="
+                                w-[11%]
+                                px-2.5
+                                py-3.5
+                                font-semibold
+                                text-black
+                                min-[1280px]:max-[1365px]:px-2
+                                min-[1280px]:max-[1365px]:py-2.5
+                                min-[1366px]:max-[1537px]:px-2
+                                min-[1366px]:max-[1537px]:py-3
+                            "
+                        >
                             Action
                         </th>
 
-                        <th className="w-[15%] px-2.5 py-3.5 font-semibold text-black">
+                        <th
+                            className="
+                                w-[15%]
+                                px-2.5
+                                py-3.5
+                                font-semibold
+                                text-black
+                                min-[1280px]:max-[1365px]:px-2
+                                min-[1280px]:max-[1365px]:py-2.5
+                                min-[1366px]:max-[1537px]:px-2
+                                min-[1366px]:max-[1537px]:py-3
+                            "
+                        >
                             Details
                         </th>
 
-                        <th className="w-[12%] px-2.5 py-3.5 font-semibold text-black">
+                        <th
+                            className="
+                                w-[12%]
+                                px-2.5
+                                py-3.5
+                                font-semibold
+                                text-black
+                                min-[1280px]:max-[1365px]:px-2
+                                min-[1280px]:max-[1365px]:py-2.5
+                                min-[1366px]:max-[1537px]:px-2
+                                min-[1366px]:max-[1537px]:py-3
+                            "
+                        >
                             Created
                         </th>
                     </tr>
@@ -89,13 +193,29 @@ export default function AuditLogsListContent({
                         <tr>
                             <td
                                 colSpan={7}
-                                className="px-6 py-16 text-center"
+                                className="
+                                    px-6
+                                    py-16
+                                    text-center
+                                    min-[1280px]:max-[1365px]:px-4
+                                    min-[1280px]:max-[1365px]:py-10
+                                    min-[1366px]:max-[1537px]:px-5
+                                    min-[1366px]:max-[1537px]:py-12
+                                "
                             >
                                 <p className="font-medium text-black">
                                     No audit logs found
                                 </p>
 
-                                <p className="mt-1 text-sm text-gray-500">
+                                <p
+                                    className="
+                                        mt-1
+                                        text-sm
+                                        text-gray-500
+                                        min-[1280px]:max-[1365px]:text-[11px]
+                                        min-[1366px]:max-[1537px]:text-xs
+                                    "
+                                >
                                     There are currently no audit logs
                                     matching your search or filters.
                                 </p>
@@ -114,7 +234,16 @@ function AuditLogRow({ log }) {
     return (
         <tr className="border-b border-gray-200 transition-colors last:border-b-0 hover:bg-gray-50">
             {/* USER CODE */}
-            <td className="px-2.5 py-4">
+            <td
+                className="
+                    px-2.5
+                    py-4
+                    min-[1280px]:max-[1365px]:px-2
+                    min-[1280px]:max-[1365px]:py-2.5
+                    min-[1366px]:max-[1537px]:px-2
+                    min-[1366px]:max-[1537px]:py-3
+                "
+            >
                 <p
                     className="truncate font-semibold text-black"
                     title={log.user_code || "-"}
@@ -124,7 +253,16 @@ function AuditLogRow({ log }) {
             </td>
 
             {/* USER */}
-            <td className="px-2.5 py-4">
+            <td
+                className="
+                    px-2.5
+                    py-4
+                    min-[1280px]:max-[1365px]:px-2
+                    min-[1280px]:max-[1365px]:py-2.5
+                    min-[1366px]:max-[1537px]:px-2
+                    min-[1366px]:max-[1537px]:py-3
+                "
+            >
                 <div className="min-w-0">
                     <p
                         className="truncate font-medium text-black"
@@ -134,36 +272,87 @@ function AuditLogRow({ log }) {
                     </p>
 
                     <p
-                        className="mt-0.5 truncate text-xs text-gray-500"
-                        title={log.email || "No email provided"}
+                        className="
+                            mt-0.5
+                            truncate
+                            text-xs
+                            text-gray-500
+                            min-[1280px]:max-[1365px]:text-[10px]
+                            min-[1366px]:max-[1537px]:text-[11px]
+                        "
+                        title={
+                            log.email ||
+                            "No email provided"
+                        }
                     >
-                        {log.email || "No email provided"}
+                        {log.email ||
+                            "No email provided"}
                     </p>
                 </div>
             </td>
 
             {/* ROLE */}
-            <td className="px-2.5 py-4">
+            <td
+                className="
+                    px-2.5
+                    py-4
+                    min-[1280px]:max-[1365px]:px-2
+                    min-[1280px]:max-[1365px]:py-2.5
+                    min-[1366px]:max-[1537px]:px-2
+                    min-[1366px]:max-[1537px]:py-3
+                "
+            >
                 <RoleBadge role={log.role} />
             </td>
 
             {/* DEPARTMENT */}
-            <td className="px-2.5 py-4">
+            <td
+                className="
+                    px-2.5
+                    py-4
+                    min-[1280px]:max-[1365px]:px-2
+                    min-[1280px]:max-[1365px]:py-2.5
+                    min-[1366px]:max-[1537px]:px-2
+                    min-[1366px]:max-[1537px]:py-3
+                "
+            >
                 <p
                     className="truncate text-black"
-                    title={log.department || "No Department"}
+                    title={
+                        log.department ||
+                        "No Department"
+                    }
                 >
-                    {log.department || "No Department"}
+                    {log.department ||
+                        "No Department"}
                 </p>
             </td>
 
             {/* ACTION */}
-            <td className="px-2.5 py-4">
+            <td
+                className="
+                    px-2.5
+                    py-4
+                    min-[1280px]:max-[1365px]:px-2
+                    min-[1280px]:max-[1365px]:py-2.5
+                    min-[1366px]:max-[1537px]:px-2
+                    min-[1366px]:max-[1537px]:py-3
+                "
+            >
                 <ActionBadge action={action} />
             </td>
 
             {/* DETAILS */}
-            <td className="px-2.5 py-4">
+            <td
+                className="
+                    px-2.5
+                    py-4
+                    min-[1280px]:max-[1365px]:px-2
+                    min-[1280px]:max-[1365px]:py-2.5
+                    min-[1366px]:max-[1537px]:px-2
+                    min-[1366px]:max-[1537px]:py-3
+                "
+            >
                 <div className="min-w-0">
                     <p
                         className="truncate text-black"
@@ -172,30 +361,81 @@ function AuditLogRow({ log }) {
                         {getDetails(log)}
                     </p>
 
-                    {(log.old_value || log.new_value) && (
-                        <div className="mt-1 flex min-w-0 items-center gap-1.5 text-xs">
+                    {(log.old_value ||
+                        log.new_value) && (
+                        <div
+                            className="
+                                mt-1
+                                flex
+                                min-w-0
+                                items-center
+                                gap-1.5
+                                text-xs
+                                min-[1280px]:max-[1365px]:gap-1
+                                min-[1280px]:max-[1365px]:text-[10px]
+                                min-[1366px]:max-[1537px]:text-[11px]
+                            "
+                        >
                             {log.old_value && (
                                 <span
-                                    className="max-w-[100px] truncate rounded-md bg-gray-100 px-1.5 py-0.5 text-gray-600"
-                                    title={String(log.old_value)}
+                                    className="
+                                        max-w-[100px]
+                                        truncate
+                                        rounded-md
+                                        bg-gray-100
+                                        px-1.5
+                                        py-0.5
+                                        text-gray-600
+                                        min-[1280px]:max-[1365px]:max-w-[80px]
+                                        min-[1280px]:max-[1365px]:px-1
+                                        min-[1366px]:max-[1537px]:max-w-[90px]
+                                    "
+                                    title={String(
+                                        log.old_value
+                                    )}
                                 >
-                                    Old: {String(log.old_value)}
+                                    Old:{" "}
+                                    {String(
+                                        log.old_value
+                                    )}
                                 </span>
                             )}
 
-                            {log.old_value && log.new_value && (
-                                <ArrowRight
-                                    size={12}
-                                    className="shrink-0 text-gray-400"
-                                />
-                            )}
+                            {log.old_value &&
+                                log.new_value && (
+                                    <ArrowRight
+                                        size={12}
+                                        className="
+                                            shrink-0
+                                            text-gray-400
+                                            min-[1280px]:max-[1365px]:size-2.5
+                                            min-[1366px]:max-[1537px]:size-2.5
+                                        "
+                                    />
+                                )}
 
                             {log.new_value && (
                                 <span
-                                    className="max-w-[100px] truncate rounded-md bg-blue-50 px-1.5 py-0.5 text-blue-700"
-                                    title={String(log.new_value)}
+                                    className="
+                                        max-w-[100px]
+                                        truncate
+                                        rounded-md
+                                        bg-blue-50
+                                        px-1.5
+                                        py-0.5
+                                        text-blue-700
+                                        min-[1280px]:max-[1365px]:max-w-[80px]
+                                        min-[1280px]:max-[1365px]:px-1
+                                        min-[1366px]:max-[1537px]:max-w-[90px]
+                                    "
+                                    title={String(
+                                        log.new_value
+                                    )}
                                 >
-                                    New: {String(log.new_value)}
+                                    New:{" "}
+                                    {String(
+                                        log.new_value
+                                    )}
                                 </span>
                             )}
                         </div>
@@ -204,17 +444,30 @@ function AuditLogRow({ log }) {
             </td>
 
             {/* CREATED */}
-            <td className="px-2.5 py-4">
+            <td
+                className="
+                    px-2.5
+                    py-4
+                    min-[1280px]:max-[1365px]:px-2
+                    min-[1280px]:max-[1365px]:py-2.5
+                    min-[1366px]:max-[1537px]:px-2
+                    min-[1366px]:max-[1537px]:py-3
+                "
+            >
                 <span
                     className="whitespace-nowrap font-medium text-black"
                     title={
                         log.created_at
-                            ? formatDate(log.created_at)
+                            ? formatDate(
+                                  log.created_at
+                              )
                             : "-"
                     }
                 >
                     {log.created_at
-                        ? formatDate(log.created_at)
+                        ? formatDate(
+                              log.created_at
+                          )
                         : "-"}
                 </span>
             </td>
@@ -234,9 +487,11 @@ function getDetails(log) {
     const action = log.action || "";
 
     const details = {
-        TICKET_CREATED: "Ticket has been created.",
+        TICKET_CREATED:
+            "Ticket has been created.",
 
-        UPDATE: "Ticket information has been updated.",
+        UPDATE:
+            "Ticket information has been updated.",
 
         STATUS_CHANGED:
             "Ticket status has been changed.",
@@ -290,7 +545,10 @@ function getDetails(log) {
             "User has logged out.",
     };
 
-    return details[action] || "System activity recorded.";
+    return (
+        details[action] ||
+        "System activity recorded."
+    );
 }
 
 function ActionBadge({ action }) {
@@ -432,9 +690,38 @@ function ActionBadge({ action }) {
 
     return (
         <span
-            className={`inline-flex max-w-full items-center gap-1.5 rounded-md border px-2 py-1 text-xs font-medium ${current.className}`}
+            className={`
+                inline-flex
+                max-w-full
+                items-center
+                gap-1.5
+                rounded-md
+                border
+                px-2
+                py-1
+                text-xs
+                font-medium
+                ${current.className}
+                min-[1280px]:max-[1365px]:gap-1
+                min-[1280px]:max-[1365px]:px-1.5
+                min-[1280px]:max-[1365px]:py-0.5
+                min-[1280px]:max-[1365px]:text-[10px]
+                min-[1366px]:max-[1537px]:gap-1
+                min-[1366px]:max-[1537px]:px-1.5
+                min-[1366px]:max-[1537px]:py-0.5
+                min-[1366px]:max-[1537px]:text-[11px]
+            `}
         >
-            {current.icon}
+            <span
+                className="
+                    shrink-0
+                    [&>svg]:size-3.5
+                    min-[1280px]:max-[1365px]:[&>svg]:size-3
+                    min-[1366px]:max-[1537px]:[&>svg]:size-3
+                "
+            >
+                {current.icon}
+            </span>
 
             <span className="truncate">
                 {current.label}
@@ -481,10 +768,27 @@ function RoleBadge({ role }) {
 
     return (
         <span
-            className={`inline-flex max-w-full whitespace-nowrap rounded-md border px-2 py-1 text-xs font-medium ${
-                roleStyles[normalizedRole] ||
-                "border-gray-300 bg-gray-50 text-gray-700"
-            }`}
+            className={`
+                inline-flex
+                max-w-full
+                whitespace-nowrap
+                rounded-md
+                border
+                px-2
+                py-1
+                text-xs
+                font-medium
+                ${
+                    roleStyles[normalizedRole] ||
+                    "border-gray-300 bg-gray-50 text-gray-700"
+                }
+                min-[1280px]:max-[1365px]:px-1.5
+                min-[1280px]:max-[1365px]:py-0.5
+                min-[1280px]:max-[1365px]:text-[10px]
+                min-[1366px]:max-[1537px]:px-1.5
+                min-[1366px]:max-[1537px]:py-0.5
+                min-[1366px]:max-[1537px]:text-[11px]
+            `}
         >
             {roleLabels[normalizedRole] ||
                 normalizedRole ||

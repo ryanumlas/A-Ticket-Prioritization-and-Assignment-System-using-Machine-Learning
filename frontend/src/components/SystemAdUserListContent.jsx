@@ -12,8 +12,21 @@ export default function SystemAdUserListContent({
 }) {
     if (loading) {
         return (
-            <div className="flex h-[510px] items-center justify-center bg-white">
-                <p className="text-sm text-gray-500">
+            <div
+                className="
+                    flex h-[637px] items-center justify-center bg-white
+                    min-[1280px]:max-[1365px]:h-[350px]
+                    min-[1366px]:max-[1537px]:h-[400px]
+                    min-[1538px]:max-[1919px]:h-[637px]
+                "
+            >
+                <p
+                    className="
+                        text-sm text-gray-500
+                        min-[1280px]:max-[1365px]:text-[11px]
+                        min-[1366px]:max-[1537px]:text-xs
+                    "
+                >
                     Loading users...
                 </p>
             </div>
@@ -31,146 +44,155 @@ export default function SystemAdUserListContent({
     return (
         <div
             className="
-                h-[510px] w-full overflow-auto bg-white
-                [&::-webkit-scrollbar]:w-[3px]
-                [&::-webkit-scrollbar]:h-[3px]
+                h-[580px] w-full overflow-auto bg-white
+                min-[1280px]:max-[1365px]:h-[393px]
+                min-[1366px]:max-[1537px]:h-[433px]
+                min-[1538px]:max-[1919px]:h-[523px]
+                [&::-webkit-scrollbar]:w-px
+                [&::-webkit-scrollbar]:h-px
                 [&::-webkit-scrollbar-track]:bg-transparent
+                [&::-webkit-scrollbar-thumb]:bg-transparent
+                hover:[&::-webkit-scrollbar-thumb]:bg-gray-300
                 [&::-webkit-scrollbar-thumb]:rounded-full
-                [&::-webkit-scrollbar-thumb]:bg-gray-300
-                hover:[&::-webkit-scrollbar-thumb]:bg-gray-400
             "
         >
-            <table className="w-full table-fixed text-sm">
+            <table
+                className="
+                    w-full table-fixed text-sm
+                    min-[1280px]:max-[1365px]:text-[11px]
+                    min-[1366px]:max-[1537px]:text-xs
+                "
+            >
                 <thead className="sticky top-0 z-10 bg-gray-50">
                     {isAllUsers ? (
                         <tr className="border-b border-gray-300 text-left">
-                            <th className="w-[10%] px-2.5 py-3 font-semibold text-black">
+                            <th className="w-[10%] px-2.5 py-3 font-semibold text-black min-[1280px]:max-[1365px]:px-2 min-[1280px]:max-[1365px]:py-2.5 min-[1366px]:max-[1537px]:px-2.5 min-[1366px]:max-[1537px]:py-2.5">
                                 User Code
                             </th>
 
-                            <th className="w-[16%] px-2.5 py-3 font-semibold text-black">
+                            <th className="w-[16%] px-2.5 py-3 font-semibold text-black min-[1280px]:max-[1365px]:px-2 min-[1280px]:max-[1365px]:py-2.5 min-[1366px]:max-[1537px]:px-2.5 min-[1366px]:max-[1537px]:py-2.5">
                                 User
                             </th>
 
-                            <th className="w-[13%] px-2.5 py-3 font-semibold text-black">
+                            <th className="w-[13%] px-2.5 py-3 font-semibold text-black min-[1280px]:max-[1365px]:px-2 min-[1280px]:max-[1365px]:py-2.5 min-[1366px]:max-[1537px]:px-2.5 min-[1366px]:max-[1537px]:py-2.5">
                                 Role
                             </th>
 
-                            <th className="w-[16%] px-2.5 py-3 font-semibold text-black">
+                            <th className="w-[16%] px-2.5 py-3 font-semibold text-black min-[1280px]:max-[1365px]:px-2 min-[1280px]:max-[1365px]:py-2.5 min-[1366px]:max-[1537px]:px-2.5 min-[1366px]:max-[1537px]:py-2.5">
                                 Department
                             </th>
 
-                            <th className="w-[15%] px-2.5 py-3 font-semibold text-black">
+                            <th className="w-[15%] px-2.5 py-3 font-semibold text-black min-[1280px]:max-[1365px]:px-2 min-[1280px]:max-[1365px]:py-2.5 min-[1366px]:max-[1537px]:px-2.5 min-[1366px]:max-[1537px]:py-2.5">
                                 Office Location
                             </th>
 
-                            <th className="w-[9%] px-2.5 py-3 font-semibold text-black">
+                            <th className="w-[9%] px-2.5 py-3 font-semibold text-black min-[1280px]:max-[1365px]:px-2 min-[1280px]:max-[1365px]:py-2.5 min-[1366px]:max-[1537px]:px-2.5 min-[1366px]:max-[1537px]:py-2.5">
                                 Status
                             </th>
 
-                            <th className="w-[8%] px-2.5 py-3 font-semibold text-black">
+                            <th className="w-[8%] px-2.5 py-3 font-semibold text-black min-[1280px]:max-[1365px]:px-2 min-[1280px]:max-[1365px]:py-2.5 min-[1366px]:max-[1537px]:px-2.5 min-[1366px]:max-[1537px]:py-2.5">
                                 Created
                             </th>
 
-                            <th className="w-[7%] px-2 py-3 text-center font-semibold text-black">
+                            <th className="w-[7%] px-2 py-3 text-center font-semibold text-black min-[1280px]:max-[1365px]:px-1.5 min-[1280px]:max-[1365px]:py-2.5 min-[1366px]:max-[1537px]:px-1.5 min-[1366px]:max-[1537px]:py-2.5">
                                 Actions
                             </th>
                         </tr>
                     ) : isITSupport ? (
                         <tr className="border-b border-gray-300 text-left">
-                            <th className="w-[11%] px-2.5 py-3 font-semibold text-black">
+                            <th className="w-[11%] px-2.5 py-3 font-semibold text-black min-[1280px]:max-[1365px]:px-2 min-[1280px]:max-[1365px]:py-2.5 min-[1366px]:max-[1537px]:px-2.5 min-[1366px]:max-[1537px]:py-2.5">
                                 User Code
                             </th>
 
-                            <th className="w-[17%] px-2.5 py-3 font-semibold text-black">
+                            <th className="w-[17%] px-2.5 py-3 font-semibold text-black min-[1280px]:max-[1365px]:px-2 min-[1280px]:max-[1365px]:py-2.5 min-[1366px]:max-[1537px]:px-2.5 min-[1366px]:max-[1537px]:py-2.5">
                                 User
                             </th>
 
-                            <th className="w-[16%] px-2.5 py-3 font-semibold text-black">
+                            <th className="w-[16%] px-2.5 py-3 font-semibold text-black min-[1280px]:max-[1365px]:px-2 min-[1280px]:max-[1365px]:py-2.5 min-[1366px]:max-[1537px]:px-2.5 min-[1366px]:max-[1537px]:py-2.5">
                                 IT Department
                             </th>
 
-                            <th className="w-[16%] px-2.5 py-3 font-semibold text-black">
+                            <th className="w-[16%] px-2.5 py-3 font-semibold text-black min-[1280px]:max-[1365px]:px-2 min-[1280px]:max-[1365px]:py-2.5 min-[1366px]:max-[1537px]:px-2.5 min-[1366px]:max-[1537px]:py-2.5">
                                 Office Location
                             </th>
 
-                            <th className="w-[9%] px-2.5 py-3 font-semibold text-black">
+                            <th className="w-[9%] px-2.5 py-3 font-semibold text-black min-[1280px]:max-[1365px]:px-2 min-[1280px]:max-[1365px]:py-2.5 min-[1366px]:max-[1537px]:px-2.5 min-[1366px]:max-[1537px]:py-2.5">
                                 Workload
                             </th>
 
-                            <th className="w-[11%] px-2.5 py-3 font-semibold text-black">
+                            <th className="w-[11%] px-2.5 py-3 font-semibold text-black min-[1280px]:max-[1365px]:px-2 min-[1280px]:max-[1365px]:py-2.5 min-[1366px]:max-[1537px]:px-2.5 min-[1366px]:max-[1537px]:py-2.5">
                                 Availability
                             </th>
 
-                            <th className="w-[8%] px-2.5 py-3 font-semibold text-black">
+                            <th className="w-[8%] px-2.5 py-3 font-semibold text-black min-[1280px]:max-[1365px]:px-2 min-[1280px]:max-[1365px]:py-2.5 min-[1366px]:max-[1537px]:px-2.5 min-[1366px]:max-[1537px]:py-2.5">
                                 Status
                             </th>
 
-                            <th className="w-[7%] px-2.5 py-3 font-semibold text-black">
+                            <th className="w-[7%] px-2.5 py-3 font-semibold text-black min-[1280px]:max-[1365px]:px-2 min-[1280px]:max-[1365px]:py-2.5 min-[1366px]:max-[1537px]:px-2.5 min-[1366px]:max-[1537px]:py-2.5">
                                 Created
                             </th>
 
-                            <th className="w-[5%] px-2 py-3 text-center font-semibold text-black">
+                            <th className="w-[5%] px-2 py-3 text-center font-semibold text-black min-[1280px]:max-[1365px]:px-1.5 min-[1280px]:max-[1365px]:py-2.5 min-[1366px]:max-[1537px]:px-1.5 min-[1366px]:max-[1537px]:py-2.5">
                                 Actions
                             </th>
                         </tr>
                     ) : isITServiceDesk ? (
                         <tr className="border-b border-gray-300 text-left">
-                            <th className="w-[13%] px-2.5 py-3 font-semibold text-black">
+                            <th className="w-[13%] px-2.5 py-3 font-semibold text-black min-[1280px]:max-[1365px]:px-2 min-[1280px]:max-[1365px]:py-2.5 min-[1366px]:max-[1537px]:px-2.5 min-[1366px]:max-[1537px]:py-2.5">
                                 User Code
                             </th>
 
-                            <th className="w-[22%] px-2.5 py-3 font-semibold text-black">
+                            <th className="w-[22%] px-2.5 py-3 font-semibold text-black min-[1280px]:max-[1365px]:px-2 min-[1280px]:max-[1365px]:py-2.5 min-[1366px]:max-[1537px]:px-2.5 min-[1366px]:max-[1537px]:py-2.5">
                                 User
                             </th>
 
-                            <th className="w-[21%] px-2.5 py-3 font-semibold text-black">
+                            <th className="w-[21%] px-2.5 py-3 font-semibold text-black min-[1280px]:max-[1365px]:px-2 min-[1280px]:max-[1365px]:py-2.5 min-[1366px]:max-[1537px]:px-2.5 min-[1366px]:max-[1537px]:py-2.5">
                                 IT Department
                             </th>
 
-                            <th className="w-[19%] px-2.5 py-3 font-semibold text-black">
+                            <th className="w-[19%] px-2.5 py-3 font-semibold text-black min-[1280px]:max-[1365px]:px-2 min-[1280px]:max-[1365px]:py-2.5 min-[1366px]:max-[1537px]:px-2.5 min-[1366px]:max-[1537px]:py-2.5">
                                 Office Location
                             </th>
 
-                            <th className="w-[10%] px-2.5 py-3 font-semibold text-black">
+                            <th className="w-[10%] px-2.5 py-3 font-semibold text-black min-[1280px]:max-[1365px]:px-2 min-[1280px]:max-[1365px]:py-2.5 min-[1366px]:max-[1537px]:px-2.5 min-[1366px]:max-[1537px]:py-2.5">
                                 Status
                             </th>
 
-                            <th className="w-[9%] px-2.5 py-3 font-semibold text-black">
+                            <th className="w-[9%] px-2.5 py-3 font-semibold text-black min-[1280px]:max-[1365px]:px-2 min-[1280px]:max-[1365px]:py-2.5 min-[1366px]:max-[1537px]:px-2.5 min-[1366px]:max-[1537px]:py-2.5">
                                 Created
                             </th>
 
-                            <th className="w-[6%] px-2 py-3 text-center font-semibold text-black">
+                            <th className="w-[6%] px-2 py-3 text-center font-semibold text-black min-[1280px]:max-[1365px]:px-1.5 min-[1280px]:max-[1365px]:py-2.5 min-[1366px]:max-[1537px]:px-1.5 min-[1366px]:max-[1537px]:py-2.5">
                                 Actions
                             </th>
                         </tr>
                     ) : (
                         <tr className="border-b border-gray-300 text-left">
-                            <th className="w-[13%] px-2.5 py-3 font-semibold text-black">
+                            <th className="w-[13%] px-2.5 py-3 font-semibold text-black min-[1280px]:max-[1365px]:px-2 min-[1280px]:max-[1365px]:py-2.5 min-[1366px]:max-[1537px]:px-2.5 min-[1366px]:max-[1537px]:py-2.5">
                                 User Code
                             </th>
 
-                            <th className="w-[17%] px-2.5 py-3 font-semibold text-black">
+                            <th className="w-[17%] px-2.5 py-3 font-semibold text-black min-[1280px]:max-[1365px]:px-2 min-[1280px]:max-[1365px]:py-2.5 min-[1366px]:max-[1537px]:px-2.5 min-[1366px]:max-[1537px]:py-2.5">
                                 User
                             </th>
 
-                            <th className="w-[18%] px-2.5 py-3 font-semibold text-black">
+                            <th className="w-[18%] px-2.5 py-3 font-semibold text-black min-[1280px]:max-[1365px]:px-2 min-[1280px]:max-[1365px]:py-2.5 min-[1366px]:max-[1537px]:px-2.5 min-[1366px]:max-[1537px]:py-2.5">
                                 Department
                             </th>
 
-                            <th className="w-[17%] px-2.5 py-3 font-semibold text-black">
+                            <th className="w-[17%] px-2.5 py-3 font-semibold text-black min-[1280px]:max-[1365px]:px-2 min-[1280px]:max-[1365px]:py-2.5 min-[1366px]:max-[1537px]:px-2.5 min-[1366px]:max-[1537px]:py-2.5">
                                 Office Location
                             </th>
 
-                            <th className="w-[10%] px-2.5 py-3 font-semibold text-black">
+                            <th className="w-[10%] px-2.5 py-3 font-semibold text-black min-[1280px]:max-[1365px]:px-2 min-[1280px]:max-[1365px]:py-2.5 min-[1366px]:max-[1537px]:px-2.5 min-[1366px]:max-[1537px]:py-2.5">
                                 Status
                             </th>
 
-                            <th className="w-[9%] px-2.5 py-3 font-semibold text-black">
+                            <th className="w-[9%] px-2.5 py-3 font-semibold text-black min-[1280px]:max-[1365px]:px-2 min-[1280px]:max-[1365px]:py-2.5 min-[1366px]:max-[1537px]:px-2.5 min-[1366px]:max-[1537px]:py-2.5">
                                 Created
                             </th>
 
-                            <th className="w-[6%] px-2 py-3 text-center font-semibold text-black">
+                            <th className="w-[6%] px-2 py-3 text-center font-semibold text-black min-[1280px]:max-[1365px]:px-1.5 min-[1280px]:max-[1365px]:py-2.5 min-[1366px]:max-[1537px]:px-1.5 min-[1366px]:max-[1537px]:py-2.5">
                                 Actions
                             </th>
                         </tr>
@@ -203,13 +225,29 @@ export default function SystemAdUserListContent({
                                         ? 7
                                         : 7
                                 }
-                                className="px-6 py-16 text-center"
+                                className="
+                                    px-6 py-16 text-center
+                                    min-[1280px]:max-[1365px]:px-4
+                                    min-[1280px]:max-[1365px]:py-10
+                                    min-[1366px]:max-[1537px]:px-5
+                                    min-[1366px]:max-[1537px]:py-12
+                                "
                             >
-                                <p className="font-medium text-black">
+                                <p
+                                    className="
+                                        font-medium text-black
+                                    "
+                                >
                                     No users found
                                 </p>
 
-                                <p className="mt-1 text-sm text-gray-500">
+                                <p
+                                    className="
+                                        mt-1 text-sm text-gray-500
+                                        min-[1280px]:max-[1365px]:text-[11px]
+                                        min-[1366px]:max-[1537px]:text-xs
+                                    "
+                                >
                                     There are currently no users
                                     matching your search or filters.
                                 </p>
@@ -255,8 +293,10 @@ function UserRow({
         <tr className="border-b border-gray-200 transition-colors hover:bg-gray-50 last:border-b-0">
             <td
                 className={`${
-                    isAllUsers ? "px-2.5" : "px-3"
-                } py-3.5`}
+                    isAllUsers
+                        ? "px-2.5 min-[1280px]:max-[1365px]:px-2 min-[1366px]:max-[1537px]:px-2.5"
+                        : "px-3 min-[1280px]:max-[1365px]:px-2.5 min-[1366px]:max-[1537px]:px-2.5"
+                } py-3.5 min-[1280px]:max-[1365px]:py-2.5 min-[1366px]:max-[1537px]:py-3`}
             >
                 <span className="whitespace-nowrap font-semibold text-black">
                     {user.user_code || "-"}
@@ -265,8 +305,10 @@ function UserRow({
 
             <td
                 className={`${
-                    isAllUsers ? "px-2.5" : "px-3"
-                } py-3.5`}
+                    isAllUsers
+                        ? "px-2.5 min-[1280px]:max-[1365px]:px-2 min-[1366px]:max-[1537px]:px-2.5"
+                        : "px-3 min-[1280px]:max-[1365px]:px-2.5 min-[1366px]:max-[1537px]:px-2.5"
+                } py-3.5 min-[1280px]:max-[1365px]:py-2.5 min-[1366px]:max-[1537px]:py-3`}
             >
                 <p
                     className="truncate font-medium text-black"
@@ -276,7 +318,11 @@ function UserRow({
                 </p>
 
                 <p
-                    className="mt-0.5 truncate text-xs text-gray-500"
+                    className="
+                        mt-0.5 truncate text-xs text-gray-500
+                        min-[1280px]:max-[1365px]:text-[10px]
+                        min-[1366px]:max-[1537px]:text-[11px]
+                    "
                     title={
                         user.email || "No email provided"
                     }
@@ -287,13 +333,13 @@ function UserRow({
 
             {isAllUsers ? (
                 <>
-                    <td className="px-2.5 py-3.5">
+                    <td className="px-2.5 py-3.5 min-[1280px]:max-[1365px]:px-2 min-[1280px]:max-[1365px]:py-2.5 min-[1366px]:max-[1537px]:px-2.5 min-[1366px]:max-[1537px]:py-3">
                         <RoleBadge
                             role={user.role_name}
                         />
                     </td>
 
-                    <td className="px-2.5 py-3.5">
+                    <td className="px-2.5 py-3.5 min-[1280px]:max-[1365px]:px-2 min-[1280px]:max-[1365px]:py-2.5 min-[1366px]:max-[1537px]:px-2.5 min-[1366px]:max-[1537px]:py-3">
                         <p
                             className="truncate text-black"
                             title={
@@ -318,7 +364,7 @@ function UserRow({
                         </p>
                     </td>
 
-                    <td className="px-2.5 py-3.5">
+                    <td className="px-2.5 py-3.5 min-[1280px]:max-[1365px]:px-2 min-[1280px]:max-[1365px]:py-2.5 min-[1366px]:max-[1537px]:px-2.5 min-[1366px]:max-[1537px]:py-3">
                         <p
                             className="truncate text-black"
                             title={
@@ -331,13 +377,13 @@ function UserRow({
                         </p>
                     </td>
 
-                    <td className="px-2.5 py-3.5">
+                    <td className="px-2.5 py-3.5 min-[1280px]:max-[1365px]:px-2 min-[1280px]:max-[1365px]:py-2.5 min-[1366px]:max-[1537px]:px-2.5 min-[1366px]:max-[1537px]:py-3">
                         <StatusBadge
                             isActive={user.is_active}
                         />
                     </td>
 
-                    <td className="px-2.5 py-3.5">
+                    <td className="px-2.5 py-3.5 min-[1280px]:max-[1365px]:px-2 min-[1280px]:max-[1365px]:py-2.5 min-[1366px]:max-[1537px]:px-2.5 min-[1366px]:max-[1537px]:py-3">
                         <span className="whitespace-nowrap font-medium text-black">
                             {user.created_at
                                 ? formatDate(
@@ -349,7 +395,7 @@ function UserRow({
                 </>
             ) : isITSupport ? (
                 <>
-                    <td className="px-3 py-3.5">
+                    <td className="px-3 py-3.5 min-[1280px]:max-[1365px]:px-2.5 min-[1280px]:max-[1365px]:py-2.5 min-[1366px]:max-[1537px]:px-2.5 min-[1366px]:max-[1537px]:py-3">
                         <p
                             className="truncate text-black"
                             title={
@@ -362,7 +408,7 @@ function UserRow({
                         </p>
                     </td>
 
-                    <td className="px-3 py-3.5">
+                    <td className="px-3 py-3.5 min-[1280px]:max-[1365px]:px-2.5 min-[1280px]:max-[1365px]:py-2.5 min-[1366px]:max-[1537px]:px-2.5 min-[1366px]:max-[1537px]:py-3">
                         <p
                             className="truncate text-black"
                             title={
@@ -375,7 +421,7 @@ function UserRow({
                         </p>
                     </td>
 
-                    <td className="px-3 py-3.5">
+                    <td className="px-3 py-3.5 min-[1280px]:max-[1365px]:px-2.5 min-[1280px]:max-[1365px]:py-2.5 min-[1366px]:max-[1537px]:px-2.5 min-[1366px]:max-[1537px]:py-3">
                         {user.current_workload !== null &&
                         user.workload_limit !== null ? (
                             <span className="whitespace-nowrap font-medium text-black">
@@ -387,7 +433,7 @@ function UserRow({
                         )}
                     </td>
 
-                    <td className="px-3 py-3.5">
+                    <td className="px-3 py-3.5 min-[1280px]:max-[1365px]:px-2.5 min-[1280px]:max-[1365px]:py-2.5 min-[1366px]:max-[1537px]:px-2.5 min-[1366px]:max-[1537px]:py-3">
                         <AvailabilityBadge
                             status={
                                 user.availability_status
@@ -395,13 +441,13 @@ function UserRow({
                         />
                     </td>
 
-                    <td className="px-3 py-3.5">
+                    <td className="px-3 py-3.5 min-[1280px]:max-[1365px]:px-2.5 min-[1280px]:max-[1365px]:py-2.5 min-[1366px]:max-[1537px]:px-2.5 min-[1366px]:max-[1537px]:py-3">
                         <StatusBadge
                             isActive={user.is_active}
                         />
                     </td>
 
-                    <td className="px-3 py-3.5">
+                    <td className="px-3 py-3.5 min-[1280px]:max-[1365px]:px-2.5 min-[1280px]:max-[1365px]:py-2.5 min-[1366px]:max-[1537px]:px-2.5 min-[1366px]:max-[1537px]:py-3">
                         <span className="whitespace-nowrap font-medium text-black">
                             {user.created_at
                                 ? formatDate(
@@ -413,7 +459,7 @@ function UserRow({
                 </>
             ) : isITServiceDesk ? (
                 <>
-                    <td className="px-3 py-3.5">
+                    <td className="px-3 py-3.5 min-[1280px]:max-[1365px]:px-2.5 min-[1280px]:max-[1365px]:py-2.5 min-[1366px]:max-[1537px]:px-2.5 min-[1366px]:max-[1537px]:py-3">
                         <p
                             className="truncate text-black"
                             title={
@@ -426,7 +472,7 @@ function UserRow({
                         </p>
                     </td>
 
-                    <td className="px-3 py-3.5">
+                    <td className="px-3 py-3.5 min-[1280px]:max-[1365px]:px-2.5 min-[1280px]:max-[1365px]:py-2.5 min-[1366px]:max-[1537px]:px-2.5 min-[1366px]:max-[1537px]:py-3">
                         <p
                             className="truncate text-black"
                             title={
@@ -439,13 +485,13 @@ function UserRow({
                         </p>
                     </td>
 
-                    <td className="px-3 py-3.5">
+                    <td className="px-3 py-3.5 min-[1280px]:max-[1365px]:px-2.5 min-[1280px]:max-[1365px]:py-2.5 min-[1366px]:max-[1537px]:px-2.5 min-[1366px]:max-[1537px]:py-3">
                         <StatusBadge
                             isActive={user.is_active}
                         />
                     </td>
 
-                    <td className="px-3 py-3.5">
+                    <td className="px-3 py-3.5 min-[1280px]:max-[1365px]:px-2.5 min-[1280px]:max-[1365px]:py-2.5 min-[1366px]:max-[1537px]:px-2.5 min-[1366px]:max-[1537px]:py-3">
                         <span className="whitespace-nowrap font-medium text-black">
                             {user.created_at
                                 ? formatDate(
@@ -457,7 +503,7 @@ function UserRow({
                 </>
             ) : (
                 <>
-                    <td className="px-3 py-3.5">
+                    <td className="px-3 py-3.5 min-[1280px]:max-[1365px]:px-2.5 min-[1280px]:max-[1365px]:py-2.5 min-[1366px]:max-[1537px]:px-2.5 min-[1366px]:max-[1537px]:py-3">
                         <p
                             className="truncate text-black"
                             title={
@@ -470,7 +516,7 @@ function UserRow({
                         </p>
                     </td>
 
-                    <td className="px-3 py-3.5">
+                    <td className="px-3 py-3.5 min-[1280px]:max-[1365px]:px-2.5 min-[1280px]:max-[1365px]:py-2.5 min-[1366px]:max-[1537px]:px-2.5 min-[1366px]:max-[1537px]:py-3">
                         <p
                             className="truncate text-black"
                             title={
@@ -483,13 +529,13 @@ function UserRow({
                         </p>
                     </td>
 
-                    <td className="px-3 py-3.5">
+                    <td className="px-3 py-3.5 min-[1280px]:max-[1365px]:px-2.5 min-[1280px]:max-[1365px]:py-2.5 min-[1366px]:max-[1537px]:px-2.5 min-[1366px]:max-[1537px]:py-3">
                         <StatusBadge
                             isActive={user.is_active}
                         />
                     </td>
 
-                    <td className="px-3 py-3.5">
+                    <td className="px-3 py-3.5 min-[1280px]:max-[1365px]:px-2.5 min-[1280px]:max-[1365px]:py-2.5 min-[1366px]:max-[1537px]:px-2.5 min-[1366px]:max-[1537px]:py-3">
                         <span className="whitespace-nowrap font-medium text-black">
                             {user.created_at
                                 ? formatDate(
@@ -501,7 +547,7 @@ function UserRow({
                 </>
             )}
 
-            <td className="px-2 py-3.5 text-center">
+            <td className="px-2 py-3.5 text-center min-[1280px]:max-[1365px]:px-1.5 min-[1280px]:max-[1365px]:py-2.5 min-[1366px]:max-[1537px]:px-1.5 min-[1366px]:max-[1537px]:py-3">
                 <div className="relative inline-block">
                     <button
                         type="button"
@@ -514,13 +560,23 @@ function UserRow({
                             inline-flex h-8 w-8 items-center justify-center
                             rounded-md text-gray-500 transition-colors
                             hover:bg-gray-100 hover:text-black
+                            min-[1280px]:max-[1365px]:h-7
+                            min-[1280px]:max-[1365px]:w-7
+                            min-[1366px]:max-[1537px]:h-7
+                            min-[1366px]:max-[1537px]:w-7
                         "
                         aria-label={`Actions for ${
                             user.full_name ||
                             user.user_code
                         }`}
                     >
-                        <MoreVertical size={18} />
+                        <MoreVertical
+                            size={18}
+                            className="
+                                min-[1280px]:max-[1365px]:size-3.5
+                                min-[1366px]:max-[1537px]:size-4
+                            "
+                        />
                     </button>
 
                     {menuOpen && (
@@ -530,6 +586,10 @@ function UserRow({
                                 overflow-hidden rounded-lg border
                                 border-gray-200 bg-white py-1
                                 text-left shadow-lg
+                                min-[1280px]:max-[1365px]:top-8
+                                min-[1280px]:max-[1365px]:w-40
+                                min-[1366px]:max-[1537px]:top-8
+                                min-[1366px]:max-[1537px]:w-42
                             "
                         >
                             <button
@@ -539,6 +599,12 @@ function UserRow({
                                     w-full px-4 py-2.5 text-left text-sm
                                     text-gray-700 hover:bg-gray-50
                                     hover:text-black
+                                    min-[1280px]:max-[1365px]:px-3
+                                    min-[1280px]:max-[1365px]:py-2
+                                    min-[1280px]:max-[1365px]:text-[11px]
+                                    min-[1366px]:max-[1537px]:px-3.5
+                                    min-[1366px]:max-[1537px]:py-2
+                                    min-[1366px]:max-[1537px]:text-xs
                                 "
                             >
                                 View Details
@@ -551,6 +617,12 @@ function UserRow({
                                     w-full px-4 py-2.5 text-left text-sm
                                     text-gray-700 hover:bg-gray-50
                                     hover:text-black
+                                    min-[1280px]:max-[1365px]:px-3
+                                    min-[1280px]:max-[1365px]:py-2
+                                    min-[1280px]:max-[1365px]:text-[11px]
+                                    min-[1366px]:max-[1537px]:px-3.5
+                                    min-[1366px]:max-[1537px]:py-2
+                                    min-[1366px]:max-[1537px]:text-xs
                                 "
                             >
                                 Edit User
@@ -561,7 +633,7 @@ function UserRow({
                             <button
                                 type="button"
                                 onClick={handleToggleStatus}
-                                className={`w-full px-4 py-2.5 text-left text-sm ${
+                                className={`w-full px-4 py-2.5 text-left text-sm min-[1280px]:max-[1365px]:px-3 min-[1280px]:max-[1365px]:py-2 min-[1280px]:max-[1365px]:text-[11px] min-[1366px]:max-[1537px]:px-3.5 min-[1366px]:max-[1537px]:py-2 min-[1366px]:max-[1537px]:text-xs ${
                                     user.is_active
                                         ? "text-red-600 hover:bg-red-50"
                                         : "text-green-600 hover:bg-green-50"
@@ -609,7 +681,7 @@ function RoleBadge({ role }) {
 
     return (
         <span
-            className={`inline-flex whitespace-nowrap rounded-md border px-2 py-1 text-xs font-medium ${
+            className={`inline-flex whitespace-nowrap rounded-md border px-2 py-1 text-xs font-medium min-[1280px]:max-[1365px]:px-1.5 min-[1280px]:max-[1365px]:py-0.5 min-[1280px]:max-[1365px]:text-[10px] min-[1366px]:max-[1537px]:px-1.5 min-[1366px]:max-[1537px]:py-0.5 min-[1366px]:max-[1537px]:text-[11px] ${
                 roleStyles[normalizedRole] ||
                 "border-gray-300 bg-gray-50 text-gray-700"
             }`}
@@ -624,7 +696,7 @@ function RoleBadge({ role }) {
 function StatusBadge({ isActive }) {
     return (
         <span
-            className={`inline-flex whitespace-nowrap rounded-md border px-2.5 py-1 text-xs font-medium ${
+            className={`inline-flex whitespace-nowrap rounded-md border px-2.5 py-1 text-xs font-medium min-[1280px]:max-[1365px]:px-1.5 min-[1280px]:max-[1365px]:py-0.5 min-[1280px]:max-[1365px]:text-[10px] min-[1366px]:max-[1537px]:px-2 min-[1366px]:max-[1537px]:py-0.5 min-[1366px]:max-[1537px]:text-[11px] ${
                 isActive
                     ? "border-green-300 bg-green-50 text-green-700"
                     : "border-red-300 bg-red-50 text-red-700"
@@ -658,7 +730,7 @@ function AvailabilityBadge({ status }) {
 
     return (
         <span
-            className={`inline-flex whitespace-nowrap rounded-md border px-2.5 py-1 text-xs font-medium ${
+            className={`inline-flex whitespace-nowrap rounded-md border px-2.5 py-1 text-xs font-medium min-[1280px]:max-[1365px]:px-1.5 min-[1280px]:max-[1365px]:py-0.5 min-[1280px]:max-[1365px]:text-[10px] min-[1366px]:max-[1537px]:px-2 min-[1366px]:max-[1537px]:py-0.5 min-[1366px]:max-[1537px]:text-[11px] ${
                 styles[normalizedStatus] ||
                 "border-gray-300 bg-gray-100 text-gray-700"
             }`}

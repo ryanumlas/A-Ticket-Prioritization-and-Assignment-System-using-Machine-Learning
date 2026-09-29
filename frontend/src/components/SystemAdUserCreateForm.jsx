@@ -280,8 +280,20 @@ export default function SystemAdUserCreateForm({
 
     if (loadingOptions) {
         return (
-            <div className="rounded-lg border border-gray-200 bg-white p-6">
-                <p className="text-sm text-gray-500">
+            <div
+                className="
+                    rounded-lg border border-gray-200 bg-white p-6
+                    min-[1280px]:max-[1365px]:p-5
+                    min-[1366px]:max-[1537px]:p-5
+                "
+            >
+                <p
+                    className="
+                        text-sm text-gray-500
+                        min-[1280px]:max-[1365px]:text-[11px]
+                        min-[1366px]:max-[1537px]:text-xs
+                    "
+                >
                     Loading form options...
                 </p>
             </div>
@@ -294,20 +306,46 @@ export default function SystemAdUserCreateForm({
                 onSubmit={handleSubmit}
                 className="overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm"
             >
-                <div className="border-b border-gray-200 px-5 py-5 sm:px-7">
+                <div
+                    className="
+                        border-b border-gray-200 px-5 py-5 sm:px-7
+                        min-[1280px]:max-[1365px]:px-5
+                        min-[1280px]:max-[1365px]:py-4
+                        min-[1366px]:max-[1537px]:px-6
+                        min-[1366px]:max-[1537px]:py-4
+                    "
+                >
                     <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                         <div>
-                            <h2 className="text-lg font-semibold text-gray-900">
+                            <h2
+                                className="
+                                    text-lg font-semibold text-gray-900
+                                    min-[1280px]:max-[1365px]:text-base
+                                    min-[1366px]:max-[1537px]:text-base
+                                "
+                            >
                                 Create User
                             </h2>
 
-                            <p className="mt-1 text-sm text-gray-500">
+                            <p
+                                className="
+                                    mt-1 text-sm text-gray-500
+                                    min-[1280px]:max-[1365px]:text-[11px]
+                                    min-[1366px]:max-[1537px]:text-xs
+                                "
+                            >
                                 Create and configure a new
                                 system user account.
                             </p>
                         </div>
 
-                        <p className="text-xs text-gray-500 sm:pt-1">
+                        <p
+                            className="
+                                text-xs text-gray-500 sm:pt-1
+                                min-[1280px]:max-[1365px]:text-[10px]
+                                min-[1366px]:max-[1537px]:text-[11px]
+                            "
+                        >
                             Fields marked with{" "}
                             <span className="text-red-500">
                                 *
@@ -317,22 +355,64 @@ export default function SystemAdUserCreateForm({
                     </div>
                 </div>
 
-                <div className="px-5 py-6 sm:px-7 sm:py-7">
+                <div
+                    className="
+                        px-5 py-6 sm:px-7 sm:py-7
+                        min-[1280px]:max-[1365px]:px-5
+                        min-[1280px]:max-[1365px]:py-5
+                        min-[1366px]:max-[1537px]:px-6
+                        min-[1366px]:max-[1537px]:py-6
+                    "
+                >
                     <section>
-                        <div className="mb-5">
-                            <h3 className="text-sm font-semibold text-gray-900">
+                        <div
+                            className="
+                                mb-5
+                                min-[1280px]:max-[1365px]:mb-4
+                                min-[1366px]:max-[1537px]:mb-4
+                            "
+                        >
+                            <h3
+                                className="
+                                    text-lg font-semibold text-gray-900
+                                    min-[1280px]:max-[1365px]:text-xs
+                                    min-[1366px]:max-[1537px]:text-xs
+                                "
+                            >
                                 Account Details
                             </h3>
 
-                            <p className="mt-1 text-xs text-gray-500">
+                            <p
+                                className="
+                                    mt-1 text-xs text-gray-500
+                                    min-[1280px]:max-[1365px]:text-[10px]
+                                    min-[1366px]:max-[1537px]:text-[11px]
+                                "
+                            >
                                 Enter the user's basic account
                                 information.
                             </p>
                         </div>
 
-                        <div className="grid grid-cols-1 gap-x-8 gap-y-5 md:grid-cols-2">
+                        <div
+                            className="
+                                grid grid-cols-1 gap-x-8 gap-y-5 md:grid-cols-2
+                                min-[1280px]:max-[1365px]:gap-x-6
+                                min-[1280px]:max-[1365px]:gap-y-4
+                                min-[1366px]:max-[1537px]:gap-x-7
+                                min-[1366px]:max-[1537px]:gap-y-4
+                            "
+                        >
                             <div>
-                                <label className="mb-1.5 block text-sm font-medium text-gray-700">
+                                <label
+                                    className="
+                                        mb-1.5 block text-sm font-medium text-gray-700
+                                        min-[1280px]:max-[1365px]:mb-1
+                                        min-[1280px]:max-[1365px]:text-[11px]
+                                        min-[1366px]:max-[1537px]:mb-1
+                                        min-[1366px]:max-[1537px]:text-xs
+                                    "
+                                >
                                     Username{" "}
                                     <span className="text-red-500">
                                         *
@@ -345,7 +425,7 @@ export default function SystemAdUserCreateForm({
                                     value={form.username}
                                     onChange={handleChange}
                                     placeholder="e.g. juan.delacruz"
-                                    className={`h-10 w-full rounded-md border bg-white px-3 text-sm text-gray-900 outline-none transition-all placeholder:text-gray-400 focus:border-[#4C4CF9] focus:ring-2 focus:ring-[#4C4CF9]/10 ${
+                                    className={`h-10 w-full rounded-md border bg-white px-3 text-sm text-gray-900 outline-none transition-all placeholder:text-gray-400 focus:border-[#4C4CF9] focus:ring-2 focus:ring-[#4C4CF9]/10 min-[1280px]:max-[1365px]:h-9 min-[1280px]:max-[1365px]:px-2.5 min-[1280px]:max-[1365px]:text-[11px] min-[1366px]:max-[1537px]:h-9 min-[1366px]:max-[1537px]:px-3 min-[1366px]:max-[1537px]:text-xs ${
                                         errors.username
                                             ? "border-red-400"
                                             : "border-gray-300"
@@ -353,14 +433,30 @@ export default function SystemAdUserCreateForm({
                                 />
 
                                 {errors.username && (
-                                    <p className="mt-1.5 text-xs text-red-500">
+                                    <p
+                                        className="
+                                            mt-1.5 text-xs text-red-500
+                                            min-[1280px]:max-[1365px]:mt-1
+                                            min-[1280px]:max-[1365px]:text-[10px]
+                                            min-[1366px]:max-[1537px]:mt-1
+                                            min-[1366px]:max-[1537px]:text-[11px]
+                                        "
+                                    >
                                         {errors.username}
                                     </p>
                                 )}
                             </div>
 
                             <div>
-                                <label className="mb-1.5 block text-sm font-medium text-gray-700">
+                                <label
+                                    className="
+                                        mb-1.5 block text-sm font-medium text-gray-700
+                                        min-[1280px]:max-[1365px]:mb-1
+                                        min-[1280px]:max-[1365px]:text-[11px]
+                                        min-[1366px]:max-[1537px]:mb-1
+                                        min-[1366px]:max-[1537px]:text-xs
+                                    "
+                                >
                                     Email Address
                                 </label>
 
@@ -370,12 +466,28 @@ export default function SystemAdUserCreateForm({
                                     value={form.email}
                                     onChange={handleChange}
                                     placeholder="e.g. juan.delacruz@company.com"
-                                    className="h-10 w-full rounded-md border border-gray-300 bg-white px-3 text-sm text-gray-900 outline-none transition-all placeholder:text-gray-400 focus:border-[#4C4CF9] focus:ring-2 focus:ring-[#4C4CF9]/10"
+                                    className="
+                                        h-10 w-full rounded-md border border-gray-300 bg-white px-3 text-sm text-gray-900 outline-none transition-all placeholder:text-gray-400 focus:border-[#4C4CF9] focus:ring-2 focus:ring-[#4C4CF9]/10
+                                        min-[1280px]:max-[1365px]:h-9
+                                        min-[1280px]:max-[1365px]:px-2.5
+                                        min-[1280px]:max-[1365px]:text-[11px]
+                                        min-[1366px]:max-[1537px]:h-9
+                                        min-[1366px]:max-[1537px]:px-3
+                                        min-[1366px]:max-[1537px]:text-xs
+                                    "
                                 />
                             </div>
 
                             <div>
-                                <label className="mb-1.5 block text-sm font-medium text-gray-700">
+                                <label
+                                    className="
+                                        mb-1.5 block text-sm font-medium text-gray-700
+                                        min-[1280px]:max-[1365px]:mb-1
+                                        min-[1280px]:max-[1365px]:text-[11px]
+                                        min-[1366px]:max-[1537px]:mb-1
+                                        min-[1366px]:max-[1537px]:text-xs
+                                    "
+                                >
                                     First Name{" "}
                                     <span className="text-red-500">
                                         *
@@ -388,7 +500,7 @@ export default function SystemAdUserCreateForm({
                                     value={form.first_name}
                                     onChange={handleChange}
                                     placeholder="e.g. Juan"
-                                    className={`h-10 w-full rounded-md border bg-white px-3 text-sm text-gray-900 outline-none transition-all placeholder:text-gray-400 focus:border-[#4C4CF9] focus:ring-2 focus:ring-[#4C4CF9]/10 ${
+                                    className={`h-10 w-full rounded-md border bg-white px-3 text-sm text-gray-900 outline-none transition-all placeholder:text-gray-400 focus:border-[#4C4CF9] focus:ring-2 focus:ring-[#4C4CF9]/10 min-[1280px]:max-[1365px]:h-9 min-[1280px]:max-[1365px]:px-2.5 min-[1280px]:max-[1365px]:text-[11px] min-[1366px]:max-[1537px]:h-9 min-[1366px]:max-[1537px]:px-3 min-[1366px]:max-[1537px]:text-xs ${
                                         errors.first_name
                                             ? "border-red-400"
                                             : "border-gray-300"
@@ -396,14 +508,30 @@ export default function SystemAdUserCreateForm({
                                 />
 
                                 {errors.first_name && (
-                                    <p className="mt-1.5 text-xs text-red-500">
+                                    <p
+                                        className="
+                                            mt-1.5 text-xs text-red-500
+                                            min-[1280px]:max-[1365px]:mt-1
+                                            min-[1280px]:max-[1365px]:text-[10px]
+                                            min-[1366px]:max-[1537px]:mt-1
+                                            min-[1366px]:max-[1537px]:text-[11px]
+                                        "
+                                    >
                                         {errors.first_name}
                                     </p>
                                 )}
                             </div>
 
                             <div>
-                                <label className="mb-1.5 block text-sm font-medium text-gray-700">
+                                <label
+                                    className="
+                                        mb-1.5 block text-sm font-medium text-gray-700
+                                        min-[1280px]:max-[1365px]:mb-1
+                                        min-[1280px]:max-[1365px]:text-[11px]
+                                        min-[1366px]:max-[1537px]:mb-1
+                                        min-[1366px]:max-[1537px]:text-xs
+                                    "
+                                >
                                     Last Name{" "}
                                     <span className="text-red-500">
                                         *
@@ -416,7 +544,7 @@ export default function SystemAdUserCreateForm({
                                     value={form.last_name}
                                     onChange={handleChange}
                                     placeholder="e.g. Dela Cruz"
-                                    className={`h-10 w-full rounded-md border bg-white px-3 text-sm text-gray-900 outline-none transition-all placeholder:text-gray-400 focus:border-[#4C4CF9] focus:ring-2 focus:ring-[#4C4CF9]/10 ${
+                                    className={`h-10 w-full rounded-md border bg-white px-3 text-sm text-gray-900 outline-none transition-all placeholder:text-gray-400 focus:border-[#4C4CF9] focus:ring-2 focus:ring-[#4C4CF9]/10 min-[1280px]:max-[1365px]:h-9 min-[1280px]:max-[1365px]:px-2.5 min-[1280px]:max-[1365px]:text-[11px] min-[1366px]:max-[1537px]:h-9 min-[1366px]:max-[1537px]:px-3 min-[1366px]:max-[1537px]:text-xs ${
                                         errors.last_name
                                             ? "border-red-400"
                                             : "border-gray-300"
@@ -424,14 +552,30 @@ export default function SystemAdUserCreateForm({
                                 />
 
                                 {errors.last_name && (
-                                    <p className="mt-1.5 text-xs text-red-500">
+                                    <p
+                                        className="
+                                            mt-1.5 text-xs text-red-500
+                                            min-[1280px]:max-[1365px]:mt-1
+                                            min-[1280px]:max-[1365px]:text-[10px]
+                                            min-[1366px]:max-[1537px]:mt-1
+                                            min-[1366px]:max-[1537px]:text-[11px]
+                                        "
+                                    >
                                         {errors.last_name}
                                     </p>
                                 )}
                             </div>
 
                             <div className="md:col-span-2">
-                                <label className="mb-1.5 block text-sm font-medium text-gray-700">
+                                <label
+                                    className="
+                                        mb-1.5 block text-sm font-medium text-gray-700
+                                        min-[1280px]:max-[1365px]:mb-1
+                                        min-[1280px]:max-[1365px]:text-[11px]
+                                        min-[1366px]:max-[1537px]:mb-1
+                                        min-[1366px]:max-[1537px]:text-xs
+                                    "
+                                >
                                     Password{" "}
                                     <span className="text-red-500">
                                         *
@@ -449,7 +593,7 @@ export default function SystemAdUserCreateForm({
                                         value={form.password}
                                         onChange={handleChange}
                                         placeholder="e.g. *********"
-                                        className={`h-10 w-full rounded-md border bg-white px-3 pr-10 text-sm text-gray-900 outline-none transition-all placeholder:text-gray-400 focus:border-[#4C4CF9] focus:ring-2 focus:ring-[#4C4CF9]/10 ${
+                                        className={`h-10 w-full rounded-md border bg-white px-3 pr-10 text-sm text-gray-900 outline-none transition-all placeholder:text-gray-400 focus:border-[#4C4CF9] focus:ring-2 focus:ring-[#4C4CF9]/10 min-[1280px]:max-[1365px]:h-9 min-[1280px]:max-[1365px]:px-2.5 min-[1280px]:max-[1365px]:pr-9 min-[1280px]:max-[1365px]:text-[11px] min-[1366px]:max-[1537px]:h-9 min-[1366px]:max-[1537px]:px-3 min-[1366px]:max-[1537px]:pr-9 min-[1366px]:max-[1537px]:text-xs ${
                                             errors.password
                                                 ? "border-red-400"
                                                 : "border-gray-300"
@@ -464,7 +608,13 @@ export default function SystemAdUserCreateForm({
                                                     !previous
                                             )
                                         }
-                                        className="absolute right-0 top-0 flex h-10 w-10 cursor-pointer items-center justify-center text-gray-400 transition-colors hover:text-gray-700"
+                                        className="
+                                            absolute right-0 top-0 flex h-10 w-10 cursor-pointer items-center justify-center text-gray-400 transition-colors hover:text-gray-700
+                                            min-[1280px]:max-[1365px]:h-9
+                                            min-[1280px]:max-[1365px]:w-9
+                                            min-[1366px]:max-[1537px]:h-9
+                                            min-[1366px]:max-[1537px]:w-9
+                                        "
                                         aria-label={
                                             showPassword
                                                 ? "Hide password"
@@ -472,15 +622,35 @@ export default function SystemAdUserCreateForm({
                                         }
                                     >
                                         {showPassword ? (
-                                            <EyeOff size={17} />
+                                            <EyeOff
+                                                size={17}
+                                                className="
+                                                    min-[1280px]:max-[1365px]:size-3.5
+                                                    min-[1366px]:max-[1537px]:size-3.5
+                                                "
+                                            />
                                         ) : (
-                                            <Eye size={17} />
+                                            <Eye
+                                                size={17}
+                                                className="
+                                                    min-[1280px]:max-[1365px]:size-3.5
+                                                    min-[1366px]:max-[1537px]:size-3.5
+                                                "
+                                            />
                                         )}
                                     </button>
                                 </div>
 
                                 {errors.password && (
-                                    <p className="mt-1.5 text-xs text-red-500">
+                                    <p
+                                        className="
+                                            mt-1.5 text-xs text-red-500
+                                            min-[1280px]:max-[1365px]:mt-1
+                                            min-[1280px]:max-[1365px]:text-[10px]
+                                            min-[1366px]:max-[1537px]:mt-1
+                                            min-[1366px]:max-[1537px]:text-[11px]
+                                        "
+                                    >
                                         {errors.password}
                                     </p>
                                 )}
@@ -488,23 +658,63 @@ export default function SystemAdUserCreateForm({
                         </div>
                     </section>
 
-                    <div className="my-8 border-t border-gray-200" />
+                    <div
+                        className="
+                            my-8 border-t border-gray-200
+                            min-[1280px]:max-[1365px]:my-6
+                            min-[1366px]:max-[1537px]:my-7
+                        "
+                    />
 
                     <section>
-                        <div className="mb-5">
-                            <h3 className="text-sm font-semibold text-gray-900">
+                        <div
+                            className="
+                                mb-5
+                                min-[1280px]:max-[1365px]:mb-4
+                                min-[1366px]:max-[1537px]:mb-4
+                            "
+                        >
+                            <h3
+                                className="
+                                    text-lg font-semibold text-gray-900
+                                    min-[1280px]:max-[1365px]:text-xs
+                                    min-[1366px]:max-[1537px]:text-xs
+                                "
+                            >
                                 Role & Organization
                             </h3>
 
-                            <p className="mt-1 text-xs text-gray-500">
+                            <p
+                                className="
+                                    mt-1 text-xs text-gray-500
+                                    min-[1280px]:max-[1365px]:text-[10px]
+                                    min-[1366px]:max-[1537px]:text-[11px]
+                                "
+                            >
                                 Assign the user's role,
                                 department, and office location.
                             </p>
                         </div>
 
-                        <div className="grid grid-cols-1 gap-x-8 gap-y-5 md:grid-cols-2">
+                        <div
+                            className="
+                                grid grid-cols-1 gap-x-8 gap-y-5 md:grid-cols-2
+                                min-[1280px]:max-[1365px]:gap-x-6
+                                min-[1280px]:max-[1365px]:gap-y-4
+                                min-[1366px]:max-[1537px]:gap-x-7
+                                min-[1366px]:max-[1537px]:gap-y-4
+                            "
+                        >
                             <div>
-                                <label className="mb-1.5 block text-sm font-medium text-gray-700">
+                                <label
+                                    className="
+                                        mb-1.5 block text-sm font-medium text-gray-700
+                                        min-[1280px]:max-[1365px]:mb-1
+                                        min-[1280px]:max-[1365px]:text-[11px]
+                                        min-[1366px]:max-[1537px]:mb-1
+                                        min-[1366px]:max-[1537px]:text-xs
+                                    "
+                                >
                                     Role{" "}
                                     <span className="text-red-500">
                                         *
@@ -515,7 +725,7 @@ export default function SystemAdUserCreateForm({
                                     name="role"
                                     value={form.role}
                                     onChange={handleRoleChange}
-                                    className={`h-10 w-full cursor-pointer rounded-md border bg-white px-3 text-sm text-gray-900 outline-none transition-all focus:border-[#4C4CF9] focus:ring-2 focus:ring-[#4C4CF9]/10 ${
+                                    className={`h-10 w-full cursor-pointer rounded-md border bg-white px-3 text-sm text-gray-900 outline-none transition-all focus:border-[#4C4CF9] focus:ring-2 focus:ring-[#4C4CF9]/10 min-[1280px]:max-[1365px]:h-9 min-[1280px]:max-[1365px]:px-2.5 min-[1280px]:max-[1365px]:text-[11px] min-[1366px]:max-[1537px]:h-9 min-[1366px]:max-[1537px]:px-3 min-[1366px]:max-[1537px]:text-xs ${
                                         errors.role
                                             ? "border-red-400"
                                             : "border-gray-300"
@@ -536,7 +746,15 @@ export default function SystemAdUserCreateForm({
                                 </select>
 
                                 {errors.role && (
-                                    <p className="mt-1.5 text-xs text-red-500">
+                                    <p
+                                        className="
+                                            mt-1.5 text-xs text-red-500
+                                            min-[1280px]:max-[1365px]:mt-1
+                                            min-[1280px]:max-[1365px]:text-[10px]
+                                            min-[1366px]:max-[1537px]:mt-1
+                                            min-[1366px]:max-[1537px]:text-[11px]
+                                        "
+                                    >
                                         {errors.role}
                                     </p>
                                 )}
@@ -544,7 +762,15 @@ export default function SystemAdUserCreateForm({
 
                             {isEmployee ? (
                                 <div>
-                                    <label className="mb-1.5 block text-sm font-medium text-gray-700">
+                                    <label
+                                        className="
+                                            mb-1.5 block text-sm font-medium text-gray-700
+                                            min-[1280px]:max-[1365px]:mb-1
+                                            min-[1280px]:max-[1365px]:text-[11px]
+                                            min-[1366px]:max-[1537px]:mb-1
+                                            min-[1366px]:max-[1537px]:text-xs
+                                        "
+                                    >
                                         Employee Department{" "}
                                         <span className="text-red-500">
                                             *
@@ -557,7 +783,7 @@ export default function SystemAdUserCreateForm({
                                             form.employee_department
                                         }
                                         onChange={handleChange}
-                                        className={`h-10 w-full cursor-pointer rounded-md border bg-white px-3 text-sm text-gray-900 outline-none transition-all focus:border-[#4C4CF9] focus:ring-2 focus:ring-[#4C4CF9]/10 ${
+                                        className={`h-10 w-full cursor-pointer rounded-md border bg-white px-3 text-sm text-gray-900 outline-none transition-all focus:border-[#4C4CF9] focus:ring-2 focus:ring-[#4C4CF9]/10 min-[1280px]:max-[1365px]:h-9 min-[1280px]:max-[1365px]:px-2.5 min-[1280px]:max-[1365px]:text-[11px] min-[1366px]:max-[1537px]:h-9 min-[1366px]:max-[1537px]:px-3 min-[1366px]:max-[1537px]:text-xs ${
                                             errors.employee_department
                                                 ? "border-red-400"
                                                 : "border-gray-300"
@@ -580,7 +806,15 @@ export default function SystemAdUserCreateForm({
                                     </select>
 
                                     {errors.employee_department && (
-                                        <p className="mt-1.5 text-xs text-red-500">
+                                        <p
+                                            className="
+                                                mt-1.5 text-xs text-red-500
+                                                min-[1280px]:max-[1365px]:mt-1
+                                                min-[1280px]:max-[1365px]:text-[10px]
+                                                min-[1366px]:max-[1537px]:mt-1
+                                                min-[1366px]:max-[1537px]:text-[11px]
+                                            "
+                                        >
                                             {
                                                 errors.employee_department
                                             }
@@ -589,7 +823,15 @@ export default function SystemAdUserCreateForm({
                                 </div>
                             ) : (
                                 <div>
-                                    <label className="mb-1.5 block text-sm font-medium text-gray-700">
+                                    <label
+                                        className="
+                                            mb-1.5 block text-sm font-medium text-gray-700
+                                            min-[1280px]:max-[1365px]:mb-1
+                                            min-[1280px]:max-[1365px]:text-[11px]
+                                            min-[1366px]:max-[1537px]:mb-1
+                                            min-[1366px]:max-[1537px]:text-xs
+                                        "
+                                    >
                                         IT Department{" "}
                                         <span className="text-red-500">
                                             *
@@ -600,7 +842,7 @@ export default function SystemAdUserCreateForm({
                                         name="it_department"
                                         value={form.it_department}
                                         onChange={handleChange}
-                                        className={`h-10 w-full cursor-pointer rounded-md border bg-white px-3 text-sm text-gray-900 outline-none transition-all focus:border-[#4C4CF9] focus:ring-2 focus:ring-[#4C4CF9]/10 ${
+                                        className={`h-10 w-full cursor-pointer rounded-md border bg-white px-3 text-sm text-gray-900 outline-none transition-all focus:border-[#4C4CF9] focus:ring-2 focus:ring-[#4C4CF9]/10 min-[1280px]:max-[1365px]:h-9 min-[1280px]:max-[1365px]:px-2.5 min-[1280px]:max-[1365px]:text-[11px] min-[1366px]:max-[1537px]:h-9 min-[1366px]:max-[1537px]:px-3 min-[1366px]:max-[1537px]:text-xs ${
                                             errors.it_department
                                                 ? "border-red-400"
                                                 : "border-gray-300"
@@ -623,7 +865,15 @@ export default function SystemAdUserCreateForm({
                                     </select>
 
                                     {errors.it_department && (
-                                        <p className="mt-1.5 text-xs text-red-500">
+                                        <p
+                                            className="
+                                                mt-1.5 text-xs text-red-500
+                                                min-[1280px]:max-[1365px]:mt-1
+                                                min-[1280px]:max-[1365px]:text-[10px]
+                                                min-[1366px]:max-[1537px]:mt-1
+                                                min-[1366px]:max-[1537px]:text-[11px]
+                                            "
+                                        >
                                             {errors.it_department}
                                         </p>
                                     )}
@@ -631,7 +881,15 @@ export default function SystemAdUserCreateForm({
                             )}
 
                             <div>
-                                <label className="mb-1.5 block text-sm font-medium text-gray-700">
+                                <label
+                                    className="
+                                        mb-1.5 block text-sm font-medium text-gray-700
+                                        min-[1280px]:max-[1365px]:mb-1
+                                        min-[1280px]:max-[1365px]:text-[11px]
+                                        min-[1366px]:max-[1537px]:mb-1
+                                        min-[1366px]:max-[1537px]:text-xs
+                                    "
+                                >
                                     Office Location{" "}
                                     <span className="text-red-500">
                                         *
@@ -642,7 +900,7 @@ export default function SystemAdUserCreateForm({
                                     name="office_location"
                                     value={form.office_location}
                                     onChange={handleChange}
-                                    className={`h-10 w-full cursor-pointer rounded-md border bg-white px-3 text-sm text-gray-900 outline-none transition-all focus:border-[#4C4CF9] focus:ring-2 focus:ring-[#4C4CF9]/10 ${
+                                    className={`h-10 w-full cursor-pointer rounded-md border bg-white px-3 text-sm text-gray-900 outline-none transition-all focus:border-[#4C4CF9] focus:ring-2 focus:ring-[#4C4CF9]/10 min-[1280px]:max-[1365px]:h-9 min-[1280px]:max-[1365px]:px-2.5 min-[1280px]:max-[1365px]:text-[11px] min-[1366px]:max-[1537px]:h-9 min-[1366px]:max-[1537px]:px-3 min-[1366px]:max-[1537px]:text-xs ${
                                         errors.office_location
                                             ? "border-red-400"
                                             : "border-gray-300"
@@ -665,7 +923,15 @@ export default function SystemAdUserCreateForm({
                                 </select>
 
                                 {errors.office_location && (
-                                    <p className="mt-1.5 text-xs text-red-500">
+                                    <p
+                                        className="
+                                            mt-1.5 text-xs text-red-500
+                                            min-[1280px]:max-[1365px]:mt-1
+                                            min-[1280px]:max-[1365px]:text-[10px]
+                                            min-[1366px]:max-[1537px]:mt-1
+                                            min-[1366px]:max-[1537px]:text-[11px]
+                                        "
+                                    >
                                         {errors.office_location}
                                     </p>
                                 )}
@@ -675,15 +941,39 @@ export default function SystemAdUserCreateForm({
 
                     {isITSupport && (
                         <>
-                            <div className="my-8 border-t border-gray-200" />
+                            <div
+                                className="
+                                    my-8 border-t border-gray-200
+                                    min-[1280px]:max-[1365px]:my-6
+                                    min-[1366px]:max-[1537px]:my-7
+                                "
+                            />
 
                             <section>
-                                <div className="mb-5">
-                                    <h3 className="text-sm font-semibold text-gray-900">
+                                <div
+                                    className="
+                                        mb-5
+                                        min-[1280px]:max-[1365px]:mb-4
+                                        min-[1366px]:max-[1537px]:mb-4
+                                    "
+                                >
+                                    <h3
+                                        className="
+                                            text-sm font-semibold text-gray-900
+                                            min-[1280px]:max-[1365px]:text-xs
+                                            min-[1366px]:max-[1537px]:text-xs
+                                        "
+                                    >
                                         IT Support Details
                                     </h3>
 
-                                    <p className="mt-1 text-xs text-gray-500">
+                                    <p
+                                        className="
+                                            mt-1 text-xs text-gray-500
+                                            min-[1280px]:max-[1365px]:text-[10px]
+                                            min-[1366px]:max-[1537px]:text-[11px]
+                                        "
+                                    >
                                         Configure technical
                                         specializations for this
                                         support specialist.
@@ -691,7 +981,15 @@ export default function SystemAdUserCreateForm({
                                 </div>
 
                                 <div>
-                                    <label className="mb-1.5 block text-sm font-medium text-gray-700">
+                                    <label
+                                        className="
+                                            mb-1.5 block text-sm font-medium text-gray-700
+                                            min-[1280px]:max-[1365px]:mb-1
+                                            min-[1280px]:max-[1365px]:text-[11px]
+                                            min-[1366px]:max-[1537px]:mb-1
+                                            min-[1366px]:max-[1537px]:text-xs
+                                        "
+                                    >
                                         Specializations{" "}
                                         <span className="text-red-500">
                                             *
@@ -705,7 +1003,7 @@ export default function SystemAdUserCreateForm({
                                                 true
                                             )
                                         }
-                                        className={`flex min-h-10 w-full cursor-pointer items-center justify-between rounded-md border bg-white px-3 py-2 text-left text-sm outline-none transition-all hover:bg-gray-50 focus:border-[#4C4CF9] focus:ring-2 focus:ring-[#4C4CF9]/10 ${
+                                        className={`flex min-h-10 w-full cursor-pointer items-center justify-between rounded-md border bg-white px-3 py-2 text-left text-sm outline-none transition-all hover:bg-gray-50 focus:border-[#4C4CF9] focus:ring-2 focus:ring-[#4C4CF9]/10 min-[1280px]:max-[1365px]:min-h-9 min-[1280px]:max-[1365px]:px-2.5 min-[1280px]:max-[1365px]:py-1.5 min-[1280px]:max-[1365px]:text-[11px] min-[1366px]:max-[1537px]:min-h-9 min-[1366px]:max-[1537px]:px-3 min-[1366px]:max-[1537px]:py-1.5 min-[1366px]:max-[1537px]:text-xs ${
                                             errors.specializations
                                                 ? "border-red-400"
                                                 : "border-gray-300"
@@ -725,21 +1023,43 @@ export default function SystemAdUserCreateForm({
                                                 : "Select specializations"}
                                         </span>
 
-                                        <span className="text-xs font-medium text-gray-500">
+                                        <span
+                                            className="
+                                                text-xs font-medium text-gray-500
+                                                min-[1280px]:max-[1365px]:text-[10px]
+                                                min-[1366px]:max-[1537px]:text-[11px]
+                                            "
+                                        >
                                             Choose
                                         </span>
                                     </button>
 
                                     {selectedSpecializationNames.length >
                                         0 && (
-                                        <div className="mt-2 flex flex-wrap gap-2">
+                                        <div
+                                            className="
+                                                mt-2 flex flex-wrap gap-2
+                                                min-[1280px]:max-[1365px]:mt-1.5
+                                                min-[1280px]:max-[1365px]:gap-1.5
+                                                min-[1366px]:max-[1537px]:mt-1.5
+                                                min-[1366px]:max-[1537px]:gap-1.5
+                                            "
+                                        >
                                             {selectedSpecializationNames.map(
                                                 (specialization) => (
                                                     <span
                                                         key={
                                                             specialization.id
                                                         }
-                                                        className="rounded-full border border-gray-200 bg-gray-50 px-2.5 py-1 text-xs text-gray-700"
+                                                        className="
+                                                            rounded-full border border-gray-200 bg-gray-50 px-2.5 py-1 text-xs text-gray-700
+                                                            min-[1280px]:max-[1365px]:px-2
+                                                            min-[1280px]:max-[1365px]:py-0.5
+                                                            min-[1280px]:max-[1365px]:text-[10px]
+                                                            min-[1366px]:max-[1537px]:px-2
+                                                            min-[1366px]:max-[1537px]:py-0.5
+                                                            min-[1366px]:max-[1537px]:text-[11px]
+                                                        "
                                                     >
                                                         {
                                                             specialization.name
@@ -751,7 +1071,15 @@ export default function SystemAdUserCreateForm({
                                     )}
 
                                     {errors.specializations && (
-                                        <p className="mt-1.5 text-xs text-red-500">
+                                        <p
+                                            className="
+                                                mt-1.5 text-xs text-red-500
+                                                min-[1280px]:max-[1365px]:mt-1
+                                                min-[1280px]:max-[1365px]:text-[10px]
+                                                min-[1366px]:max-[1537px]:mt-1
+                                                min-[1366px]:max-[1537px]:text-[11px]
+                                            "
+                                        >
                                             {errors.specializations}
                                         </p>
                                     )}
@@ -761,12 +1089,30 @@ export default function SystemAdUserCreateForm({
                     )}
                 </div>
 
-                <div className="flex flex-col-reverse gap-2 border-t border-gray-200 bg-gray-50 px-5 py-4 sm:flex-row sm:items-center sm:justify-end sm:px-7">
+                <div
+                    className="
+                        flex flex-col-reverse gap-2 border-t border-gray-200 bg-gray-50 px-5 py-4 sm:flex-row sm:items-center sm:justify-end sm:px-7
+                        min-[1280px]:max-[1365px]:gap-1.5
+                        min-[1280px]:max-[1365px]:px-5
+                        min-[1280px]:max-[1365px]:py-3
+                        min-[1366px]:max-[1537px]:gap-1.5
+                        min-[1366px]:max-[1537px]:px-6
+                        min-[1366px]:max-[1537px]:py-3.5
+                    "
+                >
                     <button
                         type="button"
                         onClick={onCancel}
                         disabled={submitting}
-                        className="h-10 w-full cursor-pointer rounded-md border border-gray-300 bg-white px-5 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto"
+                        className="
+                            h-10 w-full cursor-pointer rounded-md border border-gray-300 bg-white px-5 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto
+                            min-[1280px]:max-[1365px]:h-9
+                            min-[1280px]:max-[1365px]:px-4
+                            min-[1280px]:max-[1365px]:text-[11px]
+                            min-[1366px]:max-[1537px]:h-9
+                            min-[1366px]:max-[1537px]:px-4
+                            min-[1366px]:max-[1537px]:text-xs
+                        "
                     >
                         Cancel
                     </button>
@@ -774,7 +1120,15 @@ export default function SystemAdUserCreateForm({
                     <button
                         type="submit"
                         disabled={submitting}
-                        className="h-10 w-full cursor-pointer rounded-md bg-[#4C4CF9] px-5 text-sm font-medium text-white transition-colors hover:bg-[#3f3fe8] disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto"
+                        className="
+                            h-10 w-full cursor-pointer rounded-md bg-[#4C4CF9] px-5 text-sm font-medium text-white transition-colors hover:bg-[#3f3fe8] disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto
+                            min-[1280px]:max-[1365px]:h-9
+                            min-[1280px]:max-[1365px]:px-4
+                            min-[1280px]:max-[1365px]:text-[11px]
+                            min-[1366px]:max-[1537px]:h-9
+                            min-[1366px]:max-[1537px]:px-4
+                            min-[1366px]:max-[1537px]:text-xs
+                        "
                     >
                         {submitting
                             ? "Creating..."

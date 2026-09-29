@@ -102,17 +102,56 @@ export default function TicketReturnServiceDesk() {
 
     return (
         <div className="min-h-full bg-gray-50">
-            <div className="border-b border-gray-200 px-5 py-4">
-                <h1 className="text-xl font-semibold text-gray-900">
+            <div
+                className="
+                    border-b
+                    border-gray-200
+                    px-5
+                    py-4
+                    min-[1280px]:max-[1365px]:px-4
+                    min-[1280px]:max-[1365px]:py-3
+                    min-[1366px]:max-[1537px]:px-4
+                    min-[1366px]:max-[1537px]:py-3.5
+                "
+            >
+                <h1
+                    className="
+                        text-xl
+                        font-semibold
+                        text-gray-900
+                        min-[1280px]:max-[1365px]:text-lg
+                        min-[1366px]:max-[1537px]:text-lg
+                    "
+                >
                     Returned Tickets
                 </h1>
 
-                <p className="mt-1 text-sm text-gray-500">
+                <p
+                    className="
+                        mt-1
+                        text-sm
+                        text-gray-500
+                        min-[1280px]:max-[1365px]:text-[11px]
+                        min-[1366px]:max-[1537px]:text-xs
+                    "
+                >
                     Review ticket return requests submitted by IT support.
                 </p>
             </div>
 
-            <div className="border-b border-gray-200 bg-white px-5 py-3">
+            <div
+                className="
+                    border-b
+                    border-gray-200
+                    bg-white
+                    px-5
+                    py-3
+                    min-[1280px]:max-[1365px]:px-4
+                    min-[1280px]:max-[1365px]:py-2.5
+                    min-[1366px]:max-[1537px]:px-4
+                    min-[1366px]:max-[1537px]:py-2.5
+                "
+            >
                 <div className="flex items-center justify-between gap-4">
                     <form
                         onSubmit={handleSearch}
@@ -120,7 +159,14 @@ export default function TicketReturnServiceDesk() {
                     >
                         <Search
                             size={17}
-                            className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
+                            className="
+                                absolute
+                                left-3
+                                top-1/2
+                                -translate-y-1/2
+                                text-gray-400
+                                min-[1280px]:max-[1365px]:left-2.5
+                            "
                         />
 
                         <input
@@ -132,16 +178,61 @@ export default function TicketReturnServiceDesk() {
                                 )
                             }
                             placeholder="Search ticket ID or subject..."
-                            className="h-10 w-full rounded-md border border-gray-300 bg-white pl-9 pr-9 text-sm text-gray-700 outline-none placeholder:text-gray-400 focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+                            className="
+                                h-10
+                                w-full
+                                rounded-md
+                                border
+                                border-gray-300
+                                bg-white
+                                pl-9
+                                pr-9
+                                text-sm
+                                text-gray-700
+                                outline-none
+                                placeholder:text-gray-400
+                                focus:border-blue-500
+                                focus:ring-1
+                                focus:ring-blue-500
+                                min-[1280px]:max-[1365px]:h-9
+                                min-[1280px]:max-[1365px]:pl-8
+                                min-[1280px]:max-[1365px]:pr-8
+                                min-[1280px]:max-[1365px]:text-[11px]
+                                min-[1366px]:max-[1537px]:h-9
+                                min-[1366px]:max-[1537px]:text-xs
+                            "
                         />
 
                         {searchInput && (
                             <button
                                 type="button"
                                 onClick={clearSearch}
-                                className="absolute right-2 top-1/2 flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded-md text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-600"
+                                className="
+                                    absolute
+                                    right-2
+                                    top-1/2
+                                    flex
+                                    h-7
+                                    w-7
+                                    -translate-y-1/2
+                                    items-center
+                                    justify-center
+                                    rounded-md
+                                    text-gray-400
+                                    transition-colors
+                                    hover:bg-gray-100
+                                    hover:text-gray-600
+                                    min-[1280px]:max-[1365px]:h-6
+                                    min-[1280px]:max-[1365px]:w-6
+                                "
                             >
-                                <X size={15} />
+                                <X
+                                    size={15}
+                                    className="
+                                        min-[1280px]:max-[1365px]:h-3.5
+                                        min-[1280px]:max-[1365px]:w-3.5
+                                    "
+                                />
                             </button>
                         )}
                     </form>
@@ -150,7 +241,26 @@ export default function TicketReturnServiceDesk() {
                         <select
                             value={status}
                             onChange={handleStatusChange}
-                            className="h-10 rounded-md border border-gray-300 bg-white px-3 text-sm text-gray-700 outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+                            className="
+                                h-10
+                                rounded-md
+                                border
+                                border-gray-300
+                                bg-white
+                                px-3
+                                text-sm
+                                text-gray-700
+                                outline-none
+                                focus:border-blue-500
+                                focus:ring-1
+                                focus:ring-blue-500
+                                min-[1280px]:max-[1365px]:h-9
+                                min-[1280px]:max-[1365px]:px-2.5
+                                min-[1280px]:max-[1365px]:text-[11px]
+                                min-[1366px]:max-[1537px]:h-9
+                                min-[1366px]:max-[1537px]:px-2.5
+                                min-[1366px]:max-[1537px]:text-xs
+                            "
                         >
                             <option value="">
                                 All Statuses
@@ -174,7 +284,14 @@ export default function TicketReturnServiceDesk() {
                         </select>
 
                         <div className="flex items-center gap-2">
-                            <span className="text-sm text-gray-600">
+                            <span
+                                className="
+                                    text-sm
+                                    text-gray-600
+                                    min-[1280px]:max-[1365px]:text-[11px]
+                                    min-[1366px]:max-[1537px]:text-xs
+                                "
+                            >
                                 Show
                             </span>
 
@@ -183,7 +300,26 @@ export default function TicketReturnServiceDesk() {
                                 onChange={
                                     handlePageSizeChange
                                 }
-                                className="h-10 rounded-md border border-gray-300 bg-white px-3 text-sm text-gray-700 outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+                                className="
+                                    h-10
+                                    rounded-md
+                                    border
+                                    border-gray-300
+                                    bg-white
+                                    px-3
+                                    text-sm
+                                    text-gray-700
+                                    outline-none
+                                    focus:border-blue-500
+                                    focus:ring-1
+                                    focus:ring-blue-500
+                                    min-[1280px]:max-[1365px]:h-9
+                                    min-[1280px]:max-[1365px]:px-2.5
+                                    min-[1280px]:max-[1365px]:text-[11px]
+                                    min-[1366px]:max-[1537px]:h-9
+                                    min-[1366px]:max-[1537px]:px-2.5
+                                    min-[1366px]:max-[1537px]:text-xs
+                                "
                             >
                                 <option value={10}>
                                     10
@@ -213,8 +349,30 @@ export default function TicketReturnServiceDesk() {
                 />
             </div>
 
-            <div className="flex items-center justify-between border-t border-gray-200 bg-white px-5 py-3">
-                <p className="text-sm text-gray-500">
+            <div
+                className="
+                    flex
+                    items-center
+                    justify-between
+                    border-t
+                    border-gray-200
+                    bg-white
+                    px-5
+                    py-3
+                    min-[1280px]:max-[1365px]:px-4
+                    min-[1280px]:max-[1365px]:py-2.5
+                    min-[1366px]:max-[1537px]:px-4
+                    min-[1366px]:max-[1537px]:py-2.5
+                "
+            >
+                <p
+                    className="
+                        text-sm
+                        text-gray-500
+                        min-[1280px]:max-[1365px]:text-[11px]
+                        min-[1366px]:max-[1537px]:text-xs
+                    "
+                >
                     Showing{" "}
                     <span className="font-medium text-gray-700">
                         {startItem}
@@ -230,7 +388,14 @@ export default function TicketReturnServiceDesk() {
                     requests
                 </p>
 
-                <div className="flex items-center gap-2">
+                <div
+                    className="
+                        flex
+                        items-center
+                        gap-2
+                        min-[1280px]:max-[1365px]:gap-1.5
+                    "
+                >
                     <button
                         type="button"
                         onClick={() =>
@@ -245,12 +410,41 @@ export default function TicketReturnServiceDesk() {
                             page === 1 ||
                             isLoading
                         }
-                        className="h-9 rounded-md border border-gray-300 bg-white px-3 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
+                        className="
+                            h-9
+                            rounded-md
+                            border
+                            border-gray-300
+                            bg-white
+                            px-3
+                            text-sm
+                            font-medium
+                            text-gray-700
+                            transition-colors
+                            hover:bg-gray-50
+                            disabled:cursor-not-allowed
+                            disabled:opacity-50
+                            min-[1280px]:max-[1365px]:h-8
+                            min-[1280px]:max-[1365px]:px-2.5
+                            min-[1280px]:max-[1365px]:text-[11px]
+                            min-[1366px]:max-[1537px]:h-8
+                            min-[1366px]:max-[1537px]:px-2.5
+                            min-[1366px]:max-[1537px]:text-xs
+                        "
                     >
                         Previous
                     </button>
 
-                    <span className="px-2 text-sm text-gray-600">
+                    <span
+                        className="
+                            px-2
+                            text-sm
+                            text-gray-600
+                            min-[1280px]:max-[1365px]:px-1.5
+                            min-[1280px]:max-[1365px]:text-[11px]
+                            min-[1366px]:max-[1537px]:text-xs
+                        "
+                    >
                         Page {page} of {totalPages}
                     </span>
 
@@ -268,7 +462,25 @@ export default function TicketReturnServiceDesk() {
                             page >= totalPages ||
                             isLoading
                         }
-                        className="h-9 rounded-md bg-[#2563EB] px-3 text-sm font-medium text-white transition-colors hover:bg-[#1D4ED8] disabled:cursor-not-allowed disabled:opacity-50"
+                        className="
+                            h-9
+                            rounded-md
+                            bg-[#2563EB]
+                            px-3
+                            text-sm
+                            font-medium
+                            text-white
+                            transition-colors
+                            hover:bg-[#1D4ED8]
+                            disabled:cursor-not-allowed
+                            disabled:opacity-50
+                            min-[1280px]:max-[1365px]:h-8
+                            min-[1280px]:max-[1365px]:px-2.5
+                            min-[1280px]:max-[1365px]:text-[11px]
+                            min-[1366px]:max-[1537px]:h-8
+                            min-[1366px]:max-[1537px]:px-2.5
+                            min-[1366px]:max-[1537px]:text-xs
+                        "
                     >
                         Next
                     </button>

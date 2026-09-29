@@ -25,7 +25,7 @@ export default function AuditLogs() {
             <div className="flex h-screen flex-1 flex-col">
                 <Topbar />
 
-                <main className="flex-1 overflow-y-auto">
+                <main className="flex-1">
                     {MainContent}
                 </main>
             </div>

@@ -5,7 +5,6 @@ import {
     Undo2,
     Users,
     ArrowUp,
-    Sparkles,
 } from "lucide-react";
 
 export default function ManageTicketDropdown({
@@ -46,11 +45,14 @@ export default function ManageTicketDropdown({
             <button
                 type="button"
                 onClick={() => setIsOpen((prev) => !prev)}
-                className="flex h-9 cursor-pointer items-center gap-2 rounded-lg border border-[#2563EB] bg-[#2563EB] px-3.5 text-sm font-medium text-white transition-colors hover:bg-[#1D4ED8] focus:outline-none focus:ring-2 focus:ring-[#2563EB]/30"
+                className="flex h-9 cursor-pointer items-center gap-2 rounded-lg border border-[#2563EB] bg-[#2563EB] px-3.5 text-sm font-medium text-white transition-colors hover:bg-[#1D4ED8] focus:outline-none focus:ring-2 focus:ring-[#2563EB]/30 min-[1280px]:max-[1535px]:h-8 min-[1280px]:max-[1535px]:gap-1.5 min-[1280px]:max-[1535px]:rounded-md min-[1280px]:max-[1535px]:px-3 min-[1280px]:max-[1535px]:text-[13px]"
             >
                 Manage Ticket
 
-                <SlidersHorizontal size={16} />
+                <SlidersHorizontal
+                    size={16}
+                    className="min-[1280px]:max-[1535px]:h-[14px] min-[1280px]:max-[1535px]:w-[14px]"
+                />
             </button>
 
             {isOpen && (
@@ -137,7 +139,6 @@ export default function ManageTicketDropdown({
                                 </p>
                             </div>
                         </button>
-
 
                         <div className="my-1 border-t border-gray-200" />
 

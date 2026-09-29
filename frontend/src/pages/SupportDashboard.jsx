@@ -46,21 +46,22 @@ export default function SupportDashboard() {
             {/* OVERVIEW CARDS */}
             <SupportOverview />
 
-            <div className="grid grid-cols-1 gap-4 lg:grid-cols-12">
+            {/* DASHBOARD CONTENT */}
+            <div className="grid grid-cols-1 items-start gap-4 lg:grid-cols-12">
                 {/* TICKETS NEEDING ATTENTION */}
-                <div className="min-w-0 lg:col-span-7">
+                <div className="h-fit min-w-0 lg:col-span-7">
                     <TicketNeedingAttention />
                 </div>
 
                 {/* SLA OVERVIEW */}
-                <div className="min-w-0 lg:col-span-5">
+                <div className="h-fit min-w-0 lg:col-span-5">
                     <SLAOverview />
                 </div>
 
                 {/* MY ACTIVE TICKETS */}
                 <div className="min-w-0 lg:col-span-12">
                     <div className="overflow-hidden rounded-xl border border-gray-300 bg-white">
-                        {/* Header */}
+                        {/* HEADER */}
                         <div className="flex flex-col gap-3 border-b border-gray-300 px-4 py-4 sm:flex-row sm:items-center sm:justify-between">
                             <div className="min-w-0">
                                 <h1 className="text-lg font-semibold text-black sm:text-xl">
@@ -77,6 +78,7 @@ export default function SupportDashboard() {
                                 className="group inline-flex h-10 w-full cursor-pointer items-center justify-center gap-2 rounded-md bg-[#2563EB] px-5 text-sm font-medium text-white transition hover:bg-[#1D4ED8] sm:w-auto"
                             >
                                 View All
+
                                 <ArrowRight
                                     size={16}
                                     className="transition-transform group-hover:translate-x-0.5"
@@ -84,7 +86,7 @@ export default function SupportDashboard() {
                             </Link>
                         </div>
 
-                        {/* Responsive table */}
+                        {/* RESPONSIVE TABLE */}
                         <div className="w-full overflow-x-auto">
                             <div className="min-w-[900px]">
                                 <TicketTableSupport

@@ -94,6 +94,35 @@ class TicketComments(models.Model):
     class Meta:
         db_table = 'ticket_comments'
 
+class TicketCommentRead(models.Model):
+    ticket = models.ForeignKey(
+        Ticket,
+        on_delete=models.CASCADE,
+        related_name="comment_reads"
+    )
+    user = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name="ticket_comment_reads"
+    )
+    last_read_comment = models.ForeignKey(
+        TicketComments,
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+        related_name="+"
+    )
+    last_read_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        db_table = "ticket_comment_reads"
+        constraints = [
+            models.UniqueConstraint(
+                fields=["ticket", "user"],
+                name="unique_ticket_comment_read"
+            )
+        ]
+
 class TicketStatusHistory(models.Model):
     class EventType(models.TextChoices):
         CREATED = "CREATED", "Ticket Created"
@@ -283,14 +312,11 @@ class SymptomCode(models.Model):
 class ReviewFlags(models.Model):
     class Reasons(models.TextChoices):
         LOW_CONFIDENCE = 'low_confidence', 'Low Confidence'
-        MISSING_DEPARTMENT = 'missing_department', 'Missing Department'
+        PRIORITY_ASSESSMENT = 'priority_assessment', 'Priority Assessment'
         UNCLEAR_DESCRIPTION = 'unclear_description', 'Unclear Description'
-        OTHER = 'other', 'Other'
 
     class Status(models.TextChoices):
         PENDING = 'pending', 'Pending'
-        APPROVED = 'approved', 'Approved'
-        REJECTED = 'rejected', 'Rejected'
         RESOLVED = 'resolved', 'Resolved'
 
     class SourceType(models.TextChoices):

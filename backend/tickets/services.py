@@ -170,7 +170,7 @@ def calculate_priority(
         "P4": 4,
         "P3": 3,
         "P2": 2,
-        "P1": 1
+        "P1": 1,
     }
 
     PRIORITY_LABELS = {
@@ -178,7 +178,7 @@ def calculate_priority(
         4: "P4",
         3: "P3",
         2: "P2",
-        1: "P1"
+        1: "P1",
     }
 
     priority_number = PRIORITY_ORDER.get(based_priority)
@@ -186,211 +186,61 @@ def calculate_priority(
     if priority_number is None:
         return "P5"
 
-
-    # BASE PRIORITY P5
-    if based_priority == "P5":
-
-        if affected_scope == Ticket.AffectedScope.INDIVIDUAL:
-
-            if business_critical and time_critical:
-                priority_number = 2
-
-            elif business_critical:
-                priority_number = 3
-
-            elif time_critical:
-                priority_number = 4
-
-            else:
-                priority_number = 5
-
-
-        elif affected_scope == Ticket.AffectedScope.GROUP:
-
-            if business_critical and time_critical:
-                priority_number = 1
-
-            elif business_critical:
-                priority_number = 2
-
-            elif time_critical:
-                priority_number = 4
-
-            else:
-                priority_number = 5
-
-
-        elif affected_scope == Ticket.AffectedScope.DEPARTMENT:
-
-            if business_critical and time_critical:
-                priority_number = 1
-
-            elif business_critical:
-                priority_number = 2
-
-            elif time_critical:
-                priority_number = 3
-
-            else:
-                priority_number = 4
-
-
-        elif affected_scope == Ticket.AffectedScope.ORGANIZATION_WIDE:
-
-            if business_critical and time_critical:
-                priority_number = 1
-
-            elif business_critical:
-                priority_number = 1
-
-            elif time_critical:
-                priority_number = 1
-
-            else:
-                priority_number = 2
-
-        else:
-            raise ValueError(
-                f"Invalid affected_scope: {affected_scope}"
-            )
-
-
-    # BASE PRIORITY P4
-    if based_priority == "P4":
-
-        if affected_scope == Ticket.AffectedScope.INDIVIDUAL:
-
-            if business_critical and time_critical:
-                priority_number = 2
-
-            elif business_critical:
-                priority_number = 3
-
-            elif time_critical:
-                priority_number = 3
-
-            else:
-                priority_number = 4
-
-
-        elif affected_scope == Ticket.AffectedScope.GROUP:
-
-            if business_critical and time_critical:
-                priority_number = 1
-
-            elif business_critical:
-                priority_number = 2
-
-            elif time_critical:
-                priority_number = 3
-
-            else:
-                priority_number = 4
-
-
-        elif affected_scope == Ticket.AffectedScope.DEPARTMENT:
-
-            if business_critical and time_critical:
-                priority_number = 1
-
-            elif business_critical:
-                priority_number = 1
-
-            elif time_critical:
-                priority_number = 2
-
-            else:
-                priority_number = 3
-
-
-        elif affected_scope == Ticket.AffectedScope.ORGANIZATION_WIDE:
-
-            if business_critical and time_critical:
-                priority_number = 1
-
-            elif business_critical:
-                priority_number = 1
-
-            elif time_critical:
-                priority_number = 1
-
-            else:
-                priority_number = 2
-
-        else:
-            raise ValueError(
-                f"Invalid affected_scope: {affected_scope}"
-            )
-
-
-    # BASE PRIORITY P3
-    if based_priority == "P3":
-
-        if affected_scope == Ticket.AffectedScope.INDIVIDUAL:
-
-            if business_critical and time_critical:
-                priority_number = 1
-
-            elif business_critical:
-                priority_number = 2
-
-            elif time_critical:
-                priority_number = 2
-
-            else:
-                priority_number = 3
-
-
-        elif affected_scope == Ticket.AffectedScope.GROUP:
-
-            if business_critical and time_critical:
-                priority_number = 1
-
-            elif business_critical:
-                priority_number = 2
-
-            elif time_critical:
-                priority_number = 2
-
-            else:
-                priority_number = 3
-
-
-        elif affected_scope == Ticket.AffectedScope.DEPARTMENT:
-
-            if business_critical and time_critical:
-                priority_number = 1
-
-            elif business_critical:
-                priority_number = 1
-
-            elif time_critical:
-                priority_number = 2
-
-            else:
-                priority_number = 3
-
-
-        elif affected_scope == Ticket.AffectedScope.ORGANIZATION_WIDE:
-
-            if business_critical and time_critical:
-                priority_number = 1
-
-            elif business_critical:
-                priority_number = 1
-
-            elif time_critical:
-                priority_number = 1
-
-            else:
-                priority_number = 2
-
-        else:
-            raise ValueError(
-                f"Invalid affected_scope: {affected_scope}"
-            )
-
-    priority_number = max(1, priority_number)
+    if affected_scope == Ticket.AffectedScope.INDIVIDUAL:
+        impact = "LOW"
+
+    elif affected_scope == Ticket.AffectedScope.GROUP:
+        impact = "MEDIUM"
+
+    elif affected_scope == Ticket.AffectedScope.DEPARTMENT:
+        impact = "HIGH"
+
+    elif affected_scope == Ticket.AffectedScope.ORGANIZATION_WIDE:
+        impact = "CRITICAL"
+
+    else:
+        raise ValueError(
+            f"Invalid affected_scope: {affected_scope}"
+        )
+
+    if business_critical and time_critical:
+        urgency = "HIGH"
+
+    elif business_critical or time_critical:
+        urgency = "MEDIUM"
+
+    else:
+        urgency = "LOW"
+
+    PRIORITY_MATRIX = {
+        "CRITICAL": {
+            "LOW": 3,
+            "MEDIUM": 2,
+            "HIGH": 1,
+        },
+        "HIGH": {
+            "LOW": 4,
+            "MEDIUM": 3,
+            "HIGH": 2,
+        },
+        "MEDIUM": {
+            "LOW": 5,
+            "MEDIUM": 4,
+            "HIGH": 3,
+        },
+        "LOW": {
+            "LOW": 5,
+            "MEDIUM": 4,
+            "HIGH": 3,
+        },
+    }
+
+    contextual_priority = PRIORITY_MATRIX[impact][urgency]
+
+    priority_number = min(
+        priority_number,
+        contextual_priority,
+    )
 
     return PRIORITY_LABELS[priority_number]
 

@@ -10,33 +10,30 @@ export default function AssignedTicketDetails({
         ticketDetails?.is_under_review === true;
 
     return (
-        <div className="flex h-[810px] w-full overflow-hidden rounded-xl border border-gray-300 bg-white">
+        <div className="flex h-full min-h-0 w-full min-w-0 items-stretch overflow-hidden rounded-xl border border-gray-300 bg-white">
 
-            <LeftSidePanel
-                ticketDetails={ticketDetails}
-            />
-
-            <div className="min-w-0 flex-1 flex flex-col bg-white">
-
-                <div className="min-h-0 flex-1">
-
-                    <CenterPanel
-                        ticketId={ticketDetails?.id}
-                        canSend={!isTicketLocked}
-                        isUnderReview={isTicketLocked}
-                    />
-
-                </div>
-
+            {/* Left Panel */}
+            <div className="h-full min-h-0 w-[450px] min-w-[450px] shrink-0 overflow-hidden min-[1280px]:max-[1535px]:w-[320px] min-[1280px]:max-[1535px]:min-w-[320px]">
+                <LeftSidePanel
+                    ticketDetails={ticketDetails}
+                />
             </div>
 
-            <div className="w-[350px] shrink-0 border-l border-gray-300 bg-white">
+            {/* Center Panel */}
+            <div className="h-full min-h-0 min-w-0 flex-1 overflow-hidden bg-white">
+                <CenterPanel
+                    ticketId={ticketDetails?.id}
+                    canSend={!isTicketLocked}
+                    isUnderReview={isTicketLocked}
+                />
+            </div>
 
+            {/* Right Panel */}
+            <div className="h-full min-h-0 w-[350px] min-w-[350px] shrink-0 overflow-hidden border-l border-gray-300 bg-white min-[1280px]:max-[1535px]:w-[280px] min-[1280px]:max-[1535px]:min-w-[280px]">
                 <RightSidePanel
                     ticketDetails={ticketDetails}
                     onTicketUpdated={onTicketUpdated}
                 />
-
             </div>
 
         </div>

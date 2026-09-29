@@ -213,33 +213,106 @@ export default function LowConfidenceReview({ flag }) {
     return (
         <>
             <div className="space-y-4">
-                <div className="grid grid-cols-[1.05fr_0.95fr] items-start gap-4">
+                <div
+                    className="
+                        grid
+                        grid-cols-[1.05fr_0.95fr]
+                        items-start
+                        gap-4
+                        min-[1280px]:max-[1365px]:gap-3
+                        min-[1366px]:max-[1537px]:gap-3
+                    "
+                >
                     {/* TICKET INFORMATION */}
                     <div className="overflow-hidden rounded-xl border border-gray-300 bg-white">
-                        <div className="flex items-start gap-3 border-b border-gray-200 px-5 py-4">
-                            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-gray-100">
+                        <div
+                            className="
+                                flex
+                                items-start
+                                gap-3
+                                border-b
+                                border-gray-200
+                                px-5
+                                py-4
+                                min-[1280px]:max-[1365px]:gap-2.5
+                                min-[1280px]:max-[1365px]:px-4
+                                min-[1280px]:max-[1365px]:py-3
+                                min-[1366px]:max-[1537px]:gap-2.5
+                                min-[1366px]:max-[1537px]:px-4
+                                min-[1366px]:max-[1537px]:py-3.5
+                            "
+                        >
+                            <div
+                                className="
+                                    flex
+                                    h-9
+                                    w-9
+                                    shrink-0
+                                    items-center
+                                    justify-center
+                                    rounded-lg
+                                    bg-gray-100
+                                    min-[1280px]:max-[1365px]:h-8
+                                    min-[1280px]:max-[1365px]:w-8
+                                    min-[1366px]:max-[1537px]:h-8
+                                    min-[1366px]:max-[1537px]:w-8
+                                "
+                            >
                                 <Ticket
                                     size={18}
-                                    className="text-gray-600"
+                                    className="
+                                        text-gray-600
+                                        min-[1280px]:max-[1365px]:size-[16px]
+                                        min-[1366px]:max-[1537px]:size-[17px]
+                                    "
                                 />
                             </div>
 
                             <div className="min-w-0 flex-1">
                                 <div className="flex items-center justify-between gap-3">
-                                    <h2 className="text-base font-semibold text-black">
+                                    <h2
+                                        className="
+                                            text-base
+                                            font-semibold
+                                            text-black
+                                            min-[1280px]:max-[1365px]:text-sm
+                                            min-[1366px]:max-[1537px]:text-sm
+                                        "
+                                    >
                                         Ticket Information
                                     </h2>
 
                                     <span
-                                        className={`shrink-0 rounded-md border px-2.5 py-1 text-xs font-medium ${getStatusStyle(
-                                            flag.status
-                                        )}`}
+                                        className={`
+                                            shrink-0
+                                            rounded-md
+                                            border
+                                            px-2.5
+                                            py-1
+                                            text-xs
+                                            font-medium
+                                            min-[1280px]:max-[1365px]:px-2
+                                            min-[1280px]:max-[1365px]:py-0.5
+                                            min-[1280px]:max-[1365px]:text-[10px]
+                                            min-[1366px]:max-[1537px]:px-2
+                                            min-[1366px]:max-[1537px]:py-0.5
+                                            min-[1366px]:max-[1537px]:text-[11px]
+                                            ${getStatusStyle(flag.status)}
+                                        `}
                                     >
                                         {formatStatus(flag.status)}
                                     </span>
                                 </div>
 
-                                <p className="mt-0.5 text-xs text-gray-500">
+                                <p
+                                    className="
+                                        mt-0.5
+                                        text-xs
+                                        text-gray-500
+                                        min-[1280px]:max-[1365px]:text-[10px]
+                                        min-[1366px]:max-[1537px]:text-[11px]
+                                    "
+                                >
                                     Information submitted by the employee.
                                 </p>
                             </div>
@@ -276,8 +349,17 @@ export default function LowConfidenceReview({ flag }) {
                                 multiline
                             />
 
-                            <div className="px-5 py-4">
-                                <div className="grid grid-cols-2 gap-6">
+                            <div
+                                className="
+                                    px-5
+                                    py-4
+                                    min-[1280px]:max-[1365px]:px-4
+                                    min-[1280px]:max-[1365px]:py-3
+                                    min-[1366px]:max-[1537px]:px-4
+                                    min-[1366px]:max-[1537px]:py-3.5
+                                "
+                            >
+                                <div className="grid grid-cols-2 gap-6 min-[1280px]:max-[1537px]:gap-4">
                                     <UserCard
                                         label="Ticket Submitted By"
                                         user={{
@@ -308,85 +390,288 @@ export default function LowConfidenceReview({ flag }) {
 
                     {/* REVIEW CLASSIFICATION */}
                     <div className="overflow-hidden rounded-xl border border-gray-300 bg-white">
-                        <div className="flex items-start gap-3 border-b border-gray-200 px-5 py-4">
-                            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-gray-100">
+                        <div
+                            className="
+                                flex
+                                items-start
+                                gap-3
+                                border-b
+                                border-gray-200
+                                px-5
+                                py-4
+                                min-[1280px]:max-[1365px]:gap-2.5
+                                min-[1280px]:max-[1365px]:px-4
+                                min-[1280px]:max-[1365px]:py-3
+                                min-[1366px]:max-[1537px]:gap-2.5
+                                min-[1366px]:max-[1537px]:px-4
+                                min-[1366px]:max-[1537px]:py-3.5
+                            "
+                        >
+                            <div
+                                className="
+                                    flex
+                                    h-9
+                                    w-9
+                                    shrink-0
+                                    items-center
+                                    justify-center
+                                    rounded-lg
+                                    bg-gray-100
+                                    min-[1280px]:max-[1365px]:h-8
+                                    min-[1280px]:max-[1365px]:w-8
+                                    min-[1366px]:max-[1537px]:h-8
+                                    min-[1366px]:max-[1537px]:w-8
+                                "
+                            >
                                 <ClipboardCheck
                                     size={18}
-                                    className="text-gray-600"
+                                    className="
+                                        text-gray-600
+                                        min-[1280px]:max-[1365px]:size-[16px]
+                                        min-[1366px]:max-[1537px]:size-[17px]
+                                    "
                                 />
                             </div>
 
-                            <div>
-                                <h2 className="text-base font-semibold text-black">
+                            <div className="min-w-0">
+                                <h2
+                                    className="
+                                        text-base
+                                        font-semibold
+                                        text-black
+                                        min-[1280px]:max-[1365px]:text-sm
+                                        min-[1366px]:max-[1537px]:text-sm
+                                    "
+                                >
                                     Review Classification
                                 </h2>
 
-                                <p className="mt-0.5 text-xs text-gray-500">
+                                <p
+                                    className="
+                                        mt-0.5
+                                        text-xs
+                                        text-gray-500
+                                        min-[1280px]:max-[1365px]:text-[10px]
+                                        min-[1366px]:max-[1537px]:text-[11px]
+                                    "
+                                >
                                     Review the model recommendation and decide
                                     the final symptom classification.
                                 </p>
                             </div>
                         </div>
 
-                        <div className="p-5">
+                        <div
+                            className="
+                                p-5
+                                min-[1280px]:max-[1365px]:p-4
+                                min-[1366px]:max-[1537px]:p-4
+                            "
+                        >
                             {/* REVIEW REASON */}
-                            <div className="rounded-lg border border-gray-300 bg-gray-50 px-4 py-3">
-                                <p className="text-xs font-medium uppercase text-gray-500">
+                            <div
+                                className="
+                                    rounded-lg
+                                    border
+                                    border-gray-300
+                                    bg-gray-50
+                                    px-4
+                                    py-3
+                                    min-[1280px]:max-[1365px]:px-3
+                                    min-[1280px]:max-[1365px]:py-2.5
+                                    min-[1366px]:max-[1537px]:px-3.5
+                                    min-[1366px]:max-[1537px]:py-2.5
+                                "
+                            >
+                                <p
+                                    className="
+                                        text-xs
+                                        font-medium
+                                        uppercase
+                                        text-gray-500
+                                        min-[1280px]:max-[1365px]:text-[10px]
+                                        min-[1366px]:max-[1537px]:text-[11px]
+                                    "
+                                >
                                     Review Reason
                                 </p>
 
                                 <div className="mt-2 flex items-center gap-2">
                                     <CircleAlert
                                         size={17}
-                                        className="shrink-0 text-red-700"
+                                        className="
+                                            shrink-0
+                                            text-red-700
+                                            min-[1280px]:max-[1365px]:size-[15px]
+                                            min-[1366px]:max-[1537px]:size-[16px]
+                                        "
                                     />
 
-                                    <p className="text-sm font-semibold text-black">
+                                    <p
+                                        className="
+                                            text-sm
+                                            font-semibold
+                                            text-black
+                                            min-[1280px]:max-[1365px]:text-xs
+                                            min-[1366px]:max-[1537px]:text-xs
+                                        "
+                                    >
                                         {flag.reason || "Low Confidence"}
                                     </p>
                                 </div>
                             </div>
 
                             {/* MODEL RECOMMENDATION */}
-                            <div className="mt-5 rounded-lg border border-gray-300 bg-gray-50 p-4">
+                            <div
+                                className="
+                                    mt-5
+                                    rounded-lg
+                                    border
+                                    border-gray-300
+                                    bg-gray-50
+                                    p-4
+                                    min-[1280px]:max-[1365px]:mt-4
+                                    min-[1280px]:max-[1365px]:p-3
+                                    min-[1366px]:max-[1537px]:mt-4
+                                    min-[1366px]:max-[1537px]:p-3.5
+                                "
+                            >
                                 <div className="flex items-center justify-between gap-3">
-                                    <p className="text-xs font-medium uppercase text-gray-500">
+                                    <p
+                                        className="
+                                            text-xs
+                                            font-medium
+                                            uppercase
+                                            text-gray-500
+                                            min-[1280px]:max-[1365px]:text-[10px]
+                                            min-[1366px]:max-[1537px]:text-[11px]
+                                        "
+                                    >
                                         Model Recommended
                                     </p>
 
-                                    <span className="rounded-full bg-[#4C4CF9]/10 px-2.5 py-1 text-xs font-semibold text-[#4C4CF9]">
+                                    <span
+                                        className="
+                                            rounded-full
+                                            bg-[#4C4CF9]/10
+                                            px-2.5
+                                            py-1
+                                            text-xs
+                                            font-semibold
+                                            text-[#4C4CF9]
+                                            min-[1280px]:max-[1365px]:px-2
+                                            min-[1280px]:max-[1365px]:py-0.5
+                                            min-[1280px]:max-[1365px]:text-[10px]
+                                            min-[1366px]:max-[1537px]:px-2
+                                            min-[1366px]:max-[1537px]:py-0.5
+                                            min-[1366px]:max-[1537px]:text-[11px]
+                                        "
+                                    >
                                         {confidence}%
                                     </span>
                                 </div>
 
-                                <p className="mt-3 text-xl font-semibold text-black">
+                                <p
+                                    className="
+                                        mt-3
+                                        text-xl
+                                        font-semibold
+                                        text-black
+                                        min-[1280px]:max-[1365px]:mt-2
+                                        min-[1280px]:max-[1365px]:text-lg
+                                        min-[1366px]:max-[1537px]:mt-2.5
+                                        min-[1366px]:max-[1537px]:text-lg
+                                    "
+                                >
                                     {flag.predicted_symptom_code || "-"}
                                 </p>
 
-                                <p className="mt-1 text-xs text-gray-500">
+                                <p
+                                    className="
+                                        mt-1
+                                        text-xs
+                                        text-gray-500
+                                        min-[1280px]:max-[1365px]:text-[10px]
+                                        min-[1366px]:max-[1537px]:text-[11px]
+                                    "
+                                >
                                     Primary recommended symptom code
                                 </p>
                             </div>
 
                             {/* SELECT CORRECT SYMPTOM CODE */}
-                            <div className="mt-5">
-                                <label className="text-xs font-medium uppercase text-gray-500">
+                            <div
+                                className="
+                                    mt-5
+                                    min-[1280px]:max-[1365px]:mt-4
+                                    min-[1366px]:max-[1537px]:mt-4
+                                "
+                            >
+                                <label
+                                    className="
+                                        text-xs
+                                        font-medium
+                                        uppercase
+                                        text-gray-500
+                                        min-[1280px]:max-[1365px]:text-[10px]
+                                        min-[1366px]:max-[1537px]:text-[11px]
+                                    "
+                                >
                                     Select Correct Symptom Code
                                 </label>
 
                                 <button
                                     type="button"
                                     onClick={() => setSheetOpen(true)}
-                                    className="mt-2 flex w-full items-center justify-between rounded-lg border border-gray-300 bg-white px-4 py-3 text-left transition hover:bg-gray-50 focus:border-[#4C4CF9] focus:ring-2 focus:ring-[#4C4CF9]/10"
+                                    className="
+                                        mt-2
+                                        flex
+                                        w-full
+                                        items-center
+                                        justify-between
+                                        rounded-lg
+                                        border
+                                        border-gray-300
+                                        bg-white
+                                        px-4
+                                        py-3
+                                        text-left
+                                        transition
+                                        hover:bg-gray-50
+                                        focus:border-[#4C4CF9]
+                                        focus:ring-2
+                                        focus:ring-[#4C4CF9]/10
+                                        min-[1280px]:max-[1365px]:px-3
+                                        min-[1280px]:max-[1365px]:py-2.5
+                                        min-[1366px]:max-[1537px]:px-3.5
+                                        min-[1366px]:max-[1537px]:py-2.5
+                                    "
                                 >
                                     <div className="min-w-0">
-                                        <p className="truncate text-sm font-medium text-black">
+                                        <p
+                                            className="
+                                                truncate
+                                                text-sm
+                                                font-medium
+                                                text-black
+                                                min-[1280px]:max-[1365px]:text-xs
+                                                min-[1366px]:max-[1537px]:text-xs
+                                            "
+                                        >
                                             {selectedSymptom ||
                                                 "Select symptom code"}
                                         </p>
 
                                         {!selectedSymptom && (
-                                            <p className="mt-0.5 text-xs text-gray-500">
+                                            <p
+                                                className="
+                                                    mt-0.5
+                                                    text-xs
+                                                    text-gray-500
+                                                    min-[1280px]:max-[1365px]:text-[10px]
+                                                    min-[1366px]:max-[1537px]:text-[11px]
+                                                "
+                                            >
                                                 Search and select the correct
                                                 classification
                                             </p>
@@ -395,15 +680,46 @@ export default function LowConfidenceReview({ flag }) {
 
                                     <Search
                                         size={17}
-                                        className="ml-3 shrink-0 text-gray-400"
+                                        className="
+                                            ml-3
+                                            shrink-0
+                                            text-gray-400
+                                            min-[1280px]:max-[1365px]:size-[15px]
+                                            min-[1366px]:max-[1537px]:size-[16px]
+                                        "
                                     />
                                 </button>
                             </div>
 
                             {/* SELECTED CLASSIFICATION */}
                             {selectedSymptom && (
-                                <div className="mt-4 rounded-lg border border-[#4C4CF9]/30 bg-[#4C4CF9]/5 px-4 py-3.5">
-                                    <p className="text-xs font-semibold uppercase text-gray-500">
+                                <div
+                                    className="
+                                        mt-4
+                                        rounded-lg
+                                        border
+                                        border-[#4C4CF9]/30
+                                        bg-[#4C4CF9]/5
+                                        px-4
+                                        py-3.5
+                                        min-[1280px]:max-[1365px]:mt-3
+                                        min-[1280px]:max-[1365px]:px-3
+                                        min-[1280px]:max-[1365px]:py-3
+                                        min-[1366px]:max-[1537px]:mt-3
+                                        min-[1366px]:max-[1537px]:px-3.5
+                                        min-[1366px]:max-[1537px]:py-3
+                                    "
+                                >
+                                    <p
+                                        className="
+                                            text-xs
+                                            font-semibold
+                                            uppercase
+                                            text-gray-500
+                                            min-[1280px]:max-[1365px]:text-[10px]
+                                            min-[1366px]:max-[1537px]:text-[11px]
+                                        "
+                                    >
                                         Selected Classification
                                     </p>
 
@@ -418,7 +734,16 @@ export default function LowConfidenceReview({ flag }) {
                                                 }
                                             />
 
-                                            <p className="truncate text-sm font-semibold text-black">
+                                            <p
+                                                className="
+                                                    truncate
+                                                    text-sm
+                                                    font-semibold
+                                                    text-black
+                                                    min-[1280px]:max-[1365px]:text-xs
+                                                    min-[1366px]:max-[1537px]:text-xs
+                                                "
+                                            >
                                                 {selectedSymptom}
                                             </p>
                                         </div>
@@ -428,14 +753,33 @@ export default function LowConfidenceReview({ flag }) {
                                             onClick={() =>
                                                 setSheetOpen(true)
                                             }
-                                            className="shrink-0 text-xs font-medium text-[#4C4CF9] hover:underline"
+                                            className="
+                                                shrink-0
+                                                text-xs
+                                                font-medium
+                                                text-[#4C4CF9]
+                                                hover:underline
+                                                min-[1280px]:max-[1365px]:text-[10px]
+                                                min-[1366px]:max-[1537px]:text-[11px]
+                                            "
                                         >
                                             Change
                                         </button>
                                     </div>
 
                                     {!canOverride && (
-                                        <p className="mt-2 text-xs leading-5 text-gray-500">
+                                        <p
+                                            className="
+                                                mt-2
+                                                text-xs
+                                                leading-5
+                                                text-gray-500
+                                                min-[1280px]:max-[1365px]:text-[10px]
+                                                min-[1280px]:max-[1365px]:leading-4
+                                                min-[1366px]:max-[1537px]:text-[11px]
+                                                min-[1366px]:max-[1537px]:leading-4
+                                            "
+                                        >
                                             This is already the AI recommended
                                             symptom code. Use Accept
                                             Recommendation instead.
@@ -445,7 +789,18 @@ export default function LowConfidenceReview({ flag }) {
                             )}
 
                             {/* ACTION BUTTONS */}
-                            <div className="mt-5 grid grid-cols-2 gap-3">
+                            <div
+                                className="
+                                    mt-5
+                                    grid
+                                    grid-cols-2
+                                    gap-3
+                                    min-[1280px]:max-[1365px]:mt-4
+                                    min-[1280px]:max-[1365px]:gap-2
+                                    min-[1366px]:max-[1537px]:mt-4
+                                    min-[1366px]:max-[1537px]:gap-2.5
+                                "
+                            >
                                 <button
                                     type="button"
                                     onClick={openOverrideModal}
@@ -454,17 +809,40 @@ export default function LowConfidenceReview({ flag }) {
                                         approving ||
                                         accepting
                                     }
-                                    className={`flex h-10 cursor-pointer items-center justify-center gap-2 rounded-lg px-4 text-sm font-medium transition ${
-                                        canOverride &&
-                                        !approving &&
-                                        !accepting
-                                            ? "bg-[#4C4CF9] text-white hover:bg-[#3f3fe0]"
-                                            : "cursor-not-allowed bg-gray-100 text-gray-400"
-                                    }`}
+                                    className={`
+                                        flex
+                                        h-10
+                                        cursor-pointer
+                                        items-center
+                                        justify-center
+                                        gap-2
+                                        rounded-lg
+                                        px-4
+                                        text-sm
+                                        font-medium
+                                        transition
+                                        min-[1280px]:max-[1365px]:h-9
+                                        min-[1280px]:max-[1365px]:px-2.5
+                                        min-[1280px]:max-[1365px]:text-[11px]
+                                        min-[1366px]:max-[1537px]:h-9
+                                        min-[1366px]:max-[1537px]:px-3
+                                        min-[1366px]:max-[1537px]:text-xs
+                                        ${
+                                            canOverride &&
+                                            !approving &&
+                                            !accepting
+                                                ? "bg-[#4C4CF9] text-white hover:bg-[#3f3fe0]"
+                                                : "cursor-not-allowed bg-gray-100 text-gray-400"
+                                        }
+                                    `}
                                 >
                                     <Check
                                         size={16}
                                         strokeWidth={2.2}
+                                        className="
+                                            min-[1280px]:max-[1365px]:size-[14px]
+                                            min-[1366px]:max-[1537px]:size-[15px]
+                                        "
                                     />
 
                                     {approving
@@ -476,15 +854,39 @@ export default function LowConfidenceReview({ flag }) {
                                     type="button"
                                     onClick={openAcceptModal}
                                     disabled={accepting || approving}
-                                    className={`flex h-10 cursor-pointer items-center justify-center gap-2 rounded-lg px-4 text-sm font-medium text-white transition ${
-                                        accepting || approving
-                                            ? "cursor-not-allowed bg-gray-400"
-                                            : "bg-[#4C4CF9] hover:bg-[#3f3fe0]"
-                                    }`}
+                                    className={`
+                                        flex
+                                        h-10
+                                        cursor-pointer
+                                        items-center
+                                        justify-center
+                                        gap-2
+                                        rounded-lg
+                                        px-4
+                                        text-sm
+                                        font-medium
+                                        text-white
+                                        transition
+                                        min-[1280px]:max-[1365px]:h-9
+                                        min-[1280px]:max-[1365px]:px-2.5
+                                        min-[1280px]:max-[1365px]:text-[11px]
+                                        min-[1366px]:max-[1537px]:h-9
+                                        min-[1366px]:max-[1537px]:px-3
+                                        min-[1366px]:max-[1537px]:text-xs
+                                        ${
+                                            accepting || approving
+                                                ? "cursor-not-allowed bg-gray-400"
+                                                : "bg-[#4C4CF9] hover:bg-[#3f3fe0]"
+                                        }
+                                    `}
                                 >
                                     <CheckCircle2
                                         size={16}
                                         strokeWidth={2.2}
+                                        className="
+                                            min-[1280px]:max-[1365px]:size-[14px]
+                                            min-[1366px]:max-[1537px]:size-[15px]
+                                        "
                                     />
 
                                     {accepting
@@ -498,20 +900,71 @@ export default function LowConfidenceReview({ flag }) {
 
                 {/* MODEL RECOMMENDATION RESULT */}
                 <div className="overflow-hidden rounded-xl border border-gray-300 bg-white">
-                    <div className="flex items-start gap-3 border-b border-gray-200 px-5 py-4">
-                        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-gray-100">
+                    <div
+                        className="
+                            flex
+                            items-start
+                            gap-3
+                            border-b
+                            border-gray-200
+                            px-5
+                            py-4
+                            min-[1280px]:max-[1365px]:gap-2.5
+                            min-[1280px]:max-[1365px]:px-4
+                            min-[1280px]:max-[1365px]:py-3
+                            min-[1366px]:max-[1537px]:gap-2.5
+                            min-[1366px]:max-[1537px]:px-4
+                            min-[1366px]:max-[1537px]:py-3.5
+                        "
+                    >
+                        <div
+                            className="
+                                flex
+                                h-9
+                                w-9
+                                shrink-0
+                                items-center
+                                justify-center
+                                rounded-lg
+                                bg-gray-100
+                                min-[1280px]:max-[1365px]:h-8
+                                min-[1280px]:max-[1365px]:w-8
+                                min-[1366px]:max-[1537px]:h-8
+                                min-[1366px]:max-[1537px]:w-8
+                            "
+                        >
                             <TrendingUp
                                 size={18}
-                                className="text-gray-600"
+                                className="
+                                    text-gray-600
+                                    min-[1280px]:max-[1365px]:size-[16px]
+                                    min-[1366px]:max-[1537px]:size-[17px]
+                                "
                             />
                         </div>
 
-                        <div>
-                            <h2 className="text-base font-semibold text-black">
+                        <div className="min-w-0">
+                            <h2
+                                className="
+                                    text-base
+                                    font-semibold
+                                    text-black
+                                    min-[1280px]:max-[1365px]:text-sm
+                                    min-[1366px]:max-[1537px]:text-sm
+                                "
+                            >
                                 Model Recommendation Result
                             </h2>
 
-                            <p className="mt-0.5 text-xs text-gray-500">
+                            <p
+                                className="
+                                    mt-0.5
+                                    text-xs
+                                    text-gray-500
+                                    min-[1280px]:max-[1365px]:text-[10px]
+                                    min-[1366px]:max-[1537px]:text-[11px]
+                                "
+                            >
                                 The model returned a low-confidence
                                 recommendation and requires manual
                                 verification.
@@ -519,82 +972,313 @@ export default function LowConfidenceReview({ flag }) {
                         </div>
                     </div>
 
-                    <div className="grid grid-cols-3 gap-4 p-5">
-                        <div className="rounded-lg border border-gray-300 p-4">
+                    <div
+                        className="
+                            grid
+                            grid-cols-3
+                            gap-4
+                            p-5
+                            min-[1280px]:max-[1365px]:gap-3
+                            min-[1280px]:max-[1365px]:p-4
+                            min-[1366px]:max-[1537px]:gap-3
+                            min-[1366px]:max-[1537px]:p-4
+                        "
+                    >
+                        <div
+                            className="
+                                rounded-lg
+                                border
+                                border-gray-300
+                                p-4
+                                min-[1280px]:max-[1365px]:p-3
+                                min-[1366px]:max-[1537px]:p-3.5
+                            "
+                        >
                             <div className="flex items-center justify-between gap-3">
-                                <p className="text-xs font-medium uppercase text-gray-500">
+                                <p
+                                    className="
+                                        text-xs
+                                        font-medium
+                                        uppercase
+                                        text-gray-500
+                                        min-[1280px]:max-[1365px]:text-[10px]
+                                        min-[1366px]:max-[1537px]:text-[11px]
+                                    "
+                                >
                                     Primary Recommended
                                 </p>
 
-                                <span className="rounded-full bg-gray-100 px-2.5 py-1 text-[11px] font-medium text-gray-700">
+                                <span
+                                    className="
+                                        rounded-full
+                                        bg-gray-100
+                                        px-2.5
+                                        py-1
+                                        text-[11px]
+                                        font-medium
+                                        text-gray-700
+                                        min-[1280px]:max-[1365px]:px-2
+                                        min-[1280px]:max-[1365px]:py-0.5
+                                        min-[1280px]:max-[1365px]:text-[9px]
+                                        min-[1366px]:max-[1537px]:px-2
+                                        min-[1366px]:max-[1537px]:py-0.5
+                                        min-[1366px]:max-[1537px]:text-[10px]
+                                    "
+                                >
                                     Model Recommended
                                 </span>
                             </div>
 
-                            <div className="mt-5 flex items-end justify-between gap-4">
-                                <p className="text-xl font-semibold text-black">
+                            <div
+                                className="
+                                    mt-5
+                                    flex
+                                    items-end
+                                    justify-between
+                                    gap-4
+                                    min-[1280px]:max-[1365px]:mt-4
+                                    min-[1366px]:max-[1537px]:mt-4
+                                "
+                            >
+                                <p
+                                    className="
+                                        text-xl
+                                        font-semibold
+                                        text-black
+                                        min-[1280px]:max-[1365px]:text-lg
+                                        min-[1366px]:max-[1537px]:text-lg
+                                    "
+                                >
                                     {flag.predicted_symptom_code || "-"}
                                 </p>
 
-                                <p className="text-lg font-semibold text-[#4C4CF9]">
+                                <p
+                                    className="
+                                        text-lg
+                                        font-semibold
+                                        text-[#4C4CF9]
+                                        min-[1280px]:max-[1365px]:text-base
+                                        min-[1366px]:max-[1537px]:text-base
+                                    "
+                                >
                                     {confidence}%
                                 </p>
                             </div>
 
-                            <p className="mt-3 text-xs leading-5 text-gray-500">
+                            <p
+                                className="
+                                    mt-3
+                                    text-xs
+                                    leading-5
+                                    text-gray-500
+                                    min-[1280px]:max-[1365px]:mt-2
+                                    min-[1280px]:max-[1365px]:text-[10px]
+                                    min-[1280px]:max-[1365px]:leading-4
+                                    min-[1366px]:max-[1537px]:mt-2
+                                    min-[1366px]:max-[1537px]:text-[11px]
+                                    min-[1366px]:max-[1537px]:leading-4
+                                "
+                            >
                                 Primary confidence recommended by the model.
                             </p>
                         </div>
 
-                        <div className="rounded-lg border border-gray-300 p-4">
-                            <p className="text-xs font-medium uppercase text-gray-500">
+                        <div
+                            className="
+                                rounded-lg
+                                border
+                                border-gray-300
+                                p-4
+                                min-[1280px]:max-[1365px]:p-3
+                                min-[1366px]:max-[1537px]:p-3.5
+                            "
+                        >
+                            <p
+                                className="
+                                    text-xs
+                                    font-medium
+                                    uppercase
+                                    text-gray-500
+                                    min-[1280px]:max-[1365px]:text-[10px]
+                                    min-[1366px]:max-[1537px]:text-[11px]
+                                "
+                            >
                                 Secondary Recommended
                             </p>
 
-                            <div className="mt-5 flex items-end justify-between gap-4">
-                                <p className="text-xl font-semibold text-black">
+                            <div
+                                className="
+                                    mt-5
+                                    flex
+                                    items-end
+                                    justify-between
+                                    gap-4
+                                    min-[1280px]:max-[1365px]:mt-4
+                                    min-[1366px]:max-[1537px]:mt-4
+                                "
+                            >
+                                <p
+                                    className="
+                                        text-xl
+                                        font-semibold
+                                        text-black
+                                        min-[1280px]:max-[1365px]:text-lg
+                                        min-[1366px]:max-[1537px]:text-lg
+                                    "
+                                >
                                     {flag.second_predicted_symptom_code ||
                                         "-"}
                                 </p>
 
-                                <p className="text-lg font-semibold text-amber-600">
+                                <p
+                                    className="
+                                        text-lg
+                                        font-semibold
+                                        text-amber-600
+                                        min-[1280px]:max-[1365px]:text-base
+                                        min-[1366px]:max-[1537px]:text-base
+                                    "
+                                >
                                     {secondConfidence}%
                                 </p>
                             </div>
 
-                            <p className="mt-3 text-xs leading-5 text-gray-500">
+                            <p
+                                className="
+                                    mt-3
+                                    text-xs
+                                    leading-5
+                                    text-gray-500
+                                    min-[1280px]:max-[1365px]:mt-2
+                                    min-[1280px]:max-[1365px]:text-[10px]
+                                    min-[1280px]:max-[1365px]:leading-4
+                                    min-[1366px]:max-[1537px]:mt-2
+                                    min-[1366px]:max-[1537px]:text-[11px]
+                                    min-[1366px]:max-[1537px]:leading-4
+                                "
+                            >
                                 Secondary confidence recommended by the model.
                             </p>
                         </div>
 
-                        <div className="rounded-lg border border-gray-300 p-4">
-                            <p className="text-xs font-medium uppercase text-gray-500">
+                        <div
+                            className="
+                                rounded-lg
+                                border
+                                border-gray-300
+                                p-4
+                                min-[1280px]:max-[1365px]:p-3
+                                min-[1366px]:max-[1537px]:p-3.5
+                            "
+                        >
+                            <p
+                                className="
+                                    text-xs
+                                    font-medium
+                                    uppercase
+                                    text-gray-500
+                                    min-[1280px]:max-[1365px]:text-[10px]
+                                    min-[1366px]:max-[1537px]:text-[11px]
+                                "
+                            >
                                 Confidence Margin
                             </p>
 
-                            <p className="mt-5 text-2xl font-semibold text-green-600">
+                            <p
+                                className="
+                                    mt-5
+                                    text-2xl
+                                    font-semibold
+                                    text-green-600
+                                    min-[1280px]:max-[1365px]:mt-4
+                                    min-[1280px]:max-[1365px]:text-xl
+                                    min-[1366px]:max-[1537px]:mt-4
+                                    min-[1366px]:max-[1537px]:text-xl
+                                "
+                            >
                                 {confidenceMargin}%
                             </p>
 
-                            <p className="mt-3 text-xs leading-5 text-gray-500">
+                            <p
+                                className="
+                                    mt-3
+                                    text-xs
+                                    leading-5
+                                    text-gray-500
+                                    min-[1280px]:max-[1365px]:mt-2
+                                    min-[1280px]:max-[1365px]:text-[10px]
+                                    min-[1280px]:max-[1365px]:leading-4
+                                    min-[1366px]:max-[1537px]:mt-2
+                                    min-[1366px]:max-[1537px]:text-[11px]
+                                    min-[1366px]:max-[1537px]:leading-4
+                                "
+                            >
                                 Difference between the primary and secondary
                                 recommendation confidence.
                             </p>
                         </div>
                     </div>
 
-                    <div className="mx-5 mb-5 flex items-start gap-2.5 rounded-lg border border-blue-200 bg-blue-50 px-3.5 py-3">
+                    <div
+                        className="
+                            mx-5
+                            mb-5
+                            flex
+                            items-start
+                            gap-2.5
+                            rounded-lg
+                            border
+                            border-blue-200
+                            bg-blue-50
+                            px-3.5
+                            py-3
+                            min-[1280px]:max-[1365px]:mx-4
+                            min-[1280px]:max-[1365px]:mb-4
+                            min-[1280px]:max-[1365px]:gap-2
+                            min-[1280px]:max-[1365px]:px-3
+                            min-[1280px]:max-[1365px]:py-2.5
+                            min-[1366px]:max-[1537px]:mx-4
+                            min-[1366px]:max-[1537px]:mb-4
+                            min-[1366px]:max-[1537px]:px-3
+                            min-[1366px]:max-[1537px]:py-2.5
+                        "
+                    >
                         <CircleAlert
                             size={17}
-                            className="mt-0.5 shrink-0 text-blue-600"
+                            className="
+                                mt-0.5
+                                shrink-0
+                                text-blue-600
+                                min-[1280px]:max-[1365px]:size-[15px]
+                                min-[1366px]:max-[1537px]:size-[16px]
+                            "
                         />
 
-                        <div>
-                            <p className="text-sm font-medium text-blue-800">
+                        <div className="min-w-0">
+                            <p
+                                className="
+                                    text-sm
+                                    font-medium
+                                    text-blue-800
+                                    min-[1280px]:max-[1365px]:text-xs
+                                    min-[1366px]:max-[1537px]:text-xs
+                                "
+                            >
                                 Low Confidence Recommendation
                             </p>
 
-                            <p className="mt-1 text-xs leading-5 text-blue-700">
+                            <p
+                                className="
+                                    mt-1
+                                    text-xs
+                                    leading-5
+                                    text-blue-700
+                                    min-[1280px]:max-[1365px]:text-[10px]
+                                    min-[1280px]:max-[1365px]:leading-4
+                                    min-[1366px]:max-[1537px]:text-[11px]
+                                    min-[1366px]:max-[1537px]:leading-4
+                                "
+                            >
                                 This ticket was flagged because the model
                                 recommendation did not meet the required
                                 confidence threshold. Manual verification is
@@ -604,12 +1288,12 @@ export default function LowConfidenceReview({ flag }) {
                     </div>
                 </div>
 
-                <SymptomCodeSheet
-                    open={sheetOpen}
-                    onClose={() => setSheetOpen(false)}
-                    onSelect={setSelectedSymptom}
-                    excludeCode={flag.predicted_symptom_code}
-                />
+            <SymptomCodeSheet
+                open={sheetOpen}
+                onClose={() => setSheetOpen(false)}
+                onSelect={(symptom) => setSelectedSymptom(symptom.code)}
+                excludeCode={flag.predicted_symptom_code}
+            />
             </div>
 
             <RemarksModal
@@ -635,18 +1319,46 @@ function InfoCell({
 }) {
     return (
         <div
-            className={`px-5 py-4 ${
-                bordered ? "border-l border-gray-200" : ""
-            }`}
+            className={`
+                px-5
+                py-4
+                min-[1280px]:max-[1365px]:px-4
+                min-[1280px]:max-[1365px]:py-3
+                min-[1366px]:max-[1537px]:px-4
+                min-[1366px]:max-[1537px]:py-3.5
+                ${bordered ? "border-l border-gray-200" : ""}
+            `}
         >
-            <p className="text-xs font-medium uppercase text-gray-500">
+            <p
+                className="
+                    text-xs
+                    font-medium
+                    uppercase
+                    text-gray-500
+                    min-[1280px]:max-[1365px]:text-[10px]
+                    min-[1366px]:max-[1537px]:text-[11px]
+                "
+            >
                 {label}
             </p>
 
             <p
-                className={`mt-2 whitespace-pre-wrap break-words text-sm text-black ${
-                    multiline ? "leading-6" : "font-medium"
-                }`}
+                className={`
+                    mt-2
+                    whitespace-pre-wrap
+                    break-words
+                    text-sm
+                    text-black
+                    min-[1280px]:max-[1365px]:mt-1.5
+                    min-[1280px]:max-[1365px]:text-xs
+                    min-[1366px]:max-[1537px]:mt-1.5
+                    min-[1366px]:max-[1537px]:text-xs
+                    ${
+                        multiline
+                            ? "leading-6 min-[1280px]:max-[1537px]:leading-5"
+                            : "font-medium"
+                    }
+                `}
             >
                 {value || "-"}
             </p>
@@ -658,11 +1370,31 @@ function UserCard({ label, user, value }) {
     if (value !== undefined) {
         return (
             <div className="min-w-0">
-                <p className="text-xs font-medium uppercase text-gray-500">
+                <p
+                    className="
+                        text-xs
+                        font-medium
+                        uppercase
+                        text-gray-500
+                        min-[1280px]:max-[1365px]:text-[10px]
+                        min-[1366px]:max-[1537px]:text-[11px]
+                    "
+                >
                     {label}
                 </p>
 
-                <p className="mt-2 text-sm font-medium text-black">
+                <p
+                    className="
+                        mt-2
+                        text-sm
+                        font-medium
+                        text-black
+                        min-[1280px]:max-[1365px]:mt-1.5
+                        min-[1280px]:max-[1365px]:text-xs
+                        min-[1366px]:max-[1537px]:mt-1.5
+                        min-[1366px]:max-[1537px]:text-xs
+                    "
+                >
                     {value || "-"}
                 </p>
             </div>
@@ -671,26 +1403,75 @@ function UserCard({ label, user, value }) {
 
     return (
         <div className="min-w-0">
-            <p className="text-xs font-medium uppercase text-gray-500">
+            <p
+                className="
+                    text-xs
+                    font-medium
+                    uppercase
+                    text-gray-500
+                    min-[1280px]:max-[1365px]:text-[10px]
+                    min-[1366px]:max-[1537px]:text-[11px]
+                "
+            >
                 {label}
             </p>
 
-            <div className="mt-3 flex items-center gap-3">
+            <div
+                className="
+                    mt-3
+                    flex
+                    items-center
+                    gap-3
+                    min-[1280px]:max-[1365px]:mt-2
+                    min-[1280px]:max-[1365px]:gap-2
+                    min-[1366px]:max-[1537px]:mt-2.5
+                    min-[1366px]:max-[1537px]:gap-2.5
+                "
+            >
                 <Avatar name={user.name} />
 
                 <div className="min-w-0">
-                    <p className="truncate text-sm font-semibold text-black">
+                    <p
+                        className="
+                            truncate
+                            text-sm
+                            font-semibold
+                            text-black
+                            min-[1280px]:max-[1365px]:text-xs
+                            min-[1366px]:max-[1537px]:text-xs
+                        "
+                    >
                         {user.name || "-"}
                     </p>
 
-                    <p className="mt-1 truncate text-xs text-gray-500">
+                    <p
+                        className="
+                            mt-1
+                            truncate
+                            text-xs
+                            text-gray-500
+                            min-[1280px]:max-[1365px]:mt-0.5
+                            min-[1280px]:max-[1365px]:text-[10px]
+                            min-[1366px]:max-[1537px]:mt-0.5
+                            min-[1366px]:max-[1537px]:text-[11px]
+                        "
+                    >
                         {user.userCode || "-"}
                         {user.department
                             ? ` • ${user.department}`
                             : ""}
                     </p>
 
-                    <p className="mt-0.5 truncate text-xs text-gray-500">
+                    <p
+                        className="
+                            mt-0.5
+                            truncate
+                            text-xs
+                            text-gray-500
+                            min-[1280px]:max-[1365px]:text-[10px]
+                            min-[1366px]:max-[1537px]:text-[11px]
+                        "
+                    >
                         {user.officeLocation || "-"}
                     </p>
                 </div>
@@ -709,7 +1490,23 @@ function Avatar({ name, size = "md" }) {
 
     return (
         <div
-            className={`flex shrink-0 items-center justify-center rounded-full bg-[#4C4CF9]/10 font-semibold text-[#4C4CF9] ${sizeClass}`}
+            className={`
+                flex
+                shrink-0
+                items-center
+                justify-center
+                rounded-full
+                bg-[#4C4CF9]/10
+                font-semibold
+                text-[#4C4CF9]
+                ${sizeClass}
+                min-[1280px]:max-[1365px]:h-8
+                min-[1280px]:max-[1365px]:w-8
+                min-[1280px]:max-[1365px]:text-[10px]
+                min-[1366px]:max-[1537px]:h-8
+                min-[1366px]:max-[1537px]:w-8
+                min-[1366px]:max-[1537px]:text-[11px]
+            `}
         >
             {initials}
         </div>

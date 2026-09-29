@@ -19,10 +19,25 @@ export default function FlaggedTicketsTable({
                 className={
                     dashboard
                         ? "flex items-center justify-center bg-white py-10"
-                        : "flex h-[637px] items-center justify-center overflow-hidden bg-white"
+                        : `
+                            flex h-[637px]
+                            items-center justify-center
+                            overflow-hidden
+                            bg-white
+                            min-[1280px]:max-[1365px]:h-[450px]
+                            min-[1366px]:max-[1537px]:h-[500px]
+                            min-[1538px]:max-[1919px]:h-[580px]
+                        `
                 }
             >
-                <p className="text-sm text-gray-500">
+                <p
+                    className="
+                        text-sm
+                        text-gray-500
+                        min-[1280px]:max-[1365px]:text-[11px]
+                        min-[1366px]:max-[1537px]:text-xs
+                    "
+                >
                     Loading tickets...
                 </p>
             </div>
@@ -35,33 +50,127 @@ export default function FlaggedTicketsTable({
                 className={
                     dashboard
                         ? ""
-                        : "h-[637px] overflow-y-auto overflow-x-hidden"
+                        : `
+                            h-[637px]
+                            overflow-y-auto
+                            overflow-x-hidden
+                            bg-white
+                            min-[1280px]:max-[1365px]:h-[450px]
+                            min-[1366px]:max-[1537px]:h-[500px]
+                            min-[1538px]:max-[1919px]:h-[580px]
+
+                            [&::-webkit-scrollbar]:w-px
+                            [&::-webkit-scrollbar-track]:bg-transparent
+                            [&::-webkit-scrollbar-thumb]:bg-transparent
+                            hover:[&::-webkit-scrollbar-thumb]:bg-gray-300
+                            [&::-webkit-scrollbar-thumb]:rounded-full
+                        `
                 }
             >
-                <table className="w-full table-fixed text-sm">
+                <table
+                    className="
+                        w-full
+                        table-fixed
+                        text-sm
+                        min-[1280px]:max-[1365px]:text-[11px]
+                        min-[1366px]:max-[1537px]:text-xs
+                    "
+                >
                     <thead className="sticky top-0 z-10 bg-gray-50">
                         <tr className="border-b border-gray-300 text-left">
-                            <th className="w-[13%] px-6 py-3.5 font-semibold text-black">
+                            <th
+                                className="
+                                    w-[13%]
+                                    px-6
+                                    py-3.5
+                                    font-semibold
+                                    text-black
+                                    min-[1280px]:max-[1365px]:px-3
+                                    min-[1280px]:max-[1365px]:py-2.5
+                                    min-[1366px]:max-[1537px]:px-4
+                                    min-[1366px]:max-[1537px]:py-3
+                                "
+                            >
                                 Ticket ID
                             </th>
 
-                            <th className="w-[25%] px-6 py-3.5 font-semibold text-black">
+                            <th
+                                className="
+                                    w-[25%]
+                                    px-6
+                                    py-3.5
+                                    font-semibold
+                                    text-black
+                                    min-[1280px]:max-[1365px]:px-3
+                                    min-[1280px]:max-[1365px]:py-2.5
+                                    min-[1366px]:max-[1537px]:px-4
+                                    min-[1366px]:max-[1537px]:py-3
+                                "
+                            >
                                 Subject
                             </th>
 
-                            <th className="w-[17%] px-6 py-3.5 font-semibold text-black">
+                            <th
+                                className="
+                                    w-[17%]
+                                    px-6
+                                    py-3.5
+                                    font-semibold
+                                    text-black
+                                    min-[1280px]:max-[1365px]:px-3
+                                    min-[1280px]:max-[1365px]:py-2.5
+                                    min-[1366px]:max-[1537px]:px-4
+                                    min-[1366px]:max-[1537px]:py-3
+                                "
+                            >
                                 Submitted By
                             </th>
 
-                            <th className="w-[14%] px-6 py-3.5 font-semibold text-black">
+                            <th
+                                className="
+                                    w-[14%]
+                                    px-6
+                                    py-3.5
+                                    font-semibold
+                                    text-black
+                                    min-[1280px]:max-[1365px]:px-3
+                                    min-[1280px]:max-[1365px]:py-2.5
+                                    min-[1366px]:max-[1537px]:px-4
+                                    min-[1366px]:max-[1537px]:py-3
+                                "
+                            >
                                 Flag Reason
                             </th>
 
-                            <th className="w-[11%] px-6 py-3.5 font-semibold text-black">
+                            <th
+                                className="
+                                    w-[11%]
+                                    px-6
+                                    py-3.5
+                                    font-semibold
+                                    text-black
+                                    min-[1280px]:max-[1365px]:px-3
+                                    min-[1280px]:max-[1365px]:py-2.5
+                                    min-[1366px]:max-[1537px]:px-4
+                                    min-[1366px]:max-[1537px]:py-3
+                                "
+                            >
                                 Status
                             </th>
 
-                            <th className="w-[20%] px-6 py-3.5 font-semibold text-black">
+                            <th
+                                className="
+                                    w-[20%]
+                                    px-6
+                                    py-3.5
+                                    font-semibold
+                                    text-black
+                                    min-[1280px]:max-[1365px]:px-3
+                                    min-[1280px]:max-[1365px]:py-2.5
+                                    min-[1366px]:max-[1537px]:px-4
+                                    min-[1366px]:max-[1537px]:py-3
+                                "
+                            >
                                 Submitted
                             </th>
                         </tr>
@@ -89,15 +198,40 @@ export default function FlaggedTicketsTable({
                                                 `/flagged-ticket/${ticket.id}`
                                             )
                                         }
-                                        className="cursor-pointer border-b border-gray-200 transition-colors hover:bg-gray-50 last:border-b-0"
+                                        className="
+                                            cursor-pointer
+                                            border-b
+                                            border-gray-200
+                                            transition-colors
+                                            hover:bg-gray-50
+                                            last:border-b-0
+                                        "
                                     >
-                                        <td className="px-6 py-4">
+                                        <td
+                                            className="
+                                                px-6
+                                                py-4
+                                                min-[1280px]:max-[1365px]:px-3
+                                                min-[1280px]:max-[1365px]:py-2.5
+                                                min-[1366px]:max-[1537px]:px-4
+                                                min-[1366px]:max-[1537px]:py-3
+                                            "
+                                        >
                                             <span className="font-semibold text-black">
                                                 {ticket.ticket_code || "-"}
                                             </span>
                                         </td>
 
-                                        <td className="px-6 py-4">
+                                        <td
+                                            className="
+                                                px-6
+                                                py-4
+                                                min-[1280px]:max-[1365px]:px-3
+                                                min-[1280px]:max-[1365px]:py-2.5
+                                                min-[1366px]:max-[1537px]:px-4
+                                                min-[1366px]:max-[1537px]:py-3
+                                            "
+                                        >
                                             <p
                                                 className="truncate font-medium text-black"
                                                 title={ticket.subject}
@@ -106,7 +240,16 @@ export default function FlaggedTicketsTable({
                                             </p>
                                         </td>
 
-                                        <td className="px-6 py-4">
+                                        <td
+                                            className="
+                                                px-6
+                                                py-4
+                                                min-[1280px]:max-[1365px]:px-3
+                                                min-[1280px]:max-[1365px]:py-2.5
+                                                min-[1366px]:max-[1537px]:px-4
+                                                min-[1366px]:max-[1537px]:py-3
+                                            "
+                                        >
                                             <div className="min-w-0">
                                                 <p
                                                     className="truncate font-medium text-black"
@@ -116,7 +259,14 @@ export default function FlaggedTicketsTable({
                                                 </p>
 
                                                 <p
-                                                    className="mt-0.5 truncate text-xs text-gray-500"
+                                                    className="
+                                                        mt-0.5
+                                                        truncate
+                                                        text-xs
+                                                        text-gray-500
+                                                        min-[1280px]:max-[1365px]:text-[10px]
+                                                        min-[1366px]:max-[1537px]:text-[11px]
+                                                    "
                                                     title={
                                                         employeeDepartment
                                                     }
@@ -126,11 +276,37 @@ export default function FlaggedTicketsTable({
                                             </div>
                                         </td>
 
-                                        <td className="px-6 py-4">
+                                        <td
+                                            className="
+                                                px-6
+                                                py-4
+                                                min-[1280px]:max-[1365px]:px-3
+                                                min-[1280px]:max-[1365px]:py-2.5
+                                                min-[1366px]:max-[1537px]:px-4
+                                                min-[1366px]:max-[1537px]:py-3
+                                            "
+                                        >
                                             <span
-                                                className={`inline-flex max-w-full items-center rounded-md border px-2.5 py-1 text-xs font-semibold ${getFlagReasonStyle(
-                                                    ticket.reason
-                                                )}`}
+                                                className={`
+                                                    inline-flex
+                                                    max-w-full
+                                                    items-center
+                                                    rounded-md
+                                                    border
+                                                    px-2.5
+                                                    py-1
+                                                    text-xs
+                                                    font-semibold
+                                                    ${getFlagReasonStyle(
+                                                        ticket.reason
+                                                    )}
+                                                    min-[1280px]:max-[1365px]:px-2
+                                                    min-[1280px]:max-[1365px]:py-0.5
+                                                    min-[1280px]:max-[1365px]:text-[10px]
+                                                    min-[1366px]:max-[1537px]:px-2
+                                                    min-[1366px]:max-[1537px]:py-1
+                                                    min-[1366px]:max-[1537px]:text-[11px]
+                                                `}
                                             >
                                                 <span className="truncate">
                                                     {formatText(
@@ -140,11 +316,36 @@ export default function FlaggedTicketsTable({
                                             </span>
                                         </td>
 
-                                        <td className="px-6 py-4">
+                                        <td
+                                            className="
+                                                px-6
+                                                py-4
+                                                min-[1280px]:max-[1365px]:px-3
+                                                min-[1280px]:max-[1365px]:py-2.5
+                                                min-[1366px]:max-[1537px]:px-4
+                                                min-[1366px]:max-[1537px]:py-3
+                                            "
+                                        >
                                             <span
-                                                className={`inline-flex whitespace-nowrap rounded-md border px-2.5 py-1 text-xs font-medium ${getStatusStyle(
-                                                    ticket.status
-                                                )}`}
+                                                className={`
+                                                    inline-flex
+                                                    whitespace-nowrap
+                                                    rounded-md
+                                                    border
+                                                    px-2.5
+                                                    py-1
+                                                    text-xs
+                                                    font-medium
+                                                    ${getStatusStyle(
+                                                        ticket.status
+                                                    )}
+                                                    min-[1280px]:max-[1365px]:px-2
+                                                    min-[1280px]:max-[1365px]:py-0.5
+                                                    min-[1280px]:max-[1365px]:text-[10px]
+                                                    min-[1366px]:max-[1537px]:px-2
+                                                    min-[1366px]:max-[1537px]:py-1
+                                                    min-[1366px]:max-[1537px]:text-[11px]
+                                                `}
                                             >
                                                 {formatText(
                                                     ticket.status
@@ -152,7 +353,16 @@ export default function FlaggedTicketsTable({
                                             </span>
                                         </td>
 
-                                        <td className="px-6 py-4">
+                                        <td
+                                            className="
+                                                px-6
+                                                py-4
+                                                min-[1280px]:max-[1365px]:px-3
+                                                min-[1280px]:max-[1365px]:py-2.5
+                                                min-[1366px]:max-[1537px]:px-4
+                                                min-[1366px]:max-[1537px]:py-3
+                                            "
+                                        >
                                             <span className="whitespace-nowrap font-medium text-black">
                                                 {ticket.created_at
                                                     ? formatDate(
@@ -168,13 +378,29 @@ export default function FlaggedTicketsTable({
                             <tr>
                                 <td
                                     colSpan="6"
-                                    className="px-6 py-16 text-center"
+                                    className="
+                                        px-6
+                                        py-16
+                                        text-center
+                                        min-[1280px]:max-[1365px]:px-3
+                                        min-[1280px]:max-[1365px]:py-10
+                                        min-[1366px]:max-[1537px]:px-4
+                                        min-[1366px]:max-[1537px]:py-12
+                                    "
                                 >
                                     <p className="font-medium text-black">
                                         No flagged tickets found
                                     </p>
 
-                                    <p className="mt-1 text-sm text-gray-500">
+                                    <p
+                                        className="
+                                            mt-1
+                                            text-sm
+                                            text-gray-500
+                                            min-[1280px]:max-[1365px]:text-[11px]
+                                            min-[1366px]:max-[1537px]:text-xs
+                                        "
+                                    >
                                         There are currently no flagged
                                         tickets requiring review.
                                     </p>
@@ -197,6 +423,10 @@ function getFlagReasonStyle(reason = "") {
 
     if (value.includes("confidence")) {
         return "border-blue-300 bg-blue-50 text-blue-700";
+    }
+
+    if (value.includes("priority")) {
+        return "border-orange-300 bg-orange-50 text-orange-700";
     }
 
     return "border-gray-300 bg-gray-50 text-gray-700";

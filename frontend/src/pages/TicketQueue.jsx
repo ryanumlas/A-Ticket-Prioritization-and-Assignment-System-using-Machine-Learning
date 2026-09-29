@@ -40,7 +40,7 @@ export default function TicketQueue() {
                 </div>
 
                 {/* Only this area scrolls */}
-                <main className="min-h-0 flex-1 overflow-y-auto">
+                <main className="min-h-0 flex-1 ">
                     {MainContent}
                 </main>
             </div>

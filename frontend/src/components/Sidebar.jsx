@@ -173,17 +173,42 @@ export default function Sidebar() {
                         isActive
                             ? "bg-white text-black"
                             : "hover:bg-white hover:text-black"
-                    }`
+                    } min-[1280px]:max-[1535px]:gap-2 min-[1280px]:max-[1535px]:px-2 min-[1280px]:max-[1535px]:py-1.5 min-[1280px]:max-[1535px]:text-[13px]`
                 }
             >
-                {Icon && <Icon size={18} />}
+                {Icon && (
+                    <Icon
+                        size={18}
+                        className="
+                            min-[1280px]:max-[1535px]:size-[16px]
+                        "
+                    />
+                )}
 
                 <span className="flex-1">
                     {item.name}
                 </span>
 
                 {itemCount > 0 && (
-                    <span className="flex h-4 min-w-4 items-center justify-center rounded-full bg-red-500 px-1 text-[9px] font-semibold leading-none text-white">
+                    <span
+                        className="
+                            flex
+                            h-4
+                            min-w-4
+                            items-center
+                            justify-center
+                            rounded-full
+                            bg-red-500
+                            px-1
+                            text-[9px]
+                            font-semibold
+                            leading-none
+                            text-white
+                            min-[1280px]:max-[1535px]:h-3.5
+                            min-[1280px]:max-[1535px]:min-w-3.5
+                            min-[1280px]:max-[1535px]:text-[8px]
+                        "
+                    >
                         {itemCount > 99 ? "99+" : itemCount}
                     </span>
                 )}
@@ -193,32 +218,81 @@ export default function Sidebar() {
 
     const sidebarContent = (
         <>
-            <div className="mb-10 flex items-center justify-between gap-3">
+            <div
+                className="
+                    mb-10
+                    flex
+                    items-center
+                    justify-between
+                    gap-3
+                    min-[1280px]:max-[1535px]:mb-7
+                    min-[1280px]:max-[1535px]:gap-2
+                "
+            >
                 <img
                     src={foundever_blue}
                     alt="Foundever"
-                    className="h-auto w-[190px] shrink-0 object-contain"
+                    className="
+                        h-auto
+                        w-[190px]
+                        shrink-0
+                        object-contain
+                        min-[1280px]:max-[1535px]:w-[160px]
+                    "
                 />
 
                 <button
                     type="button"
                     onClick={() => setMobileOpen(false)}
                     aria-label="Close navigation"
-                    className="flex h-10 w-10 shrink-0 cursor-pointer items-center justify-center rounded-md text-white transition hover:bg-white/10 lg:hidden"
+                    className="
+                        flex
+                        h-10
+                        w-10
+                        shrink-0
+                        cursor-pointer
+                        items-center
+                        justify-center
+                        rounded-md
+                        text-white
+                        transition
+                        hover:bg-white/10
+                        lg:hidden
+                    "
                 >
                     <X size={22} />
                 </button>
             </div>
 
-            <nav className="flex flex-col gap-2">
+            <nav
+                className="
+                    flex
+                    flex-col
+                    gap-2
+                    min-[1280px]:max-[1535px]:gap-1.5
+                "
+            >
                 {menus.map((item) => {
                     if (item.type === "section") {
                         return (
                             <div
                                 key={item.title}
-                                className="mt-4"
+                                className="
+                                    mt-4
+                                    min-[1280px]:max-[1535px]:mt-3
+                                "
                             >
-                                <p className="mb-2 text-xs font-semibold uppercase text-white">
+                                <p
+                                    className="
+                                        mb-2
+                                        text-xs
+                                        font-semibold
+                                        uppercase
+                                        text-white
+                                        min-[1280px]:max-[1535px]:mb-1.5
+                                        min-[1280px]:max-[1535px]:text-[11px]
+                                    "
+                                >
                                     {item.title}
                                 </p>
 
@@ -242,11 +316,16 @@ export default function Sidebar() {
                                                         isActive
                                                             ? "bg-white text-black"
                                                             : "hover:bg-white hover:text-black"
-                                                    }`
+                                                    } min-[1280px]:max-[1535px]:mb-1.5 min-[1280px]:max-[1535px]:gap-2 min-[1280px]:max-[1535px]:px-2 min-[1280px]:max-[1535px]:py-1.5 min-[1280px]:max-[1535px]:text-[13px]`
                                                 }
                                             >
                                                 {Icon && (
-                                                    <Icon size={18} />
+                                                    <Icon
+                                                        size={18}
+                                                        className="
+                                                            min-[1280px]:max-[1535px]:size-[16px]
+                                                        "
+                                                    />
                                                 )}
 
                                                 <span className="flex-1">
@@ -273,7 +352,25 @@ export default function Sidebar() {
                     type="button"
                     onClick={() => setMobileOpen(true)}
                     aria-label="Open navigation"
-                    className="fixed left-4 top-4 z-[9999] flex h-11 w-11 cursor-pointer items-center justify-center rounded-lg bg-[#2563EB] text-white shadow-lg transition hover:bg-[#1D4ED8] lg:hidden"
+                    className="
+                        fixed
+                        left-4
+                        top-4
+                        z-[9999]
+                        flex
+                        h-11
+                        w-11
+                        cursor-pointer
+                        items-center
+                        justify-center
+                        rounded-lg
+                        bg-[#2563EB]
+                        text-white
+                        shadow-lg
+                        transition
+                        hover:bg-[#1D4ED8]
+                        lg:hidden
+                    "
                 >
                     <Menu
                         size={24}
@@ -283,7 +380,23 @@ export default function Sidebar() {
             )}
 
             {/* Desktop Sidebar */}
-            <aside className="hidden h-screen w-67 shrink-0 bg-[#4C4CF9] p-4 text-white shadow-lg lg:block">
+            <aside
+                className="
+                    hidden
+                    h-screen
+                    w-60
+                    shrink-0
+                    bg-[#4C4CF9]
+                    p-4
+                    text-white
+                    shadow-lg
+                    lg:block
+                    xl:w-64
+
+                    min-[1280px]:max-[1535px]:w-[220px]
+                    min-[1280px]:max-[1535px]:p-3.5
+                "
+            >
                 {sidebarContent}
             </aside>
 
@@ -301,7 +414,13 @@ export default function Sidebar() {
                             onClick={() =>
                                 setMobileOpen(false)
                             }
-                            className="fixed inset-0 z-[9997] bg-black/40 lg:hidden"
+                            className="
+                                fixed
+                                inset-0
+                                z-[9997]
+                                bg-black/40
+                                lg:hidden
+                            "
                         />
 
                         {/* Mobile / Tablet Sidebar */}
@@ -314,7 +433,26 @@ export default function Sidebar() {
                                 stiffness: 300,
                                 damping: 30,
                             }}
-                            className="fixed left-0 top-0 z-[9998] h-screen w-[300px] max-w-[85vw] overflow-y-auto bg-[#4C4CF9] p-4 text-white shadow-2xl lg:hidden [&::-webkit-scrollbar]:w-1 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-transparent hover:[&::-webkit-scrollbar-thumb]:bg-white/30"
+                            className="
+                                fixed
+                                left-0
+                                top-0
+                                z-[9998]
+                                h-screen
+                                w-[300px]
+                                max-w-[85vw]
+                                overflow-y-auto
+                                bg-[#4C4CF9]
+                                p-4
+                                text-white
+                                shadow-2xl
+                                lg:hidden
+                                [&::-webkit-scrollbar]:w-1
+                                [&::-webkit-scrollbar-track]:bg-transparent
+                                [&::-webkit-scrollbar-thumb]:rounded-full
+                                [&::-webkit-scrollbar-thumb]:bg-transparent
+                                hover:[&::-webkit-scrollbar-thumb]:bg-white/30
+                            "
                         >
                             {sidebarContent}
                         </motion.aside>

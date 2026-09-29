@@ -9,8 +9,27 @@ export default function TicketReturnedTable({
 
     if (loading) {
         return (
-            <div className="flex h-[637px] items-center justify-center overflow-hidden bg-white">
-                <p className="text-sm text-gray-500">
+            <div
+                className="
+                    flex
+                    h-[637px]
+                    items-center
+                    justify-center
+                    overflow-hidden
+                    bg-white
+                    min-[1280px]:max-[1365px]:h-[450px]
+                    min-[1366px]:max-[1537px]:h-[500px]
+                    min-[1538px]:max-[1919px]:h-[580px]
+                "
+            >
+                <p
+                    className="
+                        text-sm
+                        text-gray-500
+                        min-[1280px]:max-[1365px]:text-[11px]
+                        min-[1366px]:max-[1537px]:text-xs
+                    "
+                >
                     Loading returned ticket requests...
                 </p>
             </div>
@@ -18,35 +37,143 @@ export default function TicketReturnedTable({
     }
 
     return (
-        <div className="h-[637px] w-full overflow-y-auto overflow-x-hidden bg-white">
-            <table className="w-full table-fixed text-sm">
+        <div
+            className="
+                h-[637px]
+                w-full
+                overflow-y-auto
+                overflow-x-hidden
+                bg-white
+                min-[1280px]:max-[1365px]:h-[450px]
+                min-[1366px]:max-[1537px]:h-[500px]
+                min-[1538px]:max-[1919px]:h-[580px]
+                [&::-webkit-scrollbar]:w-px
+                [&::-webkit-scrollbar-track]:bg-transparent
+                [&::-webkit-scrollbar-thumb]:bg-transparent
+                hover:[&::-webkit-scrollbar-thumb]:bg-gray-300
+                [&::-webkit-scrollbar-thumb]:rounded-full
+            "
+        >
+            <table
+                className="
+                    w-full
+                    table-fixed
+                    text-sm
+                    min-[1280px]:max-[1365px]:text-[11px]
+                    min-[1366px]:max-[1537px]:text-xs
+                "
+            >
                 <thead className="sticky top-0 z-10 bg-gray-50">
                     <tr className="border-b border-gray-300 text-left">
-                        <th className="w-[10%] px-4 py-3.5 font-semibold text-black">
+                        <th
+                            className="
+                                w-[9%]
+                                px-4
+                                py-3.5
+                                font-semibold
+                                text-black
+                                min-[1280px]:max-[1365px]:px-3
+                                min-[1280px]:max-[1365px]:py-2.5
+                                min-[1366px]:max-[1537px]:px-3
+                                min-[1366px]:max-[1537px]:py-3
+                            "
+                        >
                             Ticket ID
                         </th>
 
-                        <th className="w-[22%] px-5 py-3.5 font-semibold text-black">
+                        <th
+                            className="
+                                w-[16%]
+                                px-5
+                                py-3.5
+                                font-semibold
+                                text-black
+                                min-[1280px]:max-[1365px]:px-3
+                                min-[1280px]:max-[1365px]:py-2.5
+                                min-[1366px]:max-[1537px]:px-3
+                                min-[1366px]:max-[1537px]:py-3
+                            "
+                        >
                             Subject
                         </th>
 
-                        <th className="w-[16%] px-5 py-3.5 font-semibold text-black">
+                        <th
+                            className="
+                                w-[12%]
+                                px-5
+                                py-3.5
+                                font-semibold
+                                text-black
+                                min-[1280px]:max-[1365px]:px-3
+                                min-[1280px]:max-[1365px]:py-2.5
+                                min-[1366px]:max-[1537px]:px-3
+                                min-[1366px]:max-[1537px]:py-3
+                            "
+                        >
                             Requested By
                         </th>
 
-                        <th className="w-[13%] px-5 py-3.5 font-semibold text-black">
+                        <th
+                            className="
+                                w-[13%]
+                                px-5
+                                py-3.5
+                                font-semibold
+                                text-black
+                                min-[1280px]:max-[1365px]:px-3
+                                min-[1280px]:max-[1365px]:py-2.5
+                                min-[1366px]:max-[1537px]:px-3
+                                min-[1366px]:max-[1537px]:py-3
+                            "
+                        >
                             IT Department
                         </th>
 
-                        <th className="w-[17%] px-5 py-3.5 font-semibold text-black">
+                        <th
+                            className="
+                                w-[15%]
+                                px-5
+                                py-3.5
+                                font-semibold
+                                text-black
+                                min-[1280px]:max-[1365px]:px-3
+                                min-[1280px]:max-[1365px]:py-2.5
+                                min-[1366px]:max-[1537px]:px-3
+                                min-[1366px]:max-[1537px]:py-3
+                            "
+                        >
                             Reason
                         </th>
 
-                        <th className="w-[10%] px-5 py-3.5 font-semibold text-black">
+                        <th
+                            className="
+                                w-[10%]
+                                px-5
+                                py-3.5
+                                font-semibold
+                                text-black
+                                min-[1280px]:max-[1365px]:px-3
+                                min-[1280px]:max-[1365px]:py-2.5
+                                min-[1366px]:max-[1537px]:px-3
+                                min-[1366px]:max-[1537px]:py-3
+                            "
+                        >
                             Status
                         </th>
 
-                        <th className="w-[12%] px-5 py-3.5 font-semibold text-black">
+                        <th
+                            className="
+                                w-[12%]
+                                px-5
+                                py-3.5
+                                font-semibold
+                                text-black
+                                min-[1280px]:max-[1365px]:px-3
+                                min-[1280px]:max-[1365px]:py-2.5
+                                min-[1366px]:max-[1537px]:px-3
+                                min-[1366px]:max-[1537px]:py-3
+                            "
+                        >
                             Requested At
                         </th>
                     </tr>
@@ -56,9 +183,9 @@ export default function TicketReturnedTable({
                     {requests.length > 0 ? (
                         requests.map((request) => {
                             const requesterName =
-                                request.requested_by_first_name &&
-                                request.requested_by_last_name
-                                    ? `${request.requested_by_first_name} ${request.requested_by_last_name}`
+                                request.returned_by_first_name &&
+                                request.returned_by_first_name
+                                    ? `${request.returned_by_first_name} ${request.returned_by_last_name}`
                                     : "Unknown User";
 
                             return (
@@ -69,16 +196,40 @@ export default function TicketReturnedTable({
                                             `/returned-ticket/${request.id}`
                                         )
                                     }
-                                    className="cursor-pointer border-b border-gray-200 transition-colors hover:bg-gray-50 last:border-b-0"
+                                    className="
+                                        cursor-pointer
+                                        border-b
+                                        border-gray-200
+                                        transition-colors
+                                        hover:bg-gray-50
+                                        last:border-b-0
+                                    "
                                 >
-                                    <td className="px-4 py-4">
+                                    <td
+                                        className="
+                                            px-4
+                                            py-4
+                                            min-[1280px]:max-[1365px]:px-3
+                                            min-[1280px]:max-[1365px]:py-2.5
+                                            min-[1366px]:max-[1537px]:px-3
+                                            min-[1366px]:max-[1537px]:py-3
+                                        "
+                                    >
                                         <span className="whitespace-nowrap font-semibold text-black">
-                                            {request.ticket_code ||
-                                                "-"}
+                                            {request.ticket_code || "-"}
                                         </span>
                                     </td>
 
-                                    <td className="px-5 py-4">
+                                    <td
+                                        className="
+                                            px-5
+                                            py-4
+                                            min-[1280px]:max-[1365px]:px-3
+                                            min-[1280px]:max-[1365px]:py-2.5
+                                            min-[1366px]:max-[1537px]:px-3
+                                            min-[1366px]:max-[1537px]:py-3
+                                        "
+                                    >
                                         <p
                                             className="truncate font-medium text-black"
                                             title={request.subject}
@@ -87,7 +238,16 @@ export default function TicketReturnedTable({
                                         </p>
                                     </td>
 
-                                    <td className="px-5 py-4">
+                                    <td
+                                        className="
+                                            px-5
+                                            py-4
+                                            min-[1280px]:max-[1365px]:px-3
+                                            min-[1280px]:max-[1365px]:py-2.5
+                                            min-[1366px]:max-[1537px]:px-3
+                                            min-[1366px]:max-[1537px]:py-3
+                                        "
+                                    >
                                         <div className="min-w-0">
                                             <p
                                                 className="truncate font-medium text-black"
@@ -97,18 +257,34 @@ export default function TicketReturnedTable({
                                             </p>
 
                                             <p
-                                                className="mt-0.5 truncate text-xs text-gray-500"
+                                                className="
+                                                    mt-0.5
+                                                    truncate
+                                                    text-xs
+                                                    text-gray-500
+                                                    min-[1280px]:max-[1365px]:text-[10px]
+                                                    min-[1366px]:max-[1537px]:text-[11px]
+                                                "
                                                 title={
-                                                    request.requested_by_user_code
+                                                    request.returned_by_role
                                                 }
                                             >
-                                                {request.requested_by_user_code ||
+                                                {request.returned_by_role ||
                                                     "-"}
                                             </p>
                                         </div>
                                     </td>
 
-                                    <td className="px-5 py-4">
+                                    <td
+                                        className="
+                                            px-5
+                                            py-4
+                                            min-[1280px]:max-[1365px]:px-3
+                                            min-[1280px]:max-[1365px]:py-2.5
+                                            min-[1366px]:max-[1537px]:px-3
+                                            min-[1366px]:max-[1537px]:py-3
+                                        "
+                                    >
                                         <p
                                             className="truncate text-black"
                                             title={
@@ -121,7 +297,16 @@ export default function TicketReturnedTable({
                                         </p>
                                     </td>
 
-                                    <td className="px-5 py-4">
+                                    <td
+                                        className="
+                                            px-5
+                                            py-4
+                                            min-[1280px]:max-[1365px]:px-3
+                                            min-[1280px]:max-[1365px]:py-2.5
+                                            min-[1366px]:max-[1537px]:px-3
+                                            min-[1366px]:max-[1537px]:py-3
+                                        "
+                                    >
                                         <p
                                             className="truncate text-black"
                                             title={request.reason}
@@ -131,19 +316,51 @@ export default function TicketReturnedTable({
                                         </p>
                                     </td>
 
-                                    <td className="px-5 py-4">
+                                    <td
+                                        className="
+                                            px-5
+                                            py-4
+                                            min-[1280px]:max-[1365px]:px-3
+                                            min-[1280px]:max-[1365px]:py-2.5
+                                            min-[1366px]:max-[1537px]:px-3
+                                            min-[1366px]:max-[1537px]:py-3
+                                        "
+                                    >
                                         <span
-                                            className={`inline-flex whitespace-nowrap rounded-md border px-2.5 py-1 text-xs font-medium ${getStatusStyle(
-                                                request.status
-                                            )}`}
+                                            className={`
+                                                inline-flex
+                                                whitespace-nowrap
+                                                rounded-md
+                                                border
+                                                px-2.5
+                                                py-1
+                                                text-xs
+                                                font-medium
+                                                min-[1280px]:max-[1365px]:px-2
+                                                min-[1280px]:max-[1365px]:py-0.5
+                                                min-[1280px]:max-[1365px]:text-[10px]
+                                                min-[1366px]:max-[1537px]:px-2
+                                                min-[1366px]:max-[1537px]:py-0.5
+                                                min-[1366px]:max-[1537px]:text-[11px]
+                                                ${getStatusStyle(
+                                                    request.status
+                                                )}
+                                            `}
                                         >
-                                            {formatText(
-                                                request.status
-                                            )}
+                                            {formatText(request.status)}
                                         </span>
                                     </td>
 
-                                    <td className="px-5 py-4">
+                                    <td
+                                        className="
+                                            px-5
+                                            py-4
+                                            min-[1280px]:max-[1365px]:px-3
+                                            min-[1280px]:max-[1365px]:py-2.5
+                                            min-[1366px]:max-[1537px]:px-3
+                                            min-[1366px]:max-[1537px]:py-3
+                                        "
+                                    >
                                         <span className="whitespace-nowrap font-medium text-black">
                                             {request.requested_at
                                                 ? formatDate(
@@ -159,15 +376,31 @@ export default function TicketReturnedTable({
                         <tr>
                             <td
                                 colSpan="7"
-                                className="px-6 py-16 text-center"
+                                className="
+                                    px-6
+                                    py-16
+                                    text-center
+                                    min-[1280px]:max-[1365px]:px-4
+                                    min-[1280px]:max-[1365px]:py-12
+                                    min-[1366px]:max-[1537px]:px-5
+                                    min-[1366px]:max-[1537px]:py-14
+                                "
                             >
                                 <p className="font-medium text-black">
                                     No returned requests found
                                 </p>
 
-                                <p className="mt-1 text-sm text-gray-500">
-                                    There are currently no returned
-                                    ticket requests to review.
+                                <p
+                                    className="
+                                        mt-1
+                                        text-sm
+                                        text-gray-500
+                                        min-[1280px]:max-[1365px]:text-[11px]
+                                        min-[1366px]:max-[1537px]:text-xs
+                                    "
+                                >
+                                    There are currently no returned ticket
+                                    requests to review.
                                 </p>
                             </td>
                         </tr>

@@ -1,6 +1,7 @@
 import LowConfidenceReview from "./LowConfidenceReview";
 import MissingDepartmentReview from "./MissingDepartmentReview";
 import UnclearDescriptionReview from "./UnclearDescriptionReview";
+import PriorityAssessmentReview from "./PriorityAssessmentReview";
 // import OtherReview from "./OtherReview";
 
 export default function ReviewContent({ flag }) {
@@ -8,8 +9,8 @@ export default function ReviewContent({ flag }) {
         case "Low Confidence":
             return <LowConfidenceReview flag={flag} />;
 
-        case "Missing Department":
-            return <MissingDepartmentReview flag={flag} />;
+        case "Priority Assessment":
+            return <PriorityAssessmentReview flag={flag} />;
 
         case "Unclear Description":
             return <UnclearDescriptionReview flag={flag} />;

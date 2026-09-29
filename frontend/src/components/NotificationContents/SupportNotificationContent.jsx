@@ -259,7 +259,18 @@ export default function SupportNotificationContent() {
             {!loading &&
                 !error &&
                 filteredNotifications.length > 0 && (
-                    <div className="h-[637px] overflow-y-auto overflow-x-hidden">
+                    <div
+                        className="
+                            h-[637px]
+                            overflow-y-auto
+                            overflow-x-hidden
+                            [&::-webkit-scrollbar]:w-0.5
+                            [&::-webkit-scrollbar-track]:bg-transparent
+                            [&::-webkit-scrollbar-thumb]:bg-transparent
+                            hover:[&::-webkit-scrollbar-thumb]:bg-gray-300
+                            [&::-webkit-scrollbar-thumb]:rounded-full
+                        "
+                    >
                         {filteredNotifications.map(
                             (notification) => {
                                 const isUnread =

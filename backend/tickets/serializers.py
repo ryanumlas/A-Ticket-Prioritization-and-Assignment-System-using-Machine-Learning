@@ -1,6 +1,7 @@
 from rest_framework import serializers
-from .models import Ticket, Category, SymptomCode, TicketComments, SLARules, ReviewFlags, TicketAssistance, Keyword, TicketStatusHistory, TicketReturn, TicketPriorityRequest, TicketEscalation
+from .models import Ticket, Category, SymptomCode, TicketComments, TicketCommentRead, SLARules, ReviewFlags, TicketAssistance, Keyword, TicketStatusHistory, TicketReturn, TicketPriorityRequest, TicketEscalation
 from users.models import  ITSupportProfile
+from django.db.models import Q
 from ai.models import TicketAnalysis, TicketAIAnalysis
 from departments.models import ITDepartment
 from tickets.services import (
@@ -25,6 +26,7 @@ class TicketSerializer(serializers.ModelSerializer):
     resolution_time_remaining = serializers.SerializerMethodField()
     response_time_remaining = serializers.SerializerMethodField()
 
+    unread_comment_count = serializers.SerializerMethodField()
     symptom_code = serializers.CharField(
         source="symptom_code.code",
         read_only=True,
@@ -58,6 +60,7 @@ class TicketSerializer(serializers.ModelSerializer):
             "it_department_name",
             "employee_department",
             "subject",
+            "unread_comment_count",
             "description",
             "business_impact",
             "affected_scope",
@@ -65,6 +68,7 @@ class TicketSerializer(serializers.ModelSerializer):
             "symptom_code",
             "status",
             "priority",
+            "resolution_sla_status",
             "is_under_review",
             "response_deadline",
             "response_time_remaining",
@@ -85,6 +89,53 @@ class TicketSerializer(serializers.ModelSerializer):
             "created_at",
             "updated_at",
         ]
+    def get_unread_comment_count(self, obj):
+        request = self.context.get("request")
+
+        if not request or not request.user.is_authenticated:
+            return 0
+
+        user = request.user
+
+        comments = obj.comments.all()
+
+        # Employees can only see public replies.
+        if user.role and user.role.name == "Employee":
+            comments = comments.filter(
+                comment_type=TicketComments.CommentType.PUBLIC_REPLY
+            )
+
+        # Other users cannot see system logs.
+        else:
+            comments = comments.exclude(
+                comment_type=TicketComments.CommentType.SYSTEM_LOG
+            )
+
+        # Do not count the user's own messages as unread.
+        comments = comments.exclude(
+            commented_by=user
+        )
+
+        try:
+            read_state = TicketCommentRead.objects.get(
+                ticket=obj,
+                user=user,
+            )
+        except TicketCommentRead.DoesNotExist:
+            read_state = None
+
+        if not read_state or not read_state.last_read_comment:
+            return comments.count()
+
+        last_read_comment = read_state.last_read_comment
+
+        return comments.filter(
+            Q(created_at__gt=last_read_comment.created_at)
+            | Q(
+                created_at=last_read_comment.created_at,
+                id__gt=last_read_comment.id,
+            )
+        ).count()
 
     def get_submitted_by_name(self, obj):
         if not obj.submitted_by:
@@ -123,10 +174,13 @@ class TicketSerializer(serializers.ModelSerializer):
         if not obj.assigned_to:
             return None
 
-        return (
-            f"{obj.assigned_to.first_name} "
-            f"{obj.assigned_to.last_name}"
-        ).strip()
+        user = obj.assigned_to
+
+        return {
+            "id": user.id,
+            "name": f"{user.first_name} {user.last_name}".strip(),
+            "role": user.role.name if user.role else None,
+        }
 
     def get_response_time_remaining(self, obj):
         if obj.response_at:
@@ -142,7 +196,7 @@ class TicketSerializer(serializers.ModelSerializer):
         remaining = obj.response_deadline - timezone.now()
 
         if remaining.total_seconds() <= 0:
-            return "OVERDUE"
+            return "BREACHED"
 
         total_seconds = int(
             remaining.total_seconds()
@@ -190,7 +244,7 @@ class TicketSerializer(serializers.ModelSerializer):
         )
 
         if remaining.total_seconds() <= 0:
-            return "OVERDUE"
+            return "BREACHED"
 
         total_seconds = int(
             remaining.total_seconds()
@@ -229,7 +283,7 @@ class TicketSerializer(serializers.ModelSerializer):
         remaining = deadline - timezone.now()
 
         if remaining.total_seconds() <= 0:
-            return "Overdue"
+            return "Breached"
 
         total_seconds = int(
             remaining.total_seconds()
@@ -472,6 +526,7 @@ class TicketDetailEmployeeSerializer(serializers.ModelSerializer):
             "resolution_deadline",
             "office_location",
             "workstation",
+            "resolution_sla_status",
             "employee_department",
             "first_name",
             "last_name",
@@ -557,7 +612,7 @@ class TicketDetailSupportSerializer(serializers.ModelSerializer):
     )
     automation = serializers.SerializerMethodField()
     escalation = serializers.SerializerMethodField()
-
+    resolution_remarks = serializers.SerializerMethodField()
     class Meta:
         model = Ticket
         fields = [
@@ -577,6 +632,8 @@ class TicketDetailSupportSerializer(serializers.ModelSerializer):
             "resolution_deadline",
             "office_location",
             "workstation",
+            "resolution_sla_status",
+            "response_sla_status",
             "employee_department",
             "first_name",
             "last_name",
@@ -592,6 +649,7 @@ class TicketDetailSupportSerializer(serializers.ModelSerializer):
             "it_department",
             "automation",
             "escalation",
+            "resolution_remarks",
         ]
 
     def get_assigned_to(self, obj):
@@ -608,6 +666,18 @@ class TicketDetailSupportSerializer(serializers.ModelSerializer):
             ).strip(),
         }
 
+    def get_resolution_remarks(self, obj):
+        history = (
+            obj.status_history
+            .filter(
+                event_type=TicketStatusHistory.EventType.STATUS_CHANGED,
+                new_value=Ticket.TicketStatus.RESOLVED,
+            )
+            .order_by("-created_at")
+            .first()
+        )
+
+        return history.remarks if history else None
     def get_escalation(self, obj):
         escalation = (
             obj.escalations
@@ -1414,11 +1484,12 @@ class PriorityRequestListSerializer(serializers.ModelSerializer):
     requested_priority = serializers.CharField(source="requested_priority.priority_level", read_only=True)
     requested_by_first_name = serializers.CharField(source="requested_by.first_name", read_only=True)
     requested_by_last_name = serializers.CharField(source="requested_by.last_name", read_only=True)
+    requested_by_role = serializers.CharField(source="requested_by.role", read_only=True)
     it_department = serializers.CharField(source="requested_by.it_support_profile.it_department.name", read_only=True)
 
     class Meta:
         model = TicketPriorityRequest
-        fields = ["id", "ticket_id", "ticket_code", "subject", "current_priority", "requested_priority", "it_department", "requested_by_first_name", "requested_by_last_name", "reason", "status", "requested_at"]
+        fields = ["id", "ticket_id", "ticket_code", "subject", "current_priority", "requested_by_role", "requested_priority", "it_department", "requested_by_first_name", "requested_by_last_name", "reason", "status", "requested_at"]
 
 class PriorityRequestDetailSerializer(serializers.ModelSerializer):
     ticket_id = serializers.IntegerField(source="ticket.id", read_only=True)
@@ -1534,6 +1605,7 @@ class ReturnedTicketRequestListSerializer(serializers.ModelSerializer):
         read_only=True,
     )
 
+    returned_by_role = serializers.CharField(source="returned_by.role", read_only=True)
     it_department = serializers.CharField(
         source="returned_by.it_support_profile.it_department.name",
         read_only=True,
@@ -1555,6 +1627,7 @@ class ReturnedTicketRequestListSerializer(serializers.ModelSerializer):
             "returned_by_user_code",
             "returned_by_first_name",
             "returned_by_last_name",
+            "returned_by_role",
             "it_department",
             "office_location",
             "reason",
@@ -1899,6 +1972,7 @@ class SupervisorEscalatedTicketSerializer(serializers.ModelSerializer):
 
     response_time_remaining = serializers.SerializerMethodField()
     resolution_time_remaining = serializers.SerializerMethodField()
+    unread_comment_count = serializers.SerializerMethodField()
 
     class Meta:
         model = Ticket
@@ -1919,6 +1993,7 @@ class SupervisorEscalatedTicketSerializer(serializers.ModelSerializer):
             "resolution_time_remaining",
             "escalated_at",
             "updated_at",
+            "unread_comment_count",
         ]
 
     def get_submitted_by_name(self, obj):
@@ -2044,6 +2119,34 @@ class SupervisorEscalatedTicketSerializer(serializers.ModelSerializer):
             return f"{minutes}m {seconds}s"
 
         return f"{seconds}s"
+
+    def get_unread_comment_count(self, obj):
+        request = self.context.get("request")
+
+        if not request or not request.user.is_authenticated:
+            return 0
+
+        read_record = (
+            TicketCommentRead.objects
+            .filter(
+                ticket=obj,
+                user=request.user,
+            )
+            .first()
+        )
+
+        comments = TicketComments.objects.filter(
+            ticket=obj
+        )
+
+        if read_record and read_record.last_read_comment:
+            comments = comments.filter(
+                created_at__gt=read_record.last_read_comment.created_at
+            )
+
+        return comments.exclude(
+            commented_by=request.user
+        ).count()
 # class TicketSLASerializer(serializers.ModelSerializer):
 #     class Meta:
 #         model = TicketSLA

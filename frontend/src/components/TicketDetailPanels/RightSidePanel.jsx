@@ -50,6 +50,7 @@ export default function RightSidePanel({ ticketDetails, onTicketUpdated }) {
     const [pendingStatus, setPendingStatus] = useState(null);
     const [showConfirm, setShowConfirm] = useState(false);
     const [remarks, setRemarks] = useState("");
+    const [remarksError, setRemarksError] = useState("");
     const [isUpdating, setIsUpdating] = useState(false);
     const [isLoadingHistory, setIsLoadingHistory] = useState(false);
     const [isAcknowledging, setIsAcknowledging] = useState(false);
@@ -61,14 +62,10 @@ export default function RightSidePanel({ ticketDetails, onTicketUpdated }) {
         "cancelled",
     ];
 
-    const showRemarks = statusesWithRemarks.includes(
-        pendingStatus
-    );
+    const showRemarks = statusesWithRemarks.includes(pendingStatus);
 
     useEffect(() => {
-        setStatus(
-            normalizeStatus(ticketDetails?.status)
-        );
+        setStatus(normalizeStatus(ticketDetails?.status));
     }, [ticketDetails?.status]);
 
     useEffect(() => {
@@ -108,9 +105,7 @@ export default function RightSidePanel({ ticketDetails, onTicketUpdated }) {
     };
 
     const latestHistoryId =
-        history.length > 0
-            ? history[0].id
-            : null;
+        history.length > 0 ? history[0].id : null;
 
     const acknowledgementHistory = history.find(
         item => item.event_type === "ACKNOWLEDGED"
@@ -130,31 +125,43 @@ export default function RightSidePanel({ ticketDetails, onTicketUpdated }) {
         Boolean(completionHistory);
 
     const handleStatusChange = newStatus => {
-        if (
-            !canEditStatus ||
-            newStatus === status
-        ) {
+        if (!canEditStatus || newStatus === status) {
             return;
         }
 
         setPendingStatus(newStatus);
         setRemarks("");
+        setRemarksError("");
         setShowConfirm(true);
     };
 
     const cancelStatusChange = () => {
         setPendingStatus(null);
         setRemarks("");
+        setRemarksError("");
         setShowConfirm(false);
     };
 
     const confirmStatusChange = async () => {
-        if (
-            !canEditStatus ||
-            !pendingStatus
-        ) {
+        if (!canEditStatus || !pendingStatus) {
             return;
         }
+
+        const trimmedRemarks = remarks.trim();
+
+        if (showRemarks && !trimmedRemarks) {
+            setRemarksError("Remarks are required.");
+            return;
+        }
+
+        if (showRemarks && trimmedRemarks.length < 50) {
+            setRemarksError(
+                "Remarks must be at least 50 characters."
+            );
+            return;
+        }
+
+        setRemarksError("");
 
         const newStatus = pendingStatus;
 
@@ -165,9 +172,7 @@ export default function RightSidePanel({ ticketDetails, onTicketUpdated }) {
                 `/tickets/update-status/${ticketDetails.id}/`,
                 {
                     status: newStatus,
-                    remarks: showRemarks
-                        ? remarks.trim()
-                        : "",
+                    remarks: showRemarks ? trimmedRemarks : "",
                 }
             );
 
@@ -175,14 +180,13 @@ export default function RightSidePanel({ ticketDetails, onTicketUpdated }) {
             setShowConfirm(false);
             setPendingStatus(null);
             setRemarks("");
+            setRemarksError("");
 
             await onTicketUpdated?.();
             await fetchHistory();
         } catch {
             setStatus(
-                normalizeStatus(
-                    ticketDetails?.status
-                )
+                normalizeStatus(ticketDetails?.status)
             );
         } finally {
             setIsUpdating(false);
@@ -218,10 +222,7 @@ export default function RightSidePanel({ ticketDetails, onTicketUpdated }) {
     };
 
     const handleOpenCompleteEscalation = () => {
-        if (
-            !isAcknowledged ||
-            isCompleted
-        ) {
+        if (!isAcknowledged || isCompleted) {
             return;
         }
 
@@ -275,42 +276,28 @@ export default function RightSidePanel({ ticketDetails, onTicketUpdated }) {
             return AlertTriangle;
         }
 
-        if (
-            item.event_type === "PRIORITY_CHANGED"
-        ) {
+        if (item.event_type === "PRIORITY_CHANGED") {
             return AlertTriangle;
         }
 
-        if (
-            item.event_type === "PRIORITY_REJECTED"
-        ) {
+        if (item.event_type === "PRIORITY_REJECTED") {
             return XCircle;
         }
 
-        if (
-            item.event_type === "ESCALATED"
-        ) {
+        if (item.event_type === "ESCALATED") {
             return AlertTriangle;
         }
 
-        if (
-            item.event_type === "ACKNOWLEDGED"
-        ) {
+        if (item.event_type === "ACKNOWLEDGED") {
             return CheckCheck;
         }
 
-        if (
-            item.event_type === "ESCALATION_COMPLETED"
-        ) {
+        if (item.event_type === "ESCALATION_COMPLETED") {
             return CircleCheck;
         }
 
-        if (
-            item.event_type === "STATUS_CHANGED"
-        ) {
-            const newStatus = normalizeStatus(
-                item.new_value
-            );
+        if (item.event_type === "STATUS_CHANGED") {
+            const newStatus = normalizeStatus(item.new_value);
 
             switch (newStatus) {
                 case "open":
@@ -342,45 +329,31 @@ export default function RightSidePanel({ ticketDetails, onTicketUpdated }) {
             return item.title;
         }
 
-        if (
-            item.event_type === "CREATED"
-        ) {
+        if (item.event_type === "CREATED") {
             return "Ticket Submitted";
         }
 
-        if (
-            item.event_type === "ASSIGNED"
-        ) {
+        if (item.event_type === "ASSIGNED") {
             return "Assigned";
         }
 
-        if (
-            item.event_type === "REASSIGNED"
-        ) {
+        if (item.event_type === "REASSIGNED") {
             return "Reassigned";
         }
 
-        if (
-            item.event_type === "RETURNED"
-        ) {
+        if (item.event_type === "RETURNED") {
             return "Returned to Service Desk";
         }
 
-        if (
-            item.event_type === "RETURN_APPROVED"
-        ) {
+        if (item.event_type === "RETURN_APPROVED") {
             return "Return Approved";
         }
 
-        if (
-            item.event_type === "RETURN_REJECTED"
-        ) {
+        if (item.event_type === "RETURN_REJECTED") {
             return "Return Rejected";
         }
 
-        if (
-            item.event_type === "REVIEW_COMPLETED"
-        ) {
+        if (item.event_type === "REVIEW_COMPLETED") {
             return "Review Completed";
         }
 
@@ -391,47 +364,31 @@ export default function RightSidePanel({ ticketDetails, onTicketUpdated }) {
             return "Priority Review Requested";
         }
 
-        if (
-            item.event_type === "PRIORITY_CHANGED"
-        ) {
+        if (item.event_type === "PRIORITY_CHANGED") {
             return "Priority Changed";
         }
 
-        if (
-            item.event_type === "PRIORITY_REJECTED"
-        ) {
+        if (item.event_type === "PRIORITY_REJECTED") {
             return "Priority Request Rejected";
         }
 
-        if (
-            item.event_type === "ESCALATED"
-        ) {
+        if (item.event_type === "ESCALATED") {
             return "Escalated";
         }
 
-        if (
-            item.event_type === "ACKNOWLEDGED"
-        ) {
+        if (item.event_type === "ACKNOWLEDGED") {
             return "Escalation Acknowledged";
         }
 
-        if (
-            item.event_type === "ESCALATION_COMPLETED"
-        ) {
+        if (item.event_type === "ESCALATION_COMPLETED") {
             return "Escalation Completed";
         }
 
-        if (
-            item.event_type === "STATUS_CHANGED"
-        ) {
-            return formatStatus(
-                item.new_value
-            );
+        if (item.event_type === "STATUS_CHANGED") {
+            return formatStatus(item.new_value);
         }
 
-        return formatStatus(
-            item.event_type
-        );
+        return formatStatus(item.event_type);
     };
 
     const getModalTitle = () => {
@@ -475,33 +432,36 @@ export default function RightSidePanel({ ticketDetails, onTicketUpdated }) {
 
     return (
         <>
-            <div className="flex h-full w-[350px] shrink-0 flex-col border-l border-gray-300 bg-white">
-                <div className="shrink-0 border-b border-gray-200 px-6 py-4">
-                    <div className="flex items-center gap-2">
+            <div className="box-border flex h-full w-[350px] min-w-[350px] max-w-[350px] shrink-0 basis-[350px] flex-col overflow-hidden border-gray-300 bg-white min-[1280px]:max-[1535px]:w-[280px] min-[1280px]:max-[1535px]:min-w-[280px] min-[1280px]:max-[1535px]:max-w-[280px] min-[1280px]:max-[1535px]:basis-[280px]">
+
+                {/* Header */}
+                <div className="box-border h-auto shrink-0 border-b border-gray-200 px-4 py-4 2xl:px-6 min-[1280px]:max-[1535px]:h-[70px] min-[1280px]:max-[1535px]:px-4 min-[1280px]:max-[1535px]:py-3 min-[1536px]:max-[1599px]:h-[88px] min-[1600px]:max-[1920px]:h-[88px]">
+                    <div className="flex min-w-0 items-center gap-2">
                         <History
                             size={20}
-                            className="text-[#2563EB]"
+                            className="shrink-0 text-[#2563EB] min-[1280px]:max-[1535px]:size-[18px]"
                         />
 
-                        <p className="font-semibold text-black">
+                        <p className="truncate font-semibold text-black min-[1280px]:max-[1535px]:text-[13px]">
                             Status History
                         </p>
                     </div>
 
-                    <p className="mt-1 text-xs text-gray-500">
+                    <p className="mt-1 text-xs leading-5 text-gray-500 min-[1280px]:max-[1535px]:text-[11px] min-[1280px]:max-[1535px]:leading-4">
                         {canEditStatus
                             ? "Track and manage the progress of this ticket."
                             : "Track the progress of this ticket."}
                     </p>
                 </div>
 
-                <div className="shrink-0 border-b border-gray-200 p-5">
-                    <p className="text-xs font-medium uppercase text-gray-500">
+                {/* Current Status */}
+                <div className="shrink-0 border-b border-gray-200 px-4 py-4 2xl:p-5 min-[1280px]:max-[1535px]:px-4 min-[1280px]:max-[1535px]:py-3">
+                    <p className="text-xs font-medium uppercase text-gray-500 min-[1280px]:max-[1535px]:text-[10px]">
                         Current Status
                     </p>
 
                     {canEditStatus ? (
-                        <div className="relative mt-2">
+                        <div className="relative mt-2 min-[1280px]:max-[1535px]:mt-1.5">
                             <select
                                 value={status}
                                 disabled={isUpdating}
@@ -510,7 +470,7 @@ export default function RightSidePanel({ ticketDetails, onTicketUpdated }) {
                                         e.target.value
                                     )
                                 }
-                                className="w-full appearance-none rounded-lg border border-gray-300 bg-white px-3 py-2.5 pr-10 text-sm font-medium text-black outline-none transition-colors focus:border-[#2563EB] focus:ring-2 focus:ring-[#2563EB]/10 disabled:cursor-not-allowed disabled:bg-gray-100 disabled:text-gray-400"
+                                className="w-full appearance-none rounded-lg border border-gray-300 bg-white px-3 py-2.5 pr-10 text-sm font-medium text-black outline-none transition-colors focus:border-[#2563EB] focus:ring-2 focus:ring-[#2563EB]/10 disabled:cursor-not-allowed disabled:bg-gray-100 disabled:text-gray-400 min-[1280px]:max-[1535px]:px-2.5 min-[1280px]:max-[1535px]:py-2 min-[1280px]:max-[1535px]:pr-8 min-[1280px]:max-[1535px]:text-[12px]"
                             >
                                 <option value="open">
                                     Open
@@ -539,13 +499,13 @@ export default function RightSidePanel({ ticketDetails, onTicketUpdated }) {
 
                             <ChevronDown
                                 size={16}
-                                className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-gray-400"
+                                className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 min-[1280px]:max-[1535px]:right-2.5 min-[1280px]:max-[1535px]:size-[14px]"
                             />
                         </div>
                     ) : (
-                        <div className="mt-2">
-                            <div className="flex w-full items-center rounded-lg border border-gray-300 bg-gray-50 px-3 py-2.5">
-                                <span className="text-sm font-medium text-black">
+                        <div className="mt-2 min-[1280px]:max-[1535px]:mt-1.5">
+                            <div className="flex w-full items-center rounded-lg border border-gray-300 bg-gray-50 px-3 py-2.5 min-[1280px]:max-[1535px]:px-2.5 min-[1280px]:max-[1535px]:py-2">
+                                <span className="text-sm font-medium text-black min-[1280px]:max-[1535px]:text-[12px]">
                                     {formatStatus(
                                         ticketDetails?.status
                                     ) || "-"}
@@ -554,29 +514,37 @@ export default function RightSidePanel({ ticketDetails, onTicketUpdated }) {
                         </div>
                     )}
 
-                    <p className="mt-2 text-xs text-gray-500">
+                    <p className="mt-2 text-xs text-gray-500 min-[1280px]:max-[1535px]:mt-1.5 min-[1280px]:max-[1535px]:text-[10px]">
                         {history.length > 0
                             ? `Last updated ${formatDate(history[0].created_at)}`
                             : "No status history yet."}
                     </p>
                 </div>
 
+                {/* Escalation / History Tabs */}
                 {isEscalated && (
-                    <div className="shrink-0 border-b border-gray-200 px-5 py-3">
+                    <div className="shrink-0 border-b border-gray-200 px-4 py-3 2xl:px-5 min-[1280px]:max-[1535px]:px-4 min-[1280px]:max-[1535px]:py-2.5">
                         <div className="flex items-center gap-1 rounded-lg bg-gray-100 p-1">
+
                             <button
                                 type="button"
                                 onClick={() =>
                                     setActiveTab("escalation")
                                 }
-                                className={`flex flex-1 items-center justify-center gap-2 rounded-md px-3 py-2 text-xs font-medium transition ${
+                                className={`flex min-w-0 flex-1 items-center justify-center gap-1.5 rounded-md px-2 py-2 text-xs font-medium transition 2xl:gap-2 2xl:px-3 min-[1280px]:max-[1535px]:gap-1 min-[1280px]:max-[1535px]:px-1.5 min-[1280px]:max-[1535px]:py-1.5 min-[1280px]:max-[1535px]:text-[10px] ${
                                     activeTab === "escalation"
                                         ? "bg-[#4C4CF9] text-white shadow-sm"
                                         : "text-gray-500 hover:bg-white hover:text-black"
                                 }`}
                             >
-                                <AlertTriangle size={14} />
-                                Escalation
+                                <AlertTriangle
+                                    size={14}
+                                    className="shrink-0 min-[1280px]:max-[1535px]:size-[12px]"
+                                />
+
+                                <span className="truncate">
+                                    Escalation
+                                </span>
                             </button>
 
                             <button
@@ -584,32 +552,41 @@ export default function RightSidePanel({ ticketDetails, onTicketUpdated }) {
                                 onClick={() =>
                                     setActiveTab("history")
                                 }
-                                className={`flex flex-1 items-center justify-center gap-2 rounded-md px-3 py-2 text-xs font-medium transition ${
+                                className={`flex min-w-0 flex-1 items-center justify-center gap-1.5 rounded-md px-2 py-2 text-xs font-medium transition 2xl:gap-2 2xl:px-3 min-[1280px]:max-[1535px]:gap-1 min-[1280px]:max-[1535px]:px-1.5 min-[1280px]:max-[1535px]:py-1.5 min-[1280px]:max-[1535px]:text-[10px] ${
                                     activeTab === "history"
                                         ? "bg-[#4C4CF9] text-white shadow-sm"
                                         : "text-gray-500 hover:bg-white hover:text-black"
                                 }`}
                             >
-                                <History size={14} />
-                                History
+                                <History
+                                    size={14}
+                                    className="shrink-0 min-[1280px]:max-[1535px]:size-[12px]"
+                                />
+
+                                <span className="truncate">
+                                    History
+                                </span>
                             </button>
+
                         </div>
                     </div>
                 )}
 
+                {/* History */}
                 {activeTab === "history" && (
-                    <div className="min-h-0 flex-1 overflow-y-auto p-5 [&::-webkit-scrollbar]:w-1 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-transparent hover:[&::-webkit-scrollbar-thumb]:bg-gray-300">
+                    <div className="min-h-0 min-w-0 flex-1 overflow-y-auto px-4 py-5 2xl:p-5 min-[1280px]:max-[1535px]:px-4 min-[1280px]:max-[1535px]:py-4 [&::-webkit-scrollbar]:w-1 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-transparent hover:[&::-webkit-scrollbar-thumb]:bg-gray-300">
+
                         {isLoadingHistory ? (
-                            <p className="text-sm text-gray-500">
+                            <p className="text-sm text-gray-500 min-[1280px]:max-[1535px]:text-[12px]">
                                 Loading ticket history...
                             </p>
                         ) : history.length === 0 ? (
-                            <p className="text-sm text-gray-500">
+                            <p className="text-sm text-gray-500 min-[1280px]:max-[1535px]:text-[12px]">
                                 No ticket history available.
                             </p>
                         ) : (
-                            <div className="relative">
-                                <div className="absolute bottom-5 left-[15px] top-5 w-px bg-gray-200" />
+                            <div className="relative min-w-0">
+                                <div className="absolute bottom-4 left-[15px] top-4 w-px bg-gray-200 min-[1280px]:max-[1535px]:left-[13px]" />
 
                                 {history.map(item => {
                                     const Icon =
@@ -617,6 +594,12 @@ export default function RightSidePanel({ ticketDetails, onTicketUpdated }) {
 
                                     const colorClass =
                                         getHistoryColor(item);
+
+                                    const hideRemarks =
+                                        item.event_type ===
+                                            "ESCALATED" ||
+                                        item.event_type ===
+                                            "ESCALATION_COMPLETED";
 
                                     return (
                                         <TimelineItem
@@ -627,7 +610,11 @@ export default function RightSidePanel({ ticketDetails, onTicketUpdated }) {
                                                 item.message ||
                                                 "Ticket was updated."
                                             }
-                                            remarks={item.remarks}
+                                            remarks={
+                                                hideRemarks
+                                                    ? null
+                                                    : item.remarks
+                                            }
                                             date={formatDate(
                                                 item.created_at
                                             )}
@@ -644,6 +631,7 @@ export default function RightSidePanel({ ticketDetails, onTicketUpdated }) {
                     </div>
                 )}
 
+                {/* Escalation */}
                 {isEscalated &&
                     activeTab === "escalation" && (
                         <EscalationContent
@@ -682,62 +670,82 @@ export default function RightSidePanel({ ticketDetails, onTicketUpdated }) {
             <CompleteEscalationModal
                 open={showCompleteEscalation}
                 ticketId={ticketDetails?.id}
-                onClose={
-                    handleCloseCompleteEscalation
-                }
-                onSuccess={
-                    handleEscalationCompleted
-                }
+                onClose={handleCloseCompleteEscalation}
+                onSuccess={handleEscalationCompleted}
             />
 
+            {/* Status Confirmation Modal */}
             {canEditStatus && showConfirm && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 px-4">
-                    <div className="w-full max-w-[430px] rounded-xl bg-white p-5 shadow-xl">
-                        <p className="text-base font-semibold text-black">
+                    <div className="w-full max-w-[430px] rounded-xl bg-white p-5 shadow-xl min-[1280px]:max-[1535px]:max-w-[400px] min-[1280px]:max-[1535px]:p-4">
+
+                        <p className="text-base font-semibold text-black min-[1280px]:max-[1535px]:text-sm">
                             {getModalTitle()}
                         </p>
 
-                        <p className="mt-2 text-sm leading-6 text-gray-500">
+                        <p className="mt-2 text-sm leading-6 text-gray-500 min-[1280px]:max-[1535px]:text-[13px] min-[1280px]:max-[1535px]:leading-5">
                             Are you sure you want to change the ticket status from{" "}
                             <span className="font-semibold text-black">
                                 {formatStatus(status)}
                             </span>{" "}
                             to{" "}
                             <span className="font-semibold text-black">
-                                {formatStatus(
-                                    pendingStatus
-                                )}
+                                {formatStatus(pendingStatus)}
                             </span>
                             ?
                         </p>
 
                         {showRemarks && (
-                            <div className="mt-4">
-                                <label className="mb-1.5 block text-sm font-medium">
+                            <div className="mt-4 min-[1280px]:max-[1535px]:mt-3">
+                                <label className="mb-1.5 block text-sm font-medium min-[1280px]:max-[1535px]:text-[13px]">
                                     {getRemarksLabel()}
 
-                                    <span className="ml-1 font-normal text-gray-400">
-                                        (Optional)
+                                    <span className="ml-1 font-normal text-red-500">
+                                        *
                                     </span>
                                 </label>
 
                                 <textarea
                                     value={remarks}
-                                    onChange={e =>
-                                        setRemarks(
-                                            e.target.value
-                                        )
-                                    }
+                                    onChange={e => {
+                                        const value =
+                                            e.target.value;
+
+                                        setRemarks(value);
+
+                                        if (
+                                            remarksError &&
+                                            value.trim().length >=
+                                                50
+                                        ) {
+                                            setRemarksError("");
+                                        }
+                                    }}
                                     disabled={isUpdating}
-                                    rows={4}
+                                    required
+                                    minLength={50}
                                     maxLength={1000}
+                                    rows={4}
                                     placeholder={getRemarksPlaceholder()}
-                                    className="w-full resize-none rounded-lg border border-gray-300 px-3 py-2.5 text-sm text-black outline-none transition-colors placeholder:text-gray-400 focus:border-[#2563EB] focus:ring-2 focus:ring-[#2563EB]/10 disabled:bg-gray-100"
+                                    aria-invalid={Boolean(
+                                        remarksError
+                                    )}
+                                    className={`w-full resize-none rounded-lg border px-3 py-2.5 text-sm text-black outline-none transition-colors placeholder:text-gray-400 focus:ring-2 min-[1280px]:max-[1535px]:px-2.5 min-[1280px]:max-[1535px]:py-2 min-[1280px]:max-[1535px]:text-[13px] ${
+                                        remarksError
+                                            ? "border-red-400 focus:border-red-500 focus:ring-red-500/10"
+                                            : "border-gray-300 focus:border-[#2563EB] focus:ring-[#2563EB]/10"
+                                    } disabled:bg-gray-100`}
                                 />
 
-                                <div className="mt-1 flex justify-between text-xs text-gray-400">
+                                {remarksError && (
+                                    <p className="mt-1.5 text-xs font-medium text-red-500 min-[1280px]:max-[1535px]:text-[11px]">
+                                        {remarksError}
+                                    </p>
+                                )}
+
+                                <div className="mt-1 flex justify-between text-xs text-gray-400 min-[1280px]:max-[1535px]:text-[11px]">
                                     <span>
-                                        Add additional context if needed.
+                                        Minimum 50 characters required.
                                     </span>
 
                                     <span>
@@ -747,14 +755,12 @@ export default function RightSidePanel({ ticketDetails, onTicketUpdated }) {
                             </div>
                         )}
 
-                        <div className="mt-5 flex justify-end gap-2">
+                        <div className="mt-5 flex justify-end gap-2 min-[1280px]:max-[1535px]:mt-4">
                             <button
                                 type="button"
                                 disabled={isUpdating}
-                                onClick={
-                                    cancelStatusChange
-                                }
-                                className="rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
+                                onClick={cancelStatusChange}
+                                className="rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50 min-[1280px]:max-[1535px]:px-3 min-[1280px]:max-[1535px]:py-1.5 min-[1280px]:max-[1535px]:text-[13px]"
                             >
                                 Cancel
                             </button>
@@ -762,10 +768,8 @@ export default function RightSidePanel({ ticketDetails, onTicketUpdated }) {
                             <button
                                 type="button"
                                 disabled={isUpdating}
-                                onClick={
-                                    confirmStatusChange
-                                }
-                                className="rounded-lg bg-[#4C4CF9] px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-[#1D4ED8] disabled:cursor-not-allowed disabled:opacity-50"
+                                onClick={confirmStatusChange}
+                                className="rounded-lg bg-[#4C4CF9] px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-[#1D4ED8] disabled:cursor-not-allowed disabled:opacity-50 min-[1280px]:max-[1535px]:px-3 min-[1280px]:max-[1535px]:py-1.5 min-[1280px]:max-[1535px]:text-[13px]"
                             >
                                 {isUpdating
                                     ? "Updating..."
@@ -831,64 +835,70 @@ function EscalationContent({
         null;
 
     return (
-        <div className="min-h-0 flex-1 overflow-y-auto px-5 py-5 [&::-webkit-scrollbar]:w-1 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-transparent hover:[&::-webkit-scrollbar-thumb]:bg-gray-300">
-            <div className="space-y-4">
+        <div className="min-h-0 min-w-0 flex-1 overflow-y-auto px-4 py-5 2xl:px-5 min-[1280px]:max-[1535px]:px-4 min-[1280px]:max-[1535px]:py-4 
+        [&::-webkit-scrollbar]:w-1 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-transparent 
+        hover:[&::-webkit-scrollbar-thumb]:bg-gray-300">
 
-                {/* Escalation Summary */}
-                <div className="rounded-lg border border-orange-200 bg-orange-50 p-4">
-                    <div className="flex items-center gap-2">
-                        <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-orange-100">
+            <div className="space-y-4 min-[1280px]:max-[1535px]:space-y-3">
+
+                {/* Escalated Ticket Notice */}
+                <div className="rounded-lg border border-orange-200 bg-orange-50 p-3.5 2xl:p-4 min-[1280px]:max-[1535px]:p-3">
+                    <div className="flex min-w-0 items-center gap-2">
+                        <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-orange-100 min-[1280px]:max-[1535px]:h-6 min-[1280px]:max-[1535px]:w-6">
                             <AlertTriangle
                                 size={14}
                                 strokeWidth={2}
-                                className="text-orange-600"
+                                className="text-orange-600 min-[1280px]:max-[1535px]:size-[13px]"
                             />
                         </div>
 
-                        <p className="text-sm font-semibold text-orange-800">
+                        <p className="min-w-0 text-sm font-semibold text-orange-800 min-[1280px]:max-[1535px]:text-[12px]">
                             Escalated Ticket
                         </p>
                     </div>
 
-                    <p className="mt-2 text-xs leading-5 text-orange-700">
+                    <p className="mt-2 text-xs leading-5 text-orange-700 min-[1280px]:max-[1535px]:mt-1.5 min-[1280px]:max-[1535px]:text-[10px] min-[1280px]:max-[1535px]:leading-4">
                         This ticket has been escalated for Supervisor review and additional technical assistance.
                     </p>
                 </div>
 
                 {/* Escalation Information */}
-                <div className="rounded-lg border border-gray-200 bg-white">
-                    <div className="border-b border-gray-100 px-4 py-3">
-                        <p className="text-xs font-semibold uppercase tracking-wide text-gray-400">
+                <div className="min-w-0 rounded-lg border border-gray-200 bg-white">
+                    <div className="border-b border-gray-100 px-3.5 py-3 2xl:px-4 min-[1280px]:max-[1535px]:px-3 min-[1280px]:max-[1535px]:py-2.5">
+                        <p className="text-xs font-semibold uppercase tracking-wide text-gray-400 min-[1280px]:max-[1535px]:text-[10px]">
                             Escalation Information
                         </p>
                     </div>
 
-                    <div className="space-y-4 p-4">
+                    <div className="space-y-4 p-3.5 2xl:p-4 min-[1280px]:max-[1535px]:space-y-3 min-[1280px]:max-[1535px]:p-3">
+
+                        {/* Reason */}
                         <div>
                             <p className="text-[10px] font-semibold uppercase tracking-wide text-gray-400">
                                 Reason
                             </p>
 
-                            <div className="mt-1.5 rounded-lg border border-gray-200 bg-gray-50 px-3 py-2.5">
-                                <p className="whitespace-pre-wrap break-words text-xs leading-5 text-gray-700">
+                            <div className="mt-1.5 rounded-lg border border-gray-200 bg-gray-50 px-3 py-2.5 min-[1280px]:max-[1535px]:mt-1 min-[1280px]:max-[1535px]:px-2.5 min-[1280px]:max-[1535px]:py-2">
+                                <p className="whitespace-pre-wrap break-words text-sm leading-5 text-black min-[1280px]:max-[1535px]:text-[12px] min-[1280px]:max-[1535px]:leading-4">
                                     {escalation?.reason ||
                                         "Requires additional technical assistance and Supervisor review."}
                                 </p>
                             </div>
                         </div>
 
-                        <div className="grid grid-cols-2 gap-4">
+                        <div className="grid grid-cols-1 gap-4 2xl:grid-cols-2 min-[1280px]:max-[1535px]:gap-3">
+
                             <div className="min-w-0">
                                 <p className="text-[10px] font-semibold uppercase tracking-wide text-gray-400">
                                     Escalated By
                                 </p>
 
-                                <div className="mt-1.5">
-                                    <p className="truncate text-xs font-semibold text-gray-800">
+                                <div className="mt-1.5 min-w-0 min-[1280px]:max-[1535px]:mt-1">
+                                    <p className="break-words text-sm font-semibold text-gray-800 min-[1280px]:max-[1535px]:text-[12px]">
                                         {escalatedByName}
                                     </p>
 
-                                    <p className="mt-0.5 truncate text-[11px] text-gray-500">
+                                    <p className="mt-0.5 break-words text-xs text-gray-500 min-[1280px]:max-[1535px]:text-[10px]">
                                         {escalatedByDepartment}
                                     </p>
                                 </div>
@@ -899,57 +909,56 @@ function EscalationContent({
                                     Escalated At
                                 </p>
 
-                                <p className="mt-1.5 text-xs text-gray-700">
+                                <p className="mt-1.5 text-xs leading-5 text-gray-700 min-[1280px]:max-[1535px]:mt-1 min-[1280px]:max-[1535px]:text-[10px] min-[1280px]:max-[1535px]:leading-4">
                                     {escalatedAt
                                         ? formatDate(escalatedAt)
                                         : "-"}
                                 </p>
                             </div>
+
                         </div>
                     </div>
                 </div>
 
                 {/* Escalation Status */}
                 <div>
-                    <div className="flex items-center justify-between">
-                        <p className="text-xs font-semibold uppercase tracking-wide text-gray-400">
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                        <p className="text-xs font-semibold uppercase tracking-wide text-gray-400 min-[1280px]:max-[1535px]:text-[10px]">
                             Escalation Status
                         </p>
 
                         {!isAcknowledged &&
                             !isCompleted && (
-                                <span className="rounded-full border border-orange-200 bg-orange-50 px-2 py-1 text-[10px] font-semibold uppercase tracking-wide text-orange-600">
+                                <span className="shrink-0 rounded-full border border-orange-200 bg-orange-50 px-2 py-1 text-[10px] font-semibold uppercase tracking-wide text-orange-600 min-[1280px]:max-[1535px]:px-1.5 min-[1280px]:max-[1535px]:py-0.5 min-[1280px]:max-[1535px]:text-[8px]">
                                     Pending
                                 </span>
                             )}
 
                         {isAcknowledged &&
                             !isCompleted && (
-                                <span className="rounded-full border border-green-200 bg-green-50 px-2 py-1 text-[10px] font-semibold uppercase tracking-wide text-green-600">
+                                <span className="shrink-0 rounded-full border border-green-200 bg-green-50 px-2 py-1 text-[10px] font-semibold uppercase tracking-wide text-green-600 min-[1280px]:max-[1535px]:px-1.5 min-[1280px]:max-[1535px]:py-0.5 min-[1280px]:max-[1535px]:text-[8px]">
                                     Acknowledged
                                 </span>
                             )}
 
                         {isCompleted && (
-                            <span className="rounded-full border border-green-200 bg-green-50 px-2 py-1 text-[10px] font-semibold uppercase tracking-wide text-green-600">
+                            <span className="shrink-0 rounded-full border border-green-200 bg-green-50 px-2 py-1 text-[10px] font-semibold uppercase tracking-wide text-green-600 min-[1280px]:max-[1535px]:px-1.5 min-[1280px]:max-[1535px]:py-0.5 min-[1280px]:max-[1535px]:text-[8px]">
                                 Completed
                             </span>
                         )}
                     </div>
 
                     <div
-                        className={`mt-2 rounded-lg border p-4 ${
-                            isAcknowledged ||
-                            isCompleted
+                        className={`mt-2 rounded-lg border p-3.5 2xl:p-4 min-[1280px]:max-[1535px]:mt-1.5 min-[1280px]:max-[1535px]:p-3 ${
+                            isAcknowledged || isCompleted
                                 ? "border-green-200 bg-green-50"
                                 : "border-orange-200 bg-orange-50"
                         }`}
                     >
-                        <div className="flex items-center gap-2.5">
+                        <div className="flex min-w-0 items-center gap-2.5 min-[1280px]:max-[1535px]:gap-2">
                             <div
-                                className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full ${
-                                    isAcknowledged ||
-                                    isCompleted
+                                className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full min-[1280px]:max-[1535px]:h-7 min-[1280px]:max-[1535px]:w-7 ${
+                                    isAcknowledged || isCompleted
                                         ? "bg-green-100"
                                         : "bg-orange-100"
                                 }`}
@@ -958,18 +967,16 @@ function EscalationContent({
                                     size={15}
                                     strokeWidth={2}
                                     className={
-                                        isAcknowledged ||
-                                        isCompleted
-                                            ? "text-green-600"
-                                            : "text-orange-600"
+                                        isAcknowledged || isCompleted
+                                            ? "text-green-600 min-[1280px]:max-[1535px]:size-[14px]"
+                                            : "text-orange-600 min-[1280px]:max-[1535px]:size-[14px]"
                                     }
                                 />
                             </div>
 
                             <p
-                                className={`text-sm font-semibold ${
-                                    isAcknowledged ||
-                                    isCompleted
+                                className={`min-w-0 text-sm font-semibold leading-5 min-[1280px]:max-[1535px]:text-[12px] ${
+                                    isAcknowledged || isCompleted
                                         ? "text-green-700"
                                         : "text-orange-700"
                                 }`}
@@ -983,39 +990,40 @@ function EscalationContent({
                         </div>
 
                         {isCompleted ? (
-                            <div className="mt-3 pl-10">
+                            <div className="mt-3 pl-10 min-[1280px]:max-[1535px]:mt-2 min-[1280px]:max-[1535px]:pl-9">
                                 <p className="text-[10px] font-semibold uppercase tracking-wide text-green-600">
                                     COMPLETED BY
                                 </p>
 
-                                <div className="mt-1.5">
-                                    <p className="text-xs font-semibold text-black">
-                                        {completedByName || "IT Supervisor"}
+                                <div className="mt-1.5 min-[1280px]:max-[1535px]:mt-1">
+                                    <p className="break-words text-sm font-semibold text-black min-[1280px]:max-[1535px]:text-[10px]">
+                                        {completedByName ||
+                                            "IT Supervisor"}
                                     </p>
 
                                     {completedAt && (
-                                        <p className="mt-0.5 text-[11px] text-gray-500">
+                                        <p className="mt-0.5 text-[10px] text-gray-500">
                                             {formatDate(completedAt)}
                                         </p>
                                     )}
                                 </div>
                             </div>
                         ) : isAcknowledged ? (
-                            <div className="mt-3 pl-10">
-                                <p className="text-xs text-green-700">
+                            <div className="mt-3 pl-10 min-[1280px]:max-[1535px]:mt-2 min-[1280px]:max-[1535px]:pl-9">
+                                <p className="break-words text-sm text-green-700 min-[1280px]:max-[1535px]:text-[10px]">
                                     {acknowledgedByName
                                         ? `Acknowledged by ${acknowledgedByName}`
                                         : "Acknowledged by Supervisor"}
                                 </p>
 
                                 {acknowledgedAt && (
-                                    <p className="mt-1 text-[11px] text-green-600">
+                                    <p className="mt-1 text-[10px] text-green-600">
                                         {formatDate(acknowledgedAt)}
                                     </p>
                                 )}
                             </div>
                         ) : (
-                            <p className="mt-3 pl-10 text-xs leading-5 text-orange-700">
+                            <p className="mt-3 pl-10 text-xs leading-5 text-orange-700 min-[1280px]:max-[1535px]:mt-2 min-[1280px]:max-[1535px]:pl-9 min-[1280px]:max-[1535px]:text-[10px] min-[1280px]:max-[1535px]:leading-4">
                                 This escalation is waiting for Supervisor acknowledgement.
                             </p>
                         )}
@@ -1028,9 +1036,12 @@ function EscalationContent({
                                 type="button"
                                 disabled={isAcknowledging}
                                 onClick={onAcknowledge}
-                                className="mt-3 flex w-full items-center justify-center gap-2 rounded-lg bg-[#4C4CF9] px-4 py-3 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-[#1D4ED8] disabled:cursor-not-allowed disabled:opacity-60"
+                                className="mt-3 flex w-full items-center justify-center gap-2 rounded-lg bg-[#4C4CF9] px-4 py-3 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-[#1D4ED8] disabled:cursor-not-allowed disabled:opacity-60 min-[1280px]:max-[1535px]:mt-2 min-[1280px]:max-[1535px]:px-3 min-[1280px]:max-[1535px]:py-2 min-[1280px]:max-[1535px]:text-[12px]"
                             >
-                                <CheckCheck size={17} />
+                                <CheckCheck
+                                    size={17}
+                                    className="min-[1280px]:max-[1535px]:size-[14px]"
+                                />
 
                                 {isAcknowledging
                                     ? "Acknowledging..."
@@ -1044,9 +1055,12 @@ function EscalationContent({
                             <button
                                 type="button"
                                 onClick={onCompleteEscalation}
-                                className="mt-3 flex w-full items-center justify-center gap-2 rounded-lg bg-[#4C4CF9] px-4 py-3 text-sm font-semibold text-white transition-colors hover:bg-[#1D4ED8]"
+                                className="mt-3 flex w-full items-center justify-center gap-2 rounded-lg bg-[#4C4CF9] px-4 py-3 text-sm font-semibold text-white transition-colors hover:bg-[#1D4ED8] min-[1280px]:max-[1535px]:mt-2 min-[1280px]:max-[1535px]:px-3 min-[1280px]:max-[1535px]:py-2 min-[1280px]:max-[1535px]:text-[12px]"
                             >
-                                <CircleCheck size={17} />
+                                <CircleCheck
+                                    size={17}
+                                    className="min-[1280px]:max-[1535px]:size-[14px]"
+                                />
 
                                 Complete Escalation
                             </button>
@@ -1056,43 +1070,41 @@ function EscalationContent({
                 {/* Escalation Resolution */}
                 {isCompleted && (
                     <div>
-                        <div className="flex items-center justify-between">
-                            <p className="text-xs font-semibold uppercase tracking-wide text-gray-400">
+                        <div className="flex flex-wrap items-center justify-between gap-2">
+                            <p className="text-xs font-semibold uppercase tracking-wide text-gray-400 min-[1280px]:max-[1535px]:text-[10px]">
                                 Escalation Resolution
                             </p>
 
-                            <span className="rounded-full border border-green-200 bg-green-50 px-2 py-1 text-[10px] font-semibold uppercase tracking-wide text-green-600">
+                            <span className="shrink-0 rounded-full border border-green-200 bg-green-50 px-2 py-1 text-[10px] font-semibold uppercase tracking-wide text-green-600 min-[1280px]:max-[1535px]:px-1.5 min-[1280px]:max-[1535px]:py-0.5 min-[1280px]:max-[1535px]:text-[8px]">
                                 Completed
                             </span>
                         </div>
 
-                        <div className="mt-2 rounded-lg border border-green-200 bg-green-50 p-4">
-                            {/* Header */}
-                            <div className="flex items-center gap-2.5">
-                                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-green-100">
+                        <div className="mt-2 rounded-lg border border-green-200 bg-green-50 p-3.5 2xl:p-4 min-[1280px]:max-[1535px]:mt-1.5 min-[1280px]:max-[1535px]:p-3">
+
+                            <div className="flex min-w-0 items-center gap-2.5 min-[1280px]:max-[1535px]:gap-2">
+                                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-green-100 min-[1280px]:max-[1535px]:h-7 min-[1280px]:max-[1535px]:w-7">
                                     <CircleCheck
                                         size={15}
                                         strokeWidth={2}
-                                        className="text-green-600"
+                                        className="text-green-600 min-[1280px]:max-[1535px]:size-[14px]"
                                     />
                                 </div>
 
                                 <div className="min-w-0">
-                                    <p className="text-sm font-semibold text-green-700">
+                                    <p className="text-sm font-semibold text-green-700 min-[1280px]:max-[1535px]:text-[12px]">
                                         Escalation Completed
                                     </p>
 
-                                    <p className="mt-0.5 text-xs text-green-700">
+                                    <p className="mt-0.5 text-xs leading-5 text-green-700 min-[1280px]:max-[1535px]:text-[10px] min-[1280px]:max-[1535px]:leading-4">
                                         The IT Supervisor has completed this escalation.
                                     </p>
                                 </div>
                             </div>
 
-                            {/* Divider */}
-                            <div className="my-4 border-t border-green-200" />
+                            <div className="my-4 border-t border-green-200 min-[1280px]:max-[1535px]:my-2.5" />
 
-                            {/* Resolution Details */}
-                            <div className="space-y-3">
+                            <div className="space-y-3 min-[1280px]:max-[1535px]:space-y-2.5">
 
                                 {escalation?.resolution_type_display && (
                                     <div>
@@ -1100,8 +1112,8 @@ function EscalationContent({
                                             Resolution Type
                                         </p>
 
-                                        <div className="mt-1.5 rounded-md border border-green-200 bg-white px-3 py-2">
-                                            <p className="text-xs font-medium text-black">
+                                        <div className="mt-1.5 rounded-md border border-green-200 bg-white px-3 py-2 min-[1280px]:max-[1535px]:mt-1 min-[1280px]:max-[1535px]:px-2.5 min-[1280px]:max-[1535px]:py-1.5">
+                                            <p className="break-words text-sm font-medium text-black min-[1280px]:max-[1535px]:text-[10px]">
                                                 {escalation.resolution_type_display}
                                             </p>
                                         </div>
@@ -1114,8 +1126,8 @@ function EscalationContent({
                                             Resolution Remarks
                                         </p>
 
-                                        <div className="mt-1.5 rounded-lg border border-green-200 bg-white px-3 py-2.5">
-                                            <p className="whitespace-pre-wrap break-words text-xs leading-5 text-gray-700">
+                                        <div className="mt-1.5 rounded-lg border border-green-200 bg-white px-3 py-2.5 min-[1280px]:max-[1535px]:mt-1 min-[1280px]:max-[1535px]:px-2.5 min-[1280px]:max-[1535px]:py-2">
+                                            <p className="whitespace-pre-wrap break-words text-sm leading-5 text-black min-[1280px]:max-[1535px]:text-[12px] min-[1280px]:max-[1535px]:leading-4">
                                                 {escalation.resolution_remarks}
                                             </p>
                                         </div>
@@ -1127,19 +1139,20 @@ function EscalationContent({
                                         Completed By
                                     </p>
 
-                                    <div className="mt-1.5">
-                                        <p className="text-xs font-semibold text-black">
+                                    <div className="mt-1.5 min-[1280px]:max-[1535px]:mt-1">
+                                        <p className="break-words text-sm font-semibold text-black min-[1280px]:max-[1535px]:text-[10px]">
                                             {completedByName ||
                                                 "IT Supervisor"}
                                         </p>
 
                                         {completedAt && (
-                                            <p className="mt-0.5 text-[11px] text-gray-500">
+                                            <p className="mt-0.5 text-[10px] text-gray-500">
                                                 {formatDate(completedAt)}
                                             </p>
                                         )}
                                     </div>
                                 </div>
+
                             </div>
                         </div>
                     </div>
@@ -1159,52 +1172,53 @@ function TimelineItem({
     current = false,
 }) {
     return (
-        <div className="relative flex gap-3 pb-7 last:pb-0">
+        <div className="relative flex min-w-0 gap-3 pb-7 last:pb-0 min-[1280px]:max-[1535px]:gap-2.5 min-[1280px]:max-[1535px]:pb-5">
+
             <div
                 className={`relative z-10 flex h-[31px] w-[31px] shrink-0 items-center justify-center rounded-full border ${colorClass} ${
-                    current
-                        ? "ring-4 ring-gray-200"
-                        : ""
-                }`}
+                    current ? "ring-4 ring-gray-200" : ""
+                } min-[1280px]:max-[1535px]:h-7 min-[1280px]:max-[1535px]:w-7`}
             >
                 <Icon
                     size={15}
                     strokeWidth={2.2}
+                    className="min-[1280px]:max-[1535px]:size-[13px]"
                 />
             </div>
 
             <div className="min-w-0 flex-1 pt-0.5">
-                <div className="flex items-center gap-2">
-                    <p className="text-sm font-semibold text-black">
+
+                <div className="flex min-w-0 flex-wrap items-center gap-2 min-[1280px]:max-[1535px]:gap-1">
+                    <p className="min-w-0 break-words text-sm font-semibold text-black min-[1280px]:max-[1535px]:text-[12px]">
                         {title}
                     </p>
 
                     {current && (
-                        <span className="rounded-full bg-[#2563EB]/10 px-2 py-0.5 text-[10px] font-medium text-[#2563EB]">
+                        <span className="shrink-0 rounded-full bg-[#2563EB]/10 px-2 py-0.5 text-[10px] font-medium text-[#2563EB] min-[1280px]:max-[1535px]:px-1.5 min-[1280px]:max-[1535px]:text-[8px]">
                             Current
                         </span>
                     )}
                 </div>
 
                 {description && (
-                    <p className="mt-1 text-xs leading-5 text-gray-500">
+                    <p className="mt-1 break-words text-xs leading-5 text-gray-500 min-[1280px]:max-[1535px]:mt-0.5 min-[1280px]:max-[1535px]:text-[10px] min-[1280px]:max-[1535px]:leading-4">
                         {description}
                     </p>
                 )}
 
                 {remarks?.trim() && (
-                    <div className="mt-2 rounded-md border border-gray-200 bg-gray-50 px-2.5 py-2">
-                        <p className="text-[10px] font-medium uppercase tracking-wide text-gray-400">
+                    <div className="mt-2 rounded-md border border-gray-200 bg-gray-50 px-2.5 py-2 min-[1280px]:max-[1535px]:mt-1.5 min-[1280px]:max-[1535px]:px-2 min-[1280px]:max-[1535px]:py-1.5">
+                        <p className="text-[10px] font-medium uppercase tracking-wide text-gray-400 min-[1280px]:max-[1535px]:text-[9px]">
                             Remarks
                         </p>
 
-                        <p className="mt-1 whitespace-pre-wrap break-words text-xs leading-5 text-black">
+                        <p className="mt-1 whitespace-pre-wrap break-words text-xs leading-5 text-black min-[1280px]:max-[1535px]:mt-0.5 min-[1280px]:max-[1535px]:text-[10px] min-[1280px]:max-[1535px]:leading-4">
                             {remarks}
                         </p>
                     </div>
                 )}
 
-                <p className="mt-2 text-[10px] text-gray-400">
+                <p className="mt-2 text-[10px] text-gray-400 min-[1280px]:max-[1535px]:mt-1.5 min-[1280px]:max-[1535px]:text-[9px]">
                     {date}
                 </p>
             </div>
@@ -1232,8 +1246,5 @@ function formatStatus(value) {
 
     return String(value)
         .replace(/_/g, " ")
-        .replace(
-            /\b\w/g,
-            char => char.toUpperCase()
-        );
+        .replace(/\b\w/g, char => char.toUpperCase());
 }

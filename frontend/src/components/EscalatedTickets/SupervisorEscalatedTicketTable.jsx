@@ -1,3 +1,4 @@
+import { MessageCircle } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
 import { statusColor } from "../../utils/statusColor";
@@ -22,10 +23,16 @@ export default function SupervisorEscalatedTicketTable({
                 className={
                     dashboard
                         ? "flex min-h-[220px] items-center justify-center bg-white px-4 py-10"
-                        : "flex min-h-[300px] items-center justify-center bg-white px-4 py-12"
+                        : "flex h-[637px] items-center justify-center overflow-hidden bg-white px-4 py-12 min-[1280px]:max-[1365px]:h-[450px] min-[1366px]:max-[1537px]:h-[500px] min-[1538px]:max-[1919px]:h-[580px]"
                 }
             >
-                <p className="text-sm text-gray-500">
+                <p
+                    className="
+                        text-sm text-gray-500
+                        min-[1280px]:max-[1365px]:text-[11px]
+                        min-[1366px]:max-[1537px]:text-xs
+                    "
+                >
                     Loading escalated tickets...
                 </p>
             </div>
@@ -39,14 +46,26 @@ export default function SupervisorEscalatedTicketTable({
                     className={
                         dashboard
                             ? "px-6 py-10 text-center"
-                            : "px-6 py-16 text-center"
+                            : "px-6 py-16 text-center min-[1280px]:max-[1365px]:px-4 min-[1280px]:max-[1365px]:py-12 min-[1366px]:max-[1537px]:px-5 min-[1366px]:max-[1537px]:py-14"
                     }
                 >
-                    <p className="font-medium text-black">
+                    <p
+                        className="
+                            font-medium text-black
+                            min-[1280px]:max-[1365px]:text-[11px]
+                            min-[1366px]:max-[1537px]:text-xs
+                        "
+                    >
                         No escalated tickets found
                     </p>
 
-                    <p className="mt-1 text-sm text-gray-500">
+                    <p
+                        className="
+                            mt-1 text-sm text-gray-500
+                            min-[1280px]:max-[1365px]:text-[11px]
+                            min-[1366px]:max-[1537px]:text-xs
+                        "
+                    >
                         There are currently no escalated tickets to display.
                     </p>
                 </div>
@@ -61,168 +80,194 @@ export default function SupervisorEscalatedTicketTable({
                 className={
                     dashboard
                         ? "hidden md:block"
-                        : "hidden max-h-[637px] overflow-y-auto md:block"
+                        : "hidden h-[637px] overflow-y-auto md:block min-[1280px]:max-[1365px]:h-[450px] min-[1366px]:max-[1537px]:h-[500px] min-[1538px]:max-[1919px]:h-[580px] [&::-webkit-scrollbar]:w-px [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-transparent hover:[&::-webkit-scrollbar-thumb]:bg-gray-300 [&::-webkit-scrollbar-thumb]:rounded-full"
                 }
             >
-                <table className="w-full table-fixed text-sm">
+                <table className="w-full table-fixed text-sm min-[1280px]:max-[1365px]:text-[11px] min-[1366px]:max-[1537px]:text-xs">
                     <thead className="bg-gray-50">
                         <tr className="border-b border-gray-300 text-left">
-                            <th className="w-[8%] px-5 py-3 font-semibold text-black">
+                            <th className="w-[8%] px-5 py-3 font-semibold text-black min-[1280px]:max-[1365px]:px-3 min-[1280px]:max-[1365px]:py-2.5 min-[1366px]:max-[1537px]:px-3 min-[1366px]:max-[1537px]:py-3">
                                 Ticket ID
                             </th>
 
-                            <th className="w-[19%] px-5 py-3 font-semibold text-black">
+                            <th className="w-[19%] px-5 py-3 font-semibold text-black min-[1280px]:max-[1365px]:px-3 min-[1280px]:max-[1365px]:py-2.5 min-[1366px]:max-[1537px]:px-3 min-[1366px]:max-[1537px]:py-3">
                                 Subject
                             </th>
 
-                            <th className="w-[10%] px-4 py-3 font-semibold text-black">
+                            <th className="w-[10%] px-4 py-3 font-semibold text-black min-[1280px]:max-[1365px]:px-3 min-[1280px]:max-[1365px]:py-2.5 min-[1366px]:max-[1537px]:px-3 min-[1366px]:max-[1537px]:py-3">
                                 Submitted By
                             </th>
 
-                            <th className="w-[12%] px-4 py-3 font-semibold text-black">
+                            <th className="w-[12%] px-4 py-3 font-semibold text-black min-[1280px]:max-[1365px]:px-3 min-[1280px]:max-[1365px]:py-2.5 min-[1366px]:max-[1537px]:px-3 min-[1366px]:max-[1537px]:py-3">
                                 Assigned To
                             </th>
 
-                            <th className="w-[8%] px-4 py-3 font-semibold text-black">
+                            <th className="w-[8%] px-4 py-3 font-semibold text-black min-[1280px]:max-[1365px]:px-3 min-[1280px]:max-[1365px]:py-2.5 min-[1366px]:max-[1537px]:px-3 min-[1366px]:max-[1537px]:py-3">
                                 Priority
                             </th>
 
-                            <th className="w-[8%] px-4 py-3 font-semibold text-black">
+                            <th className="w-[8%] px-4 py-3 font-semibold text-black min-[1280px]:max-[1365px]:px-3 min-[1280px]:max-[1365px]:py-2.5 min-[1366px]:max-[1537px]:px-3 min-[1366px]:max-[1537px]:py-3">
                                 Status
                             </th>
 
-                            <th className="w-[12%] px-4 py-3 font-semibold text-black">
+                            <th className="w-[12%] px-4 py-3 font-semibold text-black min-[1280px]:max-[1365px]:px-3 min-[1280px]:max-[1365px]:py-2.5 min-[1366px]:max-[1537px]:px-3 min-[1366px]:max-[1537px]:py-3">
                                 Escalated
                             </th>
 
-                            <th className="w-[9%] px-4 py-3 font-semibold text-black">
+                            <th className="w-[9%] px-4 py-3 font-semibold text-black min-[1280px]:max-[1365px]:px-3 min-[1280px]:max-[1365px]:py-2.5 min-[1366px]:max-[1537px]:px-3 min-[1366px]:max-[1537px]:py-3">
                                 SLA Remaining
                             </th>
                         </tr>
                     </thead>
 
                     <tbody>
-                        {displayedTickets.map((ticket) => (
-                            <tr
-                                key={ticket.id}
-                                onClick={() =>
-                                    navigate(`/ticket/${ticket.id}`)
-                                }
-                                className="cursor-pointer border-b border-gray-200 transition-colors hover:bg-gray-50 last:border-b-0"
-                            >
-                                {/* Ticket ID */}
-                                <td className="px-5 py-3">
-                                    <span className="font-semibold text-black">
-                                        {ticket.ticket_code || "-"}
-                                    </span>
-                                </td>
+                        {displayedTickets.map((ticket) => {
+                            const unreadCount =
+                                Number(ticket.unread_comment_count) || 0;
 
-                                {/* Subject */}
-                                <td className="px-5 py-3">
-                                    <p
-                                        className="truncate font-medium text-black"
-                                        title={ticket.subject}
-                                    >
-                                        {ticket.subject || "-"}
-                                    </p>
-                                </td>
+                            const hasUnread = unreadCount > 0;
 
-                                {/* Submitted By + Employee Department */}
-                                <td className="px-4 py-3">
-                                    <div className="min-w-0">
-                                        <p
-                                            className="truncate font-medium text-black"
-                                            title={ticket.submitted_by_name}
+                            return (
+                                <tr
+                                    key={ticket.id}
+                                    onClick={() =>
+                                        navigate(`/ticket/${ticket.id}`)
+                                    }
+                                    className={`cursor-pointer border-b border-gray-200 transition-colors last:border-b-0 ${
+                                        hasUnread
+                                            ? "bg-[#2563EB]/[0.035] hover:bg-[#2563EB]/[0.06]"
+                                            : "hover:bg-gray-50"
+                                    }`}
+                                >
+                                    {/* Ticket ID */}
+                                    <td className="px-5 py-3 min-[1280px]:max-[1365px]:px-3 min-[1280px]:max-[1365px]:py-2.5 min-[1366px]:max-[1537px]:px-3 min-[1366px]:max-[1537px]:py-3">
+                                        <span className="font-semibold text-black">
+                                            {ticket.ticket_code || "-"}
+                                        </span>
+                                    </td>
+
+                                    {/* Subject + Unread Messages */}
+                                    <td className="px-5 py-3 min-[1280px]:max-[1365px]:px-3 min-[1280px]:max-[1365px]:py-2.5 min-[1366px]:max-[1537px]:px-3 min-[1366px]:max-[1537px]:py-3">
+                                        <div className="flex min-w-0 items-center gap-3 min-[1280px]:max-[1365px]:gap-2 min-[1366px]:max-[1537px]:gap-2">
+                                            <p
+                                                className={`min-w-0 truncate text-black ${
+                                                    hasUnread
+                                                        ? "font-semibold"
+                                                        : "font-medium"
+                                                }`}
+                                                title={ticket.subject}
+                                            >
+                                                {ticket.subject || "-"}
+                                            </p>
+
+                                            {hasUnread && (
+                                                <div className="relative shrink-0">
+                                                    <MessageCircle
+                                                        size={20}
+                                                        className="text-[#2563EB] min-[1280px]:max-[1365px]:size-4 min-[1366px]:max-[1537px]:size-[18px]"
+                                                    />
+
+                                                    <span className="absolute -right-2 -top-2 flex h-4 min-w-4 items-center justify-center rounded-full bg-red-500 px-1 text-[9px] font-semibold leading-none text-white min-[1280px]:max-[1365px]:h-3.5 min-[1280px]:max-[1365px]:min-w-3.5 min-[1280px]:max-[1365px]:text-[8px] min-[1366px]:max-[1537px]:h-3.5 min-[1366px]:max-[1537px]:min-w-3.5 min-[1366px]:max-[1537px]:text-[8px]">
+                                                        {unreadCount > 99
+                                                            ? "99+"
+                                                            : unreadCount}
+                                                    </span>
+                                                </div>
+                                            )}
+                                        </div>
+                                    </td>
+
+                                    {/* Submitted By + Employee Department */}
+                                    <td className="px-4 py-3 min-[1280px]:max-[1365px]:px-3 min-[1280px]:max-[1365px]:py-2.5 min-[1366px]:max-[1537px]:px-3 min-[1366px]:max-[1537px]:py-3">
+                                        <div className="min-w-0">
+                                            <p
+                                                className="truncate font-medium text-black"
+                                                title={ticket.submitted_by_name}
+                                            >
+                                                {ticket.submitted_by_name || "-"}
+                                            </p>
+
+                                            <p
+                                                className="mt-0.5 truncate text-xs text-gray-500 min-[1280px]:max-[1365px]:text-[10px] min-[1366px]:max-[1537px]:text-[11px]"
+                                                title={
+                                                    ticket.submitted_by_department
+                                                }
+                                            >
+                                                {ticket.submitted_by_department ||
+                                                    "-"}
+                                            </p>
+                                        </div>
+                                    </td>
+
+                                    {/* Assigned To + IT Department */}
+                                    <td className="px-4 py-3 min-[1280px]:max-[1365px]:px-3 min-[1280px]:max-[1365px]:py-2.5 min-[1366px]:max-[1537px]:px-3 min-[1366px]:max-[1537px]:py-3">
+                                        <div className="min-w-0">
+                                            <p
+                                                className="truncate font-medium text-black"
+                                                title={ticket.assigned_to_name}
+                                            >
+                                                {ticket.assigned_to_name || "-"}
+                                            </p>
+
+                                            <p
+                                                className="mt-0.5 truncate text-xs text-gray-500 min-[1280px]:max-[1365px]:text-[10px] min-[1366px]:max-[1537px]:text-[11px]"
+                                                title={ticket.department_name}
+                                            >
+                                                {ticket.department_name || "-"}
+                                            </p>
+                                        </div>
+                                    </td>
+
+                                    {/* Priority */}
+                                    <td className="px-4 py-3 min-[1280px]:max-[1365px]:px-3 min-[1280px]:max-[1365px]:py-2.5 min-[1366px]:max-[1537px]:px-3 min-[1366px]:max-[1537px]:py-3">
+                                        <span
+                                            className={`inline-flex whitespace-nowrap rounded-md border px-2 py-1 text-xs font-semibold min-[1280px]:max-[1365px]:px-1.5 min-[1280px]:max-[1365px]:py-0.5 min-[1280px]:max-[1365px]:text-[10px] min-[1366px]:max-[1537px]:px-1.5 min-[1366px]:max-[1537px]:py-1 min-[1366px]:max-[1537px]:text-[11px] ${
+                                                priorityColor[
+                                                    ticket.priority
+                                                ] ||
+                                                "border-gray-300 bg-gray-100 text-gray-600"
+                                            }`}
                                         >
-                                            {ticket.submitted_by_name || "-"}
-                                        </p>
-
-                                        <p
-                                            className="mt-0.5 truncate text-xs text-gray-500"
-                                            title={
-                                                ticket.submitted_by_department
-                                            }
-                                        >
-                                            {ticket.submitted_by_department ||
+                                            {priorityLabel[ticket.priority] ||
+                                                ticket.priority ||
                                                 "-"}
-                                        </p>
-                                    </div>
-                                </td>
+                                        </span>
+                                    </td>
 
-                                {/* Assigned To + IT Department */}
-                                <td className="px-4 py-3">
-                                    <div className="min-w-0">
-                                        <p
-                                            className="truncate font-medium text-black"
-                                            title={ticket.assigned_to_name}
+                                    {/* Status */}
+                                    <td className="px-4 py-3 min-[1280px]:max-[1365px]:px-3 min-[1280px]:max-[1365px]:py-2.5 min-[1366px]:max-[1537px]:px-3 min-[1366px]:max-[1537px]:py-3">
+                                        <span
+                                            className={`inline-flex whitespace-nowrap rounded-md px-2 py-1 text-xs font-medium min-[1280px]:max-[1365px]:px-1.5 min-[1280px]:max-[1365px]:py-0.5 min-[1280px]:max-[1365px]:text-[10px] min-[1366px]:max-[1537px]:px-1.5 min-[1366px]:max-[1537px]:py-1 min-[1366px]:max-[1537px]:text-[11px] ${
+                                                statusColor[ticket.status] ||
+                                                "border border-gray-300 bg-gray-100 text-gray-700"
+                                            }`}
                                         >
-                                            {ticket.assigned_to_name || "-"}
-                                        </p>
+                                            {ticket.status || "-"}
+                                        </span>
+                                    </td>
 
-                                        <p
-                                            className="mt-0.5 truncate text-xs text-gray-500"
-                                            title={ticket.department_name}
+                                    {/* Escalated */}
+                                    <td className="px-4 py-3 min-[1280px]:max-[1365px]:px-3 min-[1280px]:max-[1365px]:py-2.5 min-[1366px]:max-[1537px]:px-3 min-[1366px]:max-[1537px]:py-3">
+                                        <span
+                                            className="whitespace-nowrap text-gray-700"
+                                            title={formatDate(
+                                                ticket.escalated_at
+                                            )}
                                         >
-                                            {ticket.department_name || "-"}
-                                        </p>
-                                    </div>
-                                </td>
+                                            {formatDate(ticket.escalated_at)}
+                                        </span>
+                                    </td>
 
-                                {/* Priority */}
-                                <td className="px-4 py-3">
-                                    <span
-                                        className={`inline-flex whitespace-nowrap rounded-md border px-2 py-1 text-xs font-semibold ${
-                                            priorityColor[
-                                                ticket.priority
-                                            ] ||
-                                            "border-gray-300 bg-gray-100 text-gray-600"
-                                        }`}
-                                    >
-                                        {priorityLabel[
-                                            ticket.priority
-                                        ] ||
-                                            ticket.priority ||
-                                            "-"}
-                                    </span>
-                                </td>
-
-                                {/* Status */}
-                                <td className="px-4 py-3">
-                                    <span
-                                        className={`inline-flex whitespace-nowrap rounded-md px-2 py-1 text-xs font-medium ${
-                                            statusColor[
-                                                ticket.status
-                                            ] ||
-                                            "border border-gray-300 bg-gray-100 text-gray-700"
-                                        }`}
-                                    >
-                                        {ticket.status || "-"}
-                                    </span>
-                                </td>
-
-                                {/* Escalated */}
-                                <td className="px-4 py-3">
-                                    <span
-                                        className="whitespace-nowrap text-gray-700"
-                                        title={formatDate(
-                                            ticket.escalated_at
-                                        )}
-                                    >
-                                        {formatDate(
-                                            ticket.escalated_at
-                                        )}
-                                    </span>
-                                </td>
-
-                                {/* SLA Remaining */}
-                                <td className="px-4 py-3">
-                                    <span className="whitespace-nowrap font-medium text-gray-900">
-                                        {ticket.resolution_time_remaining ||
-                                            "-"}
-                                    </span>
-                                </td>
-                            </tr>
-                        ))}
+                                    {/* SLA Remaining */}
+                                    <td className="px-4 py-3 min-[1280px]:max-[1365px]:px-3 min-[1280px]:max-[1365px]:py-2.5 min-[1366px]:max-[1537px]:px-3 min-[1366px]:max-[1537px]:py-3">
+                                        <span className="whitespace-nowrap font-medium text-gray-900">
+                                            {ticket.resolution_time_remaining ||
+                                                "-"}
+                                        </span>
+                                    </td>
+                                </tr>
+                            );
+                        })}
                     </tbody>
                 </table>
             </div>
@@ -232,172 +277,202 @@ export default function SupervisorEscalatedTicketTable({
                 className={
                     dashboard
                         ? "md:hidden"
-                        : "max-h-[637px] overflow-y-auto md:hidden"
+                        : "h-[637px] overflow-y-auto md:hidden min-[1280px]:max-[1365px]:h-[450px] min-[1366px]:max-[1537px]:h-[500px] min-[1538px]:max-[1919px]:h-[580px] [&::-webkit-scrollbar]:w-px [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-transparent hover:[&::-webkit-scrollbar-thumb]:bg-gray-300 [&::-webkit-scrollbar-thumb]:rounded-full"
                 }
             >
-                {displayedTickets.map((ticket) => (
-                    <div
-                        key={ticket.id}
-                        onClick={() =>
-                            navigate(`/ticket/${ticket.id}`)
-                        }
-                        className="cursor-pointer border-b border-gray-300 bg-white transition-colors hover:bg-gray-50"
-                    >
-                        <table className="w-full table-fixed text-xs">
-                            <tbody>
-                                {/* Ticket ID */}
-                                <tr className="bg-gray-100">
-                                    <th className="w-[40%] border-r border-gray-300 px-3 py-2 text-left font-semibold text-gray-700">
-                                        Ticket ID
-                                    </th>
+                {displayedTickets.map((ticket) => {
+                    const unreadCount =
+                        Number(ticket.unread_comment_count) || 0;
 
-                                    <td className="px-3 py-2 font-semibold text-[#2563EB]">
-                                        {ticket.ticket_code || "-"}
-                                    </td>
-                                </tr>
+                    const hasUnread = unreadCount > 0;
 
-                                {/* Subject */}
-                                <tr>
-                                    <th className="border-r border-gray-200 px-3 py-2 text-left font-medium text-gray-600">
-                                        Subject
-                                    </th>
+                    return (
+                        <div
+                            key={ticket.id}
+                            onClick={() => navigate(`/ticket/${ticket.id}`)}
+                            className={`cursor-pointer border-b border-gray-300 transition-colors ${
+                                hasUnread
+                                    ? "bg-[#2563EB]/[0.035] hover:bg-[#2563EB]/[0.06]"
+                                    : "bg-white hover:bg-gray-50"
+                            }`}
+                        >
+                            <table className="w-full table-fixed text-xs min-[1280px]:max-[1365px]:text-[11px] min-[1366px]:max-[1537px]:text-xs">
+                                <tbody>
+                                    {/* Ticket ID */}
+                                    <tr className="bg-gray-100">
+                                        <th className="w-[40%] border-r border-gray-300 px-3 py-2 text-left font-semibold text-gray-700 min-[1280px]:max-[1365px]:px-2.5 min-[1280px]:max-[1365px]:py-1.5 min-[1366px]:max-[1537px]:px-2.5 min-[1366px]:max-[1537px]:py-2">
+                                            Ticket ID
+                                        </th>
 
-                                    <td
-                                        className="truncate px-3 py-2 font-medium text-gray-900"
-                                        title={ticket.subject}
-                                    >
-                                        {ticket.subject || "-"}
-                                    </td>
-                                </tr>
+                                        <td className="px-3 py-2 font-semibold text-[#2563EB] min-[1280px]:max-[1365px]:px-2.5 min-[1280px]:max-[1365px]:py-1.5 min-[1366px]:max-[1537px]:px-2.5 min-[1366px]:max-[1537px]:py-2">
+                                            {ticket.ticket_code || "-"}
+                                        </td>
+                                    </tr>
 
-                                {/* Submitted By */}
-                                <tr className="bg-gray-100">
-                                    <th className="border-r border-gray-300 px-3 py-2 text-left font-medium text-gray-700">
-                                        Submitted By
-                                    </th>
+                                    {/* Subject + Unread Messages */}
+                                    <tr>
+                                        <th className="border-r border-gray-200 px-3 py-2 text-left font-medium text-gray-600 min-[1280px]:max-[1365px]:px-2.5 min-[1280px]:max-[1365px]:py-1.5 min-[1366px]:max-[1537px]:px-2.5 min-[1366px]:max-[1537px]:py-2">
+                                            Subject
+                                        </th>
 
-                                    <td className="px-3 py-2">
-                                        <p
-                                            className="truncate font-medium text-gray-900"
-                                            title={
-                                                ticket.submitted_by_name
-                                            }
+                                        <td
+                                            className={`truncate px-3 py-2 text-gray-900 min-[1280px]:max-[1365px]:px-2.5 min-[1280px]:max-[1365px]:py-1.5 min-[1366px]:max-[1537px]:px-2.5 min-[1366px]:max-[1537px]:py-2 ${
+                                                hasUnread
+                                                    ? "font-semibold"
+                                                    : "font-medium"
+                                            }`}
+                                            title={ticket.subject}
                                         >
-                                            {ticket.submitted_by_name || "-"}
-                                        </p>
+                                            <div className="flex min-w-0 items-center gap-3 min-[1280px]:max-[1365px]:gap-2 min-[1366px]:max-[1537px]:gap-2">
+                                                <span className="min-w-0 truncate">
+                                                    {ticket.subject || "-"}
+                                                </span>
 
-                                        <p
-                                            className="mt-0.5 truncate text-[11px] text-gray-500"
-                                            title={
-                                                ticket.submitted_by_department
-                                            }
-                                        >
-                                            {ticket.submitted_by_department ||
-                                                "-"}
-                                        </p>
-                                    </td>
-                                </tr>
+                                                {hasUnread && (
+                                                    <div className="relative shrink-0">
+                                                        <MessageCircle
+                                                            size={20}
+                                                            className="text-[#2563EB] min-[1280px]:max-[1365px]:size-4 min-[1366px]:max-[1537px]:size-[18px]"
+                                                        />
 
-                                {/* Assigned To */}
-                                <tr>
-                                    <th className="border-r border-gray-200 px-3 py-2 text-left font-medium text-gray-600">
-                                        Assigned To
-                                    </th>
+                                                        <span className="absolute -right-2 -top-2 flex h-4 min-w-4 items-center justify-center rounded-full bg-red-500 px-1 text-[9px] font-semibold leading-none text-white min-[1280px]:max-[1365px]:h-3.5 min-[1280px]:max-[1365px]:min-w-3.5 min-[1280px]:max-[1365px]:text-[8px] min-[1366px]:max-[1537px]:h-3.5 min-[1366px]:max-[1537px]:min-w-3.5 min-[1366px]:max-[1537px]:text-[8px]">
+                                                            {unreadCount > 99
+                                                                ? "99+"
+                                                                : unreadCount}
+                                                        </span>
+                                                    </div>
+                                                )}
+                                            </div>
+                                        </td>
+                                    </tr>
 
-                                    <td className="px-3 py-2">
-                                        <p
-                                            className="truncate font-medium text-gray-900"
-                                            title={ticket.assigned_to_name}
-                                        >
-                                            {ticket.assigned_to_name || "-"}
-                                        </p>
+                                    {/* Submitted By */}
+                                    <tr className="bg-gray-100">
+                                        <th className="border-r border-gray-300 px-3 py-2 text-left font-medium text-gray-700 min-[1280px]:max-[1365px]:px-2.5 min-[1280px]:max-[1365px]:py-1.5 min-[1366px]:max-[1537px]:px-2.5 min-[1366px]:max-[1537px]:py-2">
+                                            Submitted By
+                                        </th>
 
-                                        <p
-                                            className="mt-0.5 truncate text-[11px] text-gray-500"
-                                            title={ticket.department_name}
-                                        >
-                                            {ticket.department_name || "-"}
-                                        </p>
-                                    </td>
-                                </tr>
+                                        <td className="px-3 py-2 min-[1280px]:max-[1365px]:px-2.5 min-[1280px]:max-[1365px]:py-1.5 min-[1366px]:max-[1537px]:px-2.5 min-[1366px]:max-[1537px]:py-2">
+                                            <p
+                                                className="truncate font-medium text-gray-900"
+                                                title={
+                                                    ticket.submitted_by_name
+                                                }
+                                            >
+                                                {ticket.submitted_by_name || "-"}
+                                            </p>
 
-                                {/* Priority */}
-                                <tr className="bg-gray-100">
-                                    <th className="border-r border-gray-300 px-3 py-2 text-left font-medium text-gray-700">
-                                        Priority
-                                    </th>
+                                            <p
+                                                className="mt-0.5 truncate text-[11px] text-gray-500 min-[1280px]:max-[1365px]:text-[10px] min-[1366px]:max-[1537px]:text-[11px]"
+                                                title={
+                                                    ticket.submitted_by_department
+                                                }
+                                            >
+                                                {ticket.submitted_by_department ||
+                                                    "-"}
+                                            </p>
+                                        </td>
+                                    </tr>
 
-                                    <td className="px-3 py-2">
-                                        <span
-                                            className={`inline-flex rounded-md border px-2 py-1 text-[10px] font-semibold ${
-                                                priorityColor[
+                                    {/* Assigned To */}
+                                    <tr>
+                                        <th className="border-r border-gray-200 px-3 py-2 text-left font-medium text-gray-600 min-[1280px]:max-[1365px]:px-2.5 min-[1280px]:max-[1365px]:py-1.5 min-[1366px]:max-[1537px]:px-2.5 min-[1366px]:max-[1537px]:py-2">
+                                            Assigned To
+                                        </th>
+
+                                        <td className="px-3 py-2 min-[1280px]:max-[1365px]:px-2.5 min-[1280px]:max-[1365px]:py-1.5 min-[1366px]:max-[1537px]:px-2.5 min-[1366px]:max-[1537px]:py-2">
+                                            <p
+                                                className="truncate font-medium text-gray-900"
+                                                title={ticket.assigned_to_name}
+                                            >
+                                                {ticket.assigned_to_name || "-"}
+                                            </p>
+
+                                            <p
+                                                className="mt-0.5 truncate text-[11px] text-gray-500 min-[1280px]:max-[1365px]:text-[10px] min-[1366px]:max-[1537px]:text-[11px]"
+                                                title={ticket.department_name}
+                                            >
+                                                {ticket.department_name || "-"}
+                                            </p>
+                                        </td>
+                                    </tr>
+
+                                    {/* Priority */}
+                                    <tr className="bg-gray-100">
+                                        <th className="border-r border-gray-300 px-3 py-2 text-left font-medium text-gray-700 min-[1280px]:max-[1365px]:px-2.5 min-[1280px]:max-[1365px]:py-1.5 min-[1366px]:max-[1537px]:px-2.5 min-[1366px]:max-[1537px]:py-2">
+                                            Priority
+                                        </th>
+
+                                        <td className="px-3 py-2 min-[1280px]:max-[1365px]:px-2.5 min-[1280px]:max-[1365px]:py-1.5 min-[1366px]:max-[1537px]:px-2.5 min-[1366px]:max-[1537px]:py-2">
+                                            <span
+                                                className={`inline-flex rounded-md border px-2 py-1 text-[10px] font-semibold min-[1280px]:max-[1365px]:px-1.5 min-[1280px]:max-[1365px]:py-0.5 min-[1280px]:max-[1365px]:text-[9px] min-[1366px]:max-[1537px]:px-1.5 min-[1366px]:max-[1537px]:py-0.5 ${
+                                                    priorityColor[
+                                                        ticket.priority
+                                                    ] ||
+                                                    "border-gray-300 bg-gray-100 text-gray-600"
+                                                }`}
+                                            >
+                                                {priorityLabel[
                                                     ticket.priority
                                                 ] ||
-                                                "border-gray-300 bg-gray-100 text-gray-600"
-                                            }`}
+                                                    ticket.priority ||
+                                                    "-"}
+                                            </span>
+                                        </td>
+                                    </tr>
+
+                                    {/* Status */}
+                                    <tr>
+                                        <th className="border-r border-gray-200 px-3 py-2 text-left font-medium text-gray-600 min-[1280px]:max-[1365px]:px-2.5 min-[1280px]:max-[1365px]:py-1.5 min-[1366px]:max-[1537px]:px-2.5 min-[1366px]:max-[1537px]:py-2">
+                                            Status
+                                        </th>
+
+                                        <td className="px-3 py-2 min-[1280px]:max-[1365px]:px-2.5 min-[1280px]:max-[1365px]:py-1.5 min-[1366px]:max-[1537px]:px-2.5 min-[1366px]:max-[1537px]:py-2">
+                                            <span
+                                                className={`inline-flex rounded-md px-2 py-1 text-[10px] font-medium min-[1280px]:max-[1365px]:px-1.5 min-[1280px]:max-[1365px]:py-0.5 min-[1280px]:max-[1365px]:text-[9px] min-[1366px]:max-[1537px]:px-1.5 min-[1366px]:max-[1537px]:py-0.5 ${
+                                                    statusColor[
+                                                        ticket.status
+                                                    ] ||
+                                                    "border border-gray-300 bg-gray-100 text-gray-700"
+                                                }`}
+                                            >
+                                                {ticket.status || "-"}
+                                            </span>
+                                        </td>
+                                    </tr>
+
+                                    {/* Escalated */}
+                                    <tr className="bg-gray-100">
+                                        <th className="border-r border-gray-300 px-3 py-2 text-left font-medium text-gray-700 min-[1280px]:max-[1365px]:px-2.5 min-[1280px]:max-[1365px]:py-1.5 min-[1366px]:max-[1537px]:px-2.5 min-[1366px]:max-[1537px]:py-2">
+                                            Escalated
+                                        </th>
+
+                                        <td
+                                            className="px-3 py-2 text-gray-900 min-[1280px]:max-[1365px]:px-2.5 min-[1280px]:max-[1365px]:py-1.5 min-[1366px]:max-[1537px]:px-2.5 min-[1366px]:max-[1537px]:py-2"
+                                            title={formatDate(
+                                                ticket.escalated_at
+                                            )}
                                         >
-                                            {priorityLabel[
-                                                ticket.priority
-                                            ] ||
-                                                ticket.priority ||
+                                            {formatDate(ticket.escalated_at)}
+                                        </td>
+                                    </tr>
+
+                                    {/* SLA Remaining */}
+                                    <tr>
+                                        <th className="border-r border-gray-200 px-3 py-2 text-left font-medium text-gray-600 min-[1280px]:max-[1365px]:px-2.5 min-[1280px]:max-[1365px]:py-1.5 min-[1366px]:max-[1537px]:px-2.5 min-[1366px]:max-[1537px]:py-2">
+                                            SLA Remaining
+                                        </th>
+
+                                        <td className="px-3 py-2 font-medium text-gray-900 min-[1280px]:max-[1365px]:px-2.5 min-[1280px]:max-[1365px]:py-1.5 min-[1366px]:max-[1537px]:px-2.5 min-[1366px]:max-[1537px]:py-2">
+                                            {ticket.resolution_time_remaining ||
                                                 "-"}
-                                        </span>
-                                    </td>
-                                </tr>
-
-                                {/* Status */}
-                                <tr>
-                                    <th className="border-r border-gray-200 px-3 py-2 text-left font-medium text-gray-600">
-                                        Status
-                                    </th>
-
-                                    <td className="px-3 py-2">
-                                        <span
-                                            className={`inline-flex rounded-md px-2 py-1 text-[10px] font-medium ${
-                                                statusColor[
-                                                    ticket.status
-                                                ] ||
-                                                "border border-gray-300 bg-gray-100 text-gray-700"
-                                            }`}
-                                        >
-                                            {ticket.status || "-"}
-                                        </span>
-                                    </td>
-                                </tr>
-
-                                {/* Escalated */}
-                                <tr className="bg-gray-100">
-                                    <th className="border-r border-gray-300 px-3 py-2 text-left font-medium text-gray-700">
-                                        Escalated
-                                    </th>
-
-                                    <td
-                                        className="px-3 py-2 text-gray-900"
-                                        title={formatDate(
-                                            ticket.escalated_at
-                                        )}
-                                    >
-                                        {formatDate(
-                                            ticket.escalated_at
-                                        )}
-                                    </td>
-                                </tr>
-
-                                {/* SLA Remaining */}
-                                <tr>
-                                    <th className="border-r border-gray-200 px-3 py-2 text-left font-medium text-gray-600">
-                                        SLA Remaining
-                                    </th>
-
-                                    <td className="px-3 py-2 font-medium text-gray-900">
-                                        {ticket.resolution_time_remaining ||
-                                            "-"}
-                                    </td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
-                ))}
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    );
+                })}
             </div>
         </div>
     );

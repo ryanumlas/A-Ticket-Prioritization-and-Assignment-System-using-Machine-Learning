@@ -211,7 +211,14 @@ export default function PriorityRequestDetailsContent() {
     if (loading) {
         return (
             <div className="flex min-h-[400px] items-center justify-center">
-                <p className="text-sm text-gray-500">
+                <p
+                    className="
+                        text-sm
+                        text-gray-500
+                        min-[1280px]:max-[1365px]:text-[11px]
+                        min-[1366px]:max-[1537px]:text-xs
+                    "
+                >
                     Loading priority request...
                 </p>
             </div>
@@ -221,7 +228,14 @@ export default function PriorityRequestDetailsContent() {
     if (error) {
         return (
             <div className="flex min-h-[400px] items-center justify-center">
-                <p className="text-sm text-red-600">
+                <p
+                    className="
+                        text-sm
+                        text-red-600
+                        min-[1280px]:max-[1365px]:text-[11px]
+                        min-[1366px]:max-[1537px]:text-xs
+                    "
+                >
                     {error}
                 </p>
             </div>
@@ -281,28 +295,104 @@ export default function PriorityRequestDetailsContent() {
     const isProcessing = approving || rejecting;
 
     return (
-        <div className="space-y-4">
-            <div className="grid grid-cols-[1.05fr_0.95fr] items-start gap-4">
-                <div className="space-y-4">
+        <div
+            className="
+                space-y-4
+                min-[1280px]:max-[1537px]:space-y-3
+            "
+        >
+            <div
+                className="
+                    grid
+                    grid-cols-[1.05fr_0.95fr]
+                    items-start
+                    gap-4
+                    min-[1280px]:max-[1537px]:gap-3
+                "
+            >
+                <div
+                    className="
+                        space-y-4
+                        min-[1280px]:max-[1537px]:space-y-3
+                    "
+                >
                     <div className="overflow-hidden rounded-xl border border-gray-300 bg-white">
-                        <div className="flex items-start gap-3 border-b border-gray-200 px-5 py-4">
-                            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-gray-100">
+                        <div
+                            className="
+                                flex
+                                items-start
+                                gap-3
+                                border-b
+                                border-gray-200
+                                px-5
+                                py-4
+                                min-[1280px]:max-[1365px]:gap-2
+                                min-[1280px]:max-[1365px]:px-3
+                                min-[1280px]:max-[1365px]:py-3
+                                min-[1366px]:max-[1537px]:gap-2.5
+                                min-[1366px]:max-[1537px]:px-4
+                                min-[1366px]:max-[1537px]:py-3
+                            "
+                        >
+                            <div
+                                className="
+                                    flex
+                                    h-9
+                                    w-9
+                                    shrink-0
+                                    items-center
+                                    justify-center
+                                    rounded-lg
+                                    bg-gray-100
+                                    min-[1280px]:max-[1365px]:h-8
+                                    min-[1280px]:max-[1365px]:w-8
+                                    min-[1366px]:max-[1537px]:h-8
+                                    min-[1366px]:max-[1537px]:w-8
+                                "
+                            >
                                 <Ticket
                                     size={18}
-                                    className="text-gray-600"
+                                    className="
+                                        text-gray-600
+                                        min-[1280px]:max-[1365px]:size-4
+                                        min-[1366px]:max-[1537px]:size-4
+                                    "
                                 />
                             </div>
 
                             <div className="min-w-0 flex-1">
                                 <div className="flex items-center justify-between gap-3">
-                                    <h2 className="text-base font-semibold text-black">
+                                    <h2
+                                        className="
+                                            text-base
+                                            font-semibold
+                                            text-black
+                                            min-[1280px]:max-[1365px]:text-sm
+                                            min-[1366px]:max-[1537px]:text-sm
+                                        "
+                                    >
                                         Ticket Information
                                     </h2>
 
                                     <span
-                                        className={`shrink-0 rounded-md border px-2.5 py-1 text-xs font-medium ${getStatusStyle(
-                                            request.status
-                                        )}`}
+                                        className={`
+                                            shrink-0
+                                            rounded-md
+                                            border
+                                            px-2.5
+                                            py-1
+                                            text-xs
+                                            font-medium
+                                            min-[1280px]:max-[1365px]:px-2
+                                            min-[1280px]:max-[1365px]:py-0.5
+                                            min-[1280px]:max-[1365px]:text-[10px]
+                                            min-[1366px]:max-[1537px]:px-2
+                                            min-[1366px]:max-[1537px]:py-0.5
+                                            min-[1366px]:max-[1537px]:text-[11px]
+                                            ${getStatusStyle(
+                                                request.status
+                                            )}
+                                        `}
                                     >
                                         {formatStatus(
                                             request.status
@@ -310,7 +400,15 @@ export default function PriorityRequestDetailsContent() {
                                     </span>
                                 </div>
 
-                                <p className="mt-0.5 text-xs text-gray-500">
+                                <p
+                                    className="
+                                        mt-0.5
+                                        text-xs
+                                        text-gray-500
+                                        min-[1280px]:max-[1365px]:text-[10px]
+                                        min-[1366px]:max-[1537px]:text-[11px]
+                                    "
+                                >
                                     Information submitted by the employee.
                                 </p>
                             </div>
@@ -320,16 +418,12 @@ export default function PriorityRequestDetailsContent() {
                             <div className="grid grid-cols-2">
                                 <InfoCell
                                     label="Ticket Code"
-                                    value={
-                                        request.ticket_code
-                                    }
+                                    value={request.ticket_code}
                                 />
 
                                 <InfoCell
                                     label="Affected Scope"
-                                    value={
-                                        request.affected_scope
-                                    }
+                                    value={request.affected_scope}
                                     bordered
                                 />
                             </div>
@@ -347,14 +441,29 @@ export default function PriorityRequestDetailsContent() {
 
                             <InfoCell
                                 label="Business Impact"
-                                value={
-                                    request.business_impact
-                                }
+                                value={request.business_impact}
                                 multiline
                             />
 
-                            <div className="px-5 py-4">
-                                <div className="grid grid-cols-2 gap-6">
+                            <div
+                                className="
+                                    px-5
+                                    py-4
+                                    min-[1280px]:max-[1365px]:px-3
+                                    min-[1280px]:max-[1365px]:py-3
+                                    min-[1366px]:max-[1537px]:px-4
+                                    min-[1366px]:max-[1537px]:py-3
+                                "
+                            >
+                                <div
+                                    className="
+                                        grid
+                                        grid-cols-2
+                                        gap-6
+                                        min-[1280px]:max-[1365px]:gap-3
+                                        min-[1366px]:max-[1537px]:gap-4
+                                    "
+                                >
                                     <UserCard
                                         label="Ticket Submitted By"
                                         user={submittedBy}
@@ -366,7 +475,23 @@ export default function PriorityRequestDetailsContent() {
                                     />
                                 </div>
 
-                                <div className="mt-5 grid grid-cols-2 gap-6 border-t border-gray-200 pt-4">
+                                <div
+                                    className="
+                                        mt-5
+                                        grid
+                                        grid-cols-2
+                                        gap-6
+                                        border-t
+                                        border-gray-200
+                                        pt-4
+                                        min-[1280px]:max-[1365px]:mt-4
+                                        min-[1280px]:max-[1365px]:gap-3
+                                        min-[1280px]:max-[1365px]:pt-3
+                                        min-[1366px]:max-[1537px]:mt-4
+                                        min-[1366px]:max-[1537px]:gap-4
+                                        min-[1366px]:max-[1537px]:pt-3
+                                    "
+                                >
                                     <InfoRow
                                         label="Ticket Submitted At"
                                         value={formatDate(
@@ -386,82 +511,245 @@ export default function PriorityRequestDetailsContent() {
                     </div>
                 </div>
 
-                <div className="space-y-4">
+                <div
+                    className="
+                        space-y-4
+                        min-[1280px]:max-[1537px]:space-y-3
+                    "
+                >
                     <div className="overflow-hidden rounded-xl border border-gray-300 bg-white">
-                        <div className="flex items-start gap-3 border-b border-gray-200 px-5 py-4">
-                            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-gray-100">
+                        <div
+                            className="
+                                flex
+                                items-start
+                                gap-3
+                                border-b
+                                border-gray-200
+                                px-5
+                                py-4
+                                min-[1280px]:max-[1365px]:gap-2
+                                min-[1280px]:max-[1365px]:px-3
+                                min-[1280px]:max-[1365px]:py-3
+                                min-[1366px]:max-[1537px]:gap-2.5
+                                min-[1366px]:max-[1537px]:px-4
+                                min-[1366px]:max-[1537px]:py-3
+                            "
+                        >
+                            <div
+                                className="
+                                    flex
+                                    h-9
+                                    w-9
+                                    shrink-0
+                                    items-center
+                                    justify-center
+                                    rounded-lg
+                                    bg-gray-100
+                                    min-[1280px]:max-[1365px]:h-8
+                                    min-[1280px]:max-[1365px]:w-8
+                                    min-[1366px]:max-[1537px]:h-8
+                                    min-[1366px]:max-[1537px]:w-8
+                                "
+                            >
                                 <ArrowUpDown
                                     size={18}
-                                    className="text-gray-600"
+                                    className="
+                                        text-gray-600
+                                        min-[1280px]:max-[1365px]:size-4
+                                        min-[1366px]:max-[1537px]:size-4
+                                    "
                                 />
                             </div>
 
                             <div>
-                                <h2 className="text-base font-semibold text-black">
+                                <h2
+                                    className="
+                                        text-base
+                                        font-semibold
+                                        text-black
+                                        min-[1280px]:max-[1537px]:text-sm
+                                    "
+                                >
                                     Priority Change
                                 </h2>
 
-                                <p className="mt-0.5 text-xs text-gray-500">
+                                <p
+                                    className="
+                                        mt-0.5
+                                        text-xs
+                                        text-gray-500
+                                        min-[1280px]:max-[1365px]:text-[10px]
+                                        min-[1366px]:max-[1537px]:text-[11px]
+                                    "
+                                >
                                     Current ticket priority and the requested
                                     priority.
                                 </p>
                             </div>
                         </div>
 
-                        <div className="flex items-center gap-4 p-5">
+                        <div
+                            className="
+                                flex
+                                items-center
+                                gap-4
+                                p-5
+                                min-[1280px]:max-[1365px]:gap-2.5
+                                min-[1280px]:max-[1365px]:p-3
+                                min-[1366px]:max-[1537px]:gap-3
+                                min-[1366px]:max-[1537px]:p-4
+                            "
+                        >
                             <PriorityBox
                                 title="Current Priority"
-                                priority={
-                                    request.current_priority
-                                }
+                                priority={request.current_priority}
                             />
 
                             <ArrowRight
                                 size={21}
-                                className="shrink-0 text-gray-500"
+                                className="
+                                    shrink-0
+                                    text-gray-500
+                                    min-[1280px]:max-[1365px]:size-4
+                                    min-[1366px]:max-[1537px]:size-5
+                                "
                             />
 
                             <PriorityBox
                                 title="Requested Priority"
-                                priority={
-                                    request.requested_priority
-                                }
+                                priority={request.requested_priority}
                             />
                         </div>
                     </div>
 
                     <div className="overflow-hidden rounded-xl border border-gray-300 bg-white">
-                        <div className="flex items-start gap-3 border-b border-gray-200 px-5 py-4">
-                            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-gray-100">
+                        <div
+                            className="
+                                flex
+                                items-start
+                                gap-3
+                                border-b
+                                border-gray-200
+                                px-5
+                                py-4
+                                min-[1280px]:max-[1365px]:gap-2
+                                min-[1280px]:max-[1365px]:px-3
+                                min-[1280px]:max-[1365px]:py-3
+                                min-[1366px]:max-[1537px]:gap-2.5
+                                min-[1366px]:max-[1537px]:px-4
+                                min-[1366px]:max-[1537px]:py-3
+                            "
+                        >
+                            <div
+                                className="
+                                    flex
+                                    h-9
+                                    w-9
+                                    shrink-0
+                                    items-center
+                                    justify-center
+                                    rounded-lg
+                                    bg-gray-100
+                                    min-[1280px]:max-[1365px]:h-8
+                                    min-[1280px]:max-[1365px]:w-8
+                                    min-[1366px]:max-[1537px]:h-8
+                                    min-[1366px]:max-[1537px]:w-8
+                                "
+                            >
                                 <MessageSquareText
                                     size={18}
-                                    className="text-gray-600"
+                                    className="
+                                        text-gray-600
+                                        min-[1280px]:max-[1365px]:size-4
+                                        min-[1366px]:max-[1537px]:size-4
+                                    "
                                 />
                             </div>
 
                             <div>
-                                <h2 className="text-base font-semibold text-black">
+                                <h2
+                                    className="
+                                        text-base
+                                        font-semibold
+                                        text-black
+                                        min-[1280px]:max-[1537px]:text-sm
+                                    "
+                                >
                                     Reason for Request
                                 </h2>
 
-                                <p className="mt-0.5 text-xs text-gray-500">
+                                <p
+                                    className="
+                                        mt-0.5
+                                        text-xs
+                                        text-gray-500
+                                        min-[1280px]:max-[1365px]:text-[10px]
+                                        min-[1366px]:max-[1537px]:text-[11px]
+                                    "
+                                >
                                     Reason provided by IT Support for the
                                     priority change.
                                 </p>
                             </div>
                         </div>
 
-                        <div className="p-5">
-                            <div className="rounded-lg border border-gray-200 bg-gray-50 px-4 py-3">
-                                <p className="whitespace-pre-wrap break-words text-sm leading-6 text-black">
+                        <div
+                            className="
+                                p-5
+                                min-[1280px]:max-[1365px]:p-3
+                                min-[1366px]:max-[1537px]:p-4
+                            "
+                        >
+                            <div
+                                className="
+                                    rounded-lg
+                                    border
+                                    border-gray-200
+                                    bg-gray-50
+                                    px-4
+                                    py-3
+                                    min-[1280px]:max-[1365px]:px-3
+                                    min-[1280px]:max-[1365px]:py-2.5
+                                    min-[1366px]:max-[1537px]:px-3
+                                    min-[1366px]:max-[1537px]:py-2.5
+                                "
+                            >
+                                <p
+                                    className="
+                                        whitespace-pre-wrap
+                                        break-words
+                                        text-sm
+                                        leading-6
+                                        text-black
+                                        min-[1280px]:max-[1365px]:text-[11px]
+                                        min-[1280px]:max-[1365px]:leading-5
+                                        min-[1366px]:max-[1537px]:text-xs
+                                        min-[1366px]:max-[1537px]:leading-5
+                                    "
+                                >
                                     {request.reason ||
                                         "No reason provided."}
                                 </p>
                             </div>
 
-                            <div className="my-4 border-t border-gray-200" />
+                            <div
+                                className="
+                                    my-4
+                                    border-t
+                                    border-gray-200
+                                    min-[1280px]:max-[1365px]:my-3
+                                    min-[1366px]:max-[1537px]:my-3
+                                "
+                            />
 
-                            <div className="flex items-center gap-3">
+                            <div
+                                className="
+                                    flex
+                                    items-center
+                                    gap-3
+                                    min-[1280px]:max-[1365px]:gap-2
+                                "
+                            >
                                 <button
                                     type="button"
                                     onClick={handleReject}
@@ -469,9 +757,48 @@ export default function PriorityRequestDetailsContent() {
                                         isProcessing ||
                                         !isPending
                                     }
-                                    className="flex h-10 flex-1 cursor-pointer items-center justify-center gap-2 rounded-lg border border-red-400 bg-white px-4 py-3 text-sm font-medium text-red-600 transition-colors hover:bg-red-50 disabled:cursor-not-allowed disabled:border-gray-300 disabled:bg-gray-50 disabled:text-gray-400"
+                                    className="
+                                        flex
+                                        h-10
+                                        flex-1
+                                        cursor-pointer
+                                        items-center
+                                        justify-center
+                                        gap-2
+                                        rounded-lg
+                                        border
+                                        border-red-400
+                                        bg-white
+                                        px-4
+                                        py-3
+                                        text-sm
+                                        font-medium
+                                        text-red-600
+                                        transition-colors
+                                        hover:bg-red-50
+                                        disabled:cursor-not-allowed
+                                        disabled:border-gray-300
+                                        disabled:bg-gray-50
+                                        disabled:text-gray-400
+                                        min-[1280px]:max-[1365px]:h-9
+                                        min-[1280px]:max-[1365px]:gap-1.5
+                                        min-[1280px]:max-[1365px]:px-3
+                                        min-[1280px]:max-[1365px]:py-2
+                                        min-[1280px]:max-[1365px]:text-[11px]
+                                        min-[1366px]:max-[1537px]:h-9
+                                        min-[1366px]:max-[1537px]:gap-1.5
+                                        min-[1366px]:max-[1537px]:px-3
+                                        min-[1366px]:max-[1537px]:py-2
+                                        min-[1366px]:max-[1537px]:text-xs
+                                    "
                                 >
-                                    <X size={17} />
+                                    <X
+                                        size={17}
+                                        className="
+                                            min-[1280px]:max-[1365px]:size-3.5
+                                            min-[1366px]:max-[1537px]:size-4
+                                        "
+                                    />
 
                                     {rejecting
                                         ? "Rejecting..."
@@ -487,9 +814,44 @@ export default function PriorityRequestDetailsContent() {
                                         isProcessing ||
                                         !isPending
                                     }
-                                    className="flex h-10 flex-1 cursor-pointer items-center justify-center gap-2 rounded-lg bg-[#2563EB] px-4 py-3 text-sm font-medium text-white transition-colors hover:bg-[#1D4ED8] disabled:cursor-not-allowed disabled:bg-gray-300"
+                                    className="
+                                        flex
+                                        h-10
+                                        flex-1
+                                        cursor-pointer
+                                        items-center
+                                        justify-center
+                                        gap-2
+                                        rounded-lg
+                                        bg-[#2563EB]
+                                        px-4
+                                        py-3
+                                        text-sm
+                                        font-medium
+                                        text-white
+                                        transition-colors
+                                        hover:bg-[#1D4ED8]
+                                        disabled:cursor-not-allowed
+                                        disabled:bg-gray-300
+                                        min-[1280px]:max-[1365px]:h-9
+                                        min-[1280px]:max-[1365px]:gap-1.5
+                                        min-[1280px]:max-[1365px]:px-3
+                                        min-[1280px]:max-[1365px]:py-2
+                                        min-[1280px]:max-[1365px]:text-[11px]
+                                        min-[1366px]:max-[1537px]:h-9
+                                        min-[1366px]:max-[1537px]:gap-1.5
+                                        min-[1366px]:max-[1537px]:px-3
+                                        min-[1366px]:max-[1537px]:py-2
+                                        min-[1366px]:max-[1537px]:text-xs
+                                    "
                                 >
-                                    <Check size={17} />
+                                    <Check
+                                        size={17}
+                                        className="
+                                            min-[1280px]:max-[1365px]:size-3.5
+                                            min-[1366px]:max-[1537px]:size-4
+                                        "
+                                    />
 
                                     {approving
                                         ? "Approving..."
@@ -500,13 +862,47 @@ export default function PriorityRequestDetailsContent() {
                             </div>
 
                             {!isReviewed && (
-                                <div className="mt-4 flex items-start gap-2.5 rounded-lg border border-blue-200 bg-blue-50 px-3.5 py-3">
+                                <div
+                                    className="
+                                        mt-4
+                                        flex
+                                        items-start
+                                        gap-2.5
+                                        rounded-lg
+                                        border
+                                        border-blue-200
+                                        bg-blue-50
+                                        px-3.5
+                                        py-3
+                                        min-[1280px]:max-[1365px]:mt-3
+                                        min-[1280px]:max-[1365px]:gap-2
+                                        min-[1280px]:max-[1365px]:px-3
+                                        min-[1280px]:max-[1365px]:py-2.5
+                                        min-[1366px]:max-[1537px]:mt-3
+                                        min-[1366px]:max-[1537px]:px-3
+                                        min-[1366px]:max-[1537px]:py-2.5
+                                    "
+                                >
                                     <Info
                                         size={17}
-                                        className="mt-0.5 shrink-0 text-blue-600"
+                                        className="
+                                            mt-0.5
+                                            shrink-0
+                                            text-blue-600
+                                            min-[1280px]:max-[1365px]:size-3.5
+                                            min-[1366px]:max-[1537px]:size-4
+                                        "
                                     />
 
-                                    <p className="text-xs leading-5 text-blue-700">
+                                    <p
+                                        className="
+                                            text-xs
+                                            leading-5
+                                            text-blue-700
+                                            min-[1280px]:max-[1365px]:text-[10px]
+                                            min-[1366px]:max-[1537px]:text-[11px]
+                                        "
+                                    >
                                         Review remarks are required for both
                                         approval and rejection of this
                                         priority request.
@@ -516,14 +912,14 @@ export default function PriorityRequestDetailsContent() {
 
                             {isReviewed && (
                                 <div
-                                    className={`mt-4 flex items-center gap-3 rounded-lg border px-4 py-3 ${
+                                    className={`mt-4 flex items-center gap-3 rounded-lg border px-4 py-3 min-[1280px]:max-[1365px]:mt-3 min-[1280px]:max-[1365px]:gap-2 min-[1280px]:max-[1365px]:px-3 min-[1280px]:max-[1365px]:py-2.5 min-[1366px]:max-[1537px]:mt-3 min-[1366px]:max-[1537px]:gap-2.5 min-[1366px]:max-[1537px]:px-3.5 min-[1366px]:max-[1537px]:py-2.5 ${
                                         isApproved
                                             ? "border-green-200 bg-green-50"
                                             : "border-red-200 bg-red-50"
                                     }`}
                                 >
                                     <div
-                                        className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full ${
+                                        className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full min-[1280px]:max-[1365px]:h-7 min-[1280px]:max-[1365px]:w-7 ${
                                             isApproved
                                                 ? "bg-green-100"
                                                 : "bg-red-100"
@@ -532,19 +928,25 @@ export default function PriorityRequestDetailsContent() {
                                         {isApproved ? (
                                             <Check
                                                 size={16}
-                                                className="text-green-600"
+                                                className="
+                                                    text-green-600
+                                                    min-[1280px]:max-[1365px]:size-3.5
+                                                "
                                             />
                                         ) : (
                                             <X
                                                 size={16}
-                                                className="text-red-600"
+                                                className="
+                                                    text-red-600
+                                                    min-[1280px]:max-[1365px]:size-3.5
+                                                "
                                             />
                                         )}
                                     </div>
 
                                     <div>
                                         <p
-                                            className={`text-sm font-semibold ${
+                                            className={`text-sm font-semibold min-[1280px]:max-[1365px]:text-[11px] min-[1366px]:max-[1537px]:text-xs ${
                                                 isApproved
                                                     ? "text-green-800"
                                                     : "text-red-800"
@@ -554,7 +956,7 @@ export default function PriorityRequestDetailsContent() {
                                         </p>
 
                                         <p
-                                            className={`mt-0.5 text-xs ${
+                                            className={`mt-0.5 text-xs min-[1280px]:max-[1365px]:text-[10px] min-[1366px]:max-[1537px]:text-[11px] ${
                                                 isApproved
                                                     ? "text-green-700"
                                                     : "text-red-700"
@@ -575,16 +977,58 @@ export default function PriorityRequestDetailsContent() {
             </div>
 
             <div className="overflow-hidden rounded-xl border border-gray-300 bg-white">
-                <div className="flex items-start gap-3 border-b border-gray-200 px-5 py-4">
-                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-gray-100">
+                <div
+                    className="
+                        flex
+                        items-start
+                        gap-3
+                        border-b
+                        border-gray-200
+                        px-5
+                        py-4
+                        min-[1280px]:max-[1365px]:gap-2
+                        min-[1280px]:max-[1365px]:px-3
+                        min-[1280px]:max-[1365px]:py-3
+                        min-[1366px]:max-[1537px]:gap-2.5
+                        min-[1366px]:max-[1537px]:px-4
+                        min-[1366px]:max-[1537px]:py-3
+                    "
+                >
+                    <div
+                        className="
+                            flex
+                            h-9
+                            w-9
+                            shrink-0
+                            items-center
+                            justify-center
+                            rounded-lg
+                            bg-gray-100
+                            min-[1280px]:max-[1365px]:h-8
+                            min-[1280px]:max-[1365px]:w-8
+                            min-[1366px]:max-[1537px]:h-8
+                            min-[1366px]:max-[1537px]:w-8
+                        "
+                    >
                         <MessageSquareText
                             size={18}
-                            className="text-gray-600"
+                            className="
+                                text-gray-600
+                                min-[1280px]:max-[1365px]:size-4
+                                min-[1366px]:max-[1537px]:size-4
+                            "
                         />
                     </div>
 
                     <div>
-                        <h2 className="text-base font-semibold text-black">
+                        <h2
+                            className="
+                                text-base
+                                font-semibold
+                                text-black
+                                min-[1280px]:max-[1537px]:text-sm
+                            "
+                        >
                             Review Remarks
                             {!isReviewed && (
                                 <span className="font-normal text-red-500">
@@ -594,7 +1038,15 @@ export default function PriorityRequestDetailsContent() {
                             )}
                         </h2>
 
-                        <p className="mt-0.5 text-xs text-gray-500">
+                        <p
+                            className="
+                                mt-0.5
+                                text-xs
+                                text-gray-500
+                                min-[1280px]:max-[1365px]:text-[10px]
+                                min-[1366px]:max-[1537px]:text-[11px]
+                            "
+                        >
                             {isReviewed
                                 ? "Details of the Service Desk review."
                                 : "Provide remarks before approving or rejecting this request."}
@@ -603,16 +1055,48 @@ export default function PriorityRequestDetailsContent() {
                 </div>
 
                 {isReviewed ? (
-                    <div className="p-5">
-                        <div className="grid grid-cols-2 gap-6">
+                    <div
+                        className="
+                            p-5
+                            min-[1280px]:max-[1365px]:p-3
+                            min-[1366px]:max-[1537px]:p-4
+                        "
+                    >
+                        <div
+                            className="
+                                grid
+                                grid-cols-2
+                                gap-6
+                                min-[1280px]:max-[1365px]:gap-3
+                                min-[1366px]:max-[1537px]:gap-4
+                            "
+                        >
                             <div>
-                                <p className="text-xs font-medium uppercase text-gray-500">
+                                <p
+                                    className="
+                                        text-xs
+                                        font-medium
+                                        uppercase
+                                        text-gray-500
+                                        min-[1280px]:max-[1365px]:text-[10px]
+                                        min-[1366px]:max-[1537px]:text-[11px]
+                                    "
+                                >
                                     Decision
                                 </p>
 
-                                <div className="mt-2 flex items-center gap-2">
+                                <div
+                                    className="
+                                        mt-2
+                                        flex
+                                        items-center
+                                        gap-2
+                                        min-[1280px]:max-[1365px]:mt-1.5
+                                        min-[1280px]:max-[1365px]:gap-1.5
+                                    "
+                                >
                                     <div
-                                        className={`flex h-7 w-7 items-center justify-center rounded-full ${
+                                        className={`flex h-7 w-7 items-center justify-center rounded-full min-[1280px]:max-[1365px]:h-6 min-[1280px]:max-[1365px]:w-6 ${
                                             isApproved
                                                 ? "bg-green-100"
                                                 : "bg-red-100"
@@ -621,18 +1105,24 @@ export default function PriorityRequestDetailsContent() {
                                         {isApproved ? (
                                             <Check
                                                 size={15}
-                                                className="text-green-600"
+                                                className="
+                                                    text-green-600
+                                                    min-[1280px]:max-[1365px]:size-3.5
+                                                "
                                             />
                                         ) : (
                                             <X
                                                 size={15}
-                                                className="text-red-600"
+                                                className="
+                                                    text-red-600
+                                                    min-[1280px]:max-[1365px]:size-3.5
+                                                "
                                             />
                                         )}
                                     </div>
 
                                     <span
-                                        className={`text-sm font-semibold ${
+                                        className={`text-sm font-semibold min-[1280px]:max-[1365px]:text-[11px] min-[1366px]:max-[1537px]:text-xs ${
                                             isApproved
                                                 ? "text-green-700"
                                                 : "text-red-700"
@@ -646,36 +1136,78 @@ export default function PriorityRequestDetailsContent() {
                             </div>
 
                             <div>
-                                <p className="text-xs font-medium uppercase text-gray-500">
+                                <p
+                                    className="
+                                        text-xs
+                                        font-medium
+                                        uppercase
+                                        text-gray-500
+                                        min-[1280px]:max-[1365px]:text-[10px]
+                                        min-[1366px]:max-[1537px]:text-[11px]
+                                    "
+                                >
                                     Reviewed By
                                 </p>
 
-                                <div className="mt-2 flex items-center gap-3">
+                                <div
+                                    className="
+                                        mt-2
+                                        flex
+                                        items-center
+                                        gap-3
+                                        min-[1280px]:max-[1365px]:mt-1.5
+                                        min-[1280px]:max-[1365px]:gap-2
+                                    "
+                                >
                                     <Avatar
-                                        name={
-                                            reviewedBy.name
-                                        }
+                                        name={reviewedBy.name}
                                     />
 
                                     <div className="min-w-0">
-                                        <p className="truncate text-sm font-semibold text-black">
-                                            {reviewedBy.name ||
-                                                "-"}
+                                        <p
+                                            className="
+                                                truncate
+                                                text-sm
+                                                font-semibold
+                                                text-black
+                                                min-[1280px]:max-[1365px]:text-[11px]
+                                                min-[1366px]:max-[1537px]:text-xs
+                                            "
+                                        >
+                                            {reviewedBy.name || "-"}
                                         </p>
 
-                                        <p className="mt-0.5 truncate text-xs text-gray-500">
-                                            {reviewedBy.user_code ||
-                                                "-"}
+                                        <p
+                                            className="
+                                                mt-0.5
+                                                truncate
+                                                text-xs
+                                                text-gray-500
+                                                min-[1280px]:max-[1365px]:text-[10px]
+                                                min-[1366px]:max-[1537px]:text-[11px]
+                                            "
+                                        >
+                                            {reviewedBy.user_code || "-"}
                                             {" • "}
-                                            {reviewedBy.role ||
-                                                "-"}
+                                            {reviewedBy.role || "-"}
                                         </p>
                                     </div>
                                 </div>
                             </div>
                         </div>
 
-                        <div className="mt-5 border-t border-gray-200 pt-4">
+                        <div
+                            className="
+                                mt-5
+                                border-t
+                                border-gray-200
+                                pt-4
+                                min-[1280px]:max-[1365px]:mt-4
+                                min-[1280px]:max-[1365px]:pt-3
+                                min-[1366px]:max-[1537px]:mt-4
+                                min-[1366px]:max-[1537px]:pt-3
+                            "
+                        >
                             <InfoRow
                                 label="Reviewed At"
                                 value={formatDate(
@@ -684,21 +1216,72 @@ export default function PriorityRequestDetailsContent() {
                             />
                         </div>
 
-                        <div className="mt-5 border-t border-gray-200 pt-4">
-                            <p className="text-xs font-medium uppercase text-gray-500">
+                        <div
+                            className="
+                                mt-5
+                                border-t
+                                border-gray-200
+                                pt-4
+                                min-[1280px]:max-[1365px]:mt-4
+                                min-[1280px]:max-[1365px]:pt-3
+                                min-[1366px]:max-[1537px]:mt-4
+                                min-[1366px]:max-[1537px]:pt-3
+                            "
+                        >
+                            <p
+                                className="
+                                    text-xs
+                                    font-medium
+                                    uppercase
+                                    text-gray-500
+                                    min-[1280px]:max-[1365px]:text-[10px]
+                                    min-[1366px]:max-[1537px]:text-[11px]
+                                "
+                            >
                                 Review Remarks
                             </p>
 
-                            <div className="mt-2 rounded-lg border border-gray-200 bg-gray-50 px-4 py-3">
-                                <p className="whitespace-pre-wrap break-words text-sm leading-6 text-black">
-                                    {request.review_remarks ||
-                                        "-"}
+                            <div
+                                className="
+                                    mt-2
+                                    rounded-lg
+                                    border
+                                    border-gray-200
+                                    bg-gray-50
+                                    px-4
+                                    py-3
+                                    min-[1280px]:max-[1365px]:px-3
+                                    min-[1280px]:max-[1365px]:py-2.5
+                                    min-[1366px]:max-[1537px]:px-3
+                                    min-[1366px]:max-[1537px]:py-2.5
+                                "
+                            >
+                                <p
+                                    className="
+                                        whitespace-pre-wrap
+                                        break-words
+                                        text-sm
+                                        leading-6
+                                        text-black
+                                        min-[1280px]:max-[1365px]:text-[11px]
+                                        min-[1280px]:max-[1365px]:leading-5
+                                        min-[1366px]:max-[1537px]:text-xs
+                                        min-[1366px]:max-[1537px]:leading-5
+                                    "
+                                >
+                                    {request.review_remarks || "-"}
                                 </p>
                             </div>
                         </div>
                     </div>
                 ) : (
-                    <div className="p-5">
+                    <div
+                        className="
+                            p-5
+                            min-[1280px]:max-[1365px]:p-3
+                            min-[1366px]:max-[1537px]:p-4
+                        "
+                    >
                         <textarea
                             rows={4}
                             maxLength={500}
@@ -710,15 +1293,54 @@ export default function PriorityRequestDetailsContent() {
                             }
                             disabled={isProcessing}
                             placeholder="Enter your review remarks..."
-                            className="w-full resize-none rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm text-black outline-none transition placeholder:text-gray-400 focus:border-[#2563EB] focus:ring-2 focus:ring-[#2563EB]/10 disabled:cursor-not-allowed disabled:bg-gray-50"
+                            className="
+                                w-full
+                                resize-none
+                                rounded-lg
+                                border
+                                border-gray-300
+                                bg-white
+                                px-3
+                                py-2.5
+                                text-sm
+                                text-black
+                                outline-none
+                                transition
+                                placeholder:text-gray-400
+                                focus:border-[#2563EB]
+                                focus:ring-2
+                                focus:ring-[#2563EB]/10
+                                disabled:cursor-not-allowed
+                                disabled:bg-gray-50
+                                min-[1280px]:max-[1365px]:px-2.5
+                                min-[1280px]:max-[1365px]:py-2
+                                min-[1280px]:max-[1365px]:text-[11px]
+                                min-[1366px]:max-[1537px]:px-2.5
+                                min-[1366px]:max-[1537px]:py-2
+                                min-[1366px]:max-[1537px]:text-xs
+                            "
                         />
 
                         <div className="mt-1 flex items-center justify-between">
-                            <p className="text-xs text-gray-400">
+                            <p
+                                className="
+                                    text-xs
+                                    text-gray-400
+                                    min-[1280px]:max-[1365px]:text-[10px]
+                                    min-[1366px]:max-[1537px]:text-[11px]
+                                "
+                            >
                                 Required for approval or rejection.
                             </p>
 
-                            <p className="text-xs text-gray-400">
+                            <p
+                                className="
+                                    text-xs
+                                    text-gray-400
+                                    min-[1280px]:max-[1365px]:text-[10px]
+                                    min-[1366px]:max-[1537px]:text-[11px]
+                                "
+                            >
                                 {reviewRemarks.length}/500
                             </p>
                         </div>
@@ -737,22 +1359,42 @@ function InfoCell({
 }) {
     return (
         <div
-            className={`px-5 py-4 ${
+            className={`px-5 py-4 min-[1280px]:max-[1365px]:px-3 min-[1280px]:max-[1365px]:py-3 min-[1366px]:max-[1537px]:px-4 min-[1366px]:max-[1537px]:py-3 ${
                 bordered
                     ? "border-l border-gray-200"
                     : ""
             }`}
         >
-            <p className="text-xs font-medium uppercase text-gray-500">
+            <p
+                className="
+                    text-xs
+                    font-medium
+                    uppercase
+                    text-gray-500
+                    min-[1280px]:max-[1365px]:text-[10px]
+                    min-[1366px]:max-[1537px]:text-[11px]
+                "
+            >
                 {label}
             </p>
 
             <p
-                className={`mt-2 whitespace-pre-wrap break-words text-sm text-black ${
-                    multiline
-                        ? "leading-6"
-                        : "font-medium"
-                }`}
+                className={`
+                    mt-2
+                    whitespace-pre-wrap
+                    break-words
+                    text-sm
+                    text-black
+                    min-[1280px]:max-[1365px]:mt-1.5
+                    min-[1280px]:max-[1365px]:text-[11px]
+                    min-[1366px]:max-[1537px]:mt-1.5
+                    min-[1366px]:max-[1537px]:text-xs
+                    ${
+                        multiline
+                            ? "leading-6 min-[1280px]:max-[1537px]:leading-5"
+                            : "font-medium"
+                    }
+                `}
             >
                 {value || "-"}
             </p>
@@ -763,11 +1405,31 @@ function InfoCell({
 function InfoRow({ label, value }) {
     return (
         <div className="min-w-0">
-            <p className="text-xs font-medium uppercase text-gray-500">
+            <p
+                className="
+                    text-xs
+                    font-medium
+                    uppercase
+                    text-gray-500
+                    min-[1280px]:max-[1365px]:text-[10px]
+                    min-[1366px]:max-[1537px]:text-[11px]
+                "
+            >
                 {label}
             </p>
 
-            <p className="mt-2 text-sm font-medium text-black">
+            <p
+                className="
+                    mt-2
+                    text-sm
+                    font-medium
+                    text-black
+                    min-[1280px]:max-[1365px]:mt-1.5
+                    min-[1280px]:max-[1365px]:text-[11px]
+                    min-[1366px]:max-[1537px]:mt-1.5
+                    min-[1366px]:max-[1537px]:text-xs
+                "
+            >
                 {value || "-"}
             </p>
         </div>
@@ -777,31 +1439,90 @@ function InfoRow({ label, value }) {
 function UserCard({ label, user }) {
     return (
         <div className="min-w-0">
-            <p className="text-xs font-medium uppercase text-gray-500">
+            <p
+                className="
+                    text-xs
+                    font-medium
+                    uppercase
+                    text-gray-500
+                    min-[1280px]:max-[1365px]:text-[10px]
+                    min-[1366px]:max-[1537px]:text-[11px]
+                "
+            >
                 {label}
             </p>
 
             {!user?.name ? (
-                <p className="mt-3 text-sm text-gray-400">
+                <p
+                    className="
+                        mt-3
+                        text-sm
+                        text-gray-400
+                        min-[1280px]:max-[1365px]:mt-2
+                        min-[1280px]:max-[1365px]:text-[11px]
+                        min-[1366px]:max-[1537px]:mt-2
+                        min-[1366px]:max-[1537px]:text-xs
+                    "
+                >
                     -
                 </p>
             ) : (
-                <div className="mt-3 flex items-center gap-3">
+                <div
+                    className="
+                        mt-3
+                        flex
+                        items-center
+                        gap-3
+                        min-[1280px]:max-[1365px]:mt-2
+                        min-[1280px]:max-[1365px]:gap-2
+                        min-[1366px]:max-[1537px]:mt-2
+                        min-[1366px]:max-[1537px]:gap-2.5
+                    "
+                >
                     <Avatar name={user.name} />
 
                     <div className="min-w-0">
-                        <p className="truncate text-sm font-semibold text-black">
+                        <p
+                            className="
+                                truncate
+                                text-sm
+                                font-semibold
+                                text-black
+                                min-[1280px]:max-[1365px]:text-[11px]
+                                min-[1366px]:max-[1537px]:text-xs
+                            "
+                        >
                             {user.name}
                         </p>
 
-                        <p className="mt-1 truncate text-xs text-gray-500">
+                        <p
+                            className="
+                                mt-1
+                                truncate
+                                text-xs
+                                text-gray-500
+                                min-[1280px]:max-[1365px]:mt-0.5
+                                min-[1280px]:max-[1365px]:text-[10px]
+                                min-[1366px]:max-[1537px]:mt-0.5
+                                min-[1366px]:max-[1537px]:text-[11px]
+                            "
+                        >
                             {user.user_code || "-"}
                             {" • "}
                             {user.role || "-"}
                         </p>
 
                         {user.department && (
-                            <p className="mt-0.5 truncate text-xs text-gray-500">
+                            <p
+                                className="
+                                    mt-0.5
+                                    truncate
+                                    text-xs
+                                    text-gray-500
+                                    min-[1280px]:max-[1365px]:text-[10px]
+                                    min-[1366px]:max-[1537px]:text-[11px]
+                                "
+                            >
                                 {user.department}
                             </p>
                         )}
@@ -816,7 +1537,27 @@ function Avatar({ name }) {
     const initials = getInitials(name);
 
     return (
-        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#2563EB]/10 text-xs font-semibold text-[#2563EB]">
+        <div
+            className="
+                flex
+                h-9
+                w-9
+                shrink-0
+                items-center
+                justify-center
+                rounded-full
+                bg-[#2563EB]/10
+                text-xs
+                font-semibold
+                text-[#2563EB]
+                min-[1280px]:max-[1365px]:h-8
+                min-[1280px]:max-[1365px]:w-8
+                min-[1280px]:max-[1365px]:text-[10px]
+                min-[1366px]:max-[1537px]:h-8
+                min-[1366px]:max-[1537px]:w-8
+                min-[1366px]:max-[1537px]:text-[11px]
+            "
+        >
             {initials}
         </div>
     );
@@ -863,17 +1604,54 @@ function PriorityBox({
 
     return (
         <div
-            className={`flex flex-1 flex-col items-center rounded-xl border px-4 py-5 ${style}`}
+            className={`
+                flex
+                flex-1
+                flex-col
+                items-center
+                rounded-xl
+                border
+                px-4
+                py-5
+                min-[1280px]:max-[1365px]:px-2.5
+                min-[1280px]:max-[1365px]:py-3
+                min-[1366px]:max-[1537px]:px-3
+                min-[1366px]:max-[1537px]:py-4
+                ${style}
+            `}
         >
-            <p className="text-xs font-medium">
+            <p
+                className="
+                    text-xs
+                    font-medium
+                    min-[1280px]:max-[1365px]:text-[10px]
+                    min-[1366px]:max-[1537px]:text-[11px]
+                "
+            >
                 {title}
             </p>
 
-            <p className="mt-1 text-3xl font-semibold">
+            <p
+                className="
+                    mt-1
+                    text-3xl
+                    font-semibold
+                    min-[1280px]:max-[1365px]:text-xl
+                    min-[1366px]:max-[1537px]:text-2xl
+                "
+            >
                 {priority || "-"}
             </p>
 
-            <p className="mt-1 text-sm font-medium">
+            <p
+                className="
+                    mt-1
+                    text-sm
+                    font-medium
+                    min-[1280px]:max-[1365px]:text-[11px]
+                    min-[1366px]:max-[1537px]:text-xs
+                "
+            >
                 {labels[priority] || "Unknown"}
             </p>
         </div>
