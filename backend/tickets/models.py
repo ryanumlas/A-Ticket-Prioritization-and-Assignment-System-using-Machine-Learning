@@ -143,6 +143,10 @@ class TicketStatusHistory(models.Model):
             "PRIORITY_REJECTED",
             "Priority Request Rejected",
         )
+        ASSISTANCE_REQUESTED = (
+            "assistance_requested",
+            "Assistance Requested",
+        )
         ACKNOWLEDGED = ("ACKNOWLEDGED","Escalation Acknowledged",)
         ESCALATED = "ESCALATED", "Escalated"
         ESCALATION_COMPLETED = ("ESCALATION_COMPLETED", "Escalation Completed",)
@@ -372,10 +376,19 @@ class ReviewFlags(models.Model):
 #         db_table = 'ticket_requests'
 
 class TicketAssistance(models.Model):
+    class AssistanceStatus(models.TextChoices):
+        ONGOING = "ongoing", "Ongoing"
+        COMPLETED = "completed", "Completed"
+
     ticket = models.ForeignKey(
         Ticket,
         on_delete=models.CASCADE,
         related_name="assistances",
+    )
+    status = models.CharField(
+        max_length=20,
+        choices=AssistanceStatus.choices,
+        default=AssistanceStatus.ONGOING,
     )
 
     assisted_by = models.ForeignKey(
@@ -406,10 +419,56 @@ class TicketAssistance(models.Model):
 
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+    completed_at = models.DateTimeField(null=True, blank=True)
 
     class Meta:
         db_table = "ticket_assistance"
 
+class TicketAssistanceRequest(models.Model):
+    class RequestStatus(models.TextChoices):
+        PENDING = "pending", "Pending"
+        ACCEPTED = "accepted", "Accepted"
+    ticket = models.ForeignKey(
+        Ticket,
+        on_delete=models.CASCADE,
+        related_name="assistance_requests",
+    )
+    requested_department = models.ForeignKey(
+        ITDepartment,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="assistance_requests",
+    )
+
+    requested_by = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="assistance_requests_created",
+    )
+
+    reason = models.TextField()
+    status = models.CharField(max_length=20, choices=RequestStatus.choices, default=RequestStatus.PENDING)
+
+    accepted_by = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="accepted_assistance_requests",
+    )
+
+    requested_at = models.DateTimeField(auto_now_add=True)
+
+    accepted_at = models.DateTimeField(
+        null=True,
+        blank=True,
+    )
+
+    class Meta:
+        db_table = "ticket_assistance_requests"
 class TicketPriorityRequest(models.Model):
     class RequestStatus(models.TextChoices):
         PENDING = "pending", "Pending"

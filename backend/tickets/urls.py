@@ -4,10 +4,10 @@ UpdateTicketView, DeleteTicketView, CreateCategoryView, KeywordUpdateView ,Keywo
 UpdateCategoryView, CreateSymptomCodeView, SLARulesCreateView, SLARulesUpdateView, TicketDetailEmployeeView, TicketListServiceDeskView, UpdateTicketStatusView, ManualOverrideTicketView,
 ServiceDeskOverviewView, ServiceDeskClassifiedResultsView, FlaggedTicketsListView, FlaggedTicketDetailView, SymptomCodeListView, 
 AcceptRecommendationView, ApproveOverrideView, ManuallyClassifyView, SupportOverviewView, TicketQueueView, TicketListSupportView, DepartmentSymptomCodesView, 
-SLAPerformanceView, TicketsByCategoryView, TicketDetailSupportView, TicketStatusHistoryView, TicketCommentListCreateView, 
+SLAPerformanceView, TicketsByCategoryView, TicketDetailSupportView, TicketStatusHistoryView, TicketCommentListCreateView, RequestTicketAssistanceView,
 PriorityChangeRequestView, PriorityChangeRequestListView, PriorityRequestDetailView, ApprovePriorityRequestView, ReturnTicketView, 
 ReturnedTicketRequestListView, ReturnedTicketDetailRetrieve, ApproveReturnTicketView, PendingPriorityRequestCountView, PendingReturnTicketRequestCountView, 
-ServiceDeskDepartmentQueueView, EscalateTicketView, AcceptPriorityView, OverridePriorityView,SLARulesListView, CategoryListView,
+ServiceDeskDepartmentQueueView, EscalateTicketView, AcceptPriorityView, OverridePriorityView,SLARulesListView, CategoryListView, AssistanceQueueListView,
 ServiceDeskDepartmentSymptomCodesView, ServiceDeskDepartmentListView, RejectReturnTicketView, TicketDetailSupervisorView, AcknowledgeEscalationView, 
 RejectPriorityRequestView, EmployeeCurrentActiveTicketView, SupervisorEscalatedTicketsView, CompleteEscalationView, TicketCommentMarkReadView, TicketDetailServiceDeskView)
 
@@ -69,6 +69,10 @@ urlpatterns = [
     path("acknowledge-escalation/<int:pk>/",AcknowledgeEscalationView.as_view(),),
 
     path("<int:pk>/comments/mark-read/", TicketCommentMarkReadView.as_view(),name="ticket-comment-mark-read",),
+
+    # --- Assistance ---
+    path("assistance/<int:ticket_id>/request/", RequestTicketAssistanceView.as_view(), name="request-ticket-assistance",),
+    path("assistance/queue/list/", AssistanceQueueListView.as_view(),name="assistance-queue",),
     # --- Category URLs ---
     path('categories/list/', CategoryListView.as_view(), name='list-category'),
     path('categories/create/', CreateCategoryView.as_view(), name='create-category'),

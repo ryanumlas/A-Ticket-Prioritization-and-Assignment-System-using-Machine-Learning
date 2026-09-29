@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Ticket, Category, SymptomCode, TicketComments, TicketCommentRead, SLARules, ReviewFlags, TicketAssistance, Keyword, TicketStatusHistory, TicketReturn, TicketPriorityRequest, TicketEscalation
+from .models import Ticket, Category, SymptomCode, TicketComments, TicketCommentRead, SLARules, ReviewFlags, TicketAssistanceRequest,TicketAssistance, Keyword, TicketStatusHistory, TicketReturn, TicketPriorityRequest, TicketEscalation
 from users.models import  ITSupportProfile
 from django.db.models import Q
 from ai.models import TicketAnalysis, TicketAIAnalysis
@@ -2397,72 +2397,101 @@ class SupervisorEscalatedTicketSerializer(serializers.ModelSerializer):
         return comments.exclude(
             commented_by=request.user
         ).count()
-# class TicketSLASerializer(serializers.ModelSerializer):
-#     class Meta:
-#         model = TicketSLA
-#         fields = ['sla_deadline', 'is_breached', 'sla_warning_sent']
 
-# class TicketEscalationSerializer(serializers.ModelSerializer):
-#     class Meta:
-#         model = TicketEscalation
-#         fields = ['escalated_by', 'escalated_to', 'escalation_reason', 'escalated_at']
-#         read_only_fields = ['escalated_by', 'escalated_at']
+class TicketAssistanceRequestSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = TicketAssistanceRequest
+        fields = [
+            "id",
+            "ticket",
+            "requested_by",
+            "requested_department",
+            "reason",
+            "accepted_by",
+            "requested_at",
+            "accepted_at",
+        ]
 
-# class TicketAssigneeSerializer(serializers.ModelSerializer):
-#     class Meta:
-#         model = TicketAssignee
-#         fields = ['id', 'user', 'assigned_at']
-#         read_only_fields = ['assigned_at']
+        read_only_fields = [
+            "id",
+            "ticket",
+            "requested_by",
+            "accepted_by",
+            "requested_at",
+            "accepted_at",
+        ]
 
-# SLA_TIMES = {
-#     "P1": timedelta(hours=2),
-#     "P2": timedelta(hours=3),
-#     "P3": timedelta(days=2),
-#     "P4": timedelta(days=4),
-#     "P5": timedelta(days=7),
-# }
+    def validate_reason(self, value):
+        value = value.strip()
+
+        if not value:
+            raise serializers.ValidationError(
+                "Assistance details are required."
+            )
+
+        if len(value) < 30:
+            raise serializers.ValidationError(
+                "Assistance details must be at least 30 characters."
+            )
+
+        return value
+
+class TicketAssistanceRequestQueueListSerializer(serializers.ModelSerializer):
+    ticket_code = serializers.CharField(
+        source="ticket.ticket_code",
+        read_only=True,
+    )
+
+    subject = serializers.CharField(
+        source="ticket.subject",
+        read_only=True,
+    )
 
 
-    # def create(self, validated_data):
-    #     request = self.context.get('request')
-    #     validated_data['submitted_by'] = request.user    
+    priority = serializers.CharField(
+        source="ticket.priority.priority_level",
+        read_only=True,
+    )
 
-    #     # Might to remove this if training data is done.
-    #     if validated_data.get('status') == 'resolved':
-    #         validated_data['resolved_at'] = timezone.now()
+    symptom_code = serializers.CharField(
+        source="ticket.symptom_code.code",
+        read_only=True,
+    )
 
-    #     ticket = super().create(validated_data)
+    requested_by_name = serializers.SerializerMethodField()
+    requested_department_name = serializers.CharField(
+        source="requested_department.name",
+        read_only=True,
+    )
 
-    #     if ticket.priority_level:
-    #         sla_deadline = ticket.created_at + SLA_TIMES.get(
-    #             ticket.priority_level, 
-    #             timedelta(days=7)
-    #         )
-    #         TicketSLA.objects.create(
-    #             ticket=ticket,
-    #             sla_deadline=sla_deadline,
-    #             is_breached=timezone.now() > sla_deadline
-    #         )
+    class Meta:
+        model = TicketAssistanceRequest
+        fields = [
+            "id",
+            "ticket",
+            "ticket_code",
+            "subject",
+            "status",
+            "priority",
+            "symptom_code",
+            "requested_by",
+            "requested_by_name",
+            "requested_department",
+            "requested_department_name",
+            "reason",
+            "requested_at",
+            "accepted_by",
+            "accepted_at",
+        ]
 
-    #     return ticket
-    
+    def get_requested_by_name(self, obj):
+        if not obj.requested_by:
+            return "-"
 
-    # def update(self, instance, validated_data):
-    #     if validated_data.get('status') == 'resolved':
-    #         validated_data['resolved_at'] = timezone.now()
+        full_name = obj.requested_by.get_full_name().strip()
 
-    #     priority = validated_data.get('priority_level')
-    #     if priority:
-    #         sla_deadline = instance.created_at + SLA_TIMES.get(
-    #             priority,
-    #             timedelta(days=7)
-    #         )
-    #         TicketSLA.objects.update_or_create(
-    #             ticket=instance,
-    #             defaults={
-    #                 'sla_deadline': sla_deadline,
-    #                 'is_breached': timezone.now() > sla_deadline
-    #             }
-    #         )
-
-    #     return super().update(instance, validated_data)
+        return (
+            full_name
+            or obj.requested_by.username
+            or "-"
+        )

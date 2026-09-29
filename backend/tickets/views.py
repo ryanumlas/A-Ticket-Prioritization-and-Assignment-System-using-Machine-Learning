@@ -1,5 +1,6 @@
 from django.utils import timezone
-from django.shortcuts import render
+from django.core.paginator import Paginator
+from django.shortcuts import render, get_object_or_404
 from .pagination import TicketPagination
 from django.db.models import Count
 from django.db.models import Q
@@ -8,11 +9,11 @@ from rest_framework.response import Response
 from rest_framework import viewsets, generics, status
 from rest_framework.views import APIView
 from rest_framework.permissions import IsAuthenticated, AllowAny
-from .models import (Ticket, Category, SymptomCode, TicketComments, SLARules, ReviewFlags, TicketCommentRead, TicketAssistance, Keyword, TicketStatusHistory as TicketStatusHistoryModel, TicketReturn, TicketPriorityRequest, TicketEscalation)
+from .models import (Ticket, Category, SymptomCode, TicketComments, SLARules, ReviewFlags, TicketCommentRead, TicketAssistance, TicketAssistanceRequest, Keyword, TicketStatusHistory as TicketStatusHistoryModel, TicketReturn, TicketPriorityRequest, TicketEscalation)
 from .serializers import (SymptomCodeSerializer, TicketSerializer, CategorySerializer, 
-TicketAssistanceSerializer, TicketCommentSerializer, TicketStatusHistory, SLARulesSerializer, 
+TicketAssistanceSerializer, TicketCommentSerializer, TicketStatusHistory, SLARulesSerializer, TicketAssistanceRequestSerializer,
 SLARulesUpdateSerializer, KeywordSerializer, KeywordUpdateSerializer, UpdateSymptomCodeSerializer, CreateSymptomCodeSerializer,
-TicketCreateSerializer, TicketUpdateSerializer, TicketDetailEmployeeSerializer, CategoryUpdateSerializer, FlaggedTicketsListSerializer, 
+TicketCreateSerializer, TicketUpdateSerializer, TicketDetailEmployeeSerializer, CategoryUpdateSerializer, FlaggedTicketsListSerializer, TicketAssistanceRequestQueueListSerializer,
 FlaggedTicketDetailSerializer, TicketDetailSupportSerializer, TicketStatusHistorySerializer, PriorityChangeRequestSerializer, PriorityRequestListSerializer, 
 PriorityRequestDetailSerializer, ReturnTicketSerializer, ReturnedTicketRequestListSerializer, ReturnedTicketDetailSerializer, ApproveReturnTicketSerializer, 
 ServiceDeskDepartmentSerializer, RejectReturnTicketSerializer, EmployeeCurrentActiveTicketSerializer, SupervisorEscalatedTicketSerializer)
@@ -5687,63 +5688,272 @@ class SupervisorEscalatedTicketsView(APIView):
         return paginator.get_paginated_response(
             serializer.data
         )
-# class AddTicketAssigneeView(generics.CreateAPIView):
-#     permission_classes = [IsAuthenticated]
+class RequestTicketAssistanceView(APIView):
+    permission_classes = [IsAuthenticated]
 
-#     def post(self, request, ticket_id):
-#         try:
-#             ticket = Ticket.objects.get(id=ticket_id)
-#         except Ticket.DoesNotExist:
-#             return Response({'error': 'Ticket not found'}, status=404)
+    def post(self, request, ticket_id):
+        ticket = get_object_or_404(
+            Ticket,
+            id=ticket_id,
+        )
 
-#         user_ids = request.data.get('user_ids', [])
+        if ticket.assigned_to_id != request.user.id:
+            return Response(
+                {
+                    "message": (
+                        "Only the assigned technician can "
+                        "request assistance for this ticket."
+                    )
+                },
+                status=status.HTTP_403_FORBIDDEN,
+            )
 
-#         added = []
-#         for user_id in user_ids:
-#             try:
-#                 user = User.objects.get(id=user_id)
-#                 TicketAssignee.objects.get_or_create(
-#                     ticket=ticket,
-#                     user=user
-#                 )
-#                 added.append(user.first_name)
-#             except User.DoesNotExist:
-#                 pass
+        if ticket.status in [
+            Ticket.TicketStatus.RESOLVED,
+            Ticket.TicketStatus.CLOSED,
+            Ticket.TicketStatus.CANCELLED,
+        ]:
+            return Response(
+                {
+                    "message": (
+                        "Assistance cannot be requested "
+                        "for a completed ticket."
+                    )
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
 
-#         return Response({
-#             'message': f'Added assignees successfully',
-#             'added': added
-#         })
-    
-# class UpdateTicketAssigneeView(APIView):
-#     permission_classes = [IsAuthenticated]
+        existing_request = TicketAssistanceRequest.objects.filter(
+            ticket=ticket,
+            accepted_by__isnull=True,
+        ).first()
 
-#     def put(self, request, ticket_id):
-#         try:
-#             ticket = Ticket.objects.get(id=ticket_id)
-#         except Ticket.DoesNotExist:
-#             return Response(
-#                 {'error': 'Ticket not found'}, 
-#                 status=404
-#             )
+        if existing_request:
+            return Response(
+                {
+                    "message": (
+                        "This ticket already has a "
+                        "pending assistance request."
+                    )
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
 
-#         user_ids = request.data.get('user_ids', [])
+        serializer = TicketAssistanceRequestSerializer(
+            data=request.data
+        )
 
-#         TicketAssignee.objects.filter(ticket=ticket).delete()
+        serializer.is_valid(raise_exception=True)
 
-#         added = []
-#         for user_id in user_ids:
-#             try:
-#                 user = User.objects.get(id=user_id)
-#                 TicketAssignee.objects.create(
-#                     ticket=ticket,
-#                     user=user
-#                 )
-#                 added.append(f"{user.first_name} {user.last_name}")
-#             except User.DoesNotExist:
-#                 pass
+        assistance_request = serializer.save(
+            ticket=ticket,
+            requested_by=request.user,
+        )
 
-#         return Response({
-#             'message': 'Assignees updated successfully',
-#             'assignees': added
-#         })
+        department_name = (
+            assistance_request.requested_department.name
+            if assistance_request.requested_department
+            else "Unknown department"
+        )
+
+        AuditLogs.objects.create(
+            user=request.user,
+            module="Tickets",
+            action="ASSISTANCE_REQUESTED",
+            reference_id=ticket.ticket_code,
+            remarks=(
+                f"Assistance requested from {department_name}. "
+                f"Details: {assistance_request.reason}"
+            ),
+            created_by=request.user,
+        )
+
+        TicketStatusHistory.objects.create(
+            ticket=ticket,
+            event_type=(
+                TicketStatusHistory.EventType.ASSISTANCE_REQUESTED
+            ),
+            new_value=ticket.status,
+            changed_by=request.user,
+            created_by=request.user,
+            visibility=TicketStatusHistory.Visibility.ALL,
+        )
+
+        return Response(
+            {
+                "message": "Assistance request created successfully.",
+                "assistance_request": (
+                    TicketAssistanceRequestSerializer(
+                        assistance_request
+                    ).data
+                ),
+            },
+            status=status.HTTP_201_CREATED,
+        )
+
+class AssistanceQueueListView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        user = request.user
+
+        if getattr(user.role, "name", None) != "IT Support Specialist":
+            return Response(
+                {
+                    "message": (
+                        "Only IT Support Specialists can access "
+                        "the assistance queue."
+                    )
+                },
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
+        try:
+            support_profile = user.it_support_profile
+        except ITSupportProfile.DoesNotExist:
+            return Response(
+                {
+                    "message": (
+                        "Your IT Support profile is not configured."
+                    )
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        if not support_profile.it_department_id:
+            return Response(
+                {
+                    "message": (
+                        "Your IT department is not configured."
+                    )
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        queryset = (
+            TicketAssistanceRequest.objects
+            .select_related(
+                "ticket",
+                "ticket__priority",
+                "ticket__symptom_code",
+                "requested_by",
+                "requested_department",
+            )
+            .filter(
+                requested_department_id=(
+                    support_profile.it_department_id
+                ),
+                status=(
+                    TicketAssistanceRequest.RequestStatus.PENDING
+                ),
+            )
+            .order_by("-requested_at")
+        )
+
+        search = request.query_params.get(
+            "search",
+            "",
+        ).strip()
+
+        request_status = request.query_params.get(
+            "status",
+            "",
+        ).strip()
+
+        priority = request.query_params.get(
+            "priority",
+            "",
+        ).strip()
+
+        symptom_code = request.query_params.get(
+            "symptom_code",
+            "",
+        ).strip()
+
+        if search:
+            queryset = queryset.filter(
+                Q(ticket__ticket_code__icontains=search)
+                | Q(ticket__subject__icontains=search)
+                | Q(
+                    requested_by__first_name__icontains=search
+                )
+                | Q(
+                    requested_by__last_name__icontains=search
+                )
+                | Q(
+                    requested_by__username__icontains=search
+                )
+                | Q(reason__icontains=search)
+            )
+
+        if request_status:
+            queryset = queryset.filter(
+                status=request_status
+            )
+
+        if priority:
+            queryset = queryset.filter(
+                ticket__priority__priority_level=priority
+            )
+
+        if symptom_code:
+            queryset = queryset.filter(
+                ticket__symptom_code__code=symptom_code
+            )
+
+        try:
+            page = max(
+                int(
+                    request.query_params.get(
+                        "page",
+                        1,
+                    )
+                ),
+                1,
+            )
+        except (TypeError, ValueError):
+            page = 1
+
+        try:
+            page_size = int(
+                request.query_params.get(
+                    "page_size",
+                    15,
+                )
+            )
+        except (TypeError, ValueError):
+            page_size = 15
+
+        page_size = min(
+            max(page_size, 1),
+            100,
+        )
+
+        paginator = Paginator(
+            queryset,
+            page_size,
+        )
+
+        if (
+            page > paginator.num_pages
+            and paginator.num_pages > 0
+        ):
+            page = paginator.num_pages
+
+        page_obj = paginator.get_page(page)
+
+        serializer = TicketAssistanceRequestQueueListSerializer(
+            page_obj.object_list,
+            many=True,
+        )
+
+        return Response(
+            {
+                "count": paginator.count,
+                "page": page,
+                "page_size": page_size,
+                "total_pages": paginator.num_pages or 1,
+                "results": serializer.data,
+            },
+            status=status.HTTP_200_OK,
+        )
