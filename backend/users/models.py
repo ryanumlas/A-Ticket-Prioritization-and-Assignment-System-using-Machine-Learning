@@ -194,6 +194,7 @@ class Notifications(models.Model):
         COMMENT_ADDED = 'comment_added', 'Comment Added'
         REVIEW_REQUIRED = 'review_required', 'Review Required'
         TICKET_RESOLVED = 'ticket_resolved', 'Ticket Resolved'
+        REVIEW_COMPLETED = 'review_completed', 'Review Completed'
         TICKET_CLOSED = 'ticket_closed', 'Ticket Closed'
         TICKET_ESCALATED = 'ticket_escalated', 'Ticket Escalated'
         ESCALATION_ACKNOWLEDGED = (

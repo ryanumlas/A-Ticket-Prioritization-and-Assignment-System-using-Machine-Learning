@@ -25,9 +25,6 @@ export default function RemarksModal({
                 <div className="mt-4">
                     <label className="mb-1.5 block text-sm font-medium text-black">
                         Review Remarks
-                        <span className="ml-1 font-normal text-gray-400">
-                            (Optional)
-                        </span>
                     </label>
 
                     <textarea

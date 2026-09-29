@@ -26,6 +26,8 @@ export default function LowConfidenceReview({ flag }) {
 
     const navigate = useNavigate();
 
+    const MIN_REMARKS_LENGTH = 30;
+
     const openAcceptModal = () => {
         setRemarks("");
         setReviewAction("accept");
@@ -46,13 +48,32 @@ export default function LowConfidenceReview({ flag }) {
     };
 
     const handleAcceptRecommendation = async () => {
+        const cleanRemarks = remarks.trim();
+
+        if (cleanRemarks.length < MIN_REMARKS_LENGTH) {
+            toast.error("Review remarks are required", {
+                description: `Please provide at least ${MIN_REMARKS_LENGTH} characters explaining the review decision.`,
+                duration: 5000,
+                style: {
+                    background: "#ffffff",
+                    color: "#000000",
+                    border: "1px solid #e5e7eb",
+                    borderRadius: "8px",
+                    padding: "16px 18px",
+                    boxShadow: "0 10px 30px rgba(0, 0, 0, 0.08)",
+                },
+            });
+
+            return;
+        }
+
         try {
             setAccepting(true);
 
             const response = await api.post(
                 `/tickets/flagged/${flag.id}/accept-recommendation/`,
                 {
-                    remarks: remarks.trim(),
+                    remarks: cleanRemarks,
                 }
             );
 
@@ -96,6 +117,25 @@ export default function LowConfidenceReview({ flag }) {
     const handleApproveOverride = async () => {
         if (!selectedSymptom) return;
 
+        const cleanRemarks = remarks.trim();
+
+        if (cleanRemarks.length < MIN_REMARKS_LENGTH) {
+            toast.error("Review remarks are required", {
+                description: `Please provide at least ${MIN_REMARKS_LENGTH} characters explaining the review decision.`,
+                duration: 5000,
+                style: {
+                    background: "#ffffff",
+                    color: "#000000",
+                    border: "1px solid #e5e7eb",
+                    borderRadius: "8px",
+                    padding: "16px 18px",
+                    boxShadow: "0 10px 30px rgba(0, 0, 0, 0.08)",
+                },
+            });
+
+            return;
+        }
+
         try {
             setApproving(true);
 
@@ -103,7 +143,7 @@ export default function LowConfidenceReview({ flag }) {
                 `/tickets/flagged/${flag.id}/approve-override/`,
                 {
                     symptom_code: selectedSymptom,
-                    remarks: remarks.trim(),
+                    remarks: cleanRemarks,
                 }
             );
 
@@ -223,7 +263,6 @@ export default function LowConfidenceReview({ flag }) {
                         min-[1366px]:max-[1537px]:gap-3
                     "
                 >
-                    {/* TICKET INFORMATION */}
                     <div className="overflow-hidden rounded-xl border border-gray-300 bg-white">
                         <div
                             className="
@@ -388,7 +427,6 @@ export default function LowConfidenceReview({ flag }) {
                         </div>
                     </div>
 
-                    {/* REVIEW CLASSIFICATION */}
                     <div className="overflow-hidden rounded-xl border border-gray-300 bg-white">
                         <div
                             className="
@@ -468,7 +506,6 @@ export default function LowConfidenceReview({ flag }) {
                                 min-[1366px]:max-[1537px]:p-4
                             "
                         >
-                            {/* REVIEW REASON */}
                             <div
                                 className="
                                     rounded-lg
@@ -521,7 +558,6 @@ export default function LowConfidenceReview({ flag }) {
                                 </div>
                             </div>
 
-                            {/* MODEL RECOMMENDATION */}
                             <div
                                 className="
                                     mt-5
@@ -599,7 +635,6 @@ export default function LowConfidenceReview({ flag }) {
                                 </p>
                             </div>
 
-                            {/* SELECT CORRECT SYMPTOM CODE */}
                             <div
                                 className="
                                     mt-5
@@ -627,6 +662,7 @@ export default function LowConfidenceReview({ flag }) {
                                         mt-2
                                         flex
                                         w-full
+                                        cursor-pointer
                                         items-center
                                         justify-between
                                         rounded-lg
@@ -691,7 +727,6 @@ export default function LowConfidenceReview({ flag }) {
                                 </button>
                             </div>
 
-                            {/* SELECTED CLASSIFICATION */}
                             {selectedSymptom && (
                                 <div
                                     className="
@@ -755,6 +790,7 @@ export default function LowConfidenceReview({ flag }) {
                                             }
                                             className="
                                                 shrink-0
+                                                cursor-pointer
                                                 text-xs
                                                 font-medium
                                                 text-[#4C4CF9]
@@ -788,7 +824,6 @@ export default function LowConfidenceReview({ flag }) {
                                 </div>
                             )}
 
-                            {/* ACTION BUTTONS */}
                             <div
                                 className="
                                     mt-5
@@ -898,7 +933,6 @@ export default function LowConfidenceReview({ flag }) {
                     </div>
                 </div>
 
-                {/* MODEL RECOMMENDATION RESULT */}
                 <div className="overflow-hidden rounded-xl border border-gray-300 bg-white">
                     <div
                         className="
@@ -1288,12 +1322,15 @@ export default function LowConfidenceReview({ flag }) {
                     </div>
                 </div>
 
-            <SymptomCodeSheet
-                open={sheetOpen}
-                onClose={() => setSheetOpen(false)}
-                onSelect={(symptom) => setSelectedSymptom(symptom.code)}
-                excludeCode={flag.predicted_symptom_code}
-            />
+                <SymptomCodeSheet
+                    open={sheetOpen}
+                    onClose={() => setSheetOpen(false)}
+                    onSelect={(symptom) => {
+                        setSelectedSymptom(symptom.code);
+                        setSheetOpen(false);
+                    }}
+                    excludeCode={flag.predicted_symptom_code}
+                />
             </div>
 
             <RemarksModal
@@ -1306,6 +1343,8 @@ export default function LowConfidenceReview({ flag }) {
                 onConfirm={handleConfirmReview}
                 loading={accepting || approving}
                 confirmText={reviewModalConfirmText}
+                required
+                minLength={MIN_REMARKS_LENGTH}
             />
         </>
     );

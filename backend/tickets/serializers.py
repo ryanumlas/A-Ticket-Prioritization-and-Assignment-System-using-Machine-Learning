@@ -333,45 +333,265 @@ class FlaggedTicketsListSerializer(serializers.ModelSerializer):
         fields = ["id", "ticket_code", "subject", "description", "reason", "status", "created_at", "first_name", "last_name", "employee_department"]
 
 class FlaggedTicketDetailSerializer(serializers.ModelSerializer):
-    ticket_code = serializers.CharField(source="ticket.ticket_code", read_only=True)
-    subject = serializers.CharField(source="ticket.subject", read_only=True)
-    description = serializers.CharField(source="ticket.description", read_only=True)
-    business_impact = serializers.CharField(source="ticket.business_impact", read_only=True)
-    affected_scope = serializers.CharField(source="ticket.get_affected_scope_display", read_only=True)
+
+    ticket_code = serializers.CharField(
+        source="ticket.ticket_code",
+        read_only=True
+    )
+
+    subject = serializers.CharField(
+        source="ticket.subject",
+        read_only=True
+    )
+
+    description = serializers.CharField(
+        source="ticket.description",
+        read_only=True
+    )
+
+    business_impact = serializers.CharField(
+        source="ticket.business_impact",
+        read_only=True
+    )
+    affected_scope = serializers.CharField(
+        source="ticket.affected_scope",
+        read_only=True,
+        allow_null=True
+    )
+
     role = serializers.CharField(
         source="ticket.submitted_by.role",
         read_only=True
     )
-    reason = serializers.CharField(source="get_reason_display", read_only=True)
-    status = serializers.CharField(source="get_status_display", read_only=True)
-    predicted_symptom_code = serializers.CharField(source="prediction.predicted_symptom_code.code", read_only=True, allow_null=True)
-    second_predicted_symptom_code = serializers.CharField(source="prediction.second_predicted_symptom_code.code", read_only=True, allow_null=True)
-    confidence = serializers.FloatField(source="prediction.confidence", read_only=True, allow_null=True)
-    second_confidence = serializers.FloatField(source="prediction.second_confidence", read_only=True, allow_null=True)
-    confidence_margin = serializers.FloatField(source="prediction.confidence_margin", read_only=True, allow_null=True)
-    summary = serializers.CharField(source="ticket.ai_analysis.summary", read_only=True, allow_null=True)
-    business_critical = serializers.BooleanField(source="ticket.ai_analysis.business_critical", read_only=True)
-    is_unclear = serializers.BooleanField(source="ticket.ai_analysis.is_unclear", read_only=True)
-    first_name = serializers.CharField(source="ticket.submitted_by.first_name", read_only=True)
-    last_name = serializers.CharField(source="ticket.submitted_by.last_name", read_only=True)
-    user_code = serializers.CharField(source='ticket.submitted_by.user_code', read_only=True)
-    employee_department = serializers.CharField(source='ticket.employee_department.name', read_only=True)
-    office_location = serializers.CharField(source='ticket.office_location.name', read_only=True)
-    workstation = serializers.CharField(source="ticket.workstation", read_only=True)
-    cleaned_text = serializers.CharField(source="ticket.ai_analysis.cleaned_text", read_only=True, allow_null=True)
-    summary = serializers.CharField(source="ticket.ai_analysis.summary", read_only=True, allow_null=True)
-    submitted_at = serializers.DateTimeField(source="ticket.created_at", read_only=True)
-    submitted_by_first_name = serializers.CharField(source="ticket.submitted_by.first_name", read_only=True)
-    submitted_by_last_name = serializers.CharField(source="ticket.submitted_by.last_name", read_only=True)
-    submitted_by_user_code = serializers.CharField(source="ticket.submitted_by.user_code", read_only=True)
-    submitted_by_role = serializers.CharField(source="ticket.submitted_by.role", read_only=True)
+
+    reason = serializers.CharField(
+        source="get_reason_display",
+        read_only=True
+    )
+
+    status = serializers.CharField(
+        source="get_status_display",
+        read_only=True
+    )
+
+    predicted_symptom_code = serializers.CharField(
+        source="prediction.predicted_symptom_code.code",
+        read_only=True,
+        allow_null=True
+    )
+
+    second_predicted_symptom_code = serializers.CharField(
+        source="prediction.second_predicted_symptom_code.code",
+        read_only=True,
+        allow_null=True
+    )
+
+    confidence = serializers.FloatField(
+        source="prediction.confidence",
+        read_only=True,
+        allow_null=True
+    )
+
+    second_confidence = serializers.FloatField(
+        source="prediction.second_confidence",
+        read_only=True,
+        allow_null=True
+    )
+
+    confidence_margin = serializers.FloatField(
+        source="prediction.confidence_margin",
+        read_only=True,
+        allow_null=True
+    )
+
+    summary = serializers.CharField(
+        source="ticket.ai_analysis.summary",
+        read_only=True,
+        allow_null=True
+    )
+
+    business_critical = serializers.BooleanField(
+        source="ticket.ai_analysis.business_critical",
+        read_only=True
+    )
+
+    is_unclear = serializers.BooleanField(
+        source="ticket.ai_analysis.is_unclear",
+        read_only=True
+    )
+
+    first_name = serializers.CharField(
+        source="ticket.submitted_by.first_name",
+        read_only=True
+    )
+
+    last_name = serializers.CharField(
+        source="ticket.submitted_by.last_name",
+        read_only=True
+    )
+
+    user_code = serializers.CharField(
+        source="ticket.submitted_by.user_code",
+        read_only=True
+    )
+
+    employee_department = serializers.CharField(
+        source="ticket.employee_department.name",
+        read_only=True
+    )
+
+    office_location = serializers.CharField(
+        source="ticket.office_location.name",
+        read_only=True
+    )
+
+    workstation = serializers.CharField(
+        source="ticket.workstation",
+        read_only=True
+    )
+
+    cleaned_text = serializers.CharField(
+        source="ticket.ai_analysis.cleaned_text",
+        read_only=True,
+        allow_null=True
+    )
+
+    submitted_at = serializers.DateTimeField(
+        source="ticket.created_at",
+        read_only=True
+    )
+
+    submitted_by_first_name = serializers.CharField(
+        source="ticket.submitted_by.first_name",
+        read_only=True
+    )
+
+    submitted_by_last_name = serializers.CharField(
+        source="ticket.submitted_by.last_name",
+        read_only=True
+    )
+
+    submitted_by_user_code = serializers.CharField(
+        source="ticket.submitted_by.user_code",
+        read_only=True
+    )
+
+    submitted_by_role = serializers.CharField(
+        source="ticket.submitted_by.role",
+        read_only=True
+    )
+
+    base_priority = serializers.CharField(
+        source="prediction.predicted_symptom_code.based_priority",
+        read_only=True,
+        allow_null=True,
+    )
+
+    time_critical = serializers.BooleanField(
+        source="ticket.ai_analysis.is_time_critical",
+        read_only=True,
+        allow_null=True
+    )
+
+    priority = serializers.CharField(
+        source="ticket.priority.priority_level",
+        read_only=True,
+        allow_null=True,
+    )
+    reviewed_by_name = serializers.SerializerMethodField()
+    review_remarks = serializers.SerializerMethodField()
+    reviewed_at = serializers.DateTimeField(read_only=True,allow_null=True,)
+    reviewed_by_user_code = serializers.CharField(
+        source="reviewed_by.user_code",
+        read_only=True,
+    )
+    reviewed_by_role = serializers.CharField(
+        source="reviewed_by.role",
+        read_only=True,
+    )
+    reviewed_by_it_department = serializers.CharField(
+        source="reviewed_by.it_support_profile.it_department.name",
+        read_only=True,
+    )
     class Meta:
+
         model = ReviewFlags
-        fields = ["id", "role", "ticket_code", "subject", "description", "business_impact", "affected_scope", 
-                  "reason", "status", "predicted_symptom_code", "second_predicted_symptom_code", "confidence", "second_confidence", 
-                  "confidence_margin", "summary", "business_critical", "is_unclear", "created_at", "first_name", "last_name", "user_code", 
-                  "employee_department", "office_location", "workstation", "cleaned_text", "summary", "submitted_at", 
-                  "submitted_by_first_name", "submitted_by_last_name", "submitted_by_user_code", "submitted_by_role"]
+
+        fields = [
+            "id",
+            "role",
+            "ticket_code",
+            "reviewed_by_name",
+            "review_remarks",
+            "reviewed_at",
+            "reviewed_by_role",
+            "reviewed_by_it_department",
+            "subject",
+            "description",
+            "business_impact",
+            "affected_scope",
+            "reviewed_by_user_code",
+            "reason",
+            "status",
+            "predicted_symptom_code",
+            "second_predicted_symptom_code",
+            "confidence",
+            "second_confidence",
+            "confidence_margin",
+            "summary",
+            "business_critical",
+            "is_unclear",
+            "created_at",
+            "first_name",
+            "last_name",
+            "user_code",
+            "employee_department",
+            "office_location",
+            "workstation",
+            "cleaned_text",
+            "submitted_at",
+            "submitted_by_first_name",
+            "submitted_by_last_name",
+            "submitted_by_user_code",
+            "submitted_by_role",
+            "base_priority",
+            "time_critical",
+            "priority",
+        ]
+
+    def get_reviewed_by_name(self, obj):
+        reviewer = obj.reviewed_by
+
+        if not reviewer:
+            return None
+
+        full_name = (
+            f"{reviewer.first_name or ''} "
+            f"{reviewer.last_name or ''}"
+        ).strip()
+
+        return (
+            full_name
+            or reviewer.username
+            or reviewer.user_code
+            or None
+        )
+
+    def get_review_remarks(self, obj):
+        history = (
+            TicketStatusHistory.objects
+            .filter(
+                ticket=obj.ticket,
+                event_type=TicketStatusHistory.EventType.REVIEW_COMPLETED,
+            )
+            .order_by("-created_at")
+            .first()
+        )
+
+        if not history:
+            return None
+
+        return history.remarks or None
 
 class TicketCreateSerializer(serializers.ModelSerializer):
     class Meta:

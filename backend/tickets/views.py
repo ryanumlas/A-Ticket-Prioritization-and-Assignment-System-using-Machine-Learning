@@ -48,7 +48,24 @@ class CreateTicketView(generics.CreateAPIView):
             "automation": automation_result,
         }
 
-        return Response(response_data, status=status.HTTP_201_CREATED)
+        return Response(
+            response_data,
+            status=status.HTTP_201_CREATED,
+        )
+
+    def notify_service_desk(self, ticket, message, created_by):
+        service_desk_profiles = ITServiceDeskProfile.objects.select_related(
+            "user"
+        ).all()
+
+        for profile in service_desk_profiles:
+            create_notification(
+                user=profile.user,
+                ticket=ticket,
+                notification_type=Notifications.NotificationType.REVIEW_REQUIRED,
+                message=message,
+                created_by=created_by,
+            )
 
     @transaction.atomic
     def perform_create(self, serializer):
@@ -87,8 +104,14 @@ class CreateTicketView(generics.CreateAPIView):
                 "summary": analysis.get("summary", ""),
                 "keywords": analysis.get("keywords", []),
                 "model_version": "gemini-2.5-flash",
-                "business_critical": analysis.get("business_critical", False),
-                "is_unclear": analysis.get("is_unclear", False),
+                "business_critical": analysis.get(
+                    "business_critical",
+                    False,
+                ),
+                "is_unclear": analysis.get(
+                    "is_unclear",
+                    False,
+                ),
             },
         )
 
@@ -117,13 +140,22 @@ class CreateTicketView(generics.CreateAPIView):
                     visibility=TicketStatusHistory.Visibility.ALL,
                 )
 
+            self.notify_service_desk(
+                ticket=ticket,
+                message=(
+                    f"Ticket {ticket.ticket_code} requires "
+                    "Service Desk review before it can be assigned."
+                ),
+                created_by=self.request.user,
+            )
+
             create_notification(
                 user=ticket.submitted_by,
                 ticket=ticket,
                 notification_type=Notifications.NotificationType.REVIEW_REQUIRED,
                 message=(
                     f"Your ticket {ticket.ticket_code} requires "
-                    f"Service Desk review before it can be assigned."
+                    "Service Desk review before it can be assigned."
                 ),
                 created_by=self.request.user,
             )
@@ -202,13 +234,22 @@ class CreateTicketView(generics.CreateAPIView):
                         visibility=TicketStatusHistory.Visibility.ALL,
                     )
 
+                self.notify_service_desk(
+                    ticket=ticket,
+                    message=(
+                        f"Ticket {ticket.ticket_code} requires "
+                        "Service Desk review before it can be assigned."
+                    ),
+                    created_by=self.request.user,
+                )
+
                 create_notification(
                     user=ticket.submitted_by,
                     ticket=ticket,
                     notification_type=Notifications.NotificationType.REVIEW_REQUIRED,
                     message=(
                         f"Your ticket {ticket.ticket_code} requires "
-                        f"Service Desk review before it can be assigned."
+                        "Service Desk review before it can be assigned."
                     ),
                     created_by=self.request.user,
                 )
@@ -269,13 +310,22 @@ class CreateTicketView(generics.CreateAPIView):
                         visibility=TicketStatusHistory.Visibility.ALL,
                     )
 
+                self.notify_service_desk(
+                    ticket=ticket,
+                    message=(
+                        f"Ticket {ticket.ticket_code} requires "
+                        "Service Desk review before it can be assigned."
+                    ),
+                    created_by=self.request.user,
+                )
+
                 create_notification(
                     user=ticket.submitted_by,
                     ticket=ticket,
                     notification_type=Notifications.NotificationType.REVIEW_REQUIRED,
                     message=(
                         f"Your ticket {ticket.ticket_code} requires "
-                        f"Service Desk review before it can be assigned."
+                        "Service Desk review before it can be assigned."
                     ),
                     created_by=self.request.user,
                 )
@@ -354,13 +404,22 @@ class CreateTicketView(generics.CreateAPIView):
                     visibility=TicketStatusHistory.Visibility.ALL,
                 )
 
+            self.notify_service_desk(
+                ticket=ticket,
+                message=(
+                    f"Ticket {ticket.ticket_code} requires "
+                    "Service Desk review before it can be assigned."
+                ),
+                created_by=self.request.user,
+            )
+
             create_notification(
                 user=ticket.submitted_by,
                 ticket=ticket,
                 notification_type=Notifications.NotificationType.REVIEW_REQUIRED,
                 message=(
                     f"Your ticket {ticket.ticket_code} requires "
-                    f"Service Desk review before it can be assigned."
+                    "Service Desk review before it can be assigned."
                 ),
                 created_by=self.request.user,
             )
@@ -454,8 +513,13 @@ class CreateTicketView(generics.CreateAPIView):
         priority_requires_review = final_priority in ["P1", "P2"]
 
         if priority_requires_review:
+            prediction = TicketAnalysis.objects.filter(
+                ticket=ticket
+            ).first()
+
             ReviewFlags.objects.create(
                 ticket=ticket,
+                prediction=prediction,
                 reason=ReviewFlags.Reasons.PRIORITY_ASSESSMENT,
                 status=ReviewFlags.Status.PENDING,
                 source_type=ReviewFlags.SourceType.SYSTEM_GENERATED,
@@ -480,13 +544,22 @@ class CreateTicketView(generics.CreateAPIView):
                     visibility=TicketStatusHistory.Visibility.ALL,
                 )
 
+            self.notify_service_desk(
+                ticket=ticket,
+                message=(
+                    f"Ticket {ticket.ticket_code} requires "
+                    "Service Desk priority assessment before it can be assigned."
+                ),
+                created_by=self.request.user,
+            )
+
             create_notification(
                 user=ticket.submitted_by,
                 ticket=ticket,
                 notification_type=Notifications.NotificationType.REVIEW_REQUIRED,
                 message=(
                     f"Your ticket {ticket.ticket_code} requires "
-                    f"Service Desk priority assessment before it can be assigned."
+                    "Service Desk priority assessment before it can be assigned."
                 ),
                 created_by=self.request.user,
             )
@@ -562,11 +635,11 @@ class CreateTicketView(generics.CreateAPIView):
         if automation_result is not None:
             automation_result["matched_keywords"] = result.get(
                 "matched_keywords",
-                []
+                [],
             )
             automation_result["best_score"] = result.get(
                 "best_score",
-                0
+                0,
             )
 
         if assigned_profile:
@@ -592,7 +665,7 @@ class CreateTicketView(generics.CreateAPIView):
                 notification_type=Notifications.NotificationType.TICKET_ASSIGNED,
                 message=(
                     f"Ticket {ticket.ticket_code} has been "
-                    f"assigned to you."
+                    "assigned to you."
                 ),
                 created_by=self.request.user,
             )
@@ -1080,7 +1153,471 @@ class FlaggedTicketDetailView(generics.RetrieveAPIView):
     queryset = ReviewFlags.objects.all()
     serializer_class = FlaggedTicketDetailSerializer
     permission_classes = [IsAuthenticated]
+class AcceptPriorityView(APIView):
+    permission_classes = [IsAuthenticated]
 
+    def post(self, request, pk):
+        remarks = str(request.data.get("remarks") or "").strip()
+
+        if len(remarks) < 30:
+            return Response(
+                {
+                    "detail": "Review remarks must be at least 30 characters.",
+                    "remarks": "Please provide at least 30 characters.",
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        with transaction.atomic():
+            try:
+                review_flag = (
+                    ReviewFlags.objects
+                    .select_for_update()
+                    .select_related("ticket")
+                    .get(pk=pk)
+                )
+            except ReviewFlags.DoesNotExist:
+                return Response(
+                    {"detail": "Review flag not found."},
+                    status=status.HTTP_404_NOT_FOUND,
+                )
+
+            if not review_flag:
+                return Response(
+                    {"detail": "Review flag not found."},
+                    status=status.HTTP_404_NOT_FOUND,
+                )
+
+            if review_flag.status != ReviewFlags.Status.PENDING:
+                return Response(
+                    {
+                        "detail": "This review flag has already been resolved."
+                    },
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+
+            if review_flag.reason != ReviewFlags.Reasons.PRIORITY_ASSESSMENT:
+                return Response(
+                    {
+                        "detail": "This review flag is not a priority assessment."
+                    },
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+
+            ticket = review_flag.ticket
+            prediction = review_flag.prediction
+
+            if not prediction:
+                return Response(
+                    {
+                        "detail": "No AI prediction is associated with this review flag."
+                    },
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+
+            predicted_symptom_code = prediction.predicted_symptom_code
+
+            if not predicted_symptom_code:
+                return Response(
+                    {
+                        "detail": "No predicted symptom code is available."
+                    },
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+
+            ai_analysis = getattr(ticket, "ai_analysis", None)
+
+            if not ai_analysis:
+                return Response(
+                    {
+                        "detail": "No AI analysis is available for this ticket."
+                    },
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+
+            old_priority = (
+                ticket.priority.priority_level
+                if ticket.priority
+                else None
+            )
+
+            priority_level = calculate_priority(
+                based_priority=predicted_symptom_code.based_priority,
+                affected_scope=ticket.affected_scope,
+                business_critical=ai_analysis.business_critical,
+                time_critical=ai_analysis.is_time_critical,
+            )
+
+            try:
+                sla_rule = SLARules.objects.get(
+                    priority_level=priority_level
+                )
+            except SLARules.DoesNotExist:
+                return Response(
+                    {
+                        "detail": f"No SLA rule exists for {priority_level}."
+                    },
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+
+            ticket.symptom_code = predicted_symptom_code
+            ticket.category = predicted_symptom_code.category
+
+            if predicted_symptom_code.category:
+                ticket.it_department = (
+                    predicted_symptom_code.category.it_department
+                )
+            else:
+                ticket.it_department = None
+
+            ticket.priority = sla_rule
+            ticket.status = Ticket.TicketStatus.OPEN
+            ticket.is_under_review = False
+            ticket.updated_by = request.user
+
+            ticket.save(
+                update_fields=[
+                    "symptom_code",
+                    "category",
+                    "it_department",
+                    "priority",
+                    "status",
+                    "is_under_review",
+                    "updated_by",
+                    "updated_at",
+                ]
+            )
+
+            update_sla(ticket)
+
+            review_flag.status = ReviewFlags.Status.RESOLVED
+            review_flag.reviewed_by = request.user
+            review_flag.reviewed_at = timezone.now()
+
+            review_flag.save(
+                update_fields=[
+                    "status",
+                    "reviewed_by",
+                    "reviewed_at",
+                    "updated_at",
+                ]
+            )
+
+            TicketStatusHistory.objects.create(
+                ticket=ticket,
+                event_type=TicketStatusHistory.EventType.REVIEW_COMPLETED,
+                old_value="Under Review",
+                new_value="Accepted",
+                remarks=remarks,
+                visibility=TicketStatusHistory.Visibility.INTERNAL,
+                created_by=request.user,
+                changed_by=request.user,
+            )
+
+            if old_priority != priority_level:
+                TicketStatusHistory.objects.create(
+                    ticket=ticket,
+                    event_type=TicketStatusHistory.EventType.PRIORITY_CHANGED,
+                    old_value=old_priority,
+                    new_value=priority_level,
+                    remarks=remarks,
+                    visibility=TicketStatusHistory.Visibility.INTERNAL,
+                    created_by=request.user,
+                    changed_by=request.user,
+                )
+
+            AuditLogs.objects.create(
+                user=request.user,
+                module="Ticket Review",
+                action="Accepted Priority Assessment",
+                reference_id=str(ticket.id),
+                remarks=remarks,
+                created_by=request.user,
+            )
+
+            employee = ticket.submitted_by
+
+            Notifications.objects.create(
+                user=employee,
+                ticket=ticket,
+                message=(
+                    f"Your ticket {ticket.ticket_code} has been reviewed "
+                    f"by the IT Service Desk. The assessed priority is "
+                    f"{priority_level}."
+                ),
+                notification_type=Notifications.NotificationType.REVIEW_COMPLETED,
+                created_by=request.user,
+                updated_by=request.user,
+            )
+
+            technician = assign_ticket_automatically(ticket)
+
+            assignment_data = None
+
+            if technician:
+                assignment_data = {
+                    "id": technician.id,
+                    "name": f"{technician.user.first_name} {technician.user.last_name}".strip(),
+                    "username": technician.user.username,
+                }
+
+            return Response(
+                {
+                    "success": True,
+                    "message": "Priority assessment accepted successfully.",
+                    "review_flag": {
+                        "id": review_flag.id,
+                        "status": review_flag.status,
+                        "reviewed_by": review_flag.reviewed_by_id,
+                        "reviewed_by_name": (
+                            f"{review_flag.reviewed_by.first_name} "
+                            f"{review_flag.reviewed_by.last_name}"
+                        ).strip(),
+                        "reviewed_by_user_code": (
+                            review_flag.reviewed_by.user_code
+                            if review_flag.reviewed_by
+                            else ""
+                        ),
+                        "reviewed_by_it_department": (
+                            review_flag.reviewed_by.it_support_profile.it_department.name
+                            if (
+                                review_flag.reviewed_by
+                                and hasattr(
+                                    review_flag.reviewed_by,
+                                    "it_support_profile",
+                                )
+                                and review_flag.reviewed_by.it_support_profile
+                                and review_flag.reviewed_by.it_support_profile.it_department
+                            )
+                            else ""
+                        ),
+                        "reviewed_at": review_flag.reviewed_at,
+                        "review_remarks": remarks,
+                    },
+                    "ticket": {
+                        "id": ticket.id,
+                        "ticket_code": ticket.ticket_code,
+                        "priority": ticket.priority.priority_level
+                        if ticket.priority
+                        else None,
+                    },
+                },
+                status=status.HTTP_200_OK,
+            )
+class OverridePriorityView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, pk):
+        remarks = str(request.data.get("remarks") or "").strip()
+        priority_level = str(request.data.get("priority") or "").strip().upper()
+
+        if len(remarks) < 30:
+            return Response(
+                {
+                    "detail": "Review remarks must be at least 30 characters.",
+                    "remarks": "Please provide at least 30 characters.",
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        if not priority_level:
+            return Response(
+                {
+                    "detail": "A priority must be selected.",
+                    "priority": "Please select a priority.",
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        valid_priorities = {"P1", "P2", "P3", "P4", "P5"}
+
+        if priority_level not in valid_priorities:
+            return Response(
+                {
+                    "detail": "Invalid priority selected.",
+                    "priority": "Priority must be P1, P2, P3, P4, or P5.",
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        with transaction.atomic():
+            try:
+                review_flag = (
+                    ReviewFlags.objects
+                    .select_for_update()
+                    .select_related("ticket")
+                    .get(pk=pk)
+                )
+            except ReviewFlags.DoesNotExist:
+                return Response(
+                    {"detail": "Review flag not found."},
+                    status=status.HTTP_404_NOT_FOUND,
+                )
+
+            if review_flag.status != ReviewFlags.Status.PENDING:
+                return Response(
+                    {
+                        "detail": "This review flag has already been resolved."
+                    },
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+
+            if review_flag.reason != ReviewFlags.Reasons.PRIORITY_ASSESSMENT:
+                return Response(
+                    {
+                        "detail": "This review flag is not a priority assessment."
+                    },
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+
+            ticket = review_flag.ticket
+
+            old_priority = (
+                ticket.priority.priority_level
+                if ticket.priority
+                else None
+            )
+
+            try:
+                sla_rule = SLARules.objects.get(
+                    priority_level=priority_level
+                )
+            except SLARules.DoesNotExist:
+                return Response(
+                    {
+                        "detail": f"No SLA rule exists for {priority_level}."
+                    },
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+
+            old_status = ticket.status
+
+            ticket.priority = sla_rule
+            ticket.is_under_review = False
+            ticket.updated_by = request.user
+
+            if ticket.status == Ticket.TicketStatus.UNDER_REVIEW:
+                ticket.status = Ticket.TicketStatus.OPEN
+
+            ticket.save(
+                update_fields=[
+                    "priority",
+                    "is_under_review",
+                    "status",
+                    "updated_by",
+                    "updated_at",
+                ]
+            )
+
+            update_sla(ticket)
+
+            review_flag.status = ReviewFlags.Status.RESOLVED
+            review_flag.reviewed_by = request.user
+            review_flag.reviewed_at = timezone.now()
+
+            review_flag.save(
+                update_fields=[
+                    "status",
+                    "reviewed_by",
+                    "reviewed_at",
+                    "updated_at",
+                ]
+            )
+
+            TicketStatusHistory.objects.create(
+                ticket=ticket,
+                event_type=TicketStatusHistory.EventType.REVIEW_COMPLETED,
+                old_value="Under Review",
+                new_value="Priority Overridden",
+                remarks=remarks,
+                visibility=TicketStatusHistory.Visibility.INTERNAL,
+                created_by=request.user,
+                changed_by=request.user,
+            )
+
+            if old_priority != priority_level:
+                TicketStatusHistory.objects.create(
+                    ticket=ticket,
+                    event_type=TicketStatusHistory.EventType.PRIORITY_CHANGED,
+                    old_value=old_priority,
+                    new_value=priority_level,
+                    remarks=remarks,
+                    visibility=TicketStatusHistory.Visibility.INTERNAL,
+                    created_by=request.user,
+                    changed_by=request.user,
+                )
+
+            AuditLogs.objects.create(
+                user=request.user,
+                module="Ticket Review",
+                action="Overrode Priority Assessment",
+                reference_id=str(ticket.id),
+                remarks=remarks,
+                created_by=request.user,
+            )
+
+            employee = ticket.submitted_by
+
+            Notifications.objects.create(
+                user=employee,
+                ticket=ticket,
+                message=(
+                    f"Your ticket {ticket.ticket_code} has been reviewed "
+                    f"by the IT Service Desk. The priority has been "
+                    f"overridden to {priority_level}."
+                ),
+                notification_type=Notifications.NotificationType.REVIEW_COMPLETED,
+                created_by=request.user,
+                updated_by=request.user,
+            )
+
+            technician = assign_ticket_automatically(ticket)
+
+            assignment_data = None
+
+            if technician:
+                assignment_data = {
+                    "id": technician.id,
+                    "name": (
+                        f"{technician.user.first_name} "
+                        f"{technician.user.last_name}"
+                    ).strip(),
+                    "username": technician.user.username,
+                }
+
+            return Response(
+                {
+                    "success": True,
+                    "message": "Priority overridden successfully.",
+                    "review_flag": {
+                        "id": review_flag.id,
+                        "status": review_flag.status,
+                        "reviewed_by": review_flag.reviewed_by_id,
+                        "reviewed_by_name": (
+                            f"{review_flag.reviewed_by.first_name} "
+                            f"{review_flag.reviewed_by.last_name}"
+                        ).strip(),
+                        "reviewed_by_user_code": (
+                            review_flag.reviewed_by.user_code
+                            if review_flag.reviewed_by
+                            else ""
+                        ),
+                        "reviewed_at": review_flag.reviewed_at,
+                        "review_remarks": remarks,
+                    },
+                    "ticket": {
+                        "id": ticket.id,
+                        "ticket_code": ticket.ticket_code,
+                        "priority": (
+                            ticket.priority.priority_level
+                            if ticket.priority
+                            else None
+                        ),
+                    },
+                    "assignment": assignment_data,
+                },
+                status=status.HTTP_200_OK,
+            )
 class ApproveOverrideView(APIView):
     permission_classes = [IsAuthenticated]
 

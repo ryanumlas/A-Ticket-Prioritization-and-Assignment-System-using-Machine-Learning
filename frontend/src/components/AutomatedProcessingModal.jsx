@@ -771,6 +771,166 @@ export default function AutomatedProcessingModal({
                                 </div>
                             </div>
 
+                            <div className="border-t border-gray-200 px-4 py-4 sm:px-5">
+                                <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                                    <div className="min-w-0">
+                                        <h4 className="text-sm font-semibold text-gray-900">
+                                            Priority Calculation
+                                        </h4>
+
+                                        <p className="mt-0.5 max-w-3xl text-xs leading-5 text-gray-500">
+                                            Factors considered by
+                                            the system when
+                                            determining the final
+                                            ticket priority.
+                                        </p>
+                                    </div>
+
+                                    <span className="inline-flex w-fit shrink-0 items-center rounded-md border border-orange-300 bg-orange-50 px-2.5 py-1 text-xs font-semibold text-orange-700">
+                                        P2 — High
+                                    </span>
+                                </div>
+
+                                <div className="mt-4 overflow-hidden rounded-lg border border-gray-200">
+                                    <div className="grid grid-cols-[minmax(0,1fr)_150px_120px] border-b border-gray-200 bg-gray-50 px-3 py-2.5 sm:grid-cols-[minmax(0,1fr)_180px_140px]">
+                                        <p className="text-[11px] font-semibold uppercase tracking-wide text-gray-500">
+                                            Factor
+                                        </p>
+
+                                        <p className="text-[11px] font-semibold uppercase tracking-wide text-gray-500">
+                                            Detected Value
+                                        </p>
+
+                                        <p className="text-right text-[11px] font-semibold uppercase tracking-wide text-gray-500">
+                                            Effect
+                                        </p>
+                                    </div>
+
+                                    <div className="divide-y divide-gray-200">
+                                        <div className="grid grid-cols-[minmax(0,1fr)_150px_120px] items-center gap-2 px-3 py-3 sm:grid-cols-[minmax(0,1fr)_180px_140px]">
+                                            <div className="min-w-0">
+                                                <p className="text-sm font-medium text-gray-900">
+                                                    Base Priority
+                                                </p>
+
+                                                <p className="mt-0.5 text-xs text-gray-500">
+                                                    Priority assigned
+                                                    from the detected
+                                                    symptom.
+                                                </p>
+                                            </div>
+
+                                            <span className="inline-flex w-fit rounded-md border border-yellow-300 bg-yellow-50 px-2 py-1 text-xs font-semibold text-yellow-700">
+                                                P3 — Medium
+                                            </span>
+
+                                            <p className="text-right text-xs font-medium text-gray-500">
+                                                Starting point
+                                            </p>
+                                        </div>
+
+                                        <div className="grid grid-cols-[minmax(0,1fr)_150px_120px] items-center gap-2 px-3 py-3 sm:grid-cols-[minmax(0,1fr)_180px_140px]">
+                                            <div className="min-w-0">
+                                                <p className="text-sm font-medium text-gray-900">
+                                                    Affected Scope
+                                                </p>
+
+                                                <p className="mt-0.5 text-xs text-gray-500">
+                                                    Number or scope of
+                                                    users affected.
+                                                </p>
+                                            </div>
+
+                                            <span className="inline-flex w-fit rounded-md border border-orange-200 bg-orange-50 px-2 py-1 text-xs font-medium text-orange-700">
+                                                Department
+                                            </span>
+
+                                            <p className="text-right text-xs font-semibold text-orange-700">
+                                                Increases
+                                            </p>
+                                        </div>
+
+                                        <div className="grid grid-cols-[minmax(0,1fr)_150px_120px] items-center gap-2 px-3 py-3 sm:grid-cols-[minmax(0,1fr)_180px_140px]">
+                                            <div className="min-w-0">
+                                                <p className="text-sm font-medium text-gray-900">
+                                                    Business Critical
+                                                </p>
+
+                                                <p className="mt-0.5 text-xs text-gray-500">
+                                                    Essential business
+                                                    operations are
+                                                    affected.
+                                                </p>
+                                            </div>
+
+                                            <span className="inline-flex w-fit rounded-md border border-orange-200 bg-orange-50 px-2 py-1 text-xs font-medium text-orange-700">
+                                                Yes
+                                            </span>
+
+                                            <p className="text-right text-xs font-semibold text-orange-700">
+                                                Increases
+                                            </p>
+                                        </div>
+
+                                        <div className="grid grid-cols-[minmax(0,1fr)_150px_120px] items-center gap-2 px-3 py-3 sm:grid-cols-[minmax(0,1fr)_180px_140px]">
+                                            <div className="min-w-0">
+                                                <p className="text-sm font-medium text-gray-900">
+                                                    Time Critical
+                                                </p>
+
+                                                <p className="mt-0.5 text-xs text-gray-500">
+                                                    The issue requires
+                                                    urgent attention.
+                                                </p>
+                                            </div>
+
+                                            <span className="inline-flex w-fit rounded-md border border-orange-200 bg-orange-50 px-2 py-1 text-xs font-medium text-orange-700">
+                                                Yes
+                                            </span>
+
+                                            <p className="text-right text-xs font-semibold text-orange-700">
+                                                Increases
+                                            </p>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between rounded-lg border-2 border-orange-200 bg-orange-50 px-4 py-4">
+                                    <div className="min-w-0">
+                                        <p className="text-xs font-semibold uppercase tracking-wide text-orange-700">
+                                            Final Priority
+                                        </p>
+
+                                        <p className="mt-1 text-lg font-bold text-gray-900">
+                                            P2 — High
+                                        </p>
+
+                                        <p className="mt-1 text-xs leading-5 text-orange-800">
+                                            Priority increased from
+                                            P3 because the ticket
+                                            affects a department and
+                                            has business and time
+                                            critical impact.
+                                        </p>
+                                    </div>
+
+                                    <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full border border-orange-300 bg-white text-sm font-bold text-orange-700">
+                                        P2
+                                    </div>
+                                </div>
+
+                                <div className="mt-3 rounded-lg border border-blue-100 bg-blue-50 px-3 py-3">
+                                    <p className="text-xs leading-5 text-blue-800">
+                                        The system starts with the
+                                        symptom&apos;s base priority,
+                                        then evaluates affected scope,
+                                        business criticality, and time
+                                        criticality to determine the
+                                        final priority.
+                                    </p>
+                                </div>
+                            </div>
+
                             {processingMethod ===
                                 "rule_based" && (
                                 <div className="border-t border-gray-200 px-4 py-4 sm:px-5">

@@ -7,7 +7,7 @@ AcceptRecommendationView, ApproveOverrideView, ManuallyClassifyView, SupportOver
 SLAPerformanceView, TicketsByCategoryView, TicketDetailSupportView, TicketStatusHistoryView, TicketCommentListCreateView, 
 PriorityChangeRequestView, PriorityChangeRequestListView, PriorityRequestDetailView, ApprovePriorityRequestView, ReturnTicketView, 
 ReturnedTicketRequestListView, ReturnedTicketDetailRetrieve, ApproveReturnTicketView, PendingPriorityRequestCountView, PendingReturnTicketRequestCountView, 
-ServiceDeskDepartmentQueueView, EscalateTicketView,
+ServiceDeskDepartmentQueueView, EscalateTicketView, AcceptPriorityView, OverridePriorityView,
 ServiceDeskDepartmentSymptomCodesView, ServiceDeskDepartmentListView, RejectReturnTicketView, TicketDetailSupervisorView, AcknowledgeEscalationView, 
 RejectPriorityRequestView, EmployeeCurrentActiveTicketView, SupervisorEscalatedTicketsView, CompleteEscalationView, TicketCommentMarkReadView, TicketDetailServiceDeskView)
 
@@ -45,6 +45,8 @@ urlpatterns = [
     path("flagged/<int:pk>/accept-recommendation/", AcceptRecommendationView.as_view(), name="accept-recommendation"),
     path('flagged/<int:pk>/approve-override/', ApproveOverrideView.as_view(), name='approve-override'),
     path('flagged/<int:pk>/manual-classify/', ManuallyClassifyView.as_view(), name='manual-classify'),
+    path("flagged/<int:pk>/accept-priority/", AcceptPriorityView.as_view(), name="accept-priority",),
+    path("flagged/<int:pk>/override-priority/", OverridePriorityView.as_view(), name="override-priority",),
 
     path("support/detail/<int:ticket_id>/", TicketDetailSupportView.as_view(), name="support-ticket-detail",),
     path('support-specialist/overview/', SupportOverviewView.as_view(), name='support-overview'),

@@ -4,6 +4,7 @@ import {
     ClipboardCheck,
     Ticket,
     CheckCircle2,
+    Pencil,
 } from "lucide-react";
 import { formatDate } from "../../utils/formatDate";
 import {
@@ -14,6 +15,7 @@ import {
     affectedScopeLabel,
     affectedScopeColor,
 } from "../../utils/affectedScopeColor";
+import api from "/src/api";
 
 const MIN_REMARKS_LENGTH = 30;
 
@@ -25,68 +27,100 @@ export default function PriorityAssessmentReview({ flag }) {
     const [reviewAction, setReviewAction] = useState(null);
     const [selectedPriority, setSelectedPriority] = useState("");
     const [priorityModalOpen, setPriorityModalOpen] = useState(false);
+    const [reviewedFlag, setReviewedFlag] = useState(null);
+    const [apiError, setApiError] = useState("");
+    const [toast, setToast] = useState(null);
+
+    const activeFlag = reviewedFlag || flag;
 
     const submittedByName =
-        `${flag?.first_name || ""} ${flag?.last_name || ""}`.trim();
+        `${activeFlag?.first_name || ""} ${activeFlag?.last_name || ""}`.trim();
 
     const currentPriority =
-        flag?.priority ||
-        flag?.predicted_priority ||
-        flag?.priority_level ||
-        flag?.final_priority ||
-        "-";
+        activeFlag?.priority ||
+        activeFlag?.predicted_priority ||
+        activeFlag?.priority_level ||
+        activeFlag?.final_priority ||
+        activeFlag?.contextual_priority ||
+        activeFlag?.calculated_priority ||
+        null;
 
     const basePriority =
-        flag?.based_priority ||
-        flag?.base_priority ||
-        "-";
+        activeFlag?.base_priority ||
+        activeFlag?.based_priority ||
+        null;
 
     const affectedScope =
-        flag?.affected_scope || "-";
+        activeFlag?.affected_scope ||
+        activeFlag?.affectedScope ||
+        null;
 
     const businessCritical =
-        flag?.business_critical;
+        activeFlag?.business_critical ??
+        activeFlag?.businessCritical ??
+        false;
 
     const timeCritical =
-        flag?.time_critical;
+        activeFlag?.time_critical ??
+        activeFlag?.timeCritical ??
+        false;
 
     const impact =
-        flag?.impact ||
+        activeFlag?.impact ||
         getImpact(affectedScope);
 
     const urgency =
-        flag?.urgency ||
+        activeFlag?.urgency ||
         getUrgency(businessCritical, timeCritical);
 
-    const contextualPriority =
-        flag?.contextual_priority ||
-        flag?.calculated_priority ||
-        currentPriority;
-
-    const isReviewed =
-        flag?.status === "resolved" ||
-        flag?.status === "reviewed" ||
-        flag?.reviewed_at ||
-        flag?.reviewed_by ||
-        flag?.reviewed_by_name ||
-        flag?.reviewer_name;
-
-    const reviewedByName =
-        flag?.reviewed_by_name ||
-        flag?.reviewer_name ||
-        getReviewerName(flag?.reviewed_by) ||
-        "-";
-
     const reviewedAt =
-        flag?.reviewed_at ||
-        flag?.review_date ||
-        flag?.resolved_at ||
+        activeFlag?.reviewed_at ||
+        activeFlag?.review_date ||
+        activeFlag?.resolved_at ||
         null;
 
+    const normalizedStatus = String(
+        activeFlag?.status || ""
+    ).toLowerCase();
+
+    const isReviewed =
+        normalizedStatus === "resolved" ||
+        normalizedStatus === "reviewed" ||
+        normalizedStatus === "approved" ||
+        Boolean(reviewedAt) ||
+        Boolean(activeFlag?.reviewed_by) ||
+        Boolean(activeFlag?.reviewed_by_name) ||
+        Boolean(activeFlag?.reviewer_name) ||
+        Boolean(activeFlag?.review_remarks);
+
+    const reviewedBy =
+        activeFlag?.reviewed_by ||
+        activeFlag?.reviewer ||
+        null;
+
+    const reviewedByName =
+        activeFlag?.reviewed_by_name ||
+        activeFlag?.reviewer_name ||
+        getReviewerName(reviewedBy) ||
+        "-";
+
+    const reviewedByUserCode =
+        activeFlag?.reviewed_by_user_code ||
+        activeFlag?.reviewer_user_code ||
+        reviewedBy?.user_code ||
+        "";
+
+    const reviewedByDepartment =
+        activeFlag?.reviewed_by_it_department ||
+        activeFlag?.reviewed_by_department ||
+        activeFlag?.reviewer_department ||
+        getReviewerDepartment(reviewedBy) ||
+        "";
+
     const existingReviewRemarks =
-        flag?.review_remarks ||
-        flag?.remarks ||
-        flag?.reviewer_remarks ||
+        activeFlag?.review_remarks ||
+        activeFlag?.reviewer_remarks ||
+        activeFlag?.remarks ||
         "-";
 
     const trimmedRemarks = remarks.trim();
@@ -103,79 +137,380 @@ export default function PriorityAssessmentReview({ flag }) {
         remarksTouched &&
         !isRemarksValid;
 
+    const showToast = (type, message) => {
+        setToast({
+            type,
+            message,
+        });
+
+        setTimeout(() => {
+            setToast(null);
+        }, 4000);
+    };
+
+    const handleAcceptPriority = async () => {
+        const cleanRemarks = remarks.trim();
+
+        setRemarksTouched(true);
+        setApiError("");
+
+        if (cleanRemarks.length < MIN_REMARKS_LENGTH) {
+            return;
+        }
+
+        setAccepting(true);
+
+        try {
+            const response = await api.post(
+                `/tickets/flagged/${activeFlag.id}/accept-priority/`,
+                {
+                    remarks: cleanRemarks,
+                }
+            );
+
+            const data = response.data;
+
+            const returnedReviewer =
+                data?.review_flag?.reviewed_by ||
+                data?.reviewed_by ||
+                null;
+
+            const returnedReviewFlag = {
+                ...activeFlag,
+
+                status:
+                    data?.review_flag?.status ||
+                    "resolved",
+
+                reviewed_by:
+                    data?.review_flag?.reviewed_by ||
+                    data?.reviewed_by ||
+                    returnedReviewer,
+
+                reviewed_by_name:
+                    data?.review_flag?.reviewed_by_name ||
+                    data?.reviewed_by_name ||
+                    getReviewerName(returnedReviewer) ||
+                    "Service Desk",
+
+                reviewed_by_user_code:
+                    data?.review_flag?.reviewed_by_user_code ||
+                    data?.reviewed_by_user_code ||
+                    returnedReviewer?.user_code ||
+                    "",
+
+                reviewed_by_it_department:
+                    data?.review_flag?.reviewed_by_it_department ||
+                    data?.reviewed_by_it_department ||
+                    "",
+
+                reviewed_by_department:
+                    data?.review_flag?.reviewed_by_department ||
+                    data?.reviewed_by_department ||
+                    getReviewerDepartment(returnedReviewer) ||
+                    "",
+
+                reviewed_at:
+                    data?.review_flag?.reviewed_at ||
+                    data?.reviewed_at ||
+                    new Date().toISOString(),
+
+                review_remarks:
+                    data?.review_flag?.review_remarks ||
+                    data?.review_remarks ||
+                    cleanRemarks,
+
+                remarks: cleanRemarks,
+
+                priority:
+                    data?.ticket?.priority ||
+                    currentPriority,
+            };
+
+            setReviewedFlag(returnedReviewFlag);
+            setReviewAction(null);
+            setRemarks("");
+            setRemarksTouched(false);
+            setSelectedPriority("");
+            setApiError("");
+
+            showToast(
+                "success",
+                "Priority assessment accepted successfully."
+            );
+
+            console.log(
+                "Priority accepted successfully:",
+                data
+            );
+        } catch (error) {
+            console.error(
+                "Priority review request failed:",
+                error
+            );
+
+            const responseData =
+                error?.response?.data;
+
+            const errorMessage =
+                typeof responseData?.detail === "string"
+                    ? responseData.detail
+                    : Array.isArray(
+                          responseData?.remarks
+                      )
+                    ? responseData.remarks[0]
+                    : typeof responseData?.remarks === "string"
+                    ? responseData.remarks
+                    : typeof responseData?.message === "string"
+                    ? responseData.message
+                    : error?.message ||
+                      "Failed to accept the priority assessment.";
+
+            setApiError(errorMessage);
+
+            showToast(
+                "error",
+                errorMessage
+            );
+        } finally {
+            setAccepting(false);
+        }
+    };
+
     const openAcceptReview = () => {
-        setRemarks("");
-        setRemarksTouched(false);
+        if (isReviewed) {
+            return;
+        }
+
+        setApiError("");
         setReviewAction("accept");
+
+        if (
+            remarks.trim().length >=
+            MIN_REMARKS_LENGTH
+        ) {
+            handleAcceptPriority();
+        } else {
+            setRemarksTouched(true);
+        }
     };
 
     const openPriorityModal = () => {
-        setSelectedPriority("");
+        if (isReviewed) {
+            return;
+        }
+
+        setApiError("");
+        setPriorityModalOpen(true);
+    };
+
+    const openPriorityChange = () => {
+        if (isReviewed) {
+            return;
+        }
+
+        setApiError("");
         setPriorityModalOpen(true);
     };
 
     const closePriorityModal = () => {
-        if (overriding) return;
-
-        setPriorityModalOpen(false);
-        setSelectedPriority("");
-    };
-
-    const continuePriorityOverride = () => {
-        if (!selectedPriority) return;
-
-        if (selectedPriority === currentPriority) return;
-
-        setPriorityModalOpen(false);
-        setRemarks("");
-        setRemarksTouched(false);
-        setReviewAction("override");
-    };
-
-    const cancelReviewAction = () => {
-        if (accepting || overriding) return;
-
-        setReviewAction(null);
-        setRemarks("");
-        setRemarksTouched(false);
-
-        if (reviewAction === "override") {
-            setSelectedPriority("");
-        }
-    };
-
-    const handleConfirmReview = async () => {
-        if (!reviewAction) return;
-
-        const cleanRemarks = remarks.trim();
-
-        if (cleanRemarks.length < MIN_REMARKS_LENGTH) {
-            setRemarksTouched(true);
+        if (overriding) {
             return;
         }
 
-        if (reviewAction === "accept") {
-            setAccepting(true);
-        } else {
-            setOverriding(true);
+        setPriorityModalOpen(false);
+    };
+
+    const continuePriorityOverride = () => {
+        if (isReviewed) {
+            return;
         }
 
+        if (!selectedPriority) {
+            return;
+        }
+
+        if (selectedPriority === currentPriority) {
+            return;
+        }
+
+        setPriorityModalOpen(false);
+        setRemarks("");
+        setRemarksTouched(false);
+        setApiError("");
+    };
+
+    const handleOverridePriority = async () => {
+        if (isReviewed || !selectedPriority) {
+            return;
+        }
+
+        const cleanRemarks = remarks.trim();
+
+        setRemarksTouched(true);
+        setApiError("");
+
+        if (!selectedPriority) {
+            setApiError("Please select a new priority.");
+
+            showToast(
+                "error",
+                "Please select a new priority."
+            );
+
+            return;
+        }
+
+        if (selectedPriority === currentPriority) {
+            setApiError(
+                "Please select a different priority from the current priority."
+            );
+
+            showToast(
+                "error",
+                "Please select a different priority."
+            );
+
+            return;
+        }
+
+        if (cleanRemarks.length < MIN_REMARKS_LENGTH) {
+            return;
+        }
+
+        setOverriding(true);
+
         try {
-            const reviewData = {
-                action: reviewAction,
+            const response = await api.post(
+                `/tickets/flagged/${activeFlag.id}/override-priority/`,
+                {
+                    priority: selectedPriority,
+                    remarks: cleanRemarks,
+                }
+            );
+
+            const data = response.data;
+
+            const returnedReviewer =
+                data?.review_flag?.reviewed_by ||
+                data?.reviewed_by ||
+                null;
+
+            const returnedPriority =
+                data?.ticket?.priority ||
+                selectedPriority;
+
+            const returnedReviewFlag = {
+                ...activeFlag,
+
+                status:
+                    data?.review_flag?.status ||
+                    "resolved",
+
+                reviewed_by:
+                    data?.review_flag?.reviewed_by ||
+                    data?.reviewed_by ||
+                    returnedReviewer,
+
+                reviewed_by_name:
+                    data?.review_flag?.reviewed_by_name ||
+                    data?.reviewed_by_name ||
+                    getReviewerName(returnedReviewer) ||
+                    "Service Desk",
+
+                reviewed_by_user_code:
+                    data?.review_flag?.reviewed_by_user_code ||
+                    data?.reviewed_by_user_code ||
+                    returnedReviewer?.user_code ||
+                    "",
+
+                reviewed_by_it_department:
+                    data?.review_flag?.reviewed_by_it_department ||
+                    data?.reviewed_by_it_department ||
+                    "",
+
+                reviewed_by_department:
+                    data?.review_flag?.reviewed_by_department ||
+                    data?.reviewed_by_department ||
+                    getReviewerDepartment(returnedReviewer) ||
+                    "",
+
+                reviewed_at:
+                    data?.review_flag?.reviewed_at ||
+                    data?.reviewed_at ||
+                    new Date().toISOString(),
+
+                review_remarks:
+                    data?.review_flag?.review_remarks ||
+                    data?.review_remarks ||
+                    cleanRemarks,
+
                 remarks: cleanRemarks,
-                priority:
-                    reviewAction === "override"
-                        ? selectedPriority
-                        : currentPriority,
+
+                priority: returnedPriority,
             };
 
-            console.log("Review submitted:", reviewData);
+            setReviewedFlag(returnedReviewFlag);
+            setReviewAction(null);
+            setRemarks("");
+            setRemarksTouched(false);
+            setSelectedPriority("");
+            setApiError("");
 
-            // Connect the accept/override API here.
+            showToast(
+                "success",
+                `Priority successfully overridden to ${returnedPriority}.`
+            );
+
+            console.log(
+                "Priority overridden successfully:",
+                data
+            );
+        } catch (error) {
+            console.error(
+                "Priority override request failed:",
+                error
+            );
+
+            const responseData =
+                error?.response?.data;
+
+            const errorMessage =
+                typeof responseData?.detail === "string"
+                    ? responseData.detail
+                    : Array.isArray(
+                          responseData?.remarks
+                      )
+                    ? responseData.remarks[0]
+                    : typeof responseData?.remarks === "string"
+                    ? responseData.remarks
+                    : Array.isArray(
+                          responseData?.priority
+                      )
+                    ? responseData.priority[0]
+                    : typeof responseData?.priority === "string"
+                    ? responseData.priority
+                    : typeof responseData?.message === "string"
+                    ? responseData.message
+                    : error?.message ||
+                      "Failed to override the priority.";
+
+            setApiError(errorMessage);
+
+            showToast(
+                "error",
+                errorMessage
+            );
         } finally {
-            setAccepting(false);
             setOverriding(false);
+        }
+    };
+
+    const handlePriorityAction = () => {
+        if (selectedPriority) {
+            handleOverridePriority();
+        } else {
+            openPriorityModal();
         }
     };
 
@@ -266,10 +601,14 @@ export default function PriorityAssessmentReview({ flag }) {
                                             min-[1366px]:max-[1537px]:px-2
                                             min-[1366px]:max-[1537px]:py-0.5
                                             min-[1366px]:max-[1537px]:text-[11px]
-                                            ${getStatusStyle(flag?.status)}
+                                            ${getStatusStyle(
+                                                activeFlag?.status
+                                            )}
                                         `}
                                     >
-                                        {formatStatus(flag?.status)}
+                                        {formatStatus(
+                                            activeFlag?.status
+                                        )}
                                     </span>
                                 </div>
 
@@ -291,7 +630,9 @@ export default function PriorityAssessmentReview({ flag }) {
                             <div className="grid grid-cols-1 min-[500px]:grid-cols-2">
                                 <InfoCell
                                     label="Ticket Code"
-                                    value={flag?.ticket_code}
+                                    value={
+                                        activeFlag?.ticket_code
+                                    }
                                 />
 
                                 <InfoCell
@@ -300,7 +641,7 @@ export default function PriorityAssessmentReview({ flag }) {
                                         <span
                                             className={`
                                                 inline-flex
-                                                rounded-full
+                                                rounded-md
                                                 border
                                                 px-2.5
                                                 py-1
@@ -328,18 +669,24 @@ export default function PriorityAssessmentReview({ flag }) {
 
                             <InfoCell
                                 label="Subject"
-                                value={flag?.subject}
+                                value={
+                                    activeFlag?.subject
+                                }
                             />
 
                             <InfoCell
                                 label="Description"
-                                value={flag?.description}
+                                value={
+                                    activeFlag?.description
+                                }
                                 multiline
                             />
 
                             <InfoCell
                                 label="Business Impact"
-                                value={flag?.business_impact}
+                                value={
+                                    activeFlag?.business_impact
+                                }
                                 multiline
                             />
 
@@ -358,24 +705,24 @@ export default function PriorityAssessmentReview({ flag }) {
                                         label="Ticket Submitted By"
                                         user={{
                                             name:
-                                                submittedByName || "-",
+                                                submittedByName ||
+                                                "-",
                                             userCode:
-                                                flag?.user_code,
+                                                activeFlag?.user_code,
                                             department:
-                                                flag?.role,
-                                            officeLocation:
-                                                flag?.employee_department,
+                                                activeFlag?.employee_department ||
+                                                "IT Service Desk",
                                         }}
                                     />
 
                                     <UserCard
                                         label="Ticket Submitted At"
                                         value={
-                                            flag?.created_at ||
-                                            flag?.submitted_at
+                                            activeFlag?.created_at ||
+                                            activeFlag?.submitted_at
                                                 ? formatDate(
-                                                      flag?.created_at ||
-                                                          flag?.submitted_at
+                                                      activeFlag?.created_at ||
+                                                          activeFlag?.submitted_at
                                                   )
                                                 : "-"
                                         }
@@ -511,7 +858,9 @@ export default function PriorityAssessmentReview({ flag }) {
                                             min-[1366px]:max-[1537px]:text-xs
                                         "
                                     >
-                                        {formatReason(flag?.reason)}
+                                        {formatReason(
+                                            activeFlag?.reason
+                                        )}
                                     </p>
                                 </div>
                             </div>
@@ -563,7 +912,7 @@ export default function PriorityAssessmentReview({ flag }) {
                                             min-[1366px]:max-[1537px]:text-[11px]
                                         `}
                                     >
-                                        {currentPriority}
+                                        {currentPriority || "-"}
                                     </span>
                                 </div>
 
@@ -579,7 +928,9 @@ export default function PriorityAssessmentReview({ flag }) {
                                         min-[1366px]:max-[1537px]:text-lg
                                     "
                                 >
-                                    {priorityLabel[currentPriority] || "-"}
+                                    {priorityLabel[
+                                        currentPriority
+                                    ] || "-"}
                                 </p>
 
                                 <p
@@ -610,7 +961,9 @@ export default function PriorityAssessmentReview({ flag }) {
                                 <PriorityFactor
                                     label="Base Priority"
                                     value={
-                                        priorityLabel[basePriority] ||
+                                        priorityLabel[
+                                            basePriority
+                                        ] ||
                                         basePriority
                                     }
                                     badge
@@ -636,6 +989,7 @@ export default function PriorityAssessmentReview({ flag }) {
                                         ] ||
                                         "border-gray-300 bg-gray-100 text-gray-700"
                                     }
+                                    badgeRounded="rounded-md"
                                 />
 
                                 <PriorityFactor
@@ -681,391 +1035,233 @@ export default function PriorityAssessmentReview({ flag }) {
                                 />
                             </div>
 
-                            <div
-                                className="
-                                    mt-5
-                                    rounded-lg
-                                    border
-                                    border-gray-200
-                                    bg-white
-                                    p-4
-                                    min-[1280px]:max-[1365px]:mt-4
-                                    min-[1280px]:max-[1365px]:p-3
-                                    min-[1366px]:max-[1537px]:mt-4
-                                    min-[1366px]:max-[1537px]:p-3.5
-                                "
-                            >
-                                <div className="flex items-center justify-between gap-3">
-                                    <div className="min-w-0">
+                            {!isReviewed &&
+                                selectedPriority && (
+                                    <div
+                                        className="
+                                            mt-5
+                                            rounded-lg
+                                            border
+                                            border-[#4C4CF9]/30
+                                            bg-[#4C4CF9]/5
+                                            px-4
+                                            py-3.5
+                                            min-[1280px]:max-[1365px]:mt-4
+                                            min-[1280px]:max-[1365px]:px-3
+                                            min-[1280px]:max-[1365px]:py-3
+                                            min-[1366px]:max-[1537px]:mt-4
+                                            min-[1366px]:max-[1537px]:px-3.5
+                                            min-[1366px]:max-[1537px]:py-3
+                                        "
+                                    >
                                         <p
                                             className="
                                                 text-xs
-                                                font-medium
+                                                font-semibold
                                                 uppercase
                                                 text-gray-500
                                                 min-[1280px]:max-[1365px]:text-[10px]
                                                 min-[1366px]:max-[1537px]:text-[11px]
                                             "
                                         >
-                                            Contextual Priority
+                                            Selected Priority
                                         </p>
 
-                                        <p
-                                            className="
-                                                mt-1
-                                                text-xs
-                                                text-gray-500
-                                                min-[1280px]:max-[1365px]:text-[10px]
-                                                min-[1366px]:max-[1537px]:text-[11px]
-                                            "
-                                        >
-                                            Determined using impact and urgency.
-                                        </p>
+                                        <div className="mt-2 flex items-center justify-between gap-3">
+                                            <div className="flex min-w-0 items-center gap-2">
+                                                <Pencil
+                                                    size={15}
+                                                    className="shrink-0 text-[#4C4CF9]"
+                                                />
+
+                                                <p
+                                                    className="
+                                                        truncate
+                                                        text-sm
+                                                        font-semibold
+                                                        text-black
+                                                        min-[1280px]:max-[1365px]:text-xs
+                                                        min-[1366px]:max-[1537px]:text-xs
+                                                    "
+                                                >
+                                                    {priorityLabel[
+                                                        selectedPriority
+                                                    ] ||
+                                                        selectedPriority}
+                                                </p>
+                                            </div>
+
+                                            <button
+                                                type="button"
+                                                onClick={
+                                                    openPriorityChange
+                                                }
+                                                disabled={
+                                                    accepting ||
+                                                    overriding ||
+                                                    isReviewed
+                                                }
+                                                className="
+                                                    shrink-0
+                                                    text-xs
+                                                    font-medium
+                                                    text-[#4C4CF9]
+                                                    hover:underline
+                                                    disabled:cursor-not-allowed
+                                                    disabled:opacity-50
+                                                    min-[1280px]:max-[1365px]:text-[10px]
+                                                    min-[1366px]:max-[1537px]:text-[11px]
+                                                "
+                                            >
+                                                Change
+                                            </button>
+                                        </div>
                                     </div>
-
-                                    <span
-                                        className={`
-                                            shrink-0
-                                            rounded-full
-                                            border
-                                            px-2.5
-                                            py-1
-                                            text-xs
-                                            font-semibold
-                                            ${getPriorityBadgeStyle(
-                                                contextualPriority
-                                            )}
-                                            min-[1280px]:max-[1365px]:px-2
-                                            min-[1280px]:max-[1365px]:py-0.5
-                                            min-[1280px]:max-[1365px]:text-[10px]
-                                            min-[1366px]:max-[1537px]:px-2
-                                            min-[1366px]:max-[1537px]:py-0.5
-                                            min-[1366px]:max-[1537px]:text-[11px]
-                                        `}
-                                    >
-                                        {contextualPriority}
-                                    </span>
-                                </div>
-                            </div>
+                                )}
 
                             <div
                                 className="
                                     mt-5
+                                    grid
+                                    grid-cols-1
+                                    gap-3
                                     border-t
                                     border-gray-200
                                     pt-4
+                                    min-[500px]:grid-cols-2
                                     min-[1280px]:max-[1365px]:mt-4
                                     min-[1280px]:max-[1365px]:pt-3
                                     min-[1366px]:max-[1537px]:mt-4
                                     min-[1366px]:max-[1537px]:pt-3.5
                                 "
                             >
-                                <p
-                                    className="
-                                        mb-3
-                                        text-xs
-                                        font-medium
-                                        uppercase
-                                        text-gray-500
-                                        min-[1280px]:max-[1365px]:text-[10px]
-                                        min-[1366px]:max-[1537px]:text-[11px]
-                                    "
-                                >
-                                    Priority Decision
-                                </p>
-
-                                <div
-                                    className="
+                                <button
+                                    type="button"
+                                    onClick={
+                                        handlePriorityAction
+                                    }
+                                    disabled={
+                                        accepting ||
+                                        overriding ||
+                                        isReviewed
+                                    }
+                                    className={`
+                                        flex
+                                        h-10
+                                        cursor-pointer
+                                        items-center
+                                        justify-center
+                                        gap-2
                                         rounded-lg
                                         border
-                                        border-gray-300
-                                        bg-gray-50
                                         px-4
-                                        py-3
-                                        min-[1280px]:max-[1365px]:px-3
-                                        min-[1280px]:max-[1365px]:py-2.5
-                                        min-[1366px]:max-[1537px]:px-3.5
-                                        min-[1366px]:max-[1537px]:py-2.5
-                                    "
+                                        text-sm
+                                        font-medium
+                                        transition
+                                        min-[1280px]:max-[1365px]:h-9
+                                        min-[1280px]:max-[1365px]:px-2.5
+                                        min-[1280px]:max-[1365px]:text-[11px]
+                                        min-[1366px]:max-[1537px]:h-9
+                                        min-[1366px]:max-[1537px]:px-3
+                                        min-[1366px]:max-[1537px]:text-xs
+                                        ${
+                                            selectedPriority
+                                                ? "border-[#4C4CF9] bg-[#4C4CF9] text-white hover:bg-[#3f3fe0]"
+                                                : "border-gray-300 bg-white text-gray-700 hover:bg-gray-50"
+                                        }
+                                        ${
+                                            accepting ||
+                                            overriding ||
+                                            isReviewed
+                                                ? "cursor-not-allowed opacity-50"
+                                                : ""
+                                        }
+                                    `}
                                 >
-                                    <p
+                                    <ClipboardCheck
+                                        size={16}
+                                        strokeWidth={2.2}
                                         className="
-                                            text-xs
-                                            leading-5
-                                            text-gray-600
-                                            min-[1280px]:max-[1365px]:text-[10px]
-                                            min-[1280px]:max-[1365px]:leading-4
-                                            min-[1366px]:max-[1537px]:text-[11px]
-                                            min-[1366px]:max-[1537px]:leading-4
+                                            min-[1280px]:max-[1365px]:size-[14px]
+                                            min-[1366px]:max-[1537px]:size-[15px]
                                         "
-                                    >
-                                        The system assessed this ticket as{" "}
-                                        <span className="font-semibold text-black">
-                                            {currentPriority}
-                                        </span>
-                                        . You can accept the assessment or
-                                        choose a different priority for review.
-                                    </p>
-                                </div>
+                                    />
+
+                                    {overriding
+                                        ? "Overriding..."
+                                        : selectedPriority
+                                        ? "Override Priority"
+                                        : "Choose Priority"}
+                                </button>
+
+                                <button
+                                    type="button"
+                                    onClick={
+                                        openAcceptReview
+                                    }
+                                    disabled={
+                                        accepting ||
+                                        overriding ||
+                                        isReviewed
+                                    }
+                                    className={`
+                                        flex
+                                        h-10
+                                        cursor-pointer
+                                        items-center
+                                        justify-center
+                                        gap-2
+                                        rounded-lg
+                                        px-4
+                                        text-sm
+                                        font-medium
+                                        text-white
+                                        transition
+                                        min-[1280px]:max-[1365px]:h-9
+                                        min-[1280px]:max-[1365px]:px-2.5
+                                        min-[1280px]:max-[1365px]:text-[11px]
+                                        min-[1366px]:max-[1537px]:h-9
+                                        min-[1366px]:max-[1537px]:px-3
+                                        min-[1366px]:max-[1537px]:text-xs
+                                        ${
+                                            accepting ||
+                                            overriding ||
+                                            isReviewed
+                                                ? "cursor-not-allowed bg-gray-400"
+                                                : "bg-[#4C4CF9] hover:bg-[#3f3fe0]"
+                                        }
+                                    `}
+                                >
+                                    <CheckCircle2
+                                        size={16}
+                                        strokeWidth={2.2}
+                                        className="
+                                            min-[1280px]:max-[1365px]:size-[14px]
+                                            min-[1366px]:max-[1537px]:size-[15px]
+                                        "
+                                    />
+
+                                    {accepting
+                                        ? "Accepting..."
+                                        : "Accept Priority"}
+                                </button>
                             </div>
 
-                            {!isReviewed && (
-                                <div
-                                    className="
-                                        mt-5
-                                        grid
-                                        grid-cols-1
-                                        gap-3
-                                        border-t
-                                        border-gray-200
-                                        pt-4
-                                        min-[500px]:grid-cols-2
-                                        min-[1280px]:max-[1365px]:mt-4
-                                        min-[1280px]:max-[1365px]:pt-3
-                                        min-[1366px]:max-[1537px]:mt-4
-                                        min-[1366px]:max-[1537px]:pt-3.5
-                                    "
-                                >
-                                    <button
-                                        type="button"
-                                        onClick={openPriorityModal}
-                                        disabled={
-                                            accepting ||
-                                            overriding ||
-                                            !!reviewAction
-                                        }
-                                        className={`
-                                            flex
-                                            h-10
-                                            cursor-pointer
-                                            items-center
-                                            justify-center
-                                            gap-2
-                                            rounded-lg
-                                            border
-                                            border-gray-300
-                                            bg-white
-                                            px-4
-                                            text-sm
-                                            font-medium
-                                            text-gray-700
-                                            transition
-                                            hover:bg-gray-50
-                                            min-[1280px]:max-[1365px]:h-9
-                                            min-[1280px]:max-[1365px]:px-2.5
-                                            min-[1280px]:max-[1365px]:text-[11px]
-                                            min-[1366px]:max-[1537px]:h-9
-                                            min-[1366px]:max-[1537px]:px-3
-                                            min-[1366px]:max-[1537px]:text-xs
-                                            ${
-                                                accepting ||
-                                                overriding ||
-                                                reviewAction
-                                                    ? "cursor-not-allowed opacity-50"
-                                                    : ""
-                                            }
-                                        `}
-                                    >
-                                        <ClipboardCheck
-                                            size={16}
-                                            strokeWidth={2.2}
-                                            className="
-                                                min-[1280px]:max-[1365px]:size-[14px]
-                                                min-[1366px]:max-[1537px]:size-[15px]
-                                            "
-                                        />
-
-                                        Override Priority
-                                    </button>
-
-                                    <button
-                                        type="button"
-                                        onClick={openAcceptReview}
-                                        disabled={
-                                            accepting ||
-                                            overriding ||
-                                            !!reviewAction
-                                        }
-                                        className={`
-                                            flex
-                                            h-10
-                                            cursor-pointer
-                                            items-center
-                                            justify-center
-                                            gap-2
-                                            rounded-lg
-                                            px-4
-                                            text-sm
-                                            font-medium
-                                            text-white
-                                            transition
-                                            min-[1280px]:max-[1365px]:h-9
-                                            min-[1280px]:max-[1365px]:px-2.5
-                                            min-[1280px]:max-[1365px]:text-[11px]
-                                            min-[1366px]:max-[1537px]:h-9
-                                            min-[1366px]:max-[1537px]:px-3
-                                            min-[1366px]:max-[1537px]:text-xs
-                                            ${
-                                                accepting ||
-                                                overriding ||
-                                                reviewAction
-                                                    ? "cursor-not-allowed bg-gray-400"
-                                                    : "bg-[#4C4CF9] hover:bg-[#3f3fe0]"
-                                            }
-                                        `}
-                                    >
-                                        <CheckCircle2
-                                            size={16}
-                                            strokeWidth={2.2}
-                                            className="
-                                                min-[1280px]:max-[1365px]:size-[14px]
-                                                min-[1366px]:max-[1537px]:size-[15px]
-                                            "
-                                        />
-
-                                        Accept Priority
-                                    </button>
-                                </div>
-                            )}
-
-                            {!isReviewed && reviewAction && (
+                            {apiError && (
                                 <div
                                     className="
                                         mt-4
                                         rounded-lg
                                         border
-                                        border-[#4C4CF9]/20
-                                        bg-[#4C4CF9]/5
-                                        p-4
-                                        min-[1280px]:max-[1365px]:p-3
-                                        min-[1366px]:max-[1537px]:p-3.5
+                                        border-red-200
+                                        bg-red-50
+                                        px-3
+                                        py-2.5
                                     "
                                 >
-                                    <div className="flex items-start justify-between gap-3">
-                                        <div className="min-w-0">
-                                            <p className="text-xs font-medium uppercase text-gray-500">
-                                                Pending Review Action
-                                            </p>
-
-                                            <p className="mt-1 text-sm font-semibold text-black">
-                                                {reviewAction ===
-                                                "override"
-                                                    ? `Override ${currentPriority} → ${selectedPriority}`
-                                                    : `Accept ${currentPriority}`}
-                                            </p>
-                                        </div>
-
-                                        <button
-                                            type="button"
-                                            onClick={cancelReviewAction}
-                                            disabled={
-                                                accepting ||
-                                                overriding
-                                            }
-                                            className="
-                                                shrink-0
-                                                text-xs
-                                                font-medium
-                                                text-gray-500
-                                                hover:text-gray-700
-                                                disabled:cursor-not-allowed
-                                                disabled:opacity-50
-                                            "
-                                        >
-                                            Cancel
-                                        </button>
-                                    </div>
-
-                                    <div
-                                        className={`
-                                            mt-3
-                                            rounded-lg
-                                            border
-                                            px-3
-                                            py-2.5
-                                            ${
-                                                isRemarksValid
-                                                    ? "border-green-200 bg-green-50"
-                                                    : "border-amber-200 bg-amber-50"
-                                            }
-                                        `}
-                                    >
-                                        <div className="flex items-center justify-between gap-3">
-                                            <p
-                                                className={`
-                                                    text-xs
-                                                    font-medium
-                                                    ${
-                                                        isRemarksValid
-                                                            ? "text-green-700"
-                                                            : "text-amber-700"
-                                                    }
-                                                `}
-                                            >
-                                                {isRemarksValid
-                                                    ? "Remarks ready for submission"
-                                                    : "Review remarks required"}
-                                            </p>
-
-                                            <span
-                                                className={`
-                                                    text-[11px]
-                                                    font-medium
-                                                    ${
-                                                        isRemarksValid
-                                                            ? "text-green-600"
-                                                            : "text-amber-600"
-                                                    }
-                                                `}
-                                            >
-                                                {remarksLength}/
-                                                {MIN_REMARKS_LENGTH}
-                                            </span>
-                                        </div>
-                                    </div>
-
-                                    <button
-                                        type="button"
-                                        onClick={handleConfirmReview}
-                                        disabled={
-                                            !isRemarksValid ||
-                                            accepting ||
-                                            overriding
-                                        }
-                                        className="
-                                            mt-3
-                                            flex
-                                            h-10
-                                            w-full
-                                            items-center
-                                            justify-center
-                                            gap-2
-                                            rounded-lg
-                                            bg-[#4C4CF9]
-                                            px-4
-                                            text-sm
-                                            font-medium
-                                            text-white
-                                            transition
-                                            hover:bg-[#3f3fe0]
-                                            disabled:cursor-not-allowed
-                                            disabled:bg-gray-300
-                                        "
-                                    >
-                                        <CheckCircle2
-                                            size={16}
-                                            strokeWidth={2.2}
-                                        />
-
-                                        {accepting
-                                            ? "Accepting..."
-                                            : overriding
-                                            ? "Overriding..."
-                                            : reviewAction ===
-                                              "override"
-                                            ? "Confirm Override"
-                                            : "Confirm Review"}
-                                    </button>
+                                    <p className="text-xs font-medium text-red-700">
+                                        {apiError}
+                                    </p>
                                 </div>
                             )}
                         </div>
@@ -1157,8 +1353,18 @@ export default function PriorityAssessmentReview({ flag }) {
                         {isReviewed ? (
                             <ReviewedDetails
                                 reviewedBy={reviewedByName}
-                                reviewedAt={reviewedAt}
-                                remarks={existingReviewRemarks}
+                                reviewedByUserCode={
+                                    reviewedByUserCode
+                                }
+                                reviewedByDepartment={
+                                    reviewedByDepartment
+                                }
+                                reviewedAt={
+                                    reviewedAt
+                                }
+                                remarks={
+                                    existingReviewRemarks
+                                }
                             />
                         ) : (
                             <div
@@ -1198,7 +1404,10 @@ export default function PriorityAssessmentReview({ flag }) {
                                         `}
                                     >
                                         {remarksLength}/
-                                        {MIN_REMARKS_LENGTH} minimum
+                                        {
+                                            MIN_REMARKS_LENGTH
+                                        }{" "}
+                                        minimum
                                     </span>
                                 </div>
 
@@ -1206,12 +1415,17 @@ export default function PriorityAssessmentReview({ flag }) {
                                     value={remarks}
                                     onChange={(event) => {
                                         setRemarks(
-                                            event.target.value
+                                            event.target
+                                                .value
                                         );
-                                        setRemarksTouched(true);
+                                        setRemarksTouched(
+                                            true
+                                        );
                                     }}
                                     onBlur={() =>
-                                        setRemarksTouched(true)
+                                        setRemarksTouched(
+                                            true
+                                        )
                                     }
                                     disabled={
                                         accepting ||
@@ -1254,7 +1468,10 @@ export default function PriorityAssessmentReview({ flag }) {
                                 ) : (
                                     <p className="mt-2 text-xs text-gray-500">
                                         Review remarks must contain at
-                                        least {MIN_REMARKS_LENGTH}{" "}
+                                        least{" "}
+                                        {
+                                            MIN_REMARKS_LENGTH
+                                        }{" "}
                                         characters.
                                     </p>
                                 )}
@@ -1327,12 +1544,103 @@ export default function PriorityAssessmentReview({ flag }) {
 
             {priorityModalOpen && (
                 <PrioritySelectionModal
-                    currentPriority={currentPriority}
-                    selectedPriority={selectedPriority}
-                    setSelectedPriority={setSelectedPriority}
-                    onCancel={closePriorityModal}
-                    onContinue={continuePriorityOverride}
+                    currentPriority={
+                        currentPriority
+                    }
+                    selectedPriority={
+                        selectedPriority
+                    }
+                    setSelectedPriority={
+                        setSelectedPriority
+                    }
+                    onCancel={
+                        closePriorityModal
+                    }
+                    onContinue={
+                        continuePriorityOverride
+                    }
                 />
+            )}
+
+            {toast && (
+                <div
+                    className="
+                        fixed
+                        right-4
+                        top-4
+                        z-[100]
+                        w-[calc(100%-2rem)]
+                        max-w-sm
+                    "
+                >
+                    <div
+                        className={`
+                            flex
+                            items-start
+                            gap-3
+                            rounded-lg
+                            border
+                            px-4
+                            py-3
+                            shadow-lg
+                            ${
+                                toast.type ===
+                                "success"
+                                    ? "border-green-200 bg-green-50"
+                                    : "border-red-200 bg-red-50"
+                            }
+                        `}
+                    >
+                        {toast.type ===
+                        "success" ? (
+                            <CheckCircle2
+                                size={18}
+                                className="mt-0.5 shrink-0 text-green-600"
+                            />
+                        ) : (
+                            <CircleAlert
+                                size={18}
+                                className="mt-0.5 shrink-0 text-red-600"
+                            />
+                        )}
+
+                        <div className="min-w-0 flex-1">
+                            <p
+                                className={`
+                                    text-sm
+                                    font-semibold
+                                    ${
+                                        toast.type ===
+                                        "success"
+                                            ? "text-green-800"
+                                            : "text-red-800"
+                                    }
+                                `}
+                            >
+                                {toast.type ===
+                                "success"
+                                    ? "Success"
+                                    : "Error"}
+                            </p>
+
+                            <p
+                                className={`
+                                    mt-0.5
+                                    text-xs
+                                    leading-5
+                                    ${
+                                        toast.type ===
+                                        "success"
+                                            ? "text-green-700"
+                                            : "text-red-700"
+                                    }
+                                `}
+                            >
+                                {toast.message}
+                            </p>
+                        </div>
+                    </div>
+                </div>
             )}
         </>
     );
@@ -1345,7 +1653,13 @@ function PrioritySelectionModal({
     onCancel,
     onContinue,
 }) {
-    const priorities = ["P1", "P2", "P3", "P4", "P5"];
+    const priorities = [
+        "P1",
+        "P2",
+        "P3",
+        "P4",
+        "P5",
+    ];
 
     const isSameAsCurrent =
         selectedPriority === currentPriority;
@@ -1406,7 +1720,8 @@ function PrioritySelectionModal({
                             </p>
 
                             <p className="mt-1 text-sm font-semibold text-black">
-                                {currentPriority}
+                                {currentPriority ||
+                                    "-"}
                             </p>
                         </div>
 
@@ -1423,8 +1738,11 @@ function PrioritySelectionModal({
                                 )}
                             `}
                         >
-                            {priorityLabel[currentPriority] ||
-                                currentPriority}
+                            {priorityLabel[
+                                currentPriority
+                            ] ||
+                                currentPriority ||
+                                "-"}
                         </span>
                     </div>
 
@@ -1434,50 +1752,61 @@ function PrioritySelectionModal({
                         </p>
 
                         <div className="grid grid-cols-2 gap-3 min-[500px]:grid-cols-5">
-                            {priorities.map((priority) => {
-                                const selected =
-                                    selectedPriority === priority;
+                            {priorities.map(
+                                (priority) => {
+                                    const selected =
+                                        selectedPriority ===
+                                        priority;
 
-                                return (
-                                    <button
-                                        key={priority}
-                                        type="button"
-                                        onClick={() =>
-                                            setSelectedPriority(
+                                    return (
+                                        <button
+                                            key={
                                                 priority
-                                            )
-                                        }
-                                        className={`
-                                            flex
-                                            min-h-[74px]
-                                            cursor-pointer
-                                            flex-col
-                                            items-center
-                                            justify-center
-                                            rounded-lg
-                                            border
-                                            px-3
-                                            py-3
-                                            transition
-                                            ${
-                                                selected
-                                                    ? getPrioritySelectedStyle(
-                                                          priority
-                                                      )
-                                                    : "border-gray-300 bg-white text-gray-700 hover:bg-gray-50"
                                             }
-                                        `}
-                                    >
-                                        <span className="text-sm font-bold">
-                                            {priority}
-                                        </span>
+                                            type="button"
+                                            onClick={() =>
+                                                setSelectedPriority(
+                                                    priority
+                                                )
+                                            }
+                                            className={`
+                                                flex
+                                                min-h-[74px]
+                                                cursor-pointer
+                                                flex-col
+                                                items-center
+                                                justify-center
+                                                rounded-lg
+                                                border
+                                                px-3
+                                                py-3
+                                                transition
+                                                ${
+                                                    selected
+                                                        ? getPrioritySelectedStyle(
+                                                              priority
+                                                          )
+                                                        : "border-gray-300 bg-white text-gray-700 hover:bg-gray-50"
+                                                }
+                                            `}
+                                        >
+                                            <span className="text-sm font-bold">
+                                                {
+                                                    priority
+                                                }
+                                            </span>
 
-                                        <span className="mt-1 text-[11px] font-medium">
-                                            {priorityLabel[priority]}
-                                        </span>
-                                    </button>
-                                );
-                            })}
+                                            <span className="mt-1 text-[11px] font-medium">
+                                                {
+                                                    priorityLabel[
+                                                        priority
+                                                    ]
+                                                }
+                                            </span>
+                                        </button>
+                                    );
+                                }
+                            )}
                         </div>
                     </div>
 
@@ -1490,36 +1819,45 @@ function PrioritySelectionModal({
                         </div>
                     )}
 
-                    {selectedPriority && !isSameAsCurrent && (
-                        <div className="mt-4 rounded-lg border border-[#4C4CF9]/20 bg-[#4C4CF9]/5 px-4 py-3">
-                            <p className="text-[11px] font-medium uppercase text-gray-500">
-                                New Priority
-                            </p>
-
-                            <div className="mt-1 flex items-center justify-between gap-3">
-                                <p className="text-sm font-semibold text-black">
-                                    {selectedPriority}{" "}
-                                    {priorityLabel[selectedPriority]}
+                    {selectedPriority &&
+                        !isSameAsCurrent && (
+                            <div className="mt-4 rounded-lg border border-[#4C4CF9]/20 bg-[#4C4CF9]/5 px-4 py-3">
+                                <p className="text-[11px] font-medium uppercase text-gray-500">
+                                    New Priority
                                 </p>
 
-                                <span
-                                    className={`
-                                        rounded-full
-                                        border
-                                        px-2.5
-                                        py-1
-                                        text-xs
-                                        font-semibold
-                                        ${getPriorityBadgeStyle(
+                                <div className="mt-1 flex items-center justify-between gap-3">
+                                    <p className="text-sm font-semibold text-black">
+                                        {
                                             selectedPriority
-                                        )}
-                                    `}
-                                >
-                                    {selectedPriority}
-                                </span>
+                                        }{" "}
+                                        {
+                                            priorityLabel[
+                                                selectedPriority
+                                            ]
+                                        }
+                                    </p>
+
+                                    <span
+                                        className={`
+                                            rounded-full
+                                            border
+                                            px-2.5
+                                            py-1
+                                            text-xs
+                                            font-semibold
+                                            ${getPriorityBadgeStyle(
+                                                selectedPriority
+                                            )}
+                                        `}
+                                    >
+                                        {
+                                            selectedPriority
+                                        }
+                                    </span>
+                                </div>
                             </div>
-                        </div>
-                    )}
+                        )}
                 </div>
 
                 <div
@@ -1584,6 +1922,8 @@ function PrioritySelectionModal({
 
 function ReviewedDetails({
     reviewedBy,
+    reviewedByUserCode,
+    reviewedByDepartment,
     reviewedAt,
     remarks,
 }) {
@@ -1599,10 +1939,46 @@ function ReviewedDetails({
             >
                 <div
                     className="
-                        rounded-lg
-                        border
-                        border-gray-300
-                        bg-gray-50
+                        p-4
+                        min-[1280px]:max-[1537px]:p-3.5
+                    "
+                >
+                    <p
+                        className="
+                            text-xs
+                            font-medium
+                            uppercase
+                            text-gray-500
+                            min-[1280px]:max-[1365px]:text-[10px]
+                            min-[1366px]:max-[1537px]:text-[11px]
+                        "
+                    >
+                        Decision
+                    </p>
+
+                    <div className="mt-2 flex items-center gap-2">
+                        <div className="flex h-6 w-6 items-center justify-center rounded-full bg-green-100">
+                            <CheckCircle2
+                                size={15}
+                                className="text-green-600"
+                            />
+                        </div>
+
+                        <p
+                            className="
+                                text-sm
+                                font-semibold
+                                text-green-700
+                                min-[1280px]:max-[1537px]:text-xs
+                            "
+                        >
+                            Resolved
+                        </p>
+                    </div>
+                </div>
+
+                <div
+                    className="
                         p-4
                         min-[1280px]:max-[1537px]:p-3.5
                     "
@@ -1620,25 +1996,57 @@ function ReviewedDetails({
                         Reviewed By
                     </p>
 
-                    <p
+                    <div
                         className="
-                            mt-2
-                            text-sm
-                            font-semibold
-                            text-black
-                            min-[1280px]:max-[1537px]:text-xs
+                            mt-3
+                            flex
+                            items-center
+                            gap-3
+                            min-[1280px]:max-[1365px]:mt-2
+                            min-[1280px]:max-[1365px]:gap-2.5
+                            min-[1366px]:max-[1537px]:mt-2.5
+                            min-[1366px]:max-[1537px]:gap-2.5
                         "
                     >
-                        {reviewedBy}
-                    </p>
+                        <Avatar name={reviewedBy} />
+
+                        <div className="min-w-0">
+                            <p
+                                className="
+                                    truncate
+                                    text-sm
+                                    font-semibold
+                                    text-black
+                                    min-[1280px]:max-[1365px]:text-xs
+                                    min-[1366px]:max-[1537px]:text-xs
+                                "
+                            >
+                                {reviewedBy || "-"}
+                            </p>
+
+                            <p
+                                className="
+                                    mt-1
+                                    truncate
+                                    text-xs
+                                    text-gray-500
+                                    min-[1280px]:max-[1365px]:mt-0.5
+                                    min-[1280px]:max-[1365px]:text-[10px]
+                                    min-[1366px]:max-[1537px]:mt-0.5
+                                    min-[1366px]:max-[1537px]:text-[11px]
+                                "
+                            >
+                                {reviewedByUserCode || "-"}
+                                {reviewedByDepartment
+                                    ? ` • ${reviewedByDepartment}`
+                                    : ""}
+                            </p>
+                        </div>
+                    </div>
                 </div>
 
                 <div
                     className="
-                        rounded-lg
-                        border
-                        border-gray-300
-                        bg-gray-50
                         p-4
                         min-[1280px]:max-[1537px]:p-3.5
                     "
@@ -1660,13 +2068,15 @@ function ReviewedDetails({
                         className="
                             mt-2
                             text-sm
-                            font-semibold
+                            font-medium
                             text-black
                             min-[1280px]:max-[1537px]:text-xs
                         "
                     >
                         {reviewedAt
-                            ? formatDate(reviewedAt)
+                            ? formatDate(
+                                  reviewedAt
+                              )
                             : "-"}
                     </p>
                 </div>
@@ -1775,7 +2185,11 @@ function InfoCell({
     );
 }
 
-function UserCard({ label, user, value }) {
+function UserCard({
+    label,
+    user,
+    value,
+}) {
     if (value !== undefined) {
         return (
             <div className="min-w-0">
@@ -1832,7 +2246,7 @@ function UserCard({ label, user, value }) {
                     items-center
                     gap-3
                     min-[1280px]:max-[1365px]:mt-2
-                    min-[1280px]:max-[1365px]:gap-2
+                    min-[1280px]:max-[1365px]:gap-2.5
                     min-[1366px]:max-[1537px]:mt-2.5
                     min-[1366px]:max-[1537px]:gap-2.5
                 "
@@ -1869,19 +2283,6 @@ function UserCard({ label, user, value }) {
                         {user?.department
                             ? ` • ${user.department}`
                             : ""}
-                    </p>
-
-                    <p
-                        className="
-                            mt-0.5
-                            truncate
-                            text-xs
-                            text-gray-500
-                            min-[1280px]:max-[1365px]:text-[10px]
-                            min-[1366px]:max-[1537px]:text-[11px]
-                        "
-                    >
-                        {user?.officeLocation || "-"}
                     </p>
                 </div>
             </div>
@@ -1924,6 +2325,7 @@ function PriorityFactor({
     value,
     badge = false,
     badgeStyle = "",
+    badgeRounded = "rounded-full",
 }) {
     return (
         <div
@@ -1955,7 +2357,7 @@ function PriorityFactor({
                     className={`
                         mt-2
                         inline-flex
-                        rounded-full
+                        ${badgeRounded}
                         border
                         px-2.5
                         py-1
@@ -1999,7 +2401,9 @@ function getInitials(name) {
         .trim()
         .split(/\s+/)
         .slice(0, 2)
-        .map((part) => part.charAt(0).toUpperCase())
+        .map((part) =>
+            part.charAt(0).toUpperCase()
+        )
         .join("");
 }
 
@@ -2024,6 +2428,33 @@ function getReviewerName(reviewer) {
     );
 }
 
+function getReviewerDepartment(reviewer) {
+    if (!reviewer || typeof reviewer !== "object") {
+        return "";
+    }
+
+    if (typeof reviewer.department === "string") {
+        return reviewer.department;
+    }
+
+    if (typeof reviewer.department_name === "string") {
+        return reviewer.department_name;
+    }
+
+    if (
+        reviewer.department &&
+        typeof reviewer.department === "object"
+    ) {
+        return (
+            reviewer.department.name ||
+            reviewer.department.department_name ||
+            ""
+        );
+    }
+
+    return "";
+}
+
 function formatStatus(status = "") {
     if (!status) {
         return "-";
@@ -2046,7 +2477,9 @@ function formatReason(reason = "") {
 
     return reason
         .replace(/_/g, " ")
-        .replace(/\b\w/g, (char) => char.toUpperCase());
+        .replace(/\b\w/g, (char) =>
+            char.toUpperCase()
+        );
 }
 
 function getStatusStyle(status = "") {
@@ -2110,12 +2543,21 @@ function getImpact(scope = "") {
     }
 }
 
-function getUrgency(businessCritical, timeCritical) {
-    if (businessCritical && timeCritical) {
+function getUrgency(
+    businessCritical,
+    timeCritical
+) {
+    if (
+        businessCritical &&
+        timeCritical
+    ) {
         return "High";
     }
 
-    if (businessCritical || timeCritical) {
+    if (
+        businessCritical ||
+        timeCritical
+    ) {
         return "Medium";
     }
 
@@ -2129,8 +2571,11 @@ function getUrgency(businessCritical, timeCritical) {
     return "-";
 }
 
-function getPriorityBadgeStyle(priority = "") {
-    const color = priorityColor[priority];
+function getPriorityBadgeStyle(
+    priority = ""
+) {
+    const color =
+        priorityColor[priority];
 
     if (color) {
         return `${color} rounded-md`;
@@ -2139,8 +2584,11 @@ function getPriorityBadgeStyle(priority = "") {
     return "border-gray-300 bg-gray-100 text-gray-700 rounded-md";
 }
 
-function getPrioritySelectedStyle(priority = "") {
-    const color = priorityColor[priority];
+function getPrioritySelectedStyle(
+    priority = ""
+) {
+    const color =
+        priorityColor[priority];
 
     if (color) {
         return `${color} ring-2 ring-[#4C4CF9]/20`;
@@ -2150,7 +2598,9 @@ function getPrioritySelectedStyle(priority = "") {
 }
 
 function getImpactStyle(impact = "") {
-    switch (impact.toLowerCase()) {
+    switch (
+        String(impact || "").toLowerCase()
+    ) {
         case "critical":
             return "border-red-300 bg-red-50 text-red-700 rounded-md";
 
@@ -2169,7 +2619,9 @@ function getImpactStyle(impact = "") {
 }
 
 function getUrgencyStyle(urgency = "") {
-    switch (urgency.toLowerCase()) {
+    switch (
+        String(urgency || "").toLowerCase()
+    ) {
         case "high":
             return "border-red-300 bg-red-50 text-red-700 rounded-md";
 

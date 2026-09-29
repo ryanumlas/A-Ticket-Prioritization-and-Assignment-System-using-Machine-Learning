@@ -133,61 +133,49 @@ def analyze_ticket(ticket):
 
     "is_unclear": false
 
-    BUSINESS IMPACT DETECTION
+   TIME CRITICALITY DETECTION
 
     Analyze BOTH the Issue Description and Business Impact.
 
-    Set "business_critical" to true ONLY when the ticket explicitly describes a serious impact to an essential business operation.
+    Set "is_time_critical" to true when the ticket explicitly describes either:
 
-    Examples that MAY justify business_critical = true:
+    1. A near-term deadline, scheduled event, cutoff, or time-sensitive activity
+    where delaying resolution would cause a meaningful consequence,
 
-    - An essential business process cannot continue.
-    - Production or a critical business service is unavailable.
-    - Customer or client operations are unable to continue.
-    - Financial processing, payroll, transaction processing, or another essential operation is blocked.
-    - A department or organization cannot perform an essential business function.
-    - A critical security, compliance, or operational function is unavailable.
-    - There is no reasonable workaround and the business operation is seriously disrupted.
+    OR
 
-    Set "business_critical" to false when:
-
-    - The issue only causes inconvenience.
-    - Work is slower but can still continue.
-    - Productivity is reduced but operations are still functioning.
-    - One or more users are interrupted but essential business operations are not blocked.
-    - A routine task cannot be completed but no serious business consequence is described.
-    - The user only says "urgent", "ASAP", "important", or similar language.
-    - Serious business impact must be inferred rather than explicitly stated.
-
-    Do NOT use the number of affected users alone to determine business criticality.
-
-    Affected scope is evaluated separately.
-
-    Do NOT infer business criticality.
-
-    TIME CRITICALITY DETECTION
-
-    Analyze BOTH the Issue Description and Business Impact.
-
-    Set "is_time_critical" to true ONLY when the ticket explicitly describes a near-term deadline, scheduled event, cutoff, or other time-sensitive activity where delaying resolution would cause a meaningful consequence.
+    2. An ongoing operational disruption where the affected activity cannot
+    continue and continued downtime would reasonably cause a significant
+    operational, financial, customer, production, or service consequence.
 
     Examples that MAY justify is_time_critical = true:
 
-    - A client meeting or presentation is starting soon and cannot proceed because of the issue.
-    - A payroll, financial, deployment, or transaction cutoff is approaching and the task cannot be completed.
-    - A contractual or business deadline is imminent and the issue prevents completion.
-    - A scheduled production activity cannot proceed unless the issue is resolved soon.
-    - A time-sensitive customer commitment will be missed.
-    - Delaying resolution for even a short period would cause a significant operational, financial, customer, contractual, or compliance consequence.
+    - A client meeting or presentation is starting soon and cannot proceed.
+    - A payroll, financial, deployment, or transaction cutoff is approaching.
+    - A contractual or business deadline is imminent.
+    - A scheduled production activity cannot proceed unless the issue is resolved.
+    - Production operations are currently stopped because of the issue.
+    - A critical business service is unavailable and employees cannot continue
+    the affected operation.
+    - A customer-facing service is currently unavailable.
+    - Continued downtime is causing an ongoing significant business disruption.
+    - Delaying resolution would cause significant operational, financial,
+    customer, contractual, or compliance consequences.
 
-    Set "is_time_critical" to false when:
+    Do NOT require the employee to explicitly state a specific deadline when
+    the ticket clearly describes an ongoing critical operation that cannot
+    continue because of the issue.
 
-    - The user only says "urgent", "ASAP", "immediately", or similar emotional language.
-    - The user wants faster service but provides no actual deadline or time-sensitive consequence.
-    - The user has a routine personal deadline with no significant business consequence.
-    - Work is slower but can still continue.
-    - The issue is inconvenient but no imminent consequence is described.
-    - The deadline or urgency must be inferred or assumed.
+    However, do NOT infer time criticality merely from:
+
+    - "urgent"
+    - "ASAP"
+    - "important"
+    - "please fix immediately"
+    - general inconvenience
+    - reduced productivity
+    - a single user's inability to perform a routine task
+    - a problem where normal work can continue through a reasonable workaround
 
     Do NOT set "is_time_critical" to true only because "business_critical" is true.
 
