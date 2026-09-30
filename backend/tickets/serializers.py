@@ -2238,11 +2238,13 @@ class SLARulesUpdateSerializer(serializers.ModelSerializer):
 class CategorySerializer(serializers.ModelSerializer):
     it_department_name = serializers.CharField(
         source="it_department.name",
-        read_only=True
+        read_only=True,
+        default=None,
     )
+
     class Meta:
         model = Category
-        fields = ['id', 'it_department_name', 'name', 'created_by', 'updated_by', 'created_at', 'updated_at']
+        fields = ['id', 'name', 'it_department', 'it_department_name', 'created_by', 'updated_by', 'created_at', 'updated_at']
         read_only_fields = ['created_by', 'updated_by', 'created_at', 'updated_at']
 
 class CategoryUpdateSerializer(serializers.ModelSerializer):

@@ -3,7 +3,9 @@ from .views import (CreateITSupportProfileView, RegisterView, UserListView, Crea
 UserRoleListView, EmployeeOverviewAPIView, UserProfileUpdateView, SpecializationCreateView, ITSupportProfileCreateView, 
 ITSupportSpecializationCreateView, ITSupportProfileUpdateView, NotificationListView, NotificationMarkReadView, NotificationUnreadCountView, AdminUserListView, 
 ITDepartmentOptionsView, EmployeeDepartmentOptionsView, OfficeLocationOptionsView, 
-UserRoleOptionsView, AdminUserCreateView, SpecializationOptionsView, AdminUserDetailView, AdminAuditLogListView, UserRoleUpdateView)
+UserRoleOptionsView, AdminUserCreateView, AdminUserUpdateView,
+SpecializationOptionsView, AdminUserDetailView, AdminAuditLogListView,
+UserRoleUpdateView)
 
 urlpatterns = [
     path('list/', UserListView.as_view(), name='user-list'),
@@ -22,6 +24,7 @@ urlpatterns = [
 
     path("admin/create/",AdminUserCreateView.as_view(),name="admin-user-create",),
     path("admin/list/",AdminUserListView.as_view(),name="admin-user-list",),
+    path("admin/<int:user_id>/update/", AdminUserUpdateView.as_view(), name="admin-user-update",),
     path("admin/<int:user_id>/", AdminUserDetailView.as_view(),name="admin-user-detail",),
     path("admin/create-options/employee-departments/",EmployeeDepartmentOptionsView.as_view(),name="employee-department-options",),
     path("admin/create-options/specializations/",SpecializationOptionsView.as_view(),name="specialization-options",),

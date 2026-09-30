@@ -6,6 +6,8 @@ import SupportTicket from  "../pages/SupportTicket";
 import Topbar from "../components/Topbar";
 import EmployeeNotification from "./NotificationPages/EmployeeNotification";
 import SupportNotification from "./NotificationPages/SupportNotification";
+import ServiceDeskNotification from "./NotificationPages/ServiceDeskNotification";
+import SupervisorNotification from "./NotificationPages/SupervisorNotification";
 
 export default function Ticket() {
     const user = getCurrentUser();
@@ -19,10 +21,10 @@ export default function Ticket() {
         MainContent = <SupportNotification/>;
     }
     else if (user?.role === "IT Service Desk") {
-        MainContent = <ServiceDeskTicket/>;
+        MainContent = <ServiceDeskNotification/>;
     }
     else if (user?.role === "IT Supervisor") {
-        MainContent = <ServiceDeskTicket/>;
+        MainContent = <SupervisorNotification/>;
     }
     else if (user?.role === "System Administrator") {
         MainContent = <ServiceDeskTicket/>;

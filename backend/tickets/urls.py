@@ -1,4 +1,5 @@
 from django.urls import path
+from .views import CategoryListView, SLARulesListView
 from .views import (TicketListEmployeeView, CreateTicketView, ListTicketView, DetailTicketView, UpdateSymptomCodeView, 
 UpdateTicketView, DeleteTicketView, CreateCategoryView, KeywordUpdateView ,KeywordCreateView, 
 UpdateCategoryView, CreateSymptomCodeView, SLARulesCreateView, SLARulesUpdateView, TicketDetailEmployeeView, TicketListServiceDeskView, UpdateTicketStatusView, ManualOverrideTicketView,
@@ -80,6 +81,7 @@ urlpatterns = [
     # --- Category URLs ---
     path('categories/list/', CategoryListView.as_view(), name='list-category'),
     path('categories/create/', CreateCategoryView.as_view(), name='create-category'),
+    path('categories/list/', CategoryListView.as_view(), name='list-categories'),
     path('categories/update/<int:pk>/', UpdateCategoryView.as_view(), name='update-category'),
     path("tickets-by-category/", TicketsByCategoryView.as_view(), name="tickets-by-category",),
 
@@ -91,6 +93,7 @@ urlpatterns = [
     # --- SLA Rules URLs ---
     path('sla-rules/list/', SLARulesListView.as_view(), name='list-sla-rules'),
     path('sla-rules/create/', SLARulesCreateView.as_view(), name='create-sla-rules'),
+    path('sla-rules/list/', SLARulesListView.as_view(), name='list-sla-rules'),
     path('sla-rules/update/<int:pk>/', SLARulesUpdateView.as_view(), name='update-sla-rules'),
 
     # --- Keyword URLs ---
