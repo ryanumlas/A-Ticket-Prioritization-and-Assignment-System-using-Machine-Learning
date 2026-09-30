@@ -52,6 +52,10 @@ def classify_ticket(ticket):
     scores = {}
     matched_keywords = []
 
+    db_keywords = list(
+        Keyword.objects.select_related("symptom_code")
+    )
+
     for gemini_kw in keywords:
         gemini_kw = normalize_text(gemini_kw)
 
@@ -60,14 +64,54 @@ def classify_ticket(ticket):
 
         print(f"\nGemini Keyword: {gemini_kw}")
 
-        db_keywords = Keyword.objects.all()
         keyword_found = False
+
+        gemini_tokens = set(gemini_kw.split())
 
         for match in db_keywords:
             db_kw = normalize_text(match.keyword)
 
-            # Check if DB keyword matches as a complete phrase
-            if not phrase_matches(db_kw, gemini_kw):
+            if not db_kw:
+                continue
+
+            db_tokens = set(db_kw.split())
+
+            match_type = None
+            match_strength = 0
+
+            # --------------------------------------------------
+            # 1. Exact phrase match
+            # --------------------------------------------------
+            if phrase_matches(db_kw, gemini_kw):
+                match_type = "exact_phrase"
+                match_strength = 3
+
+            # --------------------------------------------------
+            # 2. Database phrase appears inside Gemini keyword
+            # --------------------------------------------------
+            elif db_kw in gemini_kw:
+                match_type = "phrase_inside_gemini"
+                match_strength = 2
+
+            # --------------------------------------------------
+            # 3. Single-word database keyword
+            # --------------------------------------------------
+            elif len(db_tokens) == 1 and db_kw in gemini_tokens:
+                match_type = "token_match"
+                match_strength = 1
+
+            # --------------------------------------------------
+            # 4. Multiple-word keyword overlap
+            # --------------------------------------------------
+            elif len(db_tokens) >= 2:
+                overlap = db_tokens.intersection(gemini_tokens)
+
+                if len(overlap) == len(db_tokens):
+                    match_type = "token_overlap"
+                    match_strength = 2
+
+            # No match
+            if not match_type:
                 continue
 
             keyword_found = True
@@ -75,17 +119,30 @@ def classify_ticket(ticket):
             code = match.symptom_code.code
             base_weight = match.weight or 0
 
-            # Longer keywords are more specific
-            specificity_bonus = len(db_kw.split())
-            weight = base_weight + specificity_bonus
+            # Longer database keywords are more specific
+            specificity_bonus = len(db_tokens)
 
-            # Stronger weight if keyword appears in subject
+            weight = (
+                base_weight
+                + specificity_bonus
+            )
+
+            # --------------------------------------------------
+            # Subject match = stronger
+            # --------------------------------------------------
             if phrase_matches(db_kw, subject_text):
                 weight *= 3
 
-            # Normal weight if found in description
+            # --------------------------------------------------
+            # Description match
+            # --------------------------------------------------
             elif phrase_matches(db_kw, description_text):
                 weight *= 1
+
+            # --------------------------------------------------
+            # Apply match strength
+            # --------------------------------------------------
+            weight *= match_strength
 
             scores[code] = scores.get(code, 0) + weight
 
@@ -93,17 +150,23 @@ def classify_ticket(ticket):
                 "keyword": match.keyword,
                 "symptom_code": code,
                 "weight": weight,
+                "match_type": match_type,
+                "gemini_keyword": gemini_kw,
             })
 
             print(
                 f"Matched -> {match.keyword} | "
-                f"{code} | Weight={weight}"
+                f"{code} | "
+                f"Weight={weight} | "
+                f"Type={match_type}"
             )
 
         if not keyword_found:
             print("No database keyword match")
 
-    # No rule-based matches at all
+    # ----------------------------------------------------------
+    # No rule-based matches
+    # ----------------------------------------------------------
     if not scores:
         return {
             "symptom_code": None,
@@ -114,7 +177,9 @@ def classify_ticket(ticket):
             "status": "No matching keywords found",
         }
 
+    # ----------------------------------------------------------
     # Get highest scoring symptom
+    # ----------------------------------------------------------
     best_code = max(scores, key=scores.get)
     best_score = scores[best_code]
 
@@ -122,7 +187,9 @@ def classify_ticket(ticket):
     print("Best Code:", best_code)
     print("Best Score:", best_score)
 
-    # Weak rule-based result → let ML handle it
+    # ----------------------------------------------------------
+    # Weak rule-based result → ML fallback
+    # ----------------------------------------------------------
     if best_score < MIN_RULE_SCORE:
         return {
             "symptom_code": None,
@@ -130,12 +197,21 @@ def classify_ticket(ticket):
             "scores": scores,
             "best_score": best_score,
             "matched_keywords": matched_keywords,
-            "status": "Rule-based confidence insufficient - ML fallback required"
+            "status": (
+                "Rule-based confidence insufficient - "
+                "ML fallback required"
+            ),
         }
 
-    best_symptom = SymptomCode.objects.filter(
-        code=best_code
-    ).select_related("category").first()
+    # ----------------------------------------------------------
+    # Get symptom
+    # ----------------------------------------------------------
+    best_symptom = (
+        SymptomCode.objects
+        .filter(code=best_code)
+        .select_related("category")
+        .first()
+    )
 
     if not best_symptom:
         return {

@@ -11,6 +11,7 @@ import {
     ChartNoAxesColumnIncreasing,
     LockKeyhole,
 } from "lucide-react";
+import { toast } from "sonner";
 
 import api from "../api";
 
@@ -44,6 +45,9 @@ export default function TicketForm() {
 
     const [loading, setLoading] = useState(false);
 
+    // Stores validation errors returned by the backend
+    const [errors, setErrors] = useState({});
+
     const affectedScopeChoices = [
         { value: "individual", label: "Individual" },
         { value: "group", label: "Group" },
@@ -52,29 +56,47 @@ export default function TicketForm() {
     ];
 
     const handleChange = (e) => {
+        const { name, value } = e.target;
+
         setFormData({
             ...formData,
-            [e.target.name]: e.target.value,
+            [name]: value,
         });
+
+        // Clear the error for this field when the user edits it
+        setErrors((prev) => ({
+            ...prev,
+            [name]: "",
+        }));
     };
 
     const handleSubmit = async (e) => {
         e.preventDefault();
+
         setLoading(true);
+        setErrors({});
 
         try {
-            const response = await api.post(
-                "/tickets/create/",
-                formData
-            );
+            await api.post("/tickets/create/", formData);
 
-            navigate("/ticket-success", {
-                state: {
-                    message: response.data.message,
-                },
+            toast.success("Ticket submitted successfully!", {
+                description:
+                    "Your ticket has been submitted and is now being processed.",
             });
-        } catch {
-            setLoading(false);
+
+            navigate("/dashboard");
+        } catch (error) {
+            const responseErrors = error.response?.data;
+
+            if (responseErrors) {
+                setErrors(responseErrors);
+            } else {
+                setErrors({
+                    non_field_errors: [
+                        "Something went wrong while submitting the ticket.",
+                    ],
+                });
+            }
         } finally {
             setLoading(false);
         }
@@ -85,6 +107,26 @@ export default function TicketForm() {
             onSubmit={handleSubmit}
             className="mx-auto w-full max-w-[1500px] space-y-4"
         >
+            {/* General / Non-field Errors */}
+            {errors.non_field_errors && (
+                <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3">
+                    {Array.isArray(errors.non_field_errors) ? (
+                        errors.non_field_errors.map((error, index) => (
+                            <p
+                                key={index}
+                                className="text-sm text-red-600"
+                            >
+                                {error}
+                            </p>
+                        ))
+                    ) : (
+                        <p className="text-sm text-red-600">
+                            {errors.non_field_errors}
+                        </p>
+                    )}
+                </div>
+            )}
+
             <section className="overflow-hidden rounded-lg border border-gray-300 bg-white">
                 <div className="flex items-center justify-between gap-4 border-b border-gray-200 px-5 py-4">
                     <div>
@@ -226,6 +268,7 @@ export default function TicketForm() {
                     </div>
 
                     <div className="space-y-4 px-5 py-4">
+                        {/* Subject */}
                         <FormField label="Subject" required>
                             <input
                                 type="text"
@@ -235,14 +278,32 @@ export default function TicketForm() {
                                 placeholder="Briefly summarize the issue"
                                 name="subject"
                                 required
-                                className="h-10 w-full rounded-md border border-gray-300 bg-white px-3 text-sm text-black outline-none transition placeholder:text-gray-400 focus:border-[#2563EB] focus:ring-2 focus:ring-blue-100"
+                                className={`h-10 w-full rounded-md border bg-white px-3 text-sm text-black outline-none transition placeholder:text-gray-400 focus:ring-2 ${
+                                    errors.subject
+                                        ? "border-red-400 focus:border-red-500 focus:ring-red-100"
+                                        : "border-gray-300 focus:border-[#2563EB] focus:ring-blue-100"
+                                }`}
                             />
 
                             <div className="mt-1 flex items-center justify-between gap-3">
-                                <p className="text-xs text-gray-500">
-                                    Keep the subject short and
-                                    specific.
-                                </p>
+                                <div>
+                                    {errors.subject && (
+                                        <p className="text-xs text-red-500">
+                                            {Array.isArray(
+                                                errors.subject
+                                            )
+                                                ? errors.subject[0]
+                                                : errors.subject}
+                                        </p>
+                                    )}
+
+                                    {!errors.subject && (
+                                        <p className="text-xs text-gray-500">
+                                            Keep the subject short
+                                            and specific.
+                                        </p>
+                                    )}
+                                </div>
 
                                 <p className="shrink-0 text-xs text-gray-400">
                                     {formData.subject.length}/100
@@ -250,6 +311,7 @@ export default function TicketForm() {
                             </div>
                         </FormField>
 
+                        {/* Affected Scope */}
                         <FormField
                             label="Affected Scope"
                             required
@@ -262,7 +324,11 @@ export default function TicketForm() {
                                     }
                                     onChange={handleChange}
                                     required
-                                    className="h-10 w-full cursor-pointer appearance-none rounded-md border border-gray-300 bg-white px-3 pr-9 text-sm text-black outline-none transition focus:border-[#2563EB] focus:ring-2 focus:ring-blue-100"
+                                    className={`h-10 w-full cursor-pointer appearance-none rounded-md border bg-white px-3 pr-9 text-sm text-black outline-none transition focus:ring-2 ${
+                                        errors.affected_scope
+                                            ? "border-red-400 focus:border-red-500 focus:ring-red-100"
+                                            : "border-gray-300 focus:border-[#2563EB] focus:ring-blue-100"
+                                    }`}
                                 >
                                     <option value="">
                                         Select affected scope
@@ -286,12 +352,23 @@ export default function TicketForm() {
                                 />
                             </div>
 
-                            <p className="mt-1 text-xs text-gray-500">
-                                Select how many users are affected
-                                by the issue.
-                            </p>
+                            {errors.affected_scope ? (
+                                <p className="mt-1 text-xs text-red-500">
+                                    {Array.isArray(
+                                        errors.affected_scope
+                                    )
+                                        ? errors.affected_scope[0]
+                                        : errors.affected_scope}
+                                </p>
+                            ) : (
+                                <p className="mt-1 text-xs text-gray-500">
+                                    Select how many users are
+                                    affected by the issue.
+                                </p>
+                            )}
                         </FormField>
 
+                        {/* Description */}
                         <FormField label="Description" required>
                             <textarea
                                 rows={4}
@@ -301,14 +378,31 @@ export default function TicketForm() {
                                 name="description"
                                 required
                                 placeholder="Describe what happened, what you were trying to do, and any error messages you encountered."
-                                className="w-full resize-none rounded-md border border-gray-300 bg-white p-3 text-sm leading-5 text-black outline-none transition placeholder:text-gray-400 focus:border-[#2563EB] focus:ring-2 focus:ring-blue-100"
+                                className={`w-full resize-none rounded-md border bg-white p-3 text-sm leading-5 text-black outline-none transition placeholder:text-gray-400 focus:ring-2 ${
+                                    errors.description
+                                        ? "border-red-400 focus:border-red-500 focus:ring-red-100"
+                                        : "border-gray-300 focus:border-[#2563EB] focus:ring-blue-100"
+                                }`}
                             />
 
                             <div className="mt-1 flex items-center justify-between gap-3">
-                                <p className="text-xs text-gray-500">
-                                    Include error messages or
-                                    steps that led to the issue.
-                                </p>
+                                <div>
+                                    {errors.description ? (
+                                        <p className="text-xs text-red-500">
+                                            {Array.isArray(
+                                                errors.description
+                                            )
+                                                ? errors.description[0]
+                                                : errors.description}
+                                        </p>
+                                    ) : (
+                                        <p className="text-xs text-gray-500">
+                                            Include error messages
+                                            or steps that led to
+                                            the issue.
+                                        </p>
+                                    )}
+                                </div>
 
                                 <p className="shrink-0 text-xs text-gray-400">
                                     {formData.description.length}/750
@@ -316,6 +410,7 @@ export default function TicketForm() {
                             </div>
                         </FormField>
 
+                        {/* Business Impact */}
                         <FormField
                             label="Business Impact"
                             required
@@ -328,19 +423,40 @@ export default function TicketForm() {
                                 name="business_impact"
                                 required
                                 placeholder="Explain how this issue is affecting your work or business operations."
-                                className="w-full resize-none rounded-md border border-gray-300 bg-white p-3 text-sm leading-5 text-black outline-none transition placeholder:text-gray-400 focus:border-[#2563EB] focus:ring-2 focus:ring-blue-100"
+                                className={`w-full resize-none rounded-md border bg-white p-3 text-sm leading-5 text-black outline-none transition placeholder:text-gray-400 focus:ring-2 ${
+                                    errors.business_impact
+                                        ? "border-red-400 focus:border-red-500 focus:ring-red-100"
+                                        : "border-gray-300 focus:border-[#2563EB] focus:ring-blue-100"
+                                }`}
                             />
 
                             <div className="mt-1 flex items-center justify-between gap-3">
-                                <p className="text-xs text-gray-500">
-                                    Describe what work is blocked,
-                                    delayed, or affected. This
-                                    helps determine the appropriate
-                                    ticket priority.
-                                </p>
+                                <div>
+                                    {errors.business_impact ? (
+                                        <p className="text-xs text-red-500">
+                                            {Array.isArray(
+                                                errors.business_impact
+                                            )
+                                                ? errors.business_impact[0]
+                                                : errors.business_impact}
+                                        </p>
+                                    ) : (
+                                        <p className="text-xs text-gray-500">
+                                            Describe what work is
+                                            blocked, delayed, or
+                                            affected. This helps
+                                            determine the
+                                            appropriate ticket
+                                            priority.
+                                        </p>
+                                    )}
+                                </div>
 
                                 <p className="shrink-0 text-xs text-gray-400">
-                                    {formData.business_impact.length}
+                                    {
+                                        formData.business_impact
+                                            .length
+                                    }
                                     /500
                                 </p>
                             </div>

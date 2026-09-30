@@ -597,19 +597,27 @@ class FlaggedTicketDetailSerializer(serializers.ModelSerializer):
 class TicketCreateSerializer(serializers.ModelSerializer):
     class Meta:
         model = Ticket
-        fields = ["workstation", "subject", "description" ,"business_impact", "affected_scope"]
+        fields = [
+            "workstation",
+            "subject",
+            "description",
+            "business_impact",
+            "affected_scope",
+        ]
 
     def validate_subject(self, value):
         value = value.strip()
 
-        if len(value) < 5:
+        if len(value) < 15:
             raise serializers.ValidationError(
                 "Subject must be at least 15 characters."
             )
+
         if len(value) > 100:
             raise serializers.ValidationError(
                 "Subject cannot exceed 100 characters."
             )
+
         return value
 
     def validate_description(self, value):
@@ -619,6 +627,7 @@ class TicketCreateSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError(
                 "Description must be at least 50 characters."
             )
+
         if len(value) > 750:
             raise serializers.ValidationError(
                 "Description cannot exceed 750 characters."
@@ -633,6 +642,7 @@ class TicketCreateSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError(
                 "Business Impact must be at least 20 characters."
             )
+
         if len(value) > 500:
             raise serializers.ValidationError(
                 "Business impact cannot exceed 500 characters."
