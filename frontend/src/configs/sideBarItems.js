@@ -23,6 +23,7 @@ import {
     MonitorCog,
     FileText,
     BarChart3,
+    HandHelping, 
 } from "lucide-react";
 
 export const sidebarItems = {
@@ -71,6 +72,12 @@ export const sidebarItems = {
             name: "Assigned Tickets",
             path: "/tickets",
             icon: ClipboardCheck,
+        },
+        {
+            type: "link",
+            name: "Assistance Queue",
+            path: "/assistance-queue",
+            icon: HandHelping,
         },
         {
             type: "link",

@@ -310,6 +310,8 @@ export default function TicketDetails() {
             <RequestAssistanceModal
                 open={assistanceModalOpen}
                 onClose={() => setAssistanceModalOpen(false)}
+                ticketDetails={ticketDetails}
+                ticketId={ticketId}
             />
 
             <AutomatedProcessingModal

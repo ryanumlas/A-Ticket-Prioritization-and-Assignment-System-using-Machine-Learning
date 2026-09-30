@@ -30,7 +30,7 @@ import SystemAdCategories from './pages/SystemAdCategories'
 import SystemAdSymptomCodes from './pages/SystemAdSymptomCodes'
 import SystemAdSpecializations from './pages/SystemAdSpecializations'
 import SystemAdSLARules from './pages/SystemAdSLARules'
-
+import AssistanceQueue from './pages/AssistanceQueue';
 
 // function Logout() {
 //   localStorage.clear()
@@ -99,6 +99,14 @@ function App() {
                 element={
                     <ProtectedRoute>
                         <TicketQueue/>
+                    </ProtectedRoute>
+            }
+            />
+
+            <Route path="/assistance-queue" 
+                element={
+                    <ProtectedRoute>
+                        <AssistanceQueue/>
                     </ProtectedRoute>
             }
             />
