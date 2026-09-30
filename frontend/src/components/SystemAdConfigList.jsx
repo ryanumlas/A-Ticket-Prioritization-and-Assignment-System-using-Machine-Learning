@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Search } from "lucide-react";
+import { Plus, Search, X } from "lucide-react";
 import { toast } from "sonner";
 import api from "../api";
 
@@ -120,6 +120,10 @@ export default function SystemAdConfigList({ sectionKey }) {
     const [page, setPage] = useState(1);
     const [pageSize, setPageSize] = useState(15);
     const [loading, setLoading] = useState(true);
+    const [departmentDialog, setDepartmentDialog] = useState(null);
+    const [departmentForm, setDepartmentForm] = useState({ name: "", description: "" });
+    const [savingDepartment, setSavingDepartment] = useState(false);
+    const [refreshKey, setRefreshKey] = useState(0);
 
     useEffect(() => {
         let active = true;
@@ -161,7 +165,7 @@ export default function SystemAdConfigList({ sectionKey }) {
         return () => {
             active = false;
         };
-    }, [section]);
+    }, [section, refreshKey]);
 
     const dataset = section.datasets[selectedDataset];
     const rows = rowsByDataset[selectedDataset] || [];
@@ -182,11 +186,66 @@ export default function SystemAdConfigList({ sectionKey }) {
         setPage(1);
     };
 
+    const openDepartmentDialog = (mode, row = null) => {
+        setDepartmentForm({
+            name: row?.name || "",
+            description: row?.description || "",
+        });
+        setDepartmentDialog({ mode, row });
+    };
+
+    const saveDepartment = async (event) => {
+        event.preventDefault();
+        setSavingDepartment(true);
+
+        const isITDepartment = selectedDataset === 0;
+        const endpoint = isITDepartment
+            ? departmentDialog.mode === "edit"
+                ? `/departments/update/${departmentDialog.row.id}/`
+                : "/departments/create/"
+            : "/departments/employee/create/";
+        const payload = isITDepartment
+            ? departmentForm
+            : { name: departmentForm.name };
+
+        try {
+            if (departmentDialog.mode === "edit") {
+                await api.put(endpoint, payload);
+            } else {
+                await api.post(endpoint, payload);
+            }
+
+            toast.success(
+                departmentDialog.mode === "edit"
+                    ? "Department updated successfully."
+                    : "Department added successfully."
+            );
+            setDepartmentDialog(null);
+            setRefreshKey((current) => current + 1);
+        } catch {
+            toast.error("Failed to save department. Check that the name is unique.");
+        } finally {
+            setSavingDepartment(false);
+        }
+    };
+
     return (
         <div className="min-h-full overflow-y-auto bg-gray-50">
-            <div className="border-b border-gray-200 bg-white px-5 py-4">
-                <h1 className="text-xl font-semibold text-gray-900">{section.title}</h1>
-                <p className="mt-0.5 text-sm text-gray-500">{section.description}</p>
+            <div className="flex items-center justify-between gap-4 border-b border-gray-200 bg-white px-5 py-4">
+                <div>
+                    <h1 className="text-xl font-semibold text-gray-900">{section.title}</h1>
+                    <p className="mt-0.5 text-sm text-gray-500">{section.description}</p>
+                </div>
+                {sectionKey === "departments" && (
+                    <button
+                        type="button"
+                        onClick={() => openDepartmentDialog("add")}
+                        className="inline-flex h-10 shrink-0 items-center gap-2 rounded-md bg-[#2563EB] px-4 text-sm font-medium text-white transition hover:bg-[#1D4ED8]"
+                    >
+                        <Plus size={16} />
+                        Add Department
+                    </button>
+                )}
             </div>
 
             {section.datasets.length > 1 && (
@@ -248,12 +307,15 @@ export default function SystemAdConfigList({ sectionKey }) {
                                     {column.label}
                                 </th>
                             ))}
+                            {sectionKey === "departments" && selectedDataset === 0 && (
+                                <th className="w-20 px-4 py-3 text-right font-semibold text-gray-900">Actions</th>
+                            )}
                         </tr>
                     </thead>
                     <tbody>
                         {loading ? (
                             <tr>
-                                <td colSpan={dataset.columns.length} className="px-6 py-16 text-center text-gray-500">
+                                <td colSpan={dataset.columns.length + (sectionKey === "departments" && selectedDataset === 0 ? 1 : 0)} className="px-6 py-16 text-center text-gray-500">
                                     Loading {dataset.label.toLowerCase()}...
                                 </td>
                             </tr>
@@ -267,11 +329,22 @@ export default function SystemAdConfigList({ sectionKey }) {
                                             </span>
                                         </td>
                                     ))}
+                                    {sectionKey === "departments" && selectedDataset === 0 && (
+                                        <td className="px-4 py-3 text-right">
+                                            <button
+                                                type="button"
+                                                onClick={() => openDepartmentDialog("edit", row)}
+                                                className="rounded-md bg-[#2563EB] px-3 py-1.5 text-sm font-medium text-white transition hover:bg-[#1D4ED8]"
+                                            >
+                                                Edit
+                                            </button>
+                                        </td>
+                                    )}
                                 </tr>
                             ))
                         ) : (
                             <tr>
-                                <td colSpan={dataset.columns.length} className="px-6 py-16 text-center">
+                                <td colSpan={dataset.columns.length + (sectionKey === "departments" && selectedDataset === 0 ? 1 : 0)} className="px-6 py-16 text-center">
                                     <p className="font-medium text-gray-900">No {dataset.label.toLowerCase()} found</p>
                                     <p className="mt-1 text-sm text-gray-500">There are no records matching your search.</p>
                                 </td>
@@ -315,6 +388,73 @@ export default function SystemAdConfigList({ sectionKey }) {
                     </button>
                 </div>
             </div>
+
+            {departmentDialog && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+                    <form
+                        onSubmit={saveDepartment}
+                        className="w-full max-w-lg rounded-lg border border-gray-200 bg-white shadow-xl"
+                    >
+                        <div className="flex items-center justify-between border-b border-gray-200 px-5 py-4">
+                            <h2 className="text-lg font-semibold text-gray-900">
+                                {departmentDialog.mode === "edit" ? "Edit Department" : "Add Department"}
+                            </h2>
+                            <button
+                                type="button"
+                                onClick={() => setDepartmentDialog(null)}
+                                aria-label="Close dialog"
+                                className="rounded-md p-1.5 text-gray-500 transition hover:bg-gray-100 hover:text-gray-900"
+                            >
+                                <X size={18} />
+                            </button>
+                        </div>
+                        <div className="space-y-4 p-5">
+                            <label className="block text-sm font-medium text-gray-700">
+                                Department name
+                                <input
+                                    autoFocus
+                                    required
+                                    maxLength={100}
+                                    value={departmentForm.name}
+                                    onChange={(event) =>
+                                        setDepartmentForm((current) => ({ ...current, name: event.target.value }))
+                                    }
+                                    className="mt-1.5 h-10 w-full rounded-md border border-gray-300 px-3 text-sm text-gray-900 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+                                />
+                            </label>
+                            {selectedDataset === 0 && (
+                                <label className="block text-sm font-medium text-gray-700">
+                                    Description
+                                    <textarea
+                                        rows={4}
+                                        value={departmentForm.description}
+                                        onChange={(event) =>
+                                            setDepartmentForm((current) => ({ ...current, description: event.target.value }))
+                                        }
+                                        className="mt-1.5 w-full resize-y rounded-md border border-gray-300 px-3 py-2 text-sm text-gray-900 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+                                    />
+                                </label>
+                            )}
+                        </div>
+                        <div className="flex justify-end gap-2 border-t border-gray-200 px-5 py-4">
+                            <button
+                                type="button"
+                                onClick={() => setDepartmentDialog(null)}
+                                className="h-9 rounded-md border border-gray-300 px-4 text-sm font-medium text-gray-700 transition hover:bg-gray-50"
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                type="submit"
+                                disabled={savingDepartment}
+                                className="h-9 rounded-md bg-[#2563EB] px-4 text-sm font-medium text-white transition hover:bg-[#1D4ED8] disabled:cursor-not-allowed disabled:opacity-60"
+                            >
+                                {savingDepartment ? "Saving..." : "Save Department"}
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            )}
         </div>
     );
 }
