@@ -174,9 +174,11 @@ CELERY_RESULT_SERIALIZER = "json"
 
 CELERY_TIMEZONE = "Asia/Manila"
 
-CELERY_BEAT_SCHEDULE = {
-    "update-all-sla": {
-        "task": "tickets.tasks.update_all_sla",
-        "schedule": 60.0,
-    },
-}
+CELERY_BEAT_SCHEDULER = "django_celery_beat.schedulers:DatabaseScheduler"
+
+# CELERY_BEAT_SCHEDULE = {
+#     "update-all-sla": {
+#         "task": "tickets.tasks.update_all_sla",
+#         "schedule": 60.0,
+#     },
+# }

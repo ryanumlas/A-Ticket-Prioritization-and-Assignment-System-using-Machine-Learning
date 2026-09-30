@@ -5,10 +5,10 @@ UpdateCategoryView, CreateSymptomCodeView, SLARulesCreateView, SLARulesUpdateVie
 ServiceDeskOverviewView, ServiceDeskClassifiedResultsView, FlaggedTicketsListView, FlaggedTicketDetailView, SymptomCodeListView, 
 AcceptRecommendationView, ApproveOverrideView, ManuallyClassifyView, SupportOverviewView, TicketQueueView, TicketListSupportView, DepartmentSymptomCodesView, 
 SLAPerformanceView, TicketsByCategoryView, TicketDetailSupportView, TicketStatusHistoryView, TicketCommentListCreateView, RequestTicketAssistanceView,
-PriorityChangeRequestView, PriorityChangeRequestListView, PriorityRequestDetailView, ApprovePriorityRequestView, ReturnTicketView, 
-ReturnedTicketRequestListView, ReturnedTicketDetailRetrieve, ApproveReturnTicketView, PendingPriorityRequestCountView, PendingReturnTicketRequestCountView, 
-ServiceDeskDepartmentQueueView, EscalateTicketView, AcceptPriorityView, OverridePriorityView,SLARulesListView, CategoryListView, AssistanceQueueListView,
-ServiceDeskDepartmentSymptomCodesView, ServiceDeskDepartmentListView, RejectReturnTicketView, TicketDetailSupervisorView, AcknowledgeEscalationView, 
+PriorityChangeRequestView, PriorityChangeRequestListView, PriorityRequestDetailView, ApprovePriorityRequestView, ReturnTicketView, CancelTicketAssistanceRequestView,
+ReturnedTicketRequestListView, ReturnedTicketDetailRetrieve, ApproveReturnTicketView, PendingPriorityRequestCountView, PendingReturnTicketRequestCountView, CompleteTicketAssistanceView,
+ServiceDeskDepartmentQueueView, EscalateTicketView, AcceptPriorityView, OverridePriorityView,SLARulesListView, CategoryListView, AssistanceQueueListView, AssistedTicketListView,
+ServiceDeskDepartmentSymptomCodesView, ServiceDeskDepartmentListView, RejectReturnTicketView, TicketDetailSupervisorView, AcknowledgeEscalationView, AcceptTicketAssistanceView,
 RejectPriorityRequestView, EmployeeCurrentActiveTicketView, SupervisorEscalatedTicketsView, CompleteEscalationView, TicketCommentMarkReadView, TicketDetailServiceDeskView)
 
 urlpatterns = [
@@ -73,6 +73,10 @@ urlpatterns = [
     # --- Assistance ---
     path("assistance/<int:ticket_id>/request/", RequestTicketAssistanceView.as_view(), name="request-ticket-assistance",),
     path("assistance/queue/list/", AssistanceQueueListView.as_view(),name="assistance-queue",),
+    path("assistance/request/<int:request_id>/accept/", AcceptTicketAssistanceView.as_view(),name="accept-ticket-assistance",),
+    path("assistance/assisted/list/", AssistedTicketListView.as_view(), name="assisted-ticket-list",),
+    path("assistance/request/<int:request_id>/cancel/",CancelTicketAssistanceRequestView.as_view(),name="cancel-ticket-assistance-request",),
+    path("assistance/<int:assistance_id>/complete/",CompleteTicketAssistanceView.as_view(),name="complete-ticket-assistance",),
     # --- Category URLs ---
     path('categories/list/', CategoryListView.as_view(), name='list-category'),
     path('categories/create/', CreateCategoryView.as_view(), name='create-category'),

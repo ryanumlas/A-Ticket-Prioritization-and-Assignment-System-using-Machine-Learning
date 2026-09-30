@@ -14,6 +14,11 @@ import {
     ArrowLeftRight,
 } from "lucide-react";
 
+import {
+    AnimatePresence,
+    motion,
+} from "motion/react";
+
 import { useEffect, useState } from "react";
 
 import api from "/src/api";
@@ -23,17 +28,25 @@ import { getHistoryColor } from "../../utils/historyColor";
 import { getTicketPermissions } from "../../utils/getTicketPermission";
 import CompleteEscalationModal from "../EscalatedTickets/CompleteEscalationModal";
 
-export default function RightSidePanel({ ticketDetails, onTicketUpdated }) {
+export default function RightSidePanel({
+    ticketDetails,
+    onTicketUpdated,
+    canEditStatus: canEditStatusOverride,
+}) {
     const user = getCurrentUser();
     const permissions = getTicketPermissions(user);
 
     const {
-        canEditStatus,
+        canEditStatus: roleCanEditStatus,
         canAcknowledgeEscalation,
         canCompleteEscalation,
     } = permissions;
 
-    const escalation = ticketDetails?.escalation || null;
+    const canEditStatus =
+        canEditStatusOverride ?? roleCanEditStatus;
+
+    const escalation =
+        ticketDetails?.escalation || null;
 
     const isEscalated = Boolean(
         ticketDetails?.is_escalated || escalation
@@ -43,18 +56,27 @@ export default function RightSidePanel({ ticketDetails, onTicketUpdated }) {
         normalizeStatus(ticketDetails?.status)
     );
 
-    const [showCompleteEscalation, setShowCompleteEscalation] =
-        useState(false);
+    const [
+        showCompleteEscalation,
+        setShowCompleteEscalation,
+    ] = useState(false);
 
     const [history, setHistory] = useState([]);
-    const [pendingStatus, setPendingStatus] = useState(null);
-    const [showConfirm, setShowConfirm] = useState(false);
+    const [pendingStatus, setPendingStatus] =
+        useState(null);
+    const [showConfirm, setShowConfirm] =
+        useState(false);
     const [remarks, setRemarks] = useState("");
-    const [remarksError, setRemarksError] = useState("");
-    const [isUpdating, setIsUpdating] = useState(false);
-    const [isLoadingHistory, setIsLoadingHistory] = useState(false);
-    const [isAcknowledging, setIsAcknowledging] = useState(false);
-    const [activeTab, setActiveTab] = useState("history");
+    const [remarksError, setRemarksError] =
+        useState("");
+    const [isUpdating, setIsUpdating] =
+        useState(false);
+    const [isLoadingHistory, setIsLoadingHistory] =
+        useState(false);
+    const [isAcknowledging, setIsAcknowledging] =
+        useState(false);
+    const [activeTab, setActiveTab] =
+        useState("history");
 
     const statusesWithRemarks = [
         "resolved",
@@ -62,10 +84,17 @@ export default function RightSidePanel({ ticketDetails, onTicketUpdated }) {
         "cancelled",
     ];
 
-    const showRemarks = statusesWithRemarks.includes(pendingStatus);
+    const showRemarks =
+        statusesWithRemarks.includes(
+            pendingStatus
+        );
 
     useEffect(() => {
-        setStatus(normalizeStatus(ticketDetails?.status));
+        setStatus(
+            normalizeStatus(
+                ticketDetails?.status
+            )
+        );
     }, [ticketDetails?.status]);
 
     useEffect(() => {
@@ -90,11 +119,12 @@ export default function RightSidePanel({ ticketDetails, onTicketUpdated }) {
                 `/tickets/${ticketDetails.id}/history/`
             );
 
-            const historyData = Array.isArray(response.data)
-                ? response.data
-                : response.data?.results ||
-                  response.data?.history ||
-                  [];
+            const historyData =
+                Array.isArray(response.data)
+                    ? response.data
+                    : response.data?.results ||
+                      response.data?.history ||
+                      [];
 
             setHistory(historyData);
         } catch {
@@ -105,27 +135,41 @@ export default function RightSidePanel({ ticketDetails, onTicketUpdated }) {
     };
 
     const latestHistoryId =
-        history.length > 0 ? history[0].id : null;
+        history.length > 0
+            ? history[0].id
+            : null;
 
-    const acknowledgementHistory = history.find(
-        item => item.event_type === "ACKNOWLEDGED"
-    );
+    const acknowledgementHistory =
+        history.find(
+            item =>
+                item.event_type ===
+                "ACKNOWLEDGED"
+        );
 
-    const completionHistory = history.find(
-        item => item.event_type === "ESCALATION_COMPLETED"
-    );
+    const completionHistory =
+        history.find(
+            item =>
+                item.event_type ===
+                "ESCALATION_COMPLETED"
+        );
 
     const isAcknowledged =
-        escalation?.status === "ACKNOWLEDGED" ||
-        escalation?.status === "COMPLETED" ||
+        escalation?.status ===
+            "ACKNOWLEDGED" ||
+        escalation?.status ===
+            "COMPLETED" ||
         Boolean(acknowledgementHistory);
 
     const isCompleted =
-        escalation?.status === "COMPLETED" ||
+        escalation?.status ===
+            "COMPLETED" ||
         Boolean(completionHistory);
 
     const handleStatusChange = newStatus => {
-        if (!canEditStatus || newStatus === status) {
+        if (
+            !canEditStatus ||
+            newStatus === status
+        ) {
             return;
         }
 
@@ -143,18 +187,30 @@ export default function RightSidePanel({ ticketDetails, onTicketUpdated }) {
     };
 
     const confirmStatusChange = async () => {
-        if (!canEditStatus || !pendingStatus) {
+        if (
+            !canEditStatus ||
+            !pendingStatus
+        ) {
             return;
         }
 
-        const trimmedRemarks = remarks.trim();
+        const trimmedRemarks =
+            remarks.trim();
 
-        if (showRemarks && !trimmedRemarks) {
-            setRemarksError("Remarks are required.");
+        if (
+            showRemarks &&
+            !trimmedRemarks
+        ) {
+            setRemarksError(
+                "Remarks are required."
+            );
             return;
         }
 
-        if (showRemarks && trimmedRemarks.length < 50) {
+        if (
+            showRemarks &&
+            trimmedRemarks.length < 50
+        ) {
             setRemarksError(
                 "Remarks must be at least 50 characters."
             );
@@ -172,7 +228,9 @@ export default function RightSidePanel({ ticketDetails, onTicketUpdated }) {
                 `/tickets/update-status/${ticketDetails.id}/`,
                 {
                     status: newStatus,
-                    remarks: showRemarks ? trimmedRemarks : "",
+                    remarks: showRemarks
+                        ? trimmedRemarks
+                        : "",
                 }
             );
 
@@ -186,59 +244,68 @@ export default function RightSidePanel({ ticketDetails, onTicketUpdated }) {
             await fetchHistory();
         } catch {
             setStatus(
-                normalizeStatus(ticketDetails?.status)
+                normalizeStatus(
+                    ticketDetails?.status
+                )
             );
         } finally {
             setIsUpdating(false);
         }
     };
 
-    const handleAcknowledgeEscalation = async () => {
-        if (
-            !canAcknowledgeEscalation ||
-            !ticketDetails?.id ||
-            isAcknowledging ||
-            !isEscalated ||
-            isAcknowledged ||
-            isCompleted
-        ) {
-            return;
-        }
+    const handleAcknowledgeEscalation =
+        async () => {
+            if (
+                !canAcknowledgeEscalation ||
+                !ticketDetails?.id ||
+                isAcknowledging ||
+                !isEscalated ||
+                isAcknowledged ||
+                isCompleted
+            ) {
+                return;
+            }
 
-        try {
-            setIsAcknowledging(true);
+            try {
+                setIsAcknowledging(true);
 
-            await api.post(
-                `/tickets/acknowledge-escalation/${ticketDetails.id}/`
-            );
+                await api.post(
+                    `/tickets/acknowledge-escalation/${ticketDetails.id}/`
+                );
+
+                await onTicketUpdated?.();
+                await fetchHistory();
+            } catch {
+                // Keep the current escalation state visible.
+            } finally {
+                setIsAcknowledging(false);
+            }
+        };
+
+    const handleOpenCompleteEscalation =
+        () => {
+            if (
+                !isAcknowledged ||
+                isCompleted
+            ) {
+                return;
+            }
+
+            setShowCompleteEscalation(true);
+        };
+
+    const handleCloseCompleteEscalation =
+        () => {
+            setShowCompleteEscalation(false);
+        };
+
+    const handleEscalationCompleted =
+        async () => {
+            setShowCompleteEscalation(false);
 
             await onTicketUpdated?.();
             await fetchHistory();
-        } catch {
-            // Keep the current escalation state visible.
-        } finally {
-            setIsAcknowledging(false);
-        }
-    };
-
-    const handleOpenCompleteEscalation = () => {
-        if (!isAcknowledged || isCompleted) {
-            return;
-        }
-
-        setShowCompleteEscalation(true);
-    };
-
-    const handleCloseCompleteEscalation = () => {
-        setShowCompleteEscalation(false);
-    };
-
-    const handleEscalationCompleted = async () => {
-        setShowCompleteEscalation(false);
-
-        await onTicketUpdated?.();
-        await fetchHistory();
-    };
+        };
 
     const getHistoryIcon = item => {
         if (item.event_type === "CREATED") {
@@ -257,47 +324,78 @@ export default function RightSidePanel({ ticketDetails, onTicketUpdated }) {
             return Undo2;
         }
 
-        if (item.event_type === "RETURN_APPROVED") {
-            return CircleCheck;
-        }
-
-        if (item.event_type === "RETURN_REJECTED") {
-            return XCircle;
-        }
-
-        if (item.event_type === "REVIEW_COMPLETED") {
+        if (
+            item.event_type ===
+            "RETURN_APPROVED"
+        ) {
             return CircleCheck;
         }
 
         if (
-            item.event_type === "PRIORITY_REVIEW" ||
-            item.event_type === "PRIORITY_REVIEW_REQUESTED"
+            item.event_type ===
+            "RETURN_REJECTED"
+        ) {
+            return XCircle;
+        }
+
+        if (
+            item.event_type ===
+            "REVIEW_COMPLETED"
+        ) {
+            return CircleCheck;
+        }
+
+        if (
+            item.event_type ===
+                "PRIORITY_REVIEW" ||
+            item.event_type ===
+                "PRIORITY_REVIEW_REQUESTED"
         ) {
             return AlertTriangle;
         }
 
-        if (item.event_type === "PRIORITY_CHANGED") {
+        if (
+            item.event_type ===
+            "PRIORITY_CHANGED"
+        ) {
             return AlertTriangle;
         }
 
-        if (item.event_type === "PRIORITY_REJECTED") {
+        if (
+            item.event_type ===
+            "PRIORITY_REJECTED"
+        ) {
             return XCircle;
         }
 
-        if (item.event_type === "ESCALATED") {
+        if (
+            item.event_type === "ESCALATED"
+        ) {
             return AlertTriangle;
         }
 
-        if (item.event_type === "ACKNOWLEDGED") {
+        if (
+            item.event_type ===
+            "ACKNOWLEDGED"
+        ) {
             return CheckCheck;
         }
 
-        if (item.event_type === "ESCALATION_COMPLETED") {
+        if (
+            item.event_type ===
+            "ESCALATION_COMPLETED"
+        ) {
             return CircleCheck;
         }
 
-        if (item.event_type === "STATUS_CHANGED") {
-            const newStatus = normalizeStatus(item.new_value);
+        if (
+            item.event_type ===
+            "STATUS_CHANGED"
+        ) {
+            const newStatus =
+                normalizeStatus(
+                    item.new_value
+                );
 
             switch (newStatus) {
                 case "open":
@@ -337,7 +435,9 @@ export default function RightSidePanel({ ticketDetails, onTicketUpdated }) {
             return "Assigned";
         }
 
-        if (item.event_type === "REASSIGNED") {
+        if (
+            item.event_type === "REASSIGNED"
+        ) {
             return "Reassigned";
         }
 
@@ -345,50 +445,82 @@ export default function RightSidePanel({ ticketDetails, onTicketUpdated }) {
             return "Returned to Service Desk";
         }
 
-        if (item.event_type === "RETURN_APPROVED") {
+        if (
+            item.event_type ===
+            "RETURN_APPROVED"
+        ) {
             return "Return Approved";
         }
 
-        if (item.event_type === "RETURN_REJECTED") {
+        if (
+            item.event_type ===
+            "RETURN_REJECTED"
+        ) {
             return "Return Rejected";
         }
 
-        if (item.event_type === "REVIEW_COMPLETED") {
+        if (
+            item.event_type ===
+            "REVIEW_COMPLETED"
+        ) {
             return "Review Completed";
         }
 
         if (
-            item.event_type === "PRIORITY_REVIEW" ||
-            item.event_type === "PRIORITY_REVIEW_REQUESTED"
+            item.event_type ===
+                "PRIORITY_REVIEW" ||
+            item.event_type ===
+                "PRIORITY_REVIEW_REQUESTED"
         ) {
             return "Priority Review Requested";
         }
 
-        if (item.event_type === "PRIORITY_CHANGED") {
+        if (
+            item.event_type ===
+            "PRIORITY_CHANGED"
+        ) {
             return "Priority Changed";
         }
 
-        if (item.event_type === "PRIORITY_REJECTED") {
+        if (
+            item.event_type ===
+            "PRIORITY_REJECTED"
+        ) {
             return "Priority Request Rejected";
         }
 
-        if (item.event_type === "ESCALATED") {
+        if (
+            item.event_type === "ESCALATED"
+        ) {
             return "Escalated";
         }
 
-        if (item.event_type === "ACKNOWLEDGED") {
+        if (
+            item.event_type ===
+            "ACKNOWLEDGED"
+        ) {
             return "Escalation Acknowledged";
         }
 
-        if (item.event_type === "ESCALATION_COMPLETED") {
+        if (
+            item.event_type ===
+            "ESCALATION_COMPLETED"
+        ) {
             return "Escalation Completed";
         }
 
-        if (item.event_type === "STATUS_CHANGED") {
-            return formatStatus(item.new_value);
+        if (
+            item.event_type ===
+            "STATUS_CHANGED"
+        ) {
+            return formatStatus(
+                item.new_value
+            );
         }
 
-        return formatStatus(item.event_type);
+        return formatStatus(
+            item.event_type
+        );
     };
 
     const getModalTitle = () => {
@@ -432,10 +564,37 @@ export default function RightSidePanel({ ticketDetails, onTicketUpdated }) {
 
     return (
         <>
-            <div className="box-border flex h-full w-[350px] min-w-[350px] max-w-[350px] shrink-0 basis-[350px] flex-col overflow-hidden border-gray-300 bg-white min-[1280px]:max-[1535px]:w-[280px] min-[1280px]:max-[1535px]:min-w-[280px] min-[1280px]:max-[1535px]:max-w-[280px] min-[1280px]:max-[1535px]:basis-[280px]">
-
+            <motion.div
+                initial={{
+                    opacity: 0,
+                    x: 16,
+                }}
+                animate={{
+                    opacity: 1,
+                    x: 0,
+                }}
+                transition={{
+                    duration: 0.28,
+                    ease: "easeOut",
+                }}
+                className="box-border flex h-full w-[350px] min-w-[350px] max-w-[350px] shrink-0 basis-[350px] flex-col overflow-hidden border-gray-300 bg-white min-[1280px]:max-[1535px]:w-[280px] min-[1280px]:max-[1535px]:min-w-[280px] min-[1280px]:max-[1535px]:max-w-[280px] min-[1280px]:max-[1535px]:basis-[280px]"
+            >
                 {/* Header */}
-                <div className="box-border h-auto shrink-0 border-b border-gray-200 px-4 py-4 2xl:px-6 min-[1280px]:max-[1535px]:h-[70px] min-[1280px]:max-[1535px]:px-4 min-[1280px]:max-[1535px]:py-3 min-[1536px]:max-[1599px]:h-[88px] min-[1600px]:max-[1920px]:h-[88px]">
+                <motion.div
+                    initial={{
+                        opacity: 0,
+                        y: -5,
+                    }}
+                    animate={{
+                        opacity: 1,
+                        y: 0,
+                    }}
+                    transition={{
+                        duration: 0.25,
+                        delay: 0.05,
+                    }}
+                    className="box-border h-auto shrink-0 border-b border-gray-200 px-4 py-4 2xl:px-6 min-[1280px]:max-[1535px]:h-[70px] min-[1280px]:max-[1535px]:px-4 min-[1280px]:max-[1535px]:py-3 min-[1536px]:max-[1599px]:h-[88px] min-[1600px]:max-[1920px]:h-[88px]"
+                >
                     <div className="flex min-w-0 items-center gap-2">
                         <History
                             size={20}
@@ -447,15 +606,29 @@ export default function RightSidePanel({ ticketDetails, onTicketUpdated }) {
                         </p>
                     </div>
 
-                    <p className="mt-1 text-xs leading-5 text-gray-500 min-[1280px]:max-[1535px]:text-[11px] min-[1280px]:max-[1535px]:leading-4">
+                    <p className="text-xs leading-5 text-gray-500 min-[1280px]:max-[1535px]:text-[11px] min-[1280px]:max-[1535px]:leading-4">
                         {canEditStatus
                             ? "Track and manage the progress of this ticket."
                             : "Track the progress of this ticket."}
                     </p>
-                </div>
+                </motion.div>
 
                 {/* Current Status */}
-                <div className="shrink-0 border-b border-gray-200 px-4 py-4 2xl:p-5 min-[1280px]:max-[1535px]:px-4 min-[1280px]:max-[1535px]:py-3">
+                <motion.div
+                    initial={{
+                        opacity: 0,
+                        y: 8,
+                    }}
+                    animate={{
+                        opacity: 1,
+                        y: 0,
+                    }}
+                    transition={{
+                        duration: 0.25,
+                        delay: 0.1,
+                    }}
+                    className="shrink-0 border-b border-gray-200 px-4 py-4 2xl:p-5 min-[1280px]:max-[1535px]:px-4 min-[1280px]:max-[1535px]:py-3"
+                >
                     <p className="text-xs font-medium uppercase text-gray-500 min-[1280px]:max-[1535px]:text-[10px]">
                         Current Status
                     </p>
@@ -483,18 +656,6 @@ export default function RightSidePanel({ ticketDetails, onTicketUpdated }) {
                                 <option value="resolved">
                                     Resolved
                                 </option>
-
-                                <option value="closed">
-                                    Closed
-                                </option>
-
-                                <option value="reopened">
-                                    Reopened
-                                </option>
-
-                                <option value="cancelled">
-                                    Cancelled
-                                </option>
                             </select>
 
                             <ChevronDown
@@ -516,269 +677,508 @@ export default function RightSidePanel({ ticketDetails, onTicketUpdated }) {
 
                     <p className="mt-2 text-xs text-gray-500 min-[1280px]:max-[1535px]:mt-1.5 min-[1280px]:max-[1535px]:text-[10px]">
                         {history.length > 0
-                            ? `Last updated ${formatDate(history[0].created_at)}`
+                            ? `Last updated ${formatDate(
+                                  history[0].created_at
+                              )}`
                             : "No status history yet."}
                     </p>
-                </div>
+                </motion.div>
 
                 {/* Escalation / History Tabs */}
-                {isEscalated && (
-                    <div className="shrink-0 border-b border-gray-200 px-4 py-3 2xl:px-5 min-[1280px]:max-[1535px]:px-4 min-[1280px]:max-[1535px]:py-2.5">
-                        <div className="flex items-center gap-1 rounded-lg bg-gray-100 p-1">
+                <AnimatePresence initial={false}>
+                    {isEscalated && (
+                        <motion.div
+                            initial={{
+                                opacity: 0,
+                                height: 0,
+                            }}
+                            animate={{
+                                opacity: 1,
+                                height: "auto",
+                            }}
+                            exit={{
+                                opacity: 0,
+                                height: 0,
+                            }}
+                            transition={{
+                                duration: 0.22,
+                                ease: "easeOut",
+                            }}
+                            className="shrink-0 overflow-hidden border-b border-gray-200 px-4 py-3 2xl:px-5 min-[1280px]:max-[1535px]:px-4 min-[1280px]:max-[1535px]:py-2.5"
+                        >
+                            <div className="flex items-center gap-1 rounded-lg bg-gray-100 p-1">
+                                <motion.button
+                                    type="button"
+                                    onClick={() =>
+                                        setActiveTab(
+                                            "escalation"
+                                        )
+                                    }
+                                    whileTap={{
+                                        scale: 0.98,
+                                    }}
+                                    className={`flex min-w-0 flex-1 items-center justify-center gap-1.5 rounded-md px-2 py-2 text-xs font-medium transition 2xl:gap-2 2xl:px-3 min-[1280px]:max-[1535px]:gap-1 min-[1280px]:max-[1535px]:px-1.5 min-[1280px]:max-[1535px]:py-1.5 min-[1280px]:max-[1535px]:text-[10px] ${
+                                        activeTab ===
+                                        "escalation"
+                                            ? "bg-[#4C4CF9] text-white shadow-sm"
+                                            : "text-gray-500 hover:bg-white hover:text-black"
+                                    }`}
+                                >
+                                    <AlertTriangle
+                                        size={14}
+                                        className="shrink-0 min-[1280px]:max-[1535px]:size-[12px]"
+                                    />
 
-                            <button
-                                type="button"
-                                onClick={() =>
-                                    setActiveTab("escalation")
-                                }
-                                className={`flex min-w-0 flex-1 items-center justify-center gap-1.5 rounded-md px-2 py-2 text-xs font-medium transition 2xl:gap-2 2xl:px-3 min-[1280px]:max-[1535px]:gap-1 min-[1280px]:max-[1535px]:px-1.5 min-[1280px]:max-[1535px]:py-1.5 min-[1280px]:max-[1535px]:text-[10px] ${
-                                    activeTab === "escalation"
-                                        ? "bg-[#4C4CF9] text-white shadow-sm"
-                                        : "text-gray-500 hover:bg-white hover:text-black"
-                                }`}
-                            >
-                                <AlertTriangle
-                                    size={14}
-                                    className="shrink-0 min-[1280px]:max-[1535px]:size-[12px]"
-                                />
+                                    <span className="truncate">
+                                        Escalation
+                                    </span>
+                                </motion.button>
 
-                                <span className="truncate">
-                                    Escalation
-                                </span>
-                            </button>
+                                <motion.button
+                                    type="button"
+                                    onClick={() =>
+                                        setActiveTab(
+                                            "history"
+                                        )
+                                    }
+                                    whileTap={{
+                                        scale: 0.98,
+                                    }}
+                                    className={`flex min-w-0 flex-1 items-center justify-center gap-1.5 rounded-md px-2 py-2 text-xs font-medium transition 2xl:gap-2 2xl:px-3 min-[1280px]:max-[1535px]:gap-1 min-[1280px]:max-[1535px]:px-1.5 min-[1280px]:max-[1535px]:py-1.5 min-[1280px]:max-[1535px]:text-[10px] ${
+                                        activeTab ===
+                                        "history"
+                                            ? "bg-[#4C4CF9] text-white shadow-sm"
+                                            : "text-gray-500 hover:bg-white hover:text-black"
+                                    }`}
+                                >
+                                    <History
+                                        size={14}
+                                        className="shrink-0 min-[1280px]:max-[1535px]:size-[12px]"
+                                    />
 
-                            <button
-                                type="button"
-                                onClick={() =>
-                                    setActiveTab("history")
-                                }
-                                className={`flex min-w-0 flex-1 items-center justify-center gap-1.5 rounded-md px-2 py-2 text-xs font-medium transition 2xl:gap-2 2xl:px-3 min-[1280px]:max-[1535px]:gap-1 min-[1280px]:max-[1535px]:px-1.5 min-[1280px]:max-[1535px]:py-1.5 min-[1280px]:max-[1535px]:text-[10px] ${
-                                    activeTab === "history"
-                                        ? "bg-[#4C4CF9] text-white shadow-sm"
-                                        : "text-gray-500 hover:bg-white hover:text-black"
-                                }`}
-                            >
-                                <History
-                                    size={14}
-                                    className="shrink-0 min-[1280px]:max-[1535px]:size-[12px]"
-                                />
-
-                                <span className="truncate">
-                                    History
-                                </span>
-                            </button>
-
-                        </div>
-                    </div>
-                )}
+                                    <span className="truncate">
+                                        History
+                                    </span>
+                                </motion.button>
+                            </div>
+                        </motion.div>
+                    )}
+                </AnimatePresence>
 
                 {/* History */}
-                {activeTab === "history" && (
-                    <div className="min-h-0 min-w-0 flex-1 overflow-y-auto px-4 py-5 2xl:p-5 min-[1280px]:max-[1535px]:px-4 min-[1280px]:max-[1535px]:py-4 [&::-webkit-scrollbar]:w-1 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-transparent hover:[&::-webkit-scrollbar-thumb]:bg-gray-300">
+                <AnimatePresence
+                    mode="wait"
+                    initial={false}
+                >
+                    {activeTab === "history" && (
+                        <motion.div
+                            key="history"
+                            initial={{
+                                opacity: 0,
+                                x: -6,
+                            }}
+                            animate={{
+                                opacity: 1,
+                                x: 0,
+                            }}
+                            exit={{
+                                opacity: 0,
+                                x: 6,
+                            }}
+                            transition={{
+                                duration: 0.2,
+                            }}
+                            className="min-h-0 min-w-0 flex-1 overflow-y-auto px-4 py-5 2xl:p-5 min-[1280px]:max-[1535px]:px-4 min-[1280px]:max-[1535px]:py-4 [&::-webkit-scrollbar]:w-1 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-transparent hover:[&::-webkit-scrollbar-thumb]:bg-gray-300"
+                        >
+                            {isLoadingHistory ? (
+                                <motion.p
+                                    initial={{
+                                        opacity: 0,
+                                    }}
+                                    animate={{
+                                        opacity: 1,
+                                    }}
+                                    className="text-sm text-gray-500 min-[1280px]:max-[1535px]:text-[12px]"
+                                >
+                                    Loading ticket history...
+                                </motion.p>
+                            ) : history.length ===
+                              0 ? (
+                                <motion.p
+                                    initial={{
+                                        opacity: 0,
+                                    }}
+                                    animate={{
+                                        opacity: 1,
+                                    }}
+                                    className="text-sm text-gray-500 min-[1280px]:max-[1535px]:text-[12px]"
+                                >
+                                    No ticket history available.
+                                </motion.p>
+                            ) : (
+                                <div className="relative min-w-0">
+                                    <div className="absolute bottom-4 left-[15px] top-4 w-px bg-gray-200 min-[1280px]:max-[1535px]:left-[13px]" />
 
-                        {isLoadingHistory ? (
-                            <p className="text-sm text-gray-500 min-[1280px]:max-[1535px]:text-[12px]">
-                                Loading ticket history...
-                            </p>
-                        ) : history.length === 0 ? (
-                            <p className="text-sm text-gray-500 min-[1280px]:max-[1535px]:text-[12px]">
-                                No ticket history available.
-                            </p>
-                        ) : (
-                            <div className="relative min-w-0">
-                                <div className="absolute bottom-4 left-[15px] top-4 w-px bg-gray-200 min-[1280px]:max-[1535px]:left-[13px]" />
+                                    {history.map(
+                                        (
+                                            item,
+                                            index
+                                        ) => {
+                                            const Icon =
+                                                getHistoryIcon(
+                                                    item
+                                                );
 
-                                {history.map(item => {
-                                    const Icon =
-                                        getHistoryIcon(item);
+                                            const colorClass =
+                                                getHistoryColor(
+                                                    item
+                                                );
 
-                                    const colorClass =
-                                        getHistoryColor(item);
+                                            const hideRemarks =
+                                                item.event_type ===
+                                                    "ESCALATED" ||
+                                                item.event_type ===
+                                                    "ESCALATION_COMPLETED";
 
-                                    const hideRemarks =
-                                        item.event_type ===
-                                            "ESCALATED" ||
-                                        item.event_type ===
-                                            "ESCALATION_COMPLETED";
-
-                                    return (
-                                        <TimelineItem
-                                            key={item.id}
-                                            icon={Icon}
-                                            title={getHistoryTitle(item)}
-                                            description={
-                                                item.message ||
-                                                "Ticket was updated."
-                                            }
-                                            remarks={
-                                                hideRemarks
-                                                    ? null
-                                                    : item.remarks
-                                            }
-                                            date={formatDate(
-                                                item.created_at
-                                            )}
-                                            colorClass={colorClass}
-                                            current={
-                                                item.id ===
-                                                latestHistoryId
-                                            }
-                                        />
-                                    );
-                                })}
-                            </div>
-                        )}
-                    </div>
-                )}
-
-                {/* Escalation */}
-                {isEscalated &&
-                    activeTab === "escalation" && (
-                        <EscalationContent
-                            escalation={escalation}
-                            acknowledgementHistory={
-                                acknowledgementHistory
-                            }
-                            completionHistory={
-                                completionHistory
-                            }
-                            isAcknowledged={
-                                isAcknowledged
-                            }
-                            isCompleted={
-                                isCompleted
-                            }
-                            canAcknowledgeEscalation={
-                                canAcknowledgeEscalation
-                            }
-                            canCompleteEscalation={
-                                canCompleteEscalation
-                            }
-                            isAcknowledging={
-                                isAcknowledging
-                            }
-                            onAcknowledge={
-                                handleAcknowledgeEscalation
-                            }
-                            onCompleteEscalation={
-                                handleOpenCompleteEscalation
-                            }
-                        />
+                                            return (
+                                                <TimelineItem
+                                                    key={
+                                                        item.id
+                                                    }
+                                                    icon={
+                                                        Icon
+                                                    }
+                                                    title={getHistoryTitle(
+                                                        item
+                                                    )}
+                                                    description={
+                                                        item.message ||
+                                                        "Ticket was updated."
+                                                    }
+                                                    remarks={
+                                                        hideRemarks
+                                                            ? null
+                                                            : item.remarks
+                                                    }
+                                                    date={formatDate(
+                                                        item.created_at
+                                                    )}
+                                                    colorClass={
+                                                        colorClass
+                                                    }
+                                                    current={
+                                                        item.id ===
+                                                        latestHistoryId
+                                                    }
+                                                    index={
+                                                        index
+                                                    }
+                                                />
+                                            );
+                                        }
+                                    )}
+                                </div>
+                            )}
+                        </motion.div>
                     )}
-            </div>
+
+                    {isEscalated &&
+                        activeTab ===
+                            "escalation" && (
+                            <motion.div
+                                key="escalation"
+                                initial={{
+                                    opacity: 0,
+                                    x: 6,
+                                }}
+                                animate={{
+                                    opacity: 1,
+                                    x: 0,
+                                }}
+                                exit={{
+                                    opacity: 0,
+                                    x: -6,
+                                }}
+                                transition={{
+                                    duration: 0.2,
+                                }}
+                                className="min-h-0 min-w-0 flex-1"
+                            >
+                                <EscalationContent
+                                    escalation={
+                                        escalation
+                                    }
+                                    acknowledgementHistory={
+                                        acknowledgementHistory
+                                    }
+                                    completionHistory={
+                                        completionHistory
+                                    }
+                                    isAcknowledged={
+                                        isAcknowledged
+                                    }
+                                    isCompleted={
+                                        isCompleted
+                                    }
+                                    canAcknowledgeEscalation={
+                                        canAcknowledgeEscalation
+                                    }
+                                    canCompleteEscalation={
+                                        canCompleteEscalation
+                                    }
+                                    isAcknowledging={
+                                        isAcknowledging
+                                    }
+                                    onAcknowledge={
+                                        handleAcknowledgeEscalation
+                                    }
+                                    onCompleteEscalation={
+                                        handleOpenCompleteEscalation
+                                    }
+                                />
+                            </motion.div>
+                        )}
+                </AnimatePresence>
+            </motion.div>
 
             <CompleteEscalationModal
-                open={showCompleteEscalation}
-                ticketId={ticketDetails?.id}
-                onClose={handleCloseCompleteEscalation}
-                onSuccess={handleEscalationCompleted}
+                open={
+                    showCompleteEscalation
+                }
+                ticketId={
+                    ticketDetails?.id
+                }
+                onClose={
+                    handleCloseCompleteEscalation
+                }
+                onSuccess={
+                    handleEscalationCompleted
+                }
             />
 
             {/* Status Confirmation Modal */}
-            {canEditStatus && showConfirm && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 px-4">
-                    <div className="w-full max-w-[430px] rounded-xl bg-white p-5 shadow-xl min-[1280px]:max-[1535px]:max-w-[400px] min-[1280px]:max-[1535px]:p-4">
+            <AnimatePresence>
+                {canEditStatus &&
+                    showConfirm && (
+                        <motion.div
+                            initial={{
+                                opacity: 0,
+                            }}
+                            animate={{
+                                opacity: 1,
+                            }}
+                            exit={{
+                                opacity: 0,
+                            }}
+                            className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 px-4"
+                        >
+                            <motion.div
+                                initial={{
+                                    opacity: 0,
+                                    scale: 0.96,
+                                    y: 10,
+                                }}
+                                animate={{
+                                    opacity: 1,
+                                    scale: 1,
+                                    y: 0,
+                                }}
+                                exit={{
+                                    opacity: 0,
+                                    scale: 0.96,
+                                    y: 10,
+                                }}
+                                transition={{
+                                    duration: 0.2,
+                                    ease: "easeOut",
+                                }}
+                                className="w-full max-w-[430px] rounded-xl bg-white p-5 shadow-xl min-[1280px]:max-[1535px]:max-w-[400px] min-[1280px]:max-[1535px]:p-4"
+                            >
+                                <p className="text-base font-semibold text-black min-[1280px]:max-[1535px]:text-sm">
+                                    {getModalTitle()}
+                                </p>
 
-                        <p className="text-base font-semibold text-black min-[1280px]:max-[1535px]:text-sm">
-                            {getModalTitle()}
-                        </p>
-
-                        <p className="mt-2 text-sm leading-6 text-gray-500 min-[1280px]:max-[1535px]:text-[13px] min-[1280px]:max-[1535px]:leading-5">
-                            Are you sure you want to change the ticket status from{" "}
-                            <span className="font-semibold text-black">
-                                {formatStatus(status)}
-                            </span>{" "}
-                            to{" "}
-                            <span className="font-semibold text-black">
-                                {formatStatus(pendingStatus)}
-                            </span>
-                            ?
-                        </p>
-
-                        {showRemarks && (
-                            <div className="mt-4 min-[1280px]:max-[1535px]:mt-3">
-                                <label className="mb-1.5 block text-sm font-medium min-[1280px]:max-[1535px]:text-[13px]">
-                                    {getRemarksLabel()}
-
-                                    <span className="ml-1 font-normal text-red-500">
-                                        *
+                                <p className="mt-2 text-sm leading-6 text-gray-500 min-[1280px]:max-[1535px]:text-[13px] min-[1280px]:max-[1535px]:leading-5">
+                                    Are you sure you want to change the ticket status from{" "}
+                                    <span className="font-semibold text-black">
+                                        {formatStatus(
+                                            status
+                                        )}
+                                    </span>{" "}
+                                    to{" "}
+                                    <span className="font-semibold text-black">
+                                        {formatStatus(
+                                            pendingStatus
+                                        )}
                                     </span>
-                                </label>
+                                    ?
+                                </p>
 
-                                <textarea
-                                    value={remarks}
-                                    onChange={e => {
-                                        const value =
-                                            e.target.value;
+                                <AnimatePresence
+                                    initial={false}
+                                >
+                                    {showRemarks && (
+                                        <motion.div
+                                            initial={{
+                                                opacity: 0,
+                                                height: 0,
+                                                y: -5,
+                                            }}
+                                            animate={{
+                                                opacity: 1,
+                                                height: "auto",
+                                                y: 0,
+                                            }}
+                                            exit={{
+                                                opacity: 0,
+                                                height: 0,
+                                                y: -5,
+                                            }}
+                                            transition={{
+                                                duration: 0.2,
+                                            }}
+                                            className="mt-4 min-[1280px]:max-[1535px]:mt-3"
+                                        >
+                                            <label className="mb-1.5 block text-sm font-medium min-[1280px]:max-[1535px]:text-[13px]">
+                                                {getRemarksLabel()}
 
-                                        setRemarks(value);
+                                                <span className="ml-1 font-normal text-red-500">
+                                                    *
+                                                </span>
+                                            </label>
 
-                                        if (
-                                            remarksError &&
-                                            value.trim().length >=
-                                                50
-                                        ) {
-                                            setRemarksError("");
-                                        }
-                                    }}
-                                    disabled={isUpdating}
-                                    required
-                                    minLength={50}
-                                    maxLength={1000}
-                                    rows={4}
-                                    placeholder={getRemarksPlaceholder()}
-                                    aria-invalid={Boolean(
-                                        remarksError
+                                            <textarea
+                                                value={
+                                                    remarks
+                                                }
+                                                onChange={e => {
+                                                    const value =
+                                                        e
+                                                            .target
+                                                            .value;
+
+                                                    setRemarks(
+                                                        value
+                                                    );
+
+                                                    if (
+                                                        remarksError &&
+                                                        value.trim()
+                                                            .length >=
+                                                            50
+                                                    ) {
+                                                        setRemarksError(
+                                                            ""
+                                                        );
+                                                    }
+                                                }}
+                                                disabled={
+                                                    isUpdating
+                                                }
+                                                required
+                                                minLength={
+                                                    50
+                                                }
+                                                maxLength={
+                                                    1000
+                                                }
+                                                rows={4}
+                                                placeholder={getRemarksPlaceholder()}
+                                                aria-invalid={Boolean(
+                                                    remarksError
+                                                )}
+                                                className={`w-full resize-none rounded-lg border px-3 py-2.5 text-sm text-black outline-none transition-colors placeholder:text-gray-400 focus:ring-2 min-[1280px]:max-[1535px]:px-2.5 min-[1280px]:max-[1535px]:py-2 min-[1280px]:max-[1535px]:text-[13px] ${
+                                                    remarksError
+                                                        ? "border-red-400 focus:border-red-500 focus:ring-red-500/10"
+                                                        : "border-gray-300 focus:border-[#2563EB] focus:ring-[#2563EB]/10"
+                                                } disabled:bg-gray-100`}
+                                            />
+
+                                            {remarksError && (
+                                                <p className="mt-1.5 text-xs font-medium text-red-500 min-[1280px]:max-[1535px]:text-[11px]">
+                                                    {
+                                                        remarksError
+                                                    }
+                                                </p>
+                                            )}
+
+                                            <div className="mt-1 flex justify-between text-xs text-gray-400 min-[1280px]:max-[1535px]:text-[11px]">
+                                                <span>
+                                                    Minimum 50 characters required.
+                                                </span>
+
+                                                <span>
+                                                    {
+                                                        remarks.length
+                                                    }
+                                                    /1000
+                                                </span>
+                                            </div>
+                                        </motion.div>
                                     )}
-                                    className={`w-full resize-none rounded-lg border px-3 py-2.5 text-sm text-black outline-none transition-colors placeholder:text-gray-400 focus:ring-2 min-[1280px]:max-[1535px]:px-2.5 min-[1280px]:max-[1535px]:py-2 min-[1280px]:max-[1535px]:text-[13px] ${
-                                        remarksError
-                                            ? "border-red-400 focus:border-red-500 focus:ring-red-500/10"
-                                            : "border-gray-300 focus:border-[#2563EB] focus:ring-[#2563EB]/10"
-                                    } disabled:bg-gray-100`}
-                                />
+                                </AnimatePresence>
 
-                                {remarksError && (
-                                    <p className="mt-1.5 text-xs font-medium text-red-500 min-[1280px]:max-[1535px]:text-[11px]">
-                                        {remarksError}
-                                    </p>
-                                )}
+                                <div className="mt-5 flex justify-end gap-2 min-[1280px]:max-[1535px]:mt-4">
+                                    <motion.button
+                                        type="button"
+                                        disabled={
+                                            isUpdating
+                                        }
+                                        onClick={
+                                            cancelStatusChange
+                                        }
+                                        whileHover={
+                                            !isUpdating
+                                                ? {
+                                                      y: -1,
+                                                  }
+                                                : undefined
+                                        }
+                                        whileTap={
+                                            !isUpdating
+                                                ? {
+                                                      scale: 0.98,
+                                                  }
+                                                : undefined
+                                        }
+                                        className="rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50 min-[1280px]:max-[1535px]:px-3 min-[1280px]:max-[1535px]:py-1.5 min-[1280px]:max-[1535px]:text-[13px]"
+                                    >
+                                        Cancel
+                                    </motion.button>
 
-                                <div className="mt-1 flex justify-between text-xs text-gray-400 min-[1280px]:max-[1535px]:text-[11px]">
-                                    <span>
-                                        Minimum 50 characters required.
-                                    </span>
-
-                                    <span>
-                                        {remarks.length}/1000
-                                    </span>
+                                    <motion.button
+                                        type="button"
+                                        disabled={
+                                            isUpdating
+                                        }
+                                        onClick={
+                                            confirmStatusChange
+                                        }
+                                        whileHover={
+                                            !isUpdating
+                                                ? {
+                                                      y: -1,
+                                                  }
+                                                : undefined
+                                        }
+                                        whileTap={
+                                            !isUpdating
+                                                ? {
+                                                      scale: 0.98,
+                                                  }
+                                                : undefined
+                                        }
+                                        className="rounded-lg bg-[#4C4CF9] px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-[#1D4ED8] disabled:cursor-not-allowed disabled:opacity-50 min-[1280px]:max-[1535px]:px-3 min-[1280px]:max-[1535px]:py-1.5 min-[1280px]:max-[1535px]:text-[13px]"
+                                    >
+                                        {isUpdating
+                                            ? "Updating..."
+                                            : "Confirm"}
+                                    </motion.button>
                                 </div>
-                            </div>
-                        )}
-
-                        <div className="mt-5 flex justify-end gap-2 min-[1280px]:max-[1535px]:mt-4">
-                            <button
-                                type="button"
-                                disabled={isUpdating}
-                                onClick={cancelStatusChange}
-                                className="rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50 min-[1280px]:max-[1535px]:px-3 min-[1280px]:max-[1535px]:py-1.5 min-[1280px]:max-[1535px]:text-[13px]"
-                            >
-                                Cancel
-                            </button>
-
-                            <button
-                                type="button"
-                                disabled={isUpdating}
-                                onClick={confirmStatusChange}
-                                className="rounded-lg bg-[#4C4CF9] px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-[#1D4ED8] disabled:cursor-not-allowed disabled:opacity-50 min-[1280px]:max-[1535px]:px-3 min-[1280px]:max-[1535px]:py-1.5 min-[1280px]:max-[1535px]:text-[13px]"
-                            >
-                                {isUpdating
-                                    ? "Updating..."
-                                    : "Confirm"}
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            )}
+                            </motion.div>
+                        </motion.div>
+                    )}
+            </AnimatePresence>
         </>
     );
 }
@@ -835,14 +1235,24 @@ function EscalationContent({
         null;
 
     return (
-        <div className="min-h-0 min-w-0 flex-1 overflow-y-auto px-4 py-5 2xl:px-5 min-[1280px]:max-[1535px]:px-4 min-[1280px]:max-[1535px]:py-4 
-        [&::-webkit-scrollbar]:w-1 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-transparent 
-        hover:[&::-webkit-scrollbar-thumb]:bg-gray-300">
-
+        <div className="min-h-0 min-w-0 flex-1 overflow-y-auto px-4 py-5 2xl:px-5 min-[1280px]:max-[1535px]:px-4 min-[1280px]:max-[1535px]:py-4 [&::-webkit-scrollbar]:w-1 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-transparent hover:[&::-webkit-scrollbar-thumb]:bg-gray-300">
             <div className="space-y-4 min-[1280px]:max-[1535px]:space-y-3">
 
                 {/* Escalated Ticket Notice */}
-                <div className="rounded-lg border border-orange-200 bg-orange-50 p-3.5 2xl:p-4 min-[1280px]:max-[1535px]:p-3">
+                <motion.div
+                    initial={{
+                        opacity: 0,
+                        y: 8,
+                    }}
+                    animate={{
+                        opacity: 1,
+                        y: 0,
+                    }}
+                    transition={{
+                        duration: 0.22,
+                    }}
+                    className="rounded-lg border border-orange-200 bg-orange-50 p-3.5 2xl:p-4 min-[1280px]:max-[1535px]:p-3"
+                >
                     <div className="flex min-w-0 items-center gap-2">
                         <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-orange-100 min-[1280px]:max-[1535px]:h-6 min-[1280px]:max-[1535px]:w-6">
                             <AlertTriangle
@@ -860,10 +1270,24 @@ function EscalationContent({
                     <p className="mt-2 text-xs leading-5 text-orange-700 min-[1280px]:max-[1535px]:mt-1.5 min-[1280px]:max-[1535px]:text-[10px] min-[1280px]:max-[1535px]:leading-4">
                         This ticket has been escalated for Supervisor review and additional technical assistance.
                     </p>
-                </div>
+                </motion.div>
 
                 {/* Escalation Information */}
-                <div className="min-w-0 rounded-lg border border-gray-200 bg-white">
+                <motion.div
+                    initial={{
+                        opacity: 0,
+                        y: 8,
+                    }}
+                    animate={{
+                        opacity: 1,
+                        y: 0,
+                    }}
+                    transition={{
+                        duration: 0.22,
+                        delay: 0.04,
+                    }}
+                    className="min-w-0 rounded-lg border border-gray-200 bg-white"
+                >
                     <div className="border-b border-gray-100 px-3.5 py-3 2xl:px-4 min-[1280px]:max-[1535px]:px-3 min-[1280px]:max-[1535px]:py-2.5">
                         <p className="text-xs font-semibold uppercase tracking-wide text-gray-400 min-[1280px]:max-[1535px]:text-[10px]">
                             Escalation Information
@@ -911,17 +1335,32 @@ function EscalationContent({
 
                                 <p className="mt-1.5 text-xs leading-5 text-gray-700 min-[1280px]:max-[1535px]:mt-1 min-[1280px]:max-[1535px]:text-[10px] min-[1280px]:max-[1535px]:leading-4">
                                     {escalatedAt
-                                        ? formatDate(escalatedAt)
+                                        ? formatDate(
+                                              escalatedAt
+                                          )
                                         : "-"}
                                 </p>
                             </div>
 
                         </div>
                     </div>
-                </div>
+                </motion.div>
 
                 {/* Escalation Status */}
-                <div>
+                <motion.div
+                    initial={{
+                        opacity: 0,
+                        y: 8,
+                    }}
+                    animate={{
+                        opacity: 1,
+                        y: 0,
+                    }}
+                    transition={{
+                        duration: 0.22,
+                        delay: 0.08,
+                    }}
+                >
                     <div className="flex flex-wrap items-center justify-between gap-2">
                         <p className="text-xs font-semibold uppercase tracking-wide text-gray-400 min-[1280px]:max-[1535px]:text-[10px]">
                             Escalation Status
@@ -950,7 +1389,8 @@ function EscalationContent({
 
                     <div
                         className={`mt-2 rounded-lg border p-3.5 2xl:p-4 min-[1280px]:max-[1535px]:mt-1.5 min-[1280px]:max-[1535px]:p-3 ${
-                            isAcknowledged || isCompleted
+                            isAcknowledged ||
+                            isCompleted
                                 ? "border-green-200 bg-green-50"
                                 : "border-orange-200 bg-orange-50"
                         }`}
@@ -958,7 +1398,8 @@ function EscalationContent({
                         <div className="flex min-w-0 items-center gap-2.5 min-[1280px]:max-[1535px]:gap-2">
                             <div
                                 className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full min-[1280px]:max-[1535px]:h-7 min-[1280px]:max-[1535px]:w-7 ${
-                                    isAcknowledged || isCompleted
+                                    isAcknowledged ||
+                                    isCompleted
                                         ? "bg-green-100"
                                         : "bg-orange-100"
                                 }`}
@@ -967,7 +1408,8 @@ function EscalationContent({
                                     size={15}
                                     strokeWidth={2}
                                     className={
-                                        isAcknowledged || isCompleted
+                                        isAcknowledged ||
+                                        isCompleted
                                             ? "text-green-600 min-[1280px]:max-[1535px]:size-[14px]"
                                             : "text-orange-600 min-[1280px]:max-[1535px]:size-[14px]"
                                     }
@@ -976,7 +1418,8 @@ function EscalationContent({
 
                             <p
                                 className={`min-w-0 text-sm font-semibold leading-5 min-[1280px]:max-[1535px]:text-[12px] ${
-                                    isAcknowledged || isCompleted
+                                    isAcknowledged ||
+                                    isCompleted
                                         ? "text-green-700"
                                         : "text-orange-700"
                                 }`}
@@ -1003,7 +1446,9 @@ function EscalationContent({
 
                                     {completedAt && (
                                         <p className="mt-0.5 text-[10px] text-gray-500">
-                                            {formatDate(completedAt)}
+                                            {formatDate(
+                                                completedAt
+                                            )}
                                         </p>
                                     )}
                                 </div>
@@ -1018,7 +1463,9 @@ function EscalationContent({
 
                                 {acknowledgedAt && (
                                     <p className="mt-1 text-[10px] text-green-600">
-                                        {formatDate(acknowledgedAt)}
+                                        {formatDate(
+                                            acknowledgedAt
+                                        )}
                                     </p>
                                 )}
                             </div>
@@ -1032,29 +1479,78 @@ function EscalationContent({
                     {canAcknowledgeEscalation &&
                         !isAcknowledged &&
                         !isCompleted && (
-                            <button
+                            <motion.button
                                 type="button"
-                                disabled={isAcknowledging}
-                                onClick={onAcknowledge}
+                                disabled={
+                                    isAcknowledging
+                                }
+                                onClick={
+                                    onAcknowledge
+                                }
+                                whileHover={
+                                    !isAcknowledging
+                                        ? {
+                                              y: -1,
+                                          }
+                                        : undefined
+                                }
+                                whileTap={
+                                    !isAcknowledging
+                                        ? {
+                                              scale: 0.98,
+                                          }
+                                        : undefined
+                                }
                                 className="mt-3 flex w-full items-center justify-center gap-2 rounded-lg bg-[#4C4CF9] px-4 py-3 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-[#1D4ED8] disabled:cursor-not-allowed disabled:opacity-60 min-[1280px]:max-[1535px]:mt-2 min-[1280px]:max-[1535px]:px-3 min-[1280px]:max-[1535px]:py-2 min-[1280px]:max-[1535px]:text-[12px]"
                             >
-                                <CheckCheck
-                                    size={17}
-                                    className="min-[1280px]:max-[1535px]:size-[14px]"
-                                />
+                                <motion.span
+                                    animate={
+                                        isAcknowledging
+                                            ? {
+                                                  rotate: 360,
+                                              }
+                                            : {
+                                                  rotate: 0,
+                                              }
+                                    }
+                                    transition={
+                                        isAcknowledging
+                                            ? {
+                                                  repeat: Infinity,
+                                                  duration: 0.9,
+                                                  ease: "linear",
+                                              }
+                                            : {
+                                                  duration: 0.15,
+                                              }
+                                    }
+                                >
+                                    <CheckCheck
+                                        size={17}
+                                        className="min-[1280px]:max-[1535px]:size-[14px]"
+                                    />
+                                </motion.span>
 
                                 {isAcknowledging
                                     ? "Acknowledging..."
                                     : "Acknowledge Escalation"}
-                            </button>
+                            </motion.button>
                         )}
 
                     {canCompleteEscalation &&
                         isAcknowledged &&
                         !isCompleted && (
-                            <button
+                            <motion.button
                                 type="button"
-                                onClick={onCompleteEscalation}
+                                onClick={
+                                    onCompleteEscalation
+                                }
+                                whileHover={{
+                                    y: -1,
+                                }}
+                                whileTap={{
+                                    scale: 0.98,
+                                }}
                                 className="mt-3 flex w-full items-center justify-center gap-2 rounded-lg bg-[#4C4CF9] px-4 py-3 text-sm font-semibold text-white transition-colors hover:bg-[#1D4ED8] min-[1280px]:max-[1535px]:mt-2 min-[1280px]:max-[1535px]:px-3 min-[1280px]:max-[1535px]:py-2 min-[1280px]:max-[1535px]:text-[12px]"
                             >
                                 <CircleCheck
@@ -1063,100 +1559,121 @@ function EscalationContent({
                                 />
 
                                 Complete Escalation
-                            </button>
+                            </motion.button>
                         )}
-                </div>
+                </motion.div>
 
                 {/* Escalation Resolution */}
-                {isCompleted && (
-                    <div>
-                        <div className="flex flex-wrap items-center justify-between gap-2">
-                            <p className="text-xs font-semibold uppercase tracking-wide text-gray-400 min-[1280px]:max-[1535px]:text-[10px]">
-                                Escalation Resolution
-                            </p>
+                <AnimatePresence initial={false}>
+                    {isCompleted && (
+                        <motion.div
+                            initial={{
+                                opacity: 0,
+                                height: 0,
+                                y: 8,
+                            }}
+                            animate={{
+                                opacity: 1,
+                                height: "auto",
+                                y: 0,
+                            }}
+                            exit={{
+                                opacity: 0,
+                                height: 0,
+                                y: 8,
+                            }}
+                            transition={{
+                                duration: 0.25,
+                                ease: "easeOut",
+                            }}
+                        >
+                            <div className="flex flex-wrap items-center justify-between gap-2">
+                                <p className="text-xs font-semibold uppercase tracking-wide text-gray-400 min-[1280px]:max-[1535px]:text-[10px]">
+                                    Escalation Resolution
+                                </p>
 
-                            <span className="shrink-0 rounded-full border border-green-200 bg-green-50 px-2 py-1 text-[10px] font-semibold uppercase tracking-wide text-green-600 min-[1280px]:max-[1535px]:px-1.5 min-[1280px]:max-[1535px]:py-0.5 min-[1280px]:max-[1535px]:text-[8px]">
-                                Completed
-                            </span>
-                        </div>
-
-                        <div className="mt-2 rounded-lg border border-green-200 bg-green-50 p-3.5 2xl:p-4 min-[1280px]:max-[1535px]:mt-1.5 min-[1280px]:max-[1535px]:p-3">
-
-                            <div className="flex min-w-0 items-center gap-2.5 min-[1280px]:max-[1535px]:gap-2">
-                                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-green-100 min-[1280px]:max-[1535px]:h-7 min-[1280px]:max-[1535px]:w-7">
-                                    <CircleCheck
-                                        size={15}
-                                        strokeWidth={2}
-                                        className="text-green-600 min-[1280px]:max-[1535px]:size-[14px]"
-                                    />
-                                </div>
-
-                                <div className="min-w-0">
-                                    <p className="text-sm font-semibold text-green-700 min-[1280px]:max-[1535px]:text-[12px]">
-                                        Escalation Completed
-                                    </p>
-
-                                    <p className="mt-0.5 text-xs leading-5 text-green-700 min-[1280px]:max-[1535px]:text-[10px] min-[1280px]:max-[1535px]:leading-4">
-                                        The IT Supervisor has completed this escalation.
-                                    </p>
-                                </div>
+                                <span className="shrink-0 rounded-full border border-green-200 bg-green-50 px-2 py-1 text-[10px] font-semibold uppercase tracking-wide text-green-600 min-[1280px]:max-[1535px]:px-1.5 min-[1280px]:max-[1535px]:py-0.5 min-[1280px]:max-[1535px]:text-[8px]">
+                                    Completed
+                                </span>
                             </div>
 
-                            <div className="my-4 border-t border-green-200 min-[1280px]:max-[1535px]:my-2.5" />
-
-                            <div className="space-y-3 min-[1280px]:max-[1535px]:space-y-2.5">
-
-                                {escalation?.resolution_type_display && (
-                                    <div>
-                                        <p className="text-[10px] font-semibold uppercase tracking-wide text-green-600">
-                                            Resolution Type
-                                        </p>
-
-                                        <div className="mt-1.5 rounded-md border border-green-200 bg-white px-3 py-2 min-[1280px]:max-[1535px]:mt-1 min-[1280px]:max-[1535px]:px-2.5 min-[1280px]:max-[1535px]:py-1.5">
-                                            <p className="break-words text-sm font-medium text-black min-[1280px]:max-[1535px]:text-[10px]">
-                                                {escalation.resolution_type_display}
-                                            </p>
-                                        </div>
+                            <div className="mt-2 rounded-lg border border-green-200 bg-green-50 p-3.5 2xl:p-4 min-[1280px]:max-[1535px]:mt-1.5 min-[1280px]:max-[1535px]:p-3">
+                                <div className="flex min-w-0 items-center gap-2.5 min-[1280px]:max-[1535px]:gap-2">
+                                    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-green-100 min-[1280px]:max-[1535px]:h-7 min-[1280px]:max-[1535px]:w-7">
+                                        <CircleCheck
+                                            size={15}
+                                            strokeWidth={2}
+                                            className="text-green-600 min-[1280px]:max-[1535px]:size-[14px]"
+                                        />
                                     </div>
-                                )}
 
-                                {escalation?.resolution_remarks && (
-                                    <div>
-                                        <p className="text-[10px] font-semibold uppercase tracking-wide text-green-600">
-                                            Resolution Remarks
+                                    <div className="min-w-0">
+                                        <p className="text-sm font-semibold text-green-700 min-[1280px]:max-[1535px]:text-[12px]">
+                                            Escalation Completed
                                         </p>
 
-                                        <div className="mt-1.5 rounded-lg border border-green-200 bg-white px-3 py-2.5 min-[1280px]:max-[1535px]:mt-1 min-[1280px]:max-[1535px]:px-2.5 min-[1280px]:max-[1535px]:py-2">
-                                            <p className="whitespace-pre-wrap break-words text-sm leading-5 text-black min-[1280px]:max-[1535px]:text-[12px] min-[1280px]:max-[1535px]:leading-4">
-                                                {escalation.resolution_remarks}
-                                            </p>
-                                        </div>
-                                    </div>
-                                )}
-
-                                <div>
-                                    <p className="text-[10px] font-semibold uppercase tracking-wide text-green-600">
-                                        Completed By
-                                    </p>
-
-                                    <div className="mt-1.5 min-[1280px]:max-[1535px]:mt-1">
-                                        <p className="break-words text-sm font-semibold text-black min-[1280px]:max-[1535px]:text-[10px]">
-                                            {completedByName ||
-                                                "IT Supervisor"}
+                                        <p className="mt-0.5 text-xs leading-5 text-green-700 min-[1280px]:max-[1535px]:text-[10px] min-[1280px]:max-[1535px]:leading-4">
+                                            The IT Supervisor has completed this escalation.
                                         </p>
-
-                                        {completedAt && (
-                                            <p className="mt-0.5 text-[10px] text-gray-500">
-                                                {formatDate(completedAt)}
-                                            </p>
-                                        )}
                                     </div>
                                 </div>
 
+                                <div className="my-4 border-t border-green-200 min-[1280px]:max-[1535px]:my-2.5" />
+
+                                <div className="space-y-3 min-[1280px]:max-[1535px]:space-y-2.5">
+                                    {escalation?.resolution_type_display && (
+                                        <div>
+                                            <p className="text-[10px] font-semibold uppercase tracking-wide text-green-600">
+                                                Resolution Type
+                                            </p>
+
+                                            <div className="mt-1.5 rounded-md border border-green-200 bg-white px-3 py-2 min-[1280px]:max-[1535px]:mt-1 min-[1280px]:max-[1535px]:px-2.5 min-[1280px]:max-[1535px]:py-1.5">
+                                                <p className="break-words text-sm font-medium text-black min-[1280px]:max-[1535px]:text-[10px]">
+                                                    {escalation.resolution_type_display}
+                                                </p>
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    {escalation?.resolution_remarks && (
+                                        <div>
+                                            <p className="text-[10px] font-semibold uppercase tracking-wide text-green-600">
+                                                Resolution Remarks
+                                            </p>
+
+                                            <div className="mt-1.5 rounded-lg border border-green-200 bg-white px-3 py-2.5 min-[1280px]:max-[1535px]:mt-1 min-[1280px]:max-[1535px]:px-2.5 min-[1280px]:max-[1535px]:py-2">
+                                                <p className="whitespace-pre-wrap break-words text-sm leading-5 text-black min-[1280px]:max-[1535px]:text-[12px] min-[1280px]:max-[1535px]:leading-4">
+                                                    {escalation.resolution_remarks}
+                                                </p>
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    <div>
+                                        <p className="text-[10px] font-semibold uppercase tracking-wide text-green-600">
+                                            Completed By
+                                        </p>
+
+                                        <div className="mt-1.5 min-[1280px]:max-[1535px]:mt-1">
+                                            <p className="break-words text-sm font-semibold text-black min-[1280px]:max-[1535px]:text-[10px]">
+                                                {completedByName ||
+                                                    "IT Supervisor"}
+                                            </p>
+
+                                            {completedAt && (
+                                                <p className="mt-0.5 text-[10px] text-gray-500">
+                                                    {formatDate(
+                                                        completedAt
+                                                    )}
+                                                </p>
+                                            )}
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
-                        </div>
-                    </div>
-                )}
+                        </motion.div>
+                    )}
+                </AnimatePresence>
             </div>
         </div>
     );
@@ -1170,13 +1687,30 @@ function TimelineItem({
     date,
     colorClass,
     current = false,
+    index = 0,
 }) {
     return (
-        <div className="relative flex min-w-0 gap-3 pb-7 last:pb-0 min-[1280px]:max-[1535px]:gap-2.5 min-[1280px]:max-[1535px]:pb-5">
-
+        <motion.div
+            initial={{
+                opacity: 0,
+                x: -8,
+            }}
+            animate={{
+                opacity: 1,
+                x: 0,
+            }}
+            transition={{
+                duration: 0.22,
+                delay: Math.min(index * 0.035, 0.2),
+                ease: "easeOut",
+            }}
+            className="relative flex min-w-0 gap-3 pb-7 last:pb-0 min-[1280px]:max-[1535px]:gap-2.5 min-[1280px]:max-[1535px]:pb-5"
+        >
             <div
                 className={`relative z-10 flex h-[31px] w-[31px] shrink-0 items-center justify-center rounded-full border ${colorClass} ${
-                    current ? "ring-4 ring-gray-200" : ""
+                    current
+                        ? "ring-4 ring-gray-200"
+                        : ""
                 } min-[1280px]:max-[1535px]:h-7 min-[1280px]:max-[1535px]:w-7`}
             >
                 <Icon
@@ -1187,17 +1721,28 @@ function TimelineItem({
             </div>
 
             <div className="min-w-0 flex-1 pt-0.5">
-
                 <div className="flex min-w-0 flex-wrap items-center gap-2 min-[1280px]:max-[1535px]:gap-1">
                     <p className="min-w-0 break-words text-sm font-semibold text-black min-[1280px]:max-[1535px]:text-[12px]">
                         {title}
                     </p>
 
-                    {current && (
-                        <span className="shrink-0 rounded-full bg-[#2563EB]/10 px-2 py-0.5 text-[10px] font-medium text-[#2563EB] min-[1280px]:max-[1535px]:px-1.5 min-[1280px]:max-[1535px]:text-[8px]">
-                            Current
-                        </span>
-                    )}
+                    <AnimatePresence>
+                        {current && (
+                            <motion.span
+                                initial={{
+                                    opacity: 0,
+                                    scale: 0.85,
+                                }}
+                                animate={{
+                                    opacity: 1,
+                                    scale: 1,
+                                }}
+                                className="shrink-0 rounded-full bg-[#2563EB]/10 px-2 py-0.5 text-[10px] font-medium text-[#2563EB] min-[1280px]:max-[1535px]:px-1.5 min-[1280px]:max-[1535px]:text-[8px]"
+                            >
+                                Current
+                            </motion.span>
+                        )}
+                    </AnimatePresence>
                 </div>
 
                 {description && (
@@ -1222,11 +1767,14 @@ function TimelineItem({
                     {date}
                 </p>
             </div>
-        </div>
+        </motion.div>
     );
 }
 
-function buildFullName(firstName, lastName) {
+function buildFullName(
+    firstName,
+    lastName
+) {
     return [firstName, lastName]
         .filter(Boolean)
         .join(" ")
@@ -1246,5 +1794,7 @@ function formatStatus(value) {
 
     return String(value)
         .replace(/_/g, " ")
-        .replace(/\b\w/g, char => char.toUpperCase());
+        .replace(/\b\w/g, char =>
+            char.toUpperCase()
+        );
 }

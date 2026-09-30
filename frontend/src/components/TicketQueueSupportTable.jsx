@@ -1,5 +1,9 @@
 import { statusColor } from "../utils/statusColor";
 import { priorityColor, priorityLabel } from "../utils/priority";
+import {
+    affectedScopeLabel,
+    affectedScopeColor,
+} from "../utils/affectedScopeColor";
 import { useNavigate } from "react-router-dom";
 
 export default function TicketQueueSupportTable({
@@ -28,6 +32,7 @@ export default function TicketQueueSupportTable({
             if (value.label) return String(value.label);
             if (value.title) return String(value.title);
             if (value.code) return String(value.code);
+
             if (value.id !== undefined && value.id !== null) {
                 return String(value.id);
             }
@@ -38,12 +43,12 @@ export default function TicketQueueSupportTable({
         return String(value);
     };
 
-    const getAffectedScope = (value) => {
-        const scope = getDisplayValue(value, "");
-
-        if (!scope) return "-";
-
-        return scope.charAt(0).toUpperCase() + scope.slice(1);
+    const handleTicketClick = (ticket) => {
+        navigate(`/ticket/${ticket.id}`, {
+            state: {
+                fromAssistedTickets: true,
+            },
+        });
     };
 
     if (loading) {
@@ -237,9 +242,7 @@ export default function TicketQueueSupportTable({
                         ticketList.map((ticket) => (
                             <tr
                                 key={ticket.id}
-                                onClick={() =>
-                                    navigate(`/ticket/${ticket.id}`)
-                                }
+                                onClick={() => handleTicketClick(ticket)}
                                 className="
                                     cursor-pointer
                                     border-b
@@ -249,7 +252,6 @@ export default function TicketQueueSupportTable({
                                     last:border-b-0
                                 "
                             >
-                                {/* Ticket ID */}
                                 <td
                                     className="
                                         px-6
@@ -267,7 +269,6 @@ export default function TicketQueueSupportTable({
                                     </span>
                                 </td>
 
-                                {/* Subject */}
                                 <td
                                     className="
                                         px-6
@@ -291,7 +292,6 @@ export default function TicketQueueSupportTable({
                                     </p>
                                 </td>
 
-                                {/* Submitted By */}
                                 <td
                                     className="
                                         px-4
@@ -336,7 +336,6 @@ export default function TicketQueueSupportTable({
                                     </div>
                                 </td>
 
-                                {/* Symptom Code */}
                                 <td
                                     className="
                                         px-4
@@ -362,7 +361,6 @@ export default function TicketQueueSupportTable({
                                     </span>
                                 </td>
 
-                                {/* Affected Scope */}
                                 <td
                                     className="
                                         px-4
@@ -373,14 +371,64 @@ export default function TicketQueueSupportTable({
                                         min-[1366px]:max-[1537px]:py-3
                                     "
                                 >
-                                    <span className="whitespace-nowrap text-black">
-                                        {getAffectedScope(
-                                            ticket.affected_scope
-                                        )}
-                                    </span>
+                                    {ticket.affected_scope ? (
+                                        <span
+                                            className={`
+                                                inline-flex
+                                                max-w-full
+                                                items-center
+                                                justify-center
+                                                whitespace-nowrap
+                                                rounded-md
+                                                border
+                                                px-2
+                                                py-1
+                                                text-xs
+                                                font-medium
+
+                                                min-[1280px]:max-[1365px]:px-1.5
+                                                min-[1280px]:max-[1365px]:py-0.5
+                                                min-[1280px]:max-[1365px]:text-[10px]
+
+                                                min-[1366px]:max-[1537px]:px-1.5
+                                                min-[1366px]:max-[1537px]:py-0.5
+                                                min-[1366px]:max-[1537px]:text-[11px]
+
+                                                ${
+                                                    affectedScopeColor[
+                                                        typeof ticket.affected_scope ===
+                                                        "object"
+                                                            ? ticket.affected_scope?.id
+                                                            : ticket.affected_scope
+                                                    ] ||
+                                                    "border-gray-300 bg-gray-100 text-gray-600"
+                                                }
+                                            `}
+                                            title={getDisplayValue(
+                                                affectedScopeLabel[
+                                                    typeof ticket.affected_scope ===
+                                                    "object"
+                                                        ? ticket.affected_scope?.id
+                                                        : ticket.affected_scope
+                                                ] ||
+                                                    ticket.affected_scope
+                                            )}
+                                        >
+                                            {getDisplayValue(
+                                                affectedScopeLabel[
+                                                    typeof ticket.affected_scope ===
+                                                    "object"
+                                                        ? ticket.affected_scope?.id
+                                                        : ticket.affected_scope
+                                                ] ||
+                                                    ticket.affected_scope
+                                            )}
+                                        </span>
+                                    ) : (
+                                        "-"
+                                    )}
                                 </td>
 
-                                {/* Priority */}
                                 <td
                                     className="
                                         px-4
@@ -438,7 +486,6 @@ export default function TicketQueueSupportTable({
                                     </span>
                                 </td>
 
-                                {/* Status */}
                                 <td
                                     className="
                                         px-4
@@ -478,11 +525,12 @@ export default function TicketQueueSupportTable({
                                             }
                                         `}
                                     >
-                                        {getDisplayValue(ticket.status)}
+                                        {getDisplayValue(
+                                            ticket.status
+                                        )}
                                     </span>
                                 </td>
 
-                                {/* Assigned To */}
                                 <td
                                     className="
                                         px-4
@@ -509,7 +557,6 @@ export default function TicketQueueSupportTable({
                                     </div>
                                 </td>
 
-                                {/* SLA Remaining */}
                                 <td
                                     className="
                                         px-4

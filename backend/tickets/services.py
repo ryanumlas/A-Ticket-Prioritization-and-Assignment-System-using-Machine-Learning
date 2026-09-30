@@ -186,6 +186,7 @@ def calculate_priority(
     if priority_number is None:
         return "P5"
 
+    # Determine impact from affected scope
     if affected_scope == Ticket.AffectedScope.INDIVIDUAL:
         impact = "LOW"
 
@@ -203,6 +204,7 @@ def calculate_priority(
             f"Invalid affected_scope: {affected_scope}"
         )
 
+    # Determine urgency from business and time criticality
     if business_critical and time_critical:
         urgency = "HIGH"
 
@@ -212,21 +214,22 @@ def calculate_priority(
     else:
         urgency = "LOW"
 
+    # Contextual priority matrix
     PRIORITY_MATRIX = {
         "CRITICAL": {
-            "LOW": 3,
+            "LOW": 2,
             "MEDIUM": 2,
             "HIGH": 1,
         },
         "HIGH": {
+            "LOW": 3,
+            "MEDIUM": 2,
+            "HIGH": 1,
+        },
+        "MEDIUM": {
             "LOW": 4,
             "MEDIUM": 3,
             "HIGH": 2,
-        },
-        "MEDIUM": {
-            "LOW": 5,
-            "MEDIUM": 4,
-            "HIGH": 3,
         },
         "LOW": {
             "LOW": 5,
@@ -272,6 +275,7 @@ def calculate_priority_details(
         based_priority = "P5"
         priority_number = 5
 
+    # Determine impact from affected scope
     if affected_scope == Ticket.AffectedScope.INDIVIDUAL:
         impact = "LOW"
 
@@ -289,6 +293,7 @@ def calculate_priority_details(
             f"Invalid affected_scope: {affected_scope}"
         )
 
+    # Determine urgency from business and time criticality
     if business_critical and time_critical:
         urgency = "HIGH"
 
@@ -298,21 +303,22 @@ def calculate_priority_details(
     else:
         urgency = "LOW"
 
+    # Contextual priority matrix
     PRIORITY_MATRIX = {
         "CRITICAL": {
-            "LOW": 3,
+            "LOW": 2,
             "MEDIUM": 2,
             "HIGH": 1,
         },
         "HIGH": {
+            "LOW": 3,
+            "MEDIUM": 2,
+            "HIGH": 1,
+        },
+        "MEDIUM": {
             "LOW": 4,
             "MEDIUM": 3,
             "HIGH": 2,
-        },
-        "MEDIUM": {
-            "LOW": 5,
-            "MEDIUM": 4,
-            "HIGH": 3,
         },
         "LOW": {
             "LOW": 5,
@@ -323,6 +329,8 @@ def calculate_priority_details(
 
     contextual_priority_number = PRIORITY_MATRIX[impact][urgency]
 
+    # The final priority can only become more severe,
+    # never less severe than the original/base priority.
     final_priority_number = min(
         priority_number,
         contextual_priority_number,
@@ -351,10 +359,10 @@ def calculate_priority(
     time_critical,
 ):
     details = calculate_priority_details(
-        based_priority,
-        affected_scope,
-        business_critical,
-        time_critical,
+        based_priority=based_priority,
+        affected_scope=affected_scope,
+        business_critical=business_critical,
+        time_critical=time_critical,
     )
 
     return details["final_priority"]

@@ -1,6 +1,10 @@
 import { MessageCircle } from "lucide-react";
 import { statusColor } from "../utils/statusColor";
 import { priorityColor, priorityLabel } from "../utils/priority";
+import {
+    affectedScopeLabel,
+    affectedScopeColor,
+} from "../utils/affectedScopeColor";
 import { formatDate } from "../utils/formatDate";
 import { useNavigate } from "react-router-dom";
 
@@ -15,15 +19,6 @@ export default function TicketTableSupport({
     const displayedTickets = dashboard
         ? ticketList.slice(0, maxRows)
         : ticketList;
-
-    const formatAffectedScope = (scope) => {
-        if (!scope) return "-";
-
-        return (
-            scope.charAt(0).toUpperCase() +
-            scope.slice(1)
-        );
-    };
 
     if (loading) {
         return (
@@ -53,14 +48,13 @@ export default function TicketTableSupport({
 
     return (
         <div className="overflow-hidden bg-white">
-            {/* Desktop / Tablet */}
-<div
-    className={
-        dashboard
-            ? "hidden md:block"
-            : "hidden h-[637px] overflow-y-auto md:block min-[1280px]:max-[1365px]:h-[450px] min-[1366px]:max-[1537px]:h-[500px] min-[1538px]:max-[1919px]:h-[580px] [&::-webkit-scrollbar]:w-px [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-transparent hover:[&::-webkit-scrollbar-thumb]:bg-gray-300 [&::-webkit-scrollbar-thumb]:rounded-full"
-    }
->
+            <div
+                className={
+                    dashboard
+                        ? "hidden md:block"
+                        : "hidden h-[637px] overflow-y-auto md:block min-[1280px]:max-[1365px]:h-[450px] min-[1366px]:max-[1537px]:h-[500px] min-[1538px]:max-[1919px]:h-[580px] [&::-webkit-scrollbar]:w-px [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-transparent hover:[&::-webkit-scrollbar-thumb]:bg-gray-300 [&::-webkit-scrollbar-thumb]:rounded-full"
+                }
+            >
                 <table className="w-full table-fixed text-sm min-[1280px]:max-[1365px]:text-[11px] min-[1366px]:max-[1535px]:text-xs">
                     <thead className="sticky top-0 z-10 bg-gray-50">
                         <tr className="border-b border-gray-300 text-left">
@@ -126,7 +120,6 @@ export default function TicketTableSupport({
                                             : "hover:bg-gray-50"
                                     }`}
                                 >
-                                    {/* Ticket ID */}
                                     <td className="whitespace-nowrap px-6 py-4 min-[1280px]:max-[1365px]:px-3 min-[1280px]:max-[1365px]:py-2.5 min-[1366px]:max-[1535px]:px-4 min-[1366px]:max-[1535px]:py-3">
                                         <span
                                             className="font-semibold text-black"
@@ -137,7 +130,6 @@ export default function TicketTableSupport({
                                         </span>
                                     </td>
 
-                                    {/* Subject + Unread Messages */}
                                     <td className="min-w-0 overflow-hidden px-6 py-4 min-[1280px]:max-[1365px]:px-3 min-[1280px]:max-[1365px]:py-2.5 min-[1366px]:max-[1535px]:px-4 min-[1366px]:max-[1535px]:py-3">
                                         <div className="flex min-w-0 items-center gap-3 min-[1280px]:max-[1365px]:gap-1.5 min-[1366px]:max-[1535px]:gap-2">
                                             <p
@@ -172,7 +164,6 @@ export default function TicketTableSupport({
                                         </div>
                                     </td>
 
-                                    {/* Submitted By */}
                                     <td className="min-w-0 overflow-hidden px-4 py-4 min-[1280px]:max-[1365px]:px-2.5 min-[1280px]:max-[1365px]:py-2.5 min-[1366px]:max-[1535px]:px-3 min-[1366px]:max-[1535px]:py-3">
                                         <div className="min-w-0">
                                             <p
@@ -197,7 +188,6 @@ export default function TicketTableSupport({
                                         </div>
                                     </td>
 
-                                    {/* Symptom Code */}
                                     <td className="min-w-0 overflow-hidden px-4 py-4 min-[1280px]:max-[1365px]:px-2.5 min-[1280px]:max-[1365px]:py-2.5 min-[1366px]:max-[1535px]:px-3 min-[1366px]:max-[1535px]:py-3">
                                         <span
                                             className="block truncate font-medium text-black"
@@ -212,21 +202,39 @@ export default function TicketTableSupport({
                                         </span>
                                     </td>
 
-                                    {/* Affected Scope */}
                                     <td className="min-w-0 overflow-hidden px-4 py-4 min-[1280px]:max-[1365px]:px-2.5 min-[1280px]:max-[1365px]:py-2.5 min-[1366px]:max-[1535px]:px-3 min-[1366px]:max-[1535px]:py-3">
                                         <span
-                                            className="block truncate whitespace-nowrap font-medium text-black"
-                                            title={formatAffectedScope(
-                                                ticket.affected_scope
-                                            )}
+                                            className={`inline-flex max-w-full items-center justify-center whitespace-nowrap rounded-md border px-2 py-1 text-xs font-medium min-[1280px]:max-[1365px]:px-1.5 min-[1280px]:max-[1365px]:py-0.5 min-[1280px]:max-[1365px]:text-[10px] min-[1366px]:max-[1535px]:px-1.5 min-[1366px]:max-[1535px]:py-0.5 ${
+                                                affectedScopeColor[
+                                                    typeof ticket.affected_scope ===
+                                                    "object"
+                                                        ? ticket.affected_scope?.id
+                                                        : ticket.affected_scope
+                                                ] ||
+                                                "border-gray-300 bg-gray-100 text-gray-600"
+                                            }`}
+                                            title={
+                                                affectedScopeLabel[
+                                                    typeof ticket.affected_scope ===
+                                                    "object"
+                                                        ? ticket.affected_scope?.id
+                                                        : ticket.affected_scope
+                                                ] ||
+                                                ticket.affected_scope ||
+                                                "-"
+                                            }
                                         >
-                                            {formatAffectedScope(
-                                                ticket.affected_scope
-                                            )}
+                                            {affectedScopeLabel[
+                                                typeof ticket.affected_scope ===
+                                                "object"
+                                                    ? ticket.affected_scope?.id
+                                                    : ticket.affected_scope
+                                            ] ||
+                                                ticket.affected_scope ||
+                                                "-"}
                                         </span>
                                     </td>
 
-                                    {/* Priority */}
                                     <td className="min-w-0 overflow-hidden px-4 py-4 min-[1280px]:max-[1365px]:px-2.5 min-[1280px]:max-[1365px]:py-2.5 min-[1366px]:max-[1535px]:px-3 min-[1366px]:max-[1535px]:py-3">
                                         <span
                                             className={`inline-flex max-w-full whitespace-nowrap rounded-md border px-2 py-1 text-xs font-semibold min-[1280px]:max-[1365px]:px-1.5 min-[1280px]:max-[1365px]:py-0.5 min-[1280px]:max-[1365px]:text-[10px] min-[1366px]:max-[1535px]:px-1.5 min-[1366px]:max-[1535px]:py-0.5 ${
@@ -244,7 +252,6 @@ export default function TicketTableSupport({
                                         </span>
                                     </td>
 
-                                    {/* Status */}
                                     <td className="min-w-0 overflow-hidden px-4 py-4 min-[1280px]:max-[1365px]:px-2.5 min-[1280px]:max-[1365px]:py-2.5 min-[1366px]:max-[1535px]:px-3 min-[1366px]:max-[1535px]:py-3">
                                         <span
                                             className={`inline-flex max-w-full whitespace-nowrap rounded-md px-2 py-1 text-xs font-medium min-[1280px]:max-[1365px]:px-1.5 min-[1280px]:max-[1365px]:py-0.5 min-[1280px]:max-[1365px]:text-[10px] min-[1366px]:max-[1535px]:px-1.5 min-[1366px]:max-[1535px]:py-0.5 ${
@@ -258,7 +265,6 @@ export default function TicketTableSupport({
                                         </span>
                                     </td>
 
-                                    {/* Created */}
                                     <td className="min-w-0 overflow-hidden px-4 py-4 min-[1280px]:max-[1365px]:px-2.5 min-[1280px]:max-[1365px]:py-2.5 min-[1366px]:max-[1535px]:px-3 min-[1366px]:max-[1535px]:py-3">
                                         <span
                                             className="block truncate whitespace-nowrap text-black"
@@ -272,7 +278,6 @@ export default function TicketTableSupport({
                                         </span>
                                     </td>
 
-                                    {/* SLA Remaining */}
                                     <td className="min-w-0 overflow-hidden px-4 py-4 min-[1280px]:max-[1365px]:px-2.5 min-[1280px]:max-[1365px]:py-2.5 min-[1366px]:max-[1535px]:px-3 min-[1366px]:max-[1535px]:py-3">
                                         <span
                                             className="block truncate whitespace-nowrap font-medium text-black"
@@ -292,7 +297,6 @@ export default function TicketTableSupport({
                 </table>
             </div>
 
-            {/* Mobile */}
             <div
                 className={
                     dashboard
@@ -308,6 +312,12 @@ export default function TicketTableSupport({
 
                     const hasUnread =
                         unreadCount > 0;
+
+                    const affectedScope =
+                        typeof ticket.affected_scope ===
+                        "object"
+                            ? ticket.affected_scope?.id
+                            : ticket.affected_scope;
 
                     return (
                         <div
@@ -325,7 +335,6 @@ export default function TicketTableSupport({
                         >
                             <table className="w-full table-fixed text-xs">
                                 <tbody>
-                                    {/* Ticket ID */}
                                     <tr className="bg-gray-100">
                                         <th className="w-[40%] border-r border-gray-300 px-3 py-2 text-left font-semibold text-gray-700">
                                             Ticket ID
@@ -337,7 +346,6 @@ export default function TicketTableSupport({
                                         </td>
                                     </tr>
 
-                                    {/* Subject */}
                                     <tr>
                                         <th className="border-r border-gray-200 px-3 py-2 text-left font-medium text-gray-600">
                                             Subject
@@ -376,7 +384,6 @@ export default function TicketTableSupport({
                                         </td>
                                     </tr>
 
-                                    {/* Submitted By */}
                                     <tr className="bg-gray-100">
                                         <th className="border-r border-gray-300 px-3 py-2 text-left font-medium text-gray-700">
                                             Submitted By
@@ -393,7 +400,6 @@ export default function TicketTableSupport({
                                         </td>
                                     </tr>
 
-                                    {/* Submitted By Department */}
                                     <tr>
                                         <th className="border-r border-gray-200 px-3 py-2 text-left font-medium text-gray-600">
                                             Department
@@ -410,7 +416,6 @@ export default function TicketTableSupport({
                                         </td>
                                     </tr>
 
-                                    {/* Symptom Code */}
                                     <tr className="bg-gray-100">
                                         <th className="border-r border-gray-300 px-3 py-2 text-left font-medium text-gray-700">
                                             Symptom Code
@@ -429,20 +434,33 @@ export default function TicketTableSupport({
                                         </td>
                                     </tr>
 
-                                    {/* Affected Scope */}
                                     <tr>
                                         <th className="border-r border-gray-200 px-3 py-2 text-left font-medium text-gray-600">
                                             Affected Scope
                                         </th>
 
-                                        <td className="px-3 py-2 text-gray-900">
-                                            {formatAffectedScope(
-                                                ticket.affected_scope
+                                        <td className="px-3 py-2">
+                                            {affectedScope ? (
+                                                <span
+                                                    className={`inline-flex rounded-md border px-2 py-1 text-[10px] font-medium ${
+                                                        affectedScopeColor[
+                                                            affectedScope
+                                                        ] ||
+                                                        "border-gray-300 bg-gray-100 text-gray-600"
+                                                    }`}
+                                                >
+                                                    {affectedScopeLabel[
+                                                        affectedScope
+                                                    ] ||
+                                                        affectedScope ||
+                                                        "-"}
+                                                </span>
+                                            ) : (
+                                                "-"
                                             )}
                                         </td>
                                     </tr>
 
-                                    {/* Priority */}
                                     <tr>
                                         <th className="border-r border-gray-200 px-3 py-2 text-left font-medium text-gray-600">
                                             Priority
@@ -466,7 +484,6 @@ export default function TicketTableSupport({
                                         </td>
                                     </tr>
 
-                                    {/* Status */}
                                     <tr className="bg-gray-100">
                                         <th className="border-r border-gray-300 px-3 py-2 text-left font-medium text-gray-700">
                                             Status
@@ -486,7 +503,6 @@ export default function TicketTableSupport({
                                         </td>
                                     </tr>
 
-                                    {/* Created */}
                                     <tr>
                                         <th className="border-r border-gray-200 px-3 py-2 text-left font-medium text-gray-600">
                                             Created
@@ -504,7 +520,6 @@ export default function TicketTableSupport({
                                         </td>
                                     </tr>
 
-                                    {/* SLA Remaining */}
                                     <tr className="bg-gray-100">
                                         <th className="border-r border-gray-300 px-3 py-2 text-left font-medium text-gray-700">
                                             SLA Remaining

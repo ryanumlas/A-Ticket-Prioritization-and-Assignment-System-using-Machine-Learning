@@ -147,6 +147,15 @@ class TicketStatusHistory(models.Model):
             "assistance_requested",
             "Assistance Requested",
         )
+        ASSISTANCE_ACCEPTED = (
+            "assistance_accepted",
+            "Assistance Accepted",
+        )
+        ASSISTANCE_COMPLETED  = (
+            "assistance_completed",
+            "Assistance Completed",
+        )
+
         ACKNOWLEDGED = ("ACKNOWLEDGED","Escalation Acknowledged",)
         ESCALATED = "ESCALATED", "Escalated"
         ESCALATION_COMPLETED = ("ESCALATION_COMPLETED", "Escalation Completed",)
@@ -428,6 +437,7 @@ class TicketAssistanceRequest(models.Model):
     class RequestStatus(models.TextChoices):
         PENDING = "pending", "Pending"
         ACCEPTED = "accepted", "Accepted"
+        CANCELLED = "cancelled", "Cancelled"
     ticket = models.ForeignKey(
         Ticket,
         on_delete=models.CASCADE,

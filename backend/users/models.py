@@ -205,6 +205,14 @@ class Notifications(models.Model):
             "escalation_completed",
             "Escalation Completed",
         )
+        ASSISTANCE_ACCEPTED = (
+            "assistance_accepted",
+            "Assistance Accepted",
+        )
+        ASSISTANCE_COMPLETED  = (
+            "assistance_completed",
+            "Assistance Completed",
+        )
     
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='notifications')
     ticket = models.ForeignKey('tickets.Ticket', on_delete=models.CASCADE, related_name='notifications')

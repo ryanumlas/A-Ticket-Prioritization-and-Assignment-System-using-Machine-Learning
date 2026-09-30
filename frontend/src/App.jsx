@@ -31,6 +31,7 @@ import SystemAdSymptomCodes from './pages/SystemAdSymptomCodes'
 import SystemAdSpecializations from './pages/SystemAdSpecializations'
 import SystemAdSLARules from './pages/SystemAdSLARules'
 import AssistanceQueue from './pages/AssistanceQueue';
+import AssistanceTicket from './pages/AssistanceTicket'
 
 // function Logout() {
 //   localStorage.clear()
@@ -110,7 +111,13 @@ function App() {
                     </ProtectedRoute>
             }
             />
-
+            <Route path="/assisted-tickets" 
+                element={
+                    <ProtectedRoute>
+                        <AssistanceTicket/>
+                    </ProtectedRoute>
+            }
+            />
 
             {/* IT SERVICE DESK ONLY */}
             <Route

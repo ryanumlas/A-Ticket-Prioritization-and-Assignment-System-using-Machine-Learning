@@ -1,9 +1,10 @@
 from django.utils import timezone
+import time
 from django.core.paginator import Paginator
 from django.shortcuts import render, get_object_or_404
 from .pagination import TicketPagination
 from django.db.models import Count
-from django.db.models import Q
+from django.db.models import Q, Subquery, OuterRef
 from django.db import transaction
 from rest_framework.response import Response
 from rest_framework import viewsets, generics, status
@@ -12,7 +13,7 @@ from rest_framework.permissions import IsAuthenticated, AllowAny
 from .models import (Ticket, Category, SymptomCode, TicketComments, SLARules, ReviewFlags, TicketCommentRead, TicketAssistance, TicketAssistanceRequest, Keyword, TicketStatusHistory as TicketStatusHistoryModel, TicketReturn, TicketPriorityRequest, TicketEscalation)
 from .serializers import (SymptomCodeSerializer, TicketSerializer, CategorySerializer, 
 TicketAssistanceSerializer, TicketCommentSerializer, TicketStatusHistory, SLARulesSerializer, TicketAssistanceRequestSerializer,
-SLARulesUpdateSerializer, KeywordSerializer, KeywordUpdateSerializer, UpdateSymptomCodeSerializer, CreateSymptomCodeSerializer,
+SLARulesUpdateSerializer, KeywordSerializer, KeywordUpdateSerializer, UpdateSymptomCodeSerializer, CreateSymptomCodeSerializer,TicketAssistanceRequestCreateSerializer, 
 TicketCreateSerializer, TicketUpdateSerializer, TicketDetailEmployeeSerializer, CategoryUpdateSerializer, FlaggedTicketsListSerializer, TicketAssistanceRequestQueueListSerializer,
 FlaggedTicketDetailSerializer, TicketDetailSupportSerializer, TicketStatusHistorySerializer, PriorityChangeRequestSerializer, PriorityRequestListSerializer, 
 PriorityRequestDetailSerializer, ReturnTicketSerializer, ReturnedTicketRequestListSerializer, ReturnedTicketDetailSerializer, ApproveReturnTicketSerializer, 
@@ -120,6 +121,10 @@ class CreateTicketView(generics.CreateAPIView):
                 "model_version": "gemini-2.5-flash",
                 "business_critical": analysis.get(
                     "business_critical",
+                    False,
+                ),
+                "is_time_critical": analysis.get(
+                    "is_time_critical",
                     False,
                 ),
                 "is_unclear": analysis.get(
@@ -2100,17 +2105,60 @@ class TicketCommentListCreateView(APIView):
                 status=status.HTTP_404_NOT_FOUND,
             )
 
-        comments = self.get_visible_comments(
-            request,
-            ticket,
-        )
+        # Get the ID of the newest comment the frontend already has.
+        last_comment_id = request.query_params.get("last_comment_id")
 
-        serializer = TicketCommentSerializer(
-            comments,
-            many=True,
-        )
+        try:
+            last_comment_id = (
+                int(last_comment_id)
+                if last_comment_id
+                else 0
+            )
+        except (TypeError, ValueError):
+            last_comment_id = 0
 
-        return Response(serializer.data)
+        # How long this request is allowed to wait.
+        timeout_seconds = 25
+
+        # How often Django checks for a new comment.
+        check_interval = 1
+
+        start_time = time.monotonic()
+
+        while True:
+            comments = self.get_visible_comments(
+                request,
+                ticket,
+            )
+
+            # If this is the initial request, return all comments immediately.
+            if last_comment_id == 0:
+                serializer = TicketCommentSerializer(
+                    comments,
+                    many=True,
+                )
+
+                return Response(serializer.data)
+
+            # Look for comments newer than the one the frontend already has.
+            new_comments = comments.filter(
+                id__gt=last_comment_id
+            )
+
+            if new_comments.exists():
+                serializer = TicketCommentSerializer(
+                    new_comments,
+                    many=True,
+                )
+
+                return Response(serializer.data)
+
+            # Stop waiting after the timeout.
+            if time.monotonic() - start_time >= timeout_seconds:
+                return Response([])
+
+            # Wait before checking again.
+            time.sleep(check_interval)
 
     def post(self, request, pk):
         ticket = self.get_ticket(request, pk)
@@ -2408,7 +2456,9 @@ class TicketDetailSupportView(APIView):
         except ITSupportProfile.DoesNotExist:
             return Response(
                 {
-                    "error": "You do not have an IT Support profile."
+                    "error": (
+                        "You do not have an IT Support profile."
+                    )
                 },
                 status=status.HTTP_403_FORBIDDEN,
             )
@@ -2430,13 +2480,69 @@ class TicketDetailSupportView(APIView):
                     "ai_prediction",
                     "ai_analysis",
                 )
-                .get(
-                    id=ticket_id,
-                    it_department=support_profile.it_department,
-                )
+                .get(id=ticket_id)
+            )
+        except Ticket.DoesNotExist:
+            return Response(
+                {
+                    "error": "Ticket not found."
+                },
+                status=status.HTTP_404_NOT_FOUND,
             )
 
-        except Ticket.DoesNotExist:
+        is_assigned = (
+            ticket.assigned_to_id == user.id
+        )
+
+        same_department = (
+            ticket.it_department_id
+            == support_profile.it_department_id
+        )
+
+        has_pending_request_for_my_department = (
+            TicketAssistanceRequest.objects.filter(
+                ticket=ticket,
+                requested_department_id=(
+                    support_profile.it_department_id
+                ),
+                status=(
+                    TicketAssistanceRequest
+                    .RequestStatus
+                    .PENDING
+                ),
+            ).exists()
+        )
+
+        has_ongoing_assistance_for_my_department = (
+            TicketAssistance.objects.filter(
+                ticket=ticket,
+                status=(
+                    TicketAssistance
+                    .AssistanceStatus
+                    .ONGOING
+                ),
+                assisted_by__it_support_profile__it_department_id=(
+                    support_profile.it_department_id
+                ),
+            ).exists()
+        )
+
+        has_assistance_for_ticket = (
+            TicketAssistance.objects.filter(
+                ticket=ticket,
+                assisted_by=user,
+            ).exists()
+        )
+
+        can_view = (
+            is_assigned
+            or same_department
+            or has_pending_request_for_my_department
+            or has_ongoing_assistance_for_my_department
+            or has_assistance_for_ticket
+        )
+
+        if not can_view:
             return Response(
                 {
                     "error": (
@@ -2454,7 +2560,10 @@ class TicketDetailSupportView(APIView):
             },
         )
 
-        return Response(serializer.data)
+        return Response(
+            serializer.data,
+            status=status.HTTP_200_OK,
+        )
 
 class TicketDetailSupervisorView(APIView):
     permission_classes = [IsAuthenticated]
@@ -5691,13 +5800,16 @@ class SupervisorEscalatedTicketsView(APIView):
 class RequestTicketAssistanceView(APIView):
     permission_classes = [IsAuthenticated]
 
+    @transaction.atomic
     def post(self, request, ticket_id):
         ticket = get_object_or_404(
             Ticket,
             id=ticket_id,
         )
 
-        if ticket.assigned_to_id != request.user.id:
+        user = request.user
+
+        if ticket.assigned_to_id != user.id:
             return Response(
                 {
                     "message": (
@@ -5723,74 +5835,400 @@ class RequestTicketAssistanceView(APIView):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        existing_request = TicketAssistanceRequest.objects.filter(
-            ticket=ticket,
-            accepted_by__isnull=True,
-        ).first()
+        serializer = TicketAssistanceRequestCreateSerializer(
+            data=request.data
+        )
 
-        if existing_request:
+        serializer.is_valid(
+            raise_exception=True
+        )
+
+        requested_department_ids = (
+            serializer.validated_data[
+                "requested_departments"
+            ]
+        )
+
+        reason = serializer.validated_data[
+            "reason"
+        ]
+
+        departments = list(
+            ITDepartment.objects.filter(
+                id__in=requested_department_ids
+            )
+        )
+
+        departments_by_id = {
+            department.id: department
+            for department in departments
+        }
+
+        created_requests = []
+        skipped_departments = []
+
+        for department_id in requested_department_ids:
+            department = departments_by_id.get(
+                department_id
+            )
+
+            if not department:
+                continue
+
+            has_pending_request = (
+                TicketAssistanceRequest.objects.filter(
+                    ticket=ticket,
+                    requested_department_id=department_id,
+                    status=(
+                        TicketAssistanceRequest
+                        .RequestStatus
+                        .PENDING
+                    ),
+                ).exists()
+            )
+
+            if has_pending_request:
+                skipped_departments.append(
+                    {
+                        "department": department.name,
+                        "reason": (
+                            "A pending assistance request "
+                            "already exists for this department."
+                        ),
+                    }
+                )
+                continue
+
+            assistance_request = (
+                TicketAssistanceRequest.objects.create(
+                    ticket=ticket,
+                    requested_by=user,
+                    requested_department=department,
+                    reason=reason,
+                    status=(
+                        TicketAssistanceRequest
+                        .RequestStatus
+                        .PENDING
+                    ),
+                )
+            )
+
+            created_requests.append(
+                assistance_request
+            )
+
+            AuditLogs.objects.create(
+                user=user,
+                module="Tickets",
+                action="ASSISTANCE_REQUESTED",
+                reference_id=ticket.ticket_code,
+                remarks=(
+                    f"Assistance requested from "
+                    f"{department.name}. "
+                    f"Details: {reason}"
+                ),
+                created_by=user,
+            )
+
+            TicketStatusHistory.objects.create(
+                ticket=ticket,
+                event_type=(
+                    TicketStatusHistory
+                    .EventType
+                    .ASSISTANCE_REQUESTED
+                ),
+                new_value=ticket.status,
+                changed_by=user,
+                created_by=user,
+                visibility=(
+                    TicketStatusHistory
+                    .Visibility
+                    .INTERNAL
+                ),
+            )
+
+        if not created_requests:
             return Response(
                 {
                     "message": (
-                        "This ticket already has a "
-                        "pending assistance request."
-                    )
+                        "No new assistance requests were created."
+                    ),
+                    "skipped_departments": (
+                        skipped_departments
+                    ),
                 },
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        serializer = TicketAssistanceRequestSerializer(
-            data=request.data
+        serialized_requests = (
+            TicketAssistanceRequestSerializer(
+                created_requests,
+                many=True,
+            ).data
         )
 
-        serializer.is_valid(raise_exception=True)
+        created_department_names = [
+            request_item.requested_department.name
+            for request_item in created_requests
+        ]
 
-        assistance_request = serializer.save(
-            ticket=ticket,
-            requested_by=request.user,
-        )
-
-        department_name = (
-            assistance_request.requested_department.name
-            if assistance_request.requested_department
-            else "Unknown department"
-        )
-
-        AuditLogs.objects.create(
-            user=request.user,
-            module="Tickets",
-            action="ASSISTANCE_REQUESTED",
-            reference_id=ticket.ticket_code,
-            remarks=(
-                f"Assistance requested from {department_name}. "
-                f"Details: {assistance_request.reason}"
-            ),
-            created_by=request.user,
-        )
-
-        TicketStatusHistory.objects.create(
-            ticket=ticket,
-            event_type=(
-                TicketStatusHistory.EventType.ASSISTANCE_REQUESTED
-            ),
-            new_value=ticket.status,
-            changed_by=request.user,
-            created_by=request.user,
-            visibility=TicketStatusHistory.Visibility.ALL,
-        )
+        if len(created_department_names) == 1:
+            message = (
+                f"Assistance request sent to "
+                f"{created_department_names[0]}."
+            )
+        else:
+            message = (
+                "Assistance requests sent to "
+                + ", ".join(
+                    created_department_names
+                )
+                + "."
+            )
 
         return Response(
             {
-                "message": "Assistance request created successfully.",
-                "assistance_request": (
-                    TicketAssistanceRequestSerializer(
-                        assistance_request
-                    ).data
+                "message": message,
+                "assistance_requests": (
+                    serialized_requests
+                ),
+                "skipped_departments": (
+                    skipped_departments
                 ),
             },
             status=status.HTTP_201_CREATED,
         )
 
+class CancelTicketAssistanceRequestView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    @transaction.atomic
+    def post(self, request, request_id):
+        user = request.user
+
+        if getattr(user.role, "name", None) != "IT Support Specialist":
+            return Response(
+                {
+                    "message": (
+                        "Only IT Support Specialists can cancel "
+                        "assistance requests."
+                    )
+                },
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
+        assistance_request = get_object_or_404(
+            TicketAssistanceRequest.objects.select_for_update(),
+            id=request_id,
+        )
+
+        if (
+            assistance_request.status
+            != TicketAssistanceRequest.RequestStatus.PENDING
+        ):
+            return Response(
+                {
+                    "message": (
+                        "Only pending assistance requests "
+                        "can be cancelled."
+                    )
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        ticket = assistance_request.ticket
+
+        if ticket.assigned_to_id != user.id:
+            return Response(
+                {
+                    "message": (
+                        "Only the primary assigned technician "
+                        "can cancel this assistance request."
+                    )
+                },
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
+        if assistance_request.requested_by_id != user.id:
+            return Response(
+                {
+                    "message": (
+                        "Only the technician who requested "
+                        "the assistance can cancel it."
+                    )
+                },
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
+        assistance_request.status = (
+            TicketAssistanceRequest.RequestStatus.CANCELLED
+        )
+        assistance_request.save(update_fields=["status"])
+
+        AuditLogs.objects.create(
+            user=user,
+            module="Tickets",
+            action="ASSISTANCE_REQUEST_CANCELLED",
+            reference_id=ticket.ticket_code,
+            remarks=(
+                f"Cancelled assistance request to "
+                f"{assistance_request.requested_department.name}. "
+                f"Details: {assistance_request.reason}"
+            ),
+            created_by=user,
+        )
+
+        return Response(
+            {
+                "message": (
+                    f"Assistance request to "
+                    f"{assistance_request.requested_department.name} "
+                    f"was cancelled."
+                ),
+                "request_id": assistance_request.id,
+                "status": assistance_request.status,
+            },
+            status=status.HTTP_200_OK,
+        )
+class CompleteTicketAssistanceView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    @transaction.atomic
+    def post(self, request, assistance_id):
+        user = request.user
+
+        if getattr(user.role, "name", None) != "IT Support Specialist":
+            return Response(
+                {
+                    "message": (
+                        "Only IT Support Specialists can "
+                        "complete assistance."
+                    )
+                },
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
+        assistance = get_object_or_404(
+            TicketAssistance.objects.select_for_update(),
+            id=assistance_id,
+        )
+
+        if assistance.assisted_by_id != user.id:
+            return Response(
+                {
+                    "message": (
+                        "You can only complete your own assistance."
+                    )
+                },
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
+        if (
+            assistance.status
+            != TicketAssistance.AssistanceStatus.ONGOING
+        ):
+            return Response(
+                {
+                    "message": (
+                        "This assistance is no longer ongoing."
+                    )
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        note = str(
+            request.data.get("assisted_note", "")
+        ).strip()
+
+        if not note:
+            return Response(
+                {
+                    "message": (
+                        "Assistance remarks are required "
+                        "before completing."
+                    )
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        if len(note) > 300:
+            return Response(
+                {
+                    "message": (
+                        "Assistance remarks cannot exceed "
+                        "300 characters."
+                    )
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        ticket = assistance.ticket
+        now = timezone.now()
+
+        assistance.assisted_note = note
+        assistance.status = (
+            TicketAssistance.AssistanceStatus.COMPLETED
+        )
+        assistance.completed_at = now
+        assistance.updated_by = user
+
+        assistance.save(
+            update_fields=[
+                "assisted_note",
+                "status",
+                "completed_at",
+                "updated_by",
+                "updated_at",
+            ]
+        )
+
+        AuditLogs.objects.create(
+            user=user,
+            module="Tickets",
+            action="ASSISTANCE_COMPLETED",
+            reference_id=ticket.ticket_code,
+            remarks=(
+                f"{user.get_full_name() or user.username} "
+                f"completed assistance on ticket "
+                f"{ticket.ticket_code}. "
+                f"Assistance remarks: {note}"
+            ),
+            created_by=user,
+        )
+
+        TicketStatusHistory.objects.create(
+            ticket=ticket,
+            event_type=(
+                TicketStatusHistory
+                .EventType
+                .ASSISTANCE_COMPLETED
+            ),
+            new_value=ticket.status,
+            changed_by=user,
+            created_by=user,
+            visibility=(
+                TicketStatusHistory
+                .Visibility
+                .INTERNAL
+            ),
+        )
+
+        return Response(
+            {
+                "message": (
+                    "Assistance completed successfully."
+                ),
+                "assistance": {
+                    "id": assistance.id,
+                    "ticket": assistance.ticket_id,
+                    "assisted_by": assistance.assisted_by_id,
+                    "status": assistance.status,
+                    "assisted_note": assistance.assisted_note,
+                    "completed_at": assistance.completed_at,
+                },
+            },
+            status=status.HTTP_200_OK,
+        )
 class AssistanceQueueListView(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -5954,6 +6392,548 @@ class AssistanceQueueListView(APIView):
                 "page_size": page_size,
                 "total_pages": paginator.num_pages or 1,
                 "results": serializer.data,
+            },
+            status=status.HTTP_200_OK,
+        )
+
+
+class AcceptTicketAssistanceView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    @transaction.atomic
+    def post(self, request, request_id):
+        user = request.user
+
+        if getattr(user.role, "name", None) != "IT Support Specialist":
+            return Response(
+                {
+                    "message": (
+                        "Only IT Support Specialists can "
+                        "accept assistance requests."
+                    )
+                },
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
+        try:
+            support_profile = user.it_support_profile
+        except ITSupportProfile.DoesNotExist:
+            return Response(
+                {
+                    "message": (
+                        "Your IT Support profile is "
+                        "not configured."
+                    )
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        if not support_profile.it_department_id:
+            return Response(
+                {
+                    "message": (
+                        "Your IT department is "
+                        "not configured."
+                    )
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        assistance_request = get_object_or_404(
+            TicketAssistanceRequest.objects.select_for_update(),
+            id=request_id,
+        )
+
+        ticket = assistance_request.ticket
+
+        if assistance_request.status != (
+            TicketAssistanceRequest.RequestStatus.PENDING
+        ):
+            return Response(
+                {
+                    "message": (
+                        "This assistance request "
+                        "is no longer pending."
+                    )
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        if (
+            assistance_request.requested_department_id
+            != support_profile.it_department_id
+        ):
+            return Response(
+                {
+                    "message": (
+                        "You cannot accept an assistance "
+                        "request for another IT department."
+                    )
+                },
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
+        if assistance_request.requested_by_id == user.id:
+            return Response(
+                {
+                    "message": (
+                        "You cannot accept your own "
+                        "assistance request."
+                    )
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        if ticket.status in [
+            Ticket.TicketStatus.RESOLVED,
+            Ticket.TicketStatus.CLOSED,
+            Ticket.TicketStatus.CANCELLED,
+        ]:
+            return Response(
+                {
+                    "message": (
+                        "Assistance cannot be accepted "
+                        "for a completed ticket."
+                    )
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        existing_assistance = TicketAssistance.objects.filter(
+            ticket=ticket,
+            assisted_by=user,
+            status=TicketAssistance.AssistanceStatus.ONGOING,
+        ).exists()
+
+        if existing_assistance:
+            return Response(
+                {
+                    "message": (
+                        "You are already assisting "
+                        "this ticket."
+                    )
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        now = timezone.now()
+
+        assistance = TicketAssistance.objects.create(
+            ticket=ticket,
+            assisted_by=user,
+            status=TicketAssistance.AssistanceStatus.ONGOING,
+            created_by=user,
+        )
+
+        assistance_request.status = (
+            TicketAssistanceRequest.RequestStatus.ACCEPTED
+        )
+        assistance_request.accepted_by = user
+        assistance_request.accepted_at = now
+
+        assistance_request.save(
+            update_fields=[
+                "status",
+                "accepted_by",
+                "accepted_at",
+            ]
+        )
+
+        full_name = (
+            user.get_full_name().strip()
+            or user.username
+        )
+
+        AuditLogs.objects.create(
+            user=user,
+            module="Tickets",
+            action="ASSISTANCE_ACCEPTED",
+            reference_id=ticket.ticket_code,
+            remarks=(
+                f"{full_name} accepted the assistance request."
+            ),
+            created_by=user,
+        )
+
+        TicketStatusHistory.objects.create(
+            ticket=ticket,
+            event_type=(
+                TicketStatusHistory.EventType.ASSISTANCE_ACCEPTED
+            ),
+            new_value=ticket.status,
+            changed_by=user,
+            created_by=user,
+            visibility=(
+                TicketStatusHistory.Visibility.INTERNAL
+            ),
+        )
+
+        if assistance_request.requested_by_id:
+            Notifications.objects.create(
+                user=assistance_request.requested_by,
+                ticket=ticket,
+                message=(
+                    f"{full_name} accepted your assistance "
+                    f"request for {ticket.ticket_code}."
+                ),
+                notification_type=(
+                    Notifications.NotificationType.ASSISTANCE_ACCEPTED
+                ),
+                created_by=user,
+            )
+
+        return Response(
+            {
+                "message": (
+                    "Assistance request accepted successfully."
+                ),
+                "assistance_request_id": (
+                    assistance_request.id
+                ),
+                "assistance_id": assistance.id,
+                "accepted_by": user.id,
+                "accepted_at": assistance_request.accepted_at,
+            },
+            status=status.HTTP_200_OK,
+        )
+
+class AssistedTicketListView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        user = request.user
+
+        if getattr(user.role, "name", None) != "IT Support Specialist":
+            return Response(
+                {
+                    "message": (
+                        "Only IT Support Specialists can access "
+                        "assisted tickets."
+                    )
+                },
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
+        assistance_statuses = [
+            TicketAssistance.AssistanceStatus.ONGOING,
+            TicketAssistance.AssistanceStatus.COMPLETED,
+        ]
+
+        current_user_assistance = (
+            TicketAssistance.objects.filter(
+                ticket=OuterRef("pk"),
+                assisted_by=user,
+                status__in=assistance_statuses,
+            )
+            .order_by("-created_at")
+        )
+
+        any_ongoing_assistance = TicketAssistance.objects.filter(
+            ticket=OuterRef("pk"),
+            status=TicketAssistance.AssistanceStatus.ONGOING,
+        )
+
+        queryset = (
+            Ticket.objects
+            .select_related(
+                "priority",
+                "symptom_code",
+                "submitted_by",
+                "submitted_by__profile",
+                "employee_department",
+                "assigned_to",
+            )
+            .annotate(
+                current_user_assistance_id=Subquery(
+                    current_user_assistance.values("id")[:1]
+                ),
+                current_user_assistance_since=Subquery(
+                    current_user_assistance.values("created_at")[:1]
+                ),
+                ongoing_assistance_id=Subquery(
+                    any_ongoing_assistance.values("id")[:1]
+                ),
+                ongoing_assistance_since=Subquery(
+                    any_ongoing_assistance.values("created_at")[:1]
+                ),
+            )
+            .filter(
+                Q(
+                    current_user_assistance_id__isnull=False
+                )
+                |
+                Q(
+                    assigned_to=user,
+                    ongoing_assistance_id__isnull=False,
+                )
+            )
+            .order_by(
+                "-current_user_assistance_since",
+                "-ongoing_assistance_since",
+            )
+        )
+
+        search = request.query_params.get(
+            "search",
+            "",
+        ).strip()
+
+        if search:
+            queryset = queryset.filter(
+                Q(ticket_code__icontains=search)
+                | Q(subject__icontains=search)
+                | Q(
+                    submitted_by__first_name__icontains=search
+                )
+                | Q(
+                    submitted_by__last_name__icontains=search
+                )
+                | Q(
+                    submitted_by__username__icontains=search
+                )
+                | Q(
+                    symptom_code__code__icontains=search
+                )
+            )
+
+        ticket_status = request.query_params.get(
+            "status",
+            "",
+        ).strip()
+
+        if ticket_status:
+            queryset = queryset.filter(
+                status=ticket_status
+            )
+
+        priority = request.query_params.get(
+            "priority",
+            "",
+        ).strip()
+
+        if priority:
+            queryset = queryset.filter(
+                priority__priority_level=priority
+            )
+
+        symptom_code = request.query_params.get(
+            "symptom_code",
+            "",
+        ).strip()
+
+        if symptom_code:
+            queryset = queryset.filter(
+                symptom_code__code=symptom_code
+            )
+
+        try:
+            page = max(
+                int(
+                    request.query_params.get(
+                        "page",
+                        1,
+                    )
+                ),
+                1,
+            )
+        except (
+            TypeError,
+            ValueError,
+        ):
+            page = 1
+
+        try:
+            page_size = int(
+                request.query_params.get(
+                    "page_size",
+                    15,
+                )
+            )
+        except (
+            TypeError,
+            ValueError,
+        ):
+            page_size = 15
+
+        page_size = min(
+            max(page_size, 1),
+            100,
+        )
+
+        paginator = Paginator(
+            queryset,
+            page_size,
+        )
+
+        if (
+            page > paginator.num_pages
+            and paginator.num_pages > 0
+        ):
+            page = paginator.num_pages
+
+        page_obj = paginator.get_page(page)
+
+        now = timezone.now()
+        results = []
+
+        for ticket in page_obj.object_list:
+            submitted_by = ticket.submitted_by
+
+            submitted_by_name = (
+                submitted_by.get_full_name().strip()
+                if submitted_by
+                else ""
+            )
+
+            if not submitted_by_name and submitted_by:
+                submitted_by_name = submitted_by.username
+
+            submitted_by_department = ""
+
+            if submitted_by:
+                try:
+                    profile = submitted_by.profile
+
+                    if profile.employee_department:
+                        submitted_by_department = (
+                            profile.employee_department.name
+                        )
+                except Exception:
+                    submitted_by_department = ""
+
+            assigned_to_name = ""
+
+            if ticket.assigned_to:
+                assigned_to_name = (
+                    ticket.assigned_to.get_full_name().strip()
+                )
+
+                if not assigned_to_name:
+                    assigned_to_name = (
+                        ticket.assigned_to.username
+                    )
+
+            sla_remaining = "-"
+
+            if ticket.resolution_deadline:
+                difference = (
+                    ticket.resolution_deadline - now
+                )
+
+                total_seconds = int(
+                    difference.total_seconds()
+                )
+
+                if total_seconds <= 0:
+                    sla_remaining = "Breached"
+                else:
+                    days = total_seconds // 86400
+
+                    hours = (
+                        total_seconds % 86400
+                    ) // 3600
+
+                    minutes = (
+                        total_seconds % 3600
+                    ) // 60
+
+                    parts = []
+
+                    if days:
+                        parts.append(
+                            f"{days}d"
+                        )
+
+                    if hours:
+                        parts.append(
+                            f"{hours}h"
+                        )
+
+                    if minutes:
+                        parts.append(
+                            f"{minutes}m"
+                        )
+
+                    sla_remaining = (
+                        " ".join(parts)
+                        if parts
+                        else "<1m"
+                    )
+
+            is_primary_assigned = (
+                ticket.assigned_to_id == user.id
+            )
+
+            has_current_user_assistance = (
+                ticket.current_user_assistance_id
+                is not None
+            )
+
+            has_ongoing_assistance = (
+                ticket.ongoing_assistance_id
+                is not None
+            )
+
+            assisting_since = (
+                ticket.current_user_assistance_since
+                if has_current_user_assistance
+                else ticket.ongoing_assistance_since
+            )
+
+            results.append(
+                {
+                    "id": ticket.id,
+                    "ticket_code": ticket.ticket_code,
+                    "subject": ticket.subject,
+                    "submitted_by_name": (
+                        submitted_by_name or "-"
+                    ),
+                    "submitted_by_department": (
+                        submitted_by_department or "-"
+                    ),
+                    "symptom_code": (
+                        ticket.symptom_code.code
+                        if ticket.symptom_code
+                        else "-"
+                    ),
+                    "affected_scope": (
+                        ticket.get_affected_scope_display()
+                    ),
+                    "priority": (
+                        ticket.priority.priority_level
+                        if ticket.priority
+                        else "-"
+                    ),
+                    "status": (
+                        ticket.get_status_display()
+                    ),
+                    "assigned_to": (
+                        assigned_to_name or "Unassigned"
+                    ),
+                    "resolution_time_remaining": (
+                        sla_remaining
+                    ),
+                    "assisting_since": (
+                        assisting_since
+                    ),
+                    "assistance_id": (
+                        ticket.current_user_assistance_id
+                    ),
+                    "is_primary_technician": (
+                        is_primary_assigned
+                    ),
+                }
+            )
+
+        return Response(
+            {
+                "count": paginator.count,
+                "page": page,
+                "page_size": page_size,
+                "total_pages": (
+                    paginator.num_pages or 1
+                ),
+                "results": results,
             },
             status=status.HTTP_200_OK,
         )

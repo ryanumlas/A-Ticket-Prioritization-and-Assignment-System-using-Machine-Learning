@@ -107,13 +107,13 @@ export default function AssistanceQueueTable({
                         {requestList.map((request) => (
                             <tr
                                 key={request.id}
-                                onClick={() => {
-                                    if (request.ticket) {
-                                        navigate(
-                                            `/ticket/${request.ticket}`
-                                        );
-                                    }
-                                }}
+                                onClick={() =>
+                                    navigate(`/ticket/${request.ticket}`, {
+                                        state: {
+                                            assistanceRequest: request,
+                                        },
+                                    })
+                                }
                                 className={`border-b border-gray-200 transition-colors last:border-b-0 ${
                                     request.ticket
                                         ? "cursor-pointer hover:bg-gray-50"

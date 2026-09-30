@@ -1,7 +1,13 @@
+from datetime import timedelta
+
 from celery import shared_task
+from django.utils import timezone
+
 from .models import Ticket
 from .services import update_sla
+
 import logging
+
 
 logger = logging.getLogger(__name__)
 
@@ -27,4 +33,27 @@ def update_all_sla():
 
     return (
         f"Updated {active_tickets.count()} ticket(s)."
+    )
+
+
+@shared_task
+def close_resolved_tickets():
+    cutoff = timezone.now() - timedelta(days=3)
+
+    tickets_to_close = Ticket.objects.filter(
+        status=Ticket.TicketStatus.RESOLVED,
+        resolved_at__isnull=False,
+        resolved_at__lte=cutoff,
+    )
+
+    closed_count = tickets_to_close.update(
+        status=Ticket.TicketStatus.CLOSED
+    )
+
+    logger.info(
+        f"Automatically closed {closed_count} resolved ticket(s)."
+    )
+
+    return (
+        f"Automatically closed {closed_count} ticket(s)."
     )

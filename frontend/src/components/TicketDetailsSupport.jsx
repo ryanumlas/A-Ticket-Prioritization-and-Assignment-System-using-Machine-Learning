@@ -5,6 +5,8 @@ import QueueTicketDetails from "../components/QueueTicketDetails";
 export default function TicketDetailsSupport({
     ticketDetails,
     onTicketUpdated,
+    isAssisting = false,
+    onAssistanceAccepted,
 }) {
     const user = getCurrentUser();
 
@@ -12,7 +14,15 @@ export default function TicketDetailsSupport({
         Number(ticketDetails?.assigned_to?.id) ===
         Number(user?.user_id);
 
-    if (isAssignedToMe) {
+    const hasMyAssistance =
+        ticketDetails?.my_assistance != null;
+
+    const shouldShowAssignedDetails =
+        isAssignedToMe ||
+        isAssisting ||
+        hasMyAssistance;
+
+    if (shouldShowAssignedDetails) {
         return (
             <AssignedTicketDetails
                 ticketDetails={ticketDetails}
@@ -24,6 +34,9 @@ export default function TicketDetailsSupport({
     return (
         <QueueTicketDetails
             ticketDetails={ticketDetails}
+            user={user}
+            onTicketUpdated={onTicketUpdated}
+            onAssistanceAccepted={onAssistanceAccepted}
         />
     );
 }
