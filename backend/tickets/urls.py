@@ -1,11 +1,11 @@
 from django.urls import path
-from .views import CategoryListView, SLARulesListView
+from .views import CategoryListView, SLARulesListView, TeamWorkloadView
 from .views import (TicketListEmployeeView, CreateTicketView, ListTicketView, DetailTicketView, UpdateSymptomCodeView, 
 UpdateTicketView, DeleteTicketView, CreateCategoryView, KeywordUpdateView ,KeywordCreateView, 
 UpdateCategoryView, CreateSymptomCodeView, SLARulesCreateView, SLARulesUpdateView, TicketDetailEmployeeView, TicketListServiceDeskView, UpdateTicketStatusView, ManualOverrideTicketView,
 ServiceDeskOverviewView, ServiceDeskClassifiedResultsView, FlaggedTicketsListView, FlaggedTicketDetailView, SymptomCodeListView, 
 AcceptRecommendationView, ApproveOverrideView, ManuallyClassifyView, SupportOverviewView, TicketQueueView, TicketListSupportView, DepartmentSymptomCodesView, 
-SLAPerformanceView, TicketsByCategoryView, TicketDetailSupportView, TicketStatusHistoryView, TicketCommentListCreateView, RequestTicketAssistanceView,
+SLAPerformanceView, TicketsByCategoryView, TicketDetailSupportView, TicketStatusHistoryView, TicketCommentListCreateView, RequestTicketAssistanceView, RequestTicketReopenView, ReopenRequestsListView, ReviewTicketReopenRequestView,
 PriorityChangeRequestView, PriorityChangeRequestListView, PriorityRequestDetailView, ApprovePriorityRequestView, ReturnTicketView, CancelTicketAssistanceRequestView,
 ReturnedTicketRequestListView, ReturnedTicketDetailRetrieve, ApproveReturnTicketView, PendingPriorityRequestCountView, PendingReturnTicketRequestCountView, CompleteTicketAssistanceView,
 ServiceDeskDepartmentQueueView, EscalateTicketView, AcceptPriorityView, OverridePriorityView,SLARulesListView, CategoryListView, AssistanceQueueListView, AssistedTicketListView,
@@ -70,6 +70,24 @@ urlpatterns = [
     path("acknowledge-escalation/<int:pk>/",AcknowledgeEscalationView.as_view(),),
 
     path("<int:pk>/comments/mark-read/", TicketCommentMarkReadView.as_view(),name="ticket-comment-mark-read",),
+
+    path("team-workload/",TeamWorkloadView.as_view(),),
+
+    path(
+        "<int:pk>/reopen-request/",
+        RequestTicketReopenView.as_view(),
+        name="ticket-reopen-request",
+    ),
+    path(
+        "reopen-requests/",
+        ReopenRequestsListView.as_view(),
+        name="reopen-requests-list",
+    ),
+    path(
+        "reopen-requests/<int:pk>/review/",
+        ReviewTicketReopenRequestView.as_view(),
+        name="ticket-reopen-request-review",
+    ),
 
     # --- Assistance ---
     path("assistance/<int:ticket_id>/request/", RequestTicketAssistanceView.as_view(), name="request-ticket-assistance",),

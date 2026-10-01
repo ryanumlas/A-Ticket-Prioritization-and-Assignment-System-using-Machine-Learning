@@ -1,6 +1,7 @@
 from django.db import models
 from users.models import User
 from ai.models import TicketAnalysis
+from django.db.models import Q
 from departments.models import ITDepartment, EmployeeDepartment, OfficeLocation
 from users.models import UserProfile, Specializations
 
@@ -77,6 +78,56 @@ class Ticket(models.Model):
     def __str__(self):
         return f"Ticket #{self.id} - {self.subject}"
 
+
+class TicketReopenRequest(models.Model):
+    class RequestStatus(models.TextChoices):
+        PENDING = "pending", "Pending"
+        APPROVED = "approved", "Approved"
+        REJECTED = "rejected", "Rejected"
+
+    ticket = models.ForeignKey(
+        "Ticket",
+        on_delete=models.CASCADE,
+        related_name="reopen_requests",
+    )
+    requested_by = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name="ticket_reopen_requests",
+    )
+    reason = models.TextField()
+    status = models.CharField(
+        max_length=20,
+        choices=RequestStatus.choices,
+        default=RequestStatus.PENDING,
+    )
+    reviewed_by = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="reviewed_ticket_reopen_requests",
+    )
+    review_remarks = models.TextField(blank=True)
+    requested_at = models.DateTimeField(auto_now_add=True)
+    reviewed_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        db_table = "ticket_reopen_requests"
+        ordering = ["-requested_at"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["ticket"],
+                condition=Q(status="pending"),
+                name="unique_pending_reopen_request_per_ticket",
+            ),
+        ]
+
+    def __str__(self):
+        return (
+            f"{self.ticket.ticket_code} - "
+            f"{self.get_status_display()}"
+        )
 
 class TicketComments(models.Model):
     class CommentType(models.TextChoices):
@@ -179,6 +230,8 @@ class TicketStatusHistory(models.Model):
     class Meta:
         db_table = 'ticket_status_history'
         ordering = ['-created_at']
+
+
 
 class TicketEscalation(models.Model):
     class Status(models.TextChoices):

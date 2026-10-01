@@ -635,6 +635,206 @@ def get_current_workload(profile):
         status__in=WORKLOAD_STATUSES,
     ).count()
 
+def get_team_workload(user):
+
+    support_profile = getattr(
+        user,
+        "it_support_profile",
+        None,
+    )
+
+    supervisor_profile = getattr(
+        user,
+        "it_supervisor_profile",
+        None,
+    )
+
+    # ---------------------------------------------------------
+    # IT SUPPORT
+    # ---------------------------------------------------------
+
+    if support_profile:
+        department = support_profile.it_department
+
+        if not department:
+            return {
+                "scope": "department",
+                "department": None,
+                "departments": [],
+            }
+
+        profiles = (
+            ITSupportProfile.objects
+            .filter(
+                it_department=department,
+            )
+            .select_related(
+                "user",
+                "it_department",
+            )
+            .prefetch_related(
+                "specializations__specialization",
+            )
+        )
+
+        technicians = []
+
+        for profile in profiles:
+            workload = get_current_workload(profile)
+
+            workload_limit = profile.workload_limit or 0
+
+            if workload_limit > 0:
+                workload_ratio = (
+                    workload / workload_limit
+                )
+            else:
+                workload_ratio = 0
+
+            tickets = (
+                Ticket.objects
+                .filter(
+                    assigned_to=profile.user,
+                    status__in=WORKLOAD_STATUSES,
+                )
+                .order_by("created_at")
+                .values(
+                    "ticket_code",
+                    "status",
+                )
+            )
+
+            full_name = (
+                f"{profile.user.first_name} "
+                f"{profile.user.last_name}"
+            ).strip() or profile.user.username
+
+            technicians.append({
+                "profile_id": profile.id,
+                "user_id": profile.user.id,
+                "name": full_name,
+                "username": profile.user.username,
+                "availability_status": (
+                    profile.availability_status
+                ),
+                "workload": workload,
+                "workload_limit": workload_limit,
+                "workload_ratio": workload_ratio,
+                "tickets": list(tickets),
+            })
+
+        return {
+            "scope": "department",
+            "department": {
+                "id": department.id,
+                "name": department.name,
+            },
+            "departments": [
+                {
+                    "id": department.id,
+                    "name": department.name,
+                    "technicians": technicians,
+                }
+            ],
+        }
+
+    # ---------------------------------------------------------
+    # IT SUPERVISOR
+    # ---------------------------------------------------------
+
+    if supervisor_profile:
+        departments = (
+            ITDepartment.objects
+            .all()
+            .order_by("name")
+        )
+
+        department_results = []
+
+        for department in departments:
+
+            profiles = (
+                ITSupportProfile.objects
+                .filter(
+                    it_department=department,
+                )
+                .select_related(
+                    "user",
+                    "it_department",
+                )
+                .prefetch_related(
+                    "specializations__specialization",
+                )
+            )
+
+            technicians = []
+
+            for profile in profiles:
+                workload = get_current_workload(profile)
+
+                workload_limit = profile.workload_limit or 0
+
+                if workload_limit > 0:
+                    workload_ratio = (
+                        workload / workload_limit
+                    )
+                else:
+                    workload_ratio = 0
+
+                tickets = (
+                    Ticket.objects
+                    .filter(
+                        assigned_to=profile.user,
+                        status__in=WORKLOAD_STATUSES,
+                    )
+                    .order_by("created_at")
+                    .values(
+                        "ticket_code",
+                        "status",
+                    )
+                )
+
+                full_name = (
+                    f"{profile.user.first_name} "
+                    f"{profile.user.last_name}"
+                ).strip() or profile.user.username
+
+                technicians.append({
+                    "profile_id": profile.id,
+                    "user_id": profile.user.id,
+                    "name": full_name,
+                    "username": profile.user.username,
+                    "availability_status": (
+                        profile.availability_status
+                    ),
+                    "workload": workload,
+                    "workload_limit": workload_limit,
+                    "workload_ratio": workload_ratio,
+                    "tickets": list(tickets),
+                })
+
+            department_results.append({
+                "id": department.id,
+                "name": department.name,
+                "technicians": technicians,
+            })
+
+        return {
+            "scope": "all_departments",
+            "department": None,
+            "departments": department_results,
+        }
+
+    # ---------------------------------------------------------
+    # USER HAS NO IT SUPPORT / IT SUPERVISOR PROFILE
+    # ---------------------------------------------------------
+
+    return {
+        "scope": None,
+        "department": None,
+        "departments": [],
+    }
+
 
 def get_last_assigned_at(profile):
     return (

@@ -8,6 +8,7 @@ import {
     Clock3,
     CircleDot,
     MessageSquareText,
+    Info,
 } from "lucide-react";
 
 import { motion } from "motion/react";
@@ -49,9 +50,7 @@ const itemVariants = {
 
 function DetailItem({ label, value }) {
     return (
-        <motion.div
-            variants={itemVariants}
-        >
+        <motion.div variants={itemVariants}>
             <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-gray-500">
                 {label}
             </p>
@@ -288,6 +287,41 @@ export default function QueueTicketDetails({
         "cancelled",
     ].includes(ticketStatus);
 
+    /*
+     * Determine whether the current logged-in user
+     * is the technician assigned to this ticket.
+     *
+     * The API may provide either:
+     * - assigned_to.id
+     * - assigned_to.user_id
+     *
+     * so both are supported.
+     */
+    const assignedUserId =
+        ticketDetails?.assigned_to?.id ??
+        ticketDetails?.assigned_to?.user_id ??
+        ticketDetails?.assigned_to_id ??
+        null;
+
+    const currentUserId = user?.id ?? user?.user_id ?? null;
+
+    const isAssignedToCurrentUser =
+        assignedUserId !== null &&
+        currentUserId !== null &&
+        String(assignedUserId) === String(currentUserId);
+
+    /*
+     * Read-only when the ticket is already assigned
+     * to another technician.
+     *
+     * Unassigned tickets are NOT read-only because
+     * the current technician may still assign the
+     * ticket to themselves.
+     */
+    const isReadOnly =
+        Boolean(assignedUserId) &&
+        !isAssignedToCurrentUser;
+
     const canAssignToMe =
         user?.role === "IT Support Specialist" &&
         ticketDetails?.status === "Open" &&
@@ -351,6 +385,87 @@ export default function QueueTicketDetails({
                     hover:[&::-webkit-scrollbar-thumb]:bg-gray-300
                 "
             >
+                {/* READ-ONLY INFORMATION NOTICE */}
+                {isReadOnly && (
+                    <motion.div
+                        initial={{
+                            opacity: 0,
+                            y: -6,
+                        }}
+                        animate={{
+                            opacity: 1,
+                            y: 0,
+                        }}
+                        transition={{
+                            duration: 0.25,
+                            ease: "easeOut",
+                        }}
+                        className="
+                            mb-4
+                            flex
+                            items-start
+                            justify-between
+                            gap-4
+                            rounded-lg
+                            border
+                            border-blue-200
+                            bg-blue-50
+                            px-4
+                            py-3
+                            sm:px-5
+                        "
+                    >
+                        <div className="flex min-w-0 items-start gap-3">
+                            <div
+                                className="
+                                    mt-0.5
+                                    flex
+                                    h-7
+                                    w-7
+                                    shrink-0
+                                    items-center
+                                    justify-center
+                                    rounded-full
+                                    bg-white
+                                "
+                            >
+                                <Info
+                                    size={15}
+                                    className="text-blue-600"
+                                />
+                            </div>
+
+                            <div className="min-w-0">
+                                <p className="text-xs font-medium leading-5 text-gray-700">
+                                    You are viewing this ticket
+                                    through your department queue.
+                                </p>
+
+                                <p className="mt-0.5 text-[11px] leading-5 text-gray-500">
+                                    You are viewing this ticket in read-only mode because it is currently assigned to another IT Support. You can still view the ticket details, but you cannot make any changes or updates.
+                                </p>
+                            </div>
+                        </div>
+
+                        <span
+                            className="
+                                shrink-0
+                                rounded-full
+                                bg-white
+                                px-3
+                                py-1
+                                text-[11px]
+                                font-semibold
+                                text-blue-600
+                                shadow-sm
+                            "
+                        >
+                            Read Only
+                        </span>
+                    </motion.div>
+                )}
+
+                {/* TICKET HEADER */}
                 <motion.div
                     variants={sectionVariants}
                     className="mb-4 rounded-xl border border-gray-200 bg-white px-4 py-4 sm:px-5 lg:px-6"
@@ -434,6 +549,7 @@ export default function QueueTicketDetails({
                     </div>
                 </motion.div>
 
+                {/* RESOLUTION REMARKS */}
                 {resolutionRemarks && (
                     <motion.div
                         initial={{
@@ -480,9 +596,7 @@ export default function QueueTicketDetails({
 
                                 <div className="mt-2 rounded-lg border border-green-200 bg-white px-3 py-2.5">
                                     <p className="whitespace-pre-wrap break-words text-sm leading-5 text-black">
-                                        {
-                                            resolutionRemarks
-                                        }
+                                        {resolutionRemarks}
                                     </p>
                                 </div>
                             </div>
@@ -490,8 +604,11 @@ export default function QueueTicketDetails({
                     </motion.div>
                 )}
 
+                {/* MAIN CONTENT */}
                 <div className="w-full">
                     <div className="grid w-full grid-cols-1 gap-5 xl:grid-cols-[minmax(0,1.55fr)_minmax(320px,0.85fr)]">
+
+                        {/* LEFT COLUMN */}
                         <motion.div
                             initial="hidden"
                             animate="visible"
@@ -501,6 +618,7 @@ export default function QueueTicketDetails({
                             }}
                             className="min-w-0 space-y-5"
                         >
+                            {/* TICKET OVERVIEW */}
                             <motion.section
                                 variants={sectionVariants}
                                 className="rounded-xl border border-gray-200 bg-white"
@@ -521,10 +639,8 @@ export default function QueueTicketDetails({
                                         </p>
 
                                         <p className="whitespace-pre-wrap break-words text-sm leading-6 text-black">
-                                            {
-                                                ticketDetails?.description ||
-                                                "No description provided."
-                                            }
+                                            {ticketDetails?.description ||
+                                                "No description provided."}
                                         </p>
                                     </div>
 
@@ -534,10 +650,8 @@ export default function QueueTicketDetails({
                                         </p>
 
                                         <p className="whitespace-pre-wrap break-words text-sm leading-6 text-black">
-                                            {
-                                                ticketDetails?.business_impact ||
-                                                "No business impact provided."
-                                            }
+                                            {ticketDetails?.business_impact ||
+                                                "No business impact provided."}
                                         </p>
                                     </div>
 
@@ -583,14 +697,13 @@ export default function QueueTicketDetails({
                                 </motion.div>
                             </motion.section>
 
+                            {/* REQUESTER INFORMATION */}
                             <motion.section
                                 variants={sectionVariants}
                                 className="rounded-xl border border-gray-200 bg-white"
                             >
                                 <SectionHeader
-                                    icon={
-                                        CircleUserRound
-                                    }
+                                    icon={CircleUserRound}
                                     title="Requester Information"
                                     description="Information about the employee who submitted the ticket"
                                 />
@@ -600,9 +713,7 @@ export default function QueueTicketDetails({
                                     className="grid grid-cols-1 gap-4 p-4 sm:grid-cols-2 sm:p-5 lg:grid-cols-3"
                                 >
                                     <InfoRow
-                                        icon={
-                                            CircleUserRound
-                                        }
+                                        icon={CircleUserRound}
                                         label="Name"
                                         value={`${ticketDetails?.first_name || ""} ${
                                             ticketDetails?.last_name || ""
@@ -610,9 +721,7 @@ export default function QueueTicketDetails({
                                     />
 
                                     <InfoRow
-                                        icon={
-                                            UserRoundCheck
-                                        }
+                                        icon={UserRoundCheck}
                                         label="Employee ID"
                                         value={
                                             ticketDetails?.user_code
@@ -620,9 +729,7 @@ export default function QueueTicketDetails({
                                     />
 
                                     <InfoRow
-                                        icon={
-                                            Building2
-                                        }
+                                        icon={Building2}
                                         label="Department"
                                         value={
                                             ticketDetails?.employee_department
@@ -630,9 +737,7 @@ export default function QueueTicketDetails({
                                     />
 
                                     <InfoRow
-                                        icon={
-                                            Building2
-                                        }
+                                        icon={Building2}
                                         label="Office Location"
                                         value={
                                             ticketDetails?.office_location
@@ -649,6 +754,7 @@ export default function QueueTicketDetails({
                                 </motion.div>
                             </motion.section>
 
+                            {/* ASSIGNMENT */}
                             <motion.section
                                 variants={sectionVariants}
                                 className="rounded-xl border border-gray-200 bg-white"
@@ -664,9 +770,7 @@ export default function QueueTicketDetails({
                                     className="grid grid-cols-1 gap-4 p-4 sm:grid-cols-2 sm:p-5 lg:grid-cols-3"
                                 >
                                     <InfoRow
-                                        icon={
-                                            CircleUserRound
-                                        }
+                                        icon={CircleUserRound}
                                         label="Assigned To"
                                         value={
                                             ticketDetails
@@ -677,9 +781,7 @@ export default function QueueTicketDetails({
                                     />
 
                                     <InfoRow
-                                        icon={
-                                            Building2
-                                        }
+                                        icon={Building2}
                                         label="IT Department"
                                         value={
                                             ticketDetails?.it_department
@@ -697,6 +799,7 @@ export default function QueueTicketDetails({
                             </motion.section>
                         </motion.div>
 
+                        {/* RIGHT COLUMN */}
                         <motion.div
                             initial="hidden"
                             animate="visible"
@@ -706,6 +809,7 @@ export default function QueueTicketDetails({
                             }}
                             className="min-w-0 space-y-5"
                         >
+                            {/* CLASSIFICATION */}
                             <motion.section
                                 variants={sectionVariants}
                                 className="rounded-xl border border-gray-200 bg-white"
@@ -729,9 +833,7 @@ export default function QueueTicketDetails({
                                     />
 
                                     <InfoRow
-                                        icon={
-                                            CircleDot
-                                        }
+                                        icon={CircleDot}
                                         label="Symptom Code"
                                         value={
                                             ticketDetails?.symptom_code
@@ -773,9 +875,7 @@ export default function QueueTicketDetails({
                                     />
 
                                     <InfoRow
-                                        icon={
-                                            CircleDot
-                                        }
+                                        icon={CircleDot}
                                         label="Classification Source"
                                         value={
                                             ticketDetails?.classification_source
@@ -784,6 +884,7 @@ export default function QueueTicketDetails({
                                 </motion.div>
                             </motion.section>
 
+                            {/* SLA INFORMATION */}
                             <motion.section
                                 variants={sectionVariants}
                                 className="rounded-xl border border-gray-200 bg-white"

@@ -11,6 +11,7 @@ import {
     ArrowUpDown,
     Users,
     UserCog,
+    UsersRound,
     Settings,
     Building2,
     Tags,
@@ -21,6 +22,7 @@ Handshake,
     FileText,
     BarChart3,
     HandHelping, 
+    RotateCcw,
 } from "lucide-react";
 
 export const sidebarItems = {
@@ -58,36 +60,76 @@ export const sidebarItems = {
             path: "/dashboard",
             icon: LayoutDashboard,
         },
+
+        {
+            type: "section",
+            title: "TICKETS",
+        },
+
         {
             type: "link",
             name: "Ticket Queue",
             path: "/ticket-queue",
             icon: ListTodo,
         },
+
         {
             type: "link",
             name: "Assigned Tickets",
             path: "/tickets",
             icon: ClipboardCheck,
         },
+
         {
             type: "link",
             name: "Assistance Queue",
             path: "/assistance-queue",
             icon: HandHelping,
         },
+
         {
             type: "link",
             name: "Assisted Tickets",
             path: "/assisted-tickets",
             icon: Handshake,
         },
+
+        {
+            type: "link",
+            name: "Reopen Requests",
+            path: "/reopen-requests",
+            icon: RotateCcw,
+        },
+
+        {
+            type: "section",
+            title: "TEAM",
+        },
+
+        {
+            type: "link",
+            name: "Team Workload",
+            path: "/team-workload",
+            icon: UsersRound,
+        },
+
+        {
+            type: "section",
+            title: "ACTIONS",
+        },
+
         {
             type: "link",
             name: "Create Ticket",
             path: "/",
             icon: TicketPlus,
         },
+
+        {
+            type: "section",
+            title: "OTHER",
+        },
+
         {
             type: "link",
             name: "Notifications",
@@ -247,7 +289,7 @@ export const sidebarItems = {
             type: "link",
             name: "Team Workload",
             path: "/team-workload",
-            icon: Users,
+            icon: UsersRound,
         },
 
         {

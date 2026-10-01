@@ -2,7 +2,7 @@ from django.utils import timezone
 import time
 from django.core.paginator import Paginator
 from django.shortcuts import render, get_object_or_404
-from .pagination import TicketPagination
+from .pagination import TicketPagination, WorkloadPagination
 from django.db.models import Count
 from django.db.models import Q, Subquery, OuterRef
 from django.db import transaction
@@ -10,7 +10,8 @@ from rest_framework.response import Response
 from rest_framework import viewsets, generics, status
 from rest_framework.views import APIView
 from rest_framework.permissions import IsAuthenticated, AllowAny
-from .models import (Ticket, Category, SymptomCode, TicketComments, SLARules, ReviewFlags, TicketCommentRead, TicketAssistance, TicketAssistanceRequest, Keyword, TicketStatusHistory as TicketStatusHistoryModel, TicketReturn, TicketPriorityRequest, TicketEscalation)
+from .models import (Ticket, Category, SymptomCode, TicketComments, SLARules, ReviewFlags, TicketCommentRead, TicketAssistance,  TicketReopenRequest,
+                     TicketAssistanceRequest, Keyword, TicketStatusHistory as TicketStatusHistoryModel, TicketReturn, TicketPriorityRequest, TicketEscalation)
 from .serializers import (SymptomCodeSerializer, TicketSerializer, CategorySerializer, 
 TicketAssistanceSerializer, TicketCommentSerializer, TicketStatusHistory, SLARulesSerializer, TicketAssistanceRequestSerializer,
 SLARulesUpdateSerializer, KeywordSerializer, KeywordUpdateSerializer, UpdateSymptomCodeSerializer, CreateSymptomCodeSerializer,TicketAssistanceRequestCreateSerializer, 
@@ -20,11 +21,11 @@ PriorityRequestDetailSerializer, ReturnTicketSerializer, ReturnedTicketRequestLi
 ServiceDeskDepartmentSerializer, RejectReturnTicketSerializer, EmployeeCurrentActiveTicketSerializer, SupervisorEscalatedTicketSerializer)
 from users.models import User, ITSupportProfile, Notifications, AuditLogs, ITServiceDeskProfile, ITSupervisorProfile, SystemAdministratorProfile
 from users.services import create_notification
-from .services import predict_ticket, assign_ticket_automatically
+from .services import predict_ticket, assign_ticket_automatically, get_current_workload, WORKLOAD_STATUSES
 from ai.models import TicketAnalysis, TicketAIAnalysis
 from ai.services import analyze_ticket
 from departments.models import ITDepartment
-from tickets.services import classify_ticket, calculate_priority, update_sla, finalize_ticket_classification, calculate_priority_details
+from tickets.services import classify_ticket, calculate_priority, update_sla, finalize_ticket_classification, calculate_priority_details, get_eligible_technicians
 
 # Create your views here.
 
@@ -722,6 +723,398 @@ class ManualOverrideTicketView(APIView):
             status=status.HTTP_200_OK
         )
 
+class RequestTicketReopenView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, pk):
+        reason = request.data.get("reason", "").strip()
+
+        if len(reason) < 10:
+            return Response(
+                {"error": "Please provide a reason with at least 10 characters."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        if len(reason) > 1000:
+            return Response(
+                {"error": "The reason cannot exceed 1000 characters."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        with transaction.atomic():
+            ticket = (
+                Ticket.objects
+                .select_for_update()
+                .filter(pk=pk, submitted_by=request.user)
+                .first()
+            )
+
+            if not ticket:
+                return Response(
+                    {"error": "Ticket not found."},
+                    status=status.HTTP_404_NOT_FOUND,
+                )
+
+            if ticket.status != Ticket.TicketStatus.RESOLVED:
+                return Response(
+                    {"error": "Only resolved tickets can be reopened. Closed tickets require a new ticket."},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+
+            pending_exists = TicketReopenRequest.objects.filter(
+                ticket=ticket,
+                status=TicketReopenRequest.RequestStatus.PENDING,
+            ).exists()
+
+            if pending_exists:
+                return Response(
+                    {"error": "This ticket already has a pending reopen request."},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+
+            reopen_request = TicketReopenRequest.objects.create(
+                ticket=ticket,
+                requested_by=request.user,
+                reason=reason,
+            )
+
+            AuditLogs.objects.create(
+                user=request.user,
+                module="Tickets",
+                action="REOPEN_REQUESTED",
+                reference_id=ticket.ticket_code,
+                remarks=f"Reopen request submitted: {reason}",
+                created_by=request.user,
+            )
+
+            # Notify IT Support Specialists in the ticket's department.
+            support_profiles = ITSupportProfile.objects.filter(
+                it_department=ticket.it_department,
+            ).select_related("user")
+
+            for profile in support_profiles:
+                create_notification(
+                    user=profile.user,
+                    ticket=ticket,
+                    notification_type=Notifications.NotificationType.REVIEW_REQUIRED,
+                    message=(
+                        f"Ticket {ticket.ticket_code} has a pending "
+                        "reopen request that requires review."
+                    ),
+                    created_by=request.user,
+                )
+
+        return Response(
+            {
+                "message": "Your reopen request has been submitted.",
+                "request_id": reopen_request.id,
+                "ticket_id": ticket.id,
+                "ticket_code": ticket.ticket_code,
+                "status": reopen_request.status,
+                "reason": reopen_request.reason,
+            },
+            status=status.HTTP_201_CREATED,
+        )
+
+class ReopenRequestsListView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        profile = (
+            ITSupportProfile.objects
+            .select_related("user", "it_department")
+            .filter(user=request.user)
+            .first()
+        )
+
+        if not profile:
+            return Response(
+                {"error": "Only IT Support Specialists can view reopen requests."},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
+        if not profile.it_department:
+            return Response({"results": []}, status=status.HTTP_200_OK)
+
+        reopen_requests = (
+            TicketReopenRequest.objects
+            .filter(
+                status=TicketReopenRequest.RequestStatus.PENDING,
+                ticket__it_department=profile.it_department,
+            )
+            .select_related(
+                "ticket",
+                "ticket__submitted_by",
+                "ticket__assigned_to",
+                "requested_by",
+            )
+            .order_by("requested_at")
+        )
+
+        results = []
+
+        for reopen_request in reopen_requests:
+            ticket = reopen_request.ticket
+
+            eligible_profiles = get_eligible_technicians(ticket)
+
+            can_approve = any(
+                item["profile"].id == profile.id
+                for item in eligible_profiles
+            )
+
+            results.append({
+                "id": reopen_request.id,
+                "ticket_id": ticket.id,
+                "ticket_code": ticket.ticket_code,
+                "ticket_title": ticket.subject,
+                "ticket_status": ticket.status,
+                "department": profile.it_department.name,
+                "requested_by": (
+                    reopen_request.requested_by.get_full_name()
+                    or reopen_request.requested_by.username
+                ),
+                "reason": reopen_request.reason,
+                "requested_at": reopen_request.requested_at,
+                "current_assignee": (
+                    ticket.assigned_to.get_full_name()
+                    or ticket.assigned_to.username
+                    if ticket.assigned_to
+                    else None
+                ),
+                "can_approve": can_approve,
+            })
+
+        return Response(
+            {"results": results},
+            status=status.HTTP_200_OK,
+        )
+class ReviewTicketReopenRequestView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, pk):
+        decision = request.data.get("decision", "").strip().lower()
+        review_remarks = request.data.get("review_remarks", "").strip()
+
+        if decision not in [
+            TicketReopenRequest.RequestStatus.APPROVED,
+            TicketReopenRequest.RequestStatus.REJECTED,
+        ]:
+            return Response(
+                {"error": "Decision must be 'approved' or 'rejected'."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        if decision == TicketReopenRequest.RequestStatus.REJECTED and not review_remarks:
+            return Response(
+                {"error": "Please provide remarks explaining why the request was rejected."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        profile = (
+            ITSupportProfile.objects
+            .filter(user=request.user)
+            .first()
+        )
+
+        if not profile:
+            return Response(
+                {"error": "Only IT Support Specialists can review reopen requests."},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
+        with transaction.atomic():
+            reopen_request = (
+                TicketReopenRequest.objects
+                .select_for_update()
+                .filter(pk=pk)
+                .first()
+            )
+
+            if not reopen_request:
+                return Response(
+                    {"error": "Reopen request not found."},
+                    status=status.HTTP_404_NOT_FOUND,
+                )
+
+            ticket = (
+                Ticket.objects
+                .select_for_update()
+                .filter(pk=reopen_request.ticket_id)
+                .first()
+            )
+
+            if not ticket:
+                return Response(
+                    {"error": "Ticket not found."},
+                    status=status.HTTP_404_NOT_FOUND,
+                )
+
+            if reopen_request.status != TicketReopenRequest.RequestStatus.PENDING:
+                return Response(
+                    {"error": "This reopen request has already been reviewed."},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+
+            if (
+                not profile.it_department
+                or profile.it_department_id != ticket.it_department_id
+            ):
+                return Response(
+                    {"error": "You can only review requests for your own department."},
+                    status=status.HTTP_403_FORBIDDEN,
+                )
+
+            if ticket.status != Ticket.TicketStatus.RESOLVED:
+                return Response(
+                    {"error": "This ticket is no longer resolved and cannot be reopened through this request."},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+
+            old_assignee = ticket.assigned_to
+            old_assignee_name = (
+                old_assignee.get_full_name() or old_assignee.username
+                if old_assignee
+                else None
+            )
+
+            reopen_request.reviewed_by = request.user
+            reopen_request.reviewed_at = timezone.now()
+            reopen_request.review_remarks = review_remarks
+            reopen_request.status = decision
+
+            if decision == TicketReopenRequest.RequestStatus.APPROVED:
+                eligible_profiles = get_eligible_technicians(ticket)
+
+                is_eligible = any(
+                    item["profile"].id == profile.id
+                    for item in eligible_profiles
+                )
+
+                if not is_eligible:
+                    return Response(
+                        {
+                            "error": (
+                                "You are not currently eligible to take this ticket. "
+                                "Check your availability, specialization, and workload."
+                            )
+                        },
+                        status=status.HTTP_400_BAD_REQUEST,
+                    )
+
+                # The approving technician becomes the new assignee.
+                ticket.assigned_to = request.user
+                ticket.status = Ticket.TicketStatus.IN_PROGRESS
+                ticket.resolved_at = None
+                ticket.resolved_by = None
+                ticket.updated_by = request.user
+
+                ticket.save(
+                    update_fields=[
+                        "assigned_to",
+                        "status",
+                        "resolved_at",
+                        "resolved_by",
+                        "updated_by",
+                        "updated_at",
+                    ]
+                )
+
+                profile.last_assigned_at = timezone.now()
+                profile.save(update_fields=["last_assigned_at"])
+
+                technician_name = (
+                    request.user.get_full_name()
+                    or request.user.username
+                )
+
+                TicketStatusHistory.objects.create(
+                    ticket=ticket,
+                    event_type=TicketStatusHistory.EventType.ASSIGNED,
+                    old_value=old_assignee_name,
+                    new_value=technician_name,
+                    remarks=(
+                        f"Ticket reassigned after reopen request "
+                        f"#{reopen_request.id} was approved."
+                    ),
+                    visibility=TicketStatusHistory.Visibility.ALL,
+                    changed_by=request.user,
+                    created_by=request.user,
+                )
+
+                TicketStatusHistory.objects.create(
+                    ticket=ticket,
+                    event_type=TicketStatusHistory.EventType.STATUS_CHANGED,
+                    old_value=Ticket.TicketStatus.RESOLVED,
+                    new_value=Ticket.TicketStatus.IN_PROGRESS,
+                    remarks=(
+                        f"Reopen request approved. "
+                        f"Employee reason: {reopen_request.reason}. "
+                        f"Review remarks: {review_remarks or 'None'}"
+                    ),
+                    visibility=TicketStatusHistory.Visibility.ALL,
+                    changed_by=request.user,
+                    created_by=request.user,
+                )
+
+                update_sla(ticket)
+
+                AuditLogs.objects.create(
+                    user=request.user,
+                    module="Tickets",
+                    action="REOPEN_APPROVED",
+                    reference_id=ticket.ticket_code,
+                    remarks=(
+                        f"Reopen request #{reopen_request.id} approved. "
+                        f"Assigned to {technician_name}. "
+                        f"Review remarks: {review_remarks or 'None'}"
+                    ),
+                    created_by=request.user,
+                )
+
+            else:
+                AuditLogs.objects.create(
+                    user=request.user,
+                    module="Tickets",
+                    action="REOPEN_REJECTED",
+                    reference_id=ticket.ticket_code,
+                    remarks=(
+                        f"Reopen request #{reopen_request.id} rejected. "
+                        f"Reason: {reopen_request.reason}. "
+                        f"Review remarks: {review_remarks}"
+                    ),
+                    created_by=request.user,
+                )
+
+            reopen_request.save(
+                update_fields=[
+                    "status",
+                    "reviewed_by",
+                    "reviewed_at",
+                    "review_remarks",
+                ]
+            )
+
+        return Response(
+            {
+                "message": (
+                    "Reopen request approved. You are now assigned to the ticket."
+                    if decision == TicketReopenRequest.RequestStatus.APPROVED
+                    else "Reopen request rejected. The ticket remains resolved."
+                ),
+                "request_id": reopen_request.id,
+                "request_status": reopen_request.status,
+                "ticket_id": ticket.id,
+                "ticket_code": ticket.ticket_code,
+                "ticket_status": ticket.status,
+                "assigned_to": (
+                    ticket.assigned_to.username
+                    if ticket.assigned_to
+                    else None
+                ),
+            },
+            status=status.HTTP_200_OK,
+        )
 class TicketStatusHistoryView(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -777,7 +1170,6 @@ class UpdateTicketStatusView(APIView):
 
         statuses_requiring_remarks = [
             Ticket.TicketStatus.RESOLVED,
-            Ticket.TicketStatus.REOPENED,
             Ticket.TicketStatus.CANCELLED,
         ]
 
@@ -6832,6 +7224,204 @@ class AssistedTicketListView(APIView):
                     paginator.num_pages or 1
                 ),
                 "results": results,
+            },
+            status=status.HTTP_200_OK,
+        )
+
+class TeamWorkloadView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        user = request.user
+
+        support_profile = getattr(
+            user,
+            "it_support_profile",
+            None,
+        )
+
+        supervisor_profile = getattr(
+            user,
+            "it_supervisor_profile",
+            None,
+        )
+
+        if support_profile:
+            department = support_profile.it_department
+
+            if not department:
+                return Response(
+                    {
+                        "scope": "department",
+                        "department": None,
+                        "departments": [],
+                    },
+                    status=status.HTTP_200_OK,
+                )
+
+            departments = [department]
+            scope = "department"
+
+        elif supervisor_profile:
+            departments = (
+                ITDepartment.objects
+                .all()
+                .order_by("name")
+            )
+
+            scope = "all_departments"
+
+        else:
+            return Response(
+                {
+                    "error": (
+                        "You are not authorized to view "
+                        "team workload."
+                    )
+                },
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
+        department_results = []
+
+        for department in departments:
+            profiles_queryset = (
+                ITSupportProfile.objects
+                .filter(
+                    it_department=department,
+                )
+                .select_related(
+                    "user",
+                    "it_department",
+                )
+                .prefetch_related(
+                    "specializations__specialization",
+                )
+                .order_by(
+                    "user__first_name",
+                    "user__last_name",
+                )
+            )
+
+            paginator = WorkloadPagination()
+
+            paginated_profiles = paginator.paginate_queryset(
+                profiles_queryset,
+                request,
+                view=self,
+            )
+
+            technicians = []
+
+            for profile in paginated_profiles:
+                current_workload = get_current_workload(
+                    profile
+                )
+
+                workload_limit = (
+                    profile.workload_limit or 0
+                )
+
+                if workload_limit > 0:
+                    workload_ratio = (
+                        current_workload /
+                        workload_limit
+                    )
+                else:
+                    workload_ratio = 0
+
+                workload_tickets = (
+                    Ticket.objects
+                    .filter(
+                        assigned_to=profile.user,
+                        status__in=WORKLOAD_STATUSES,
+                    )
+                    .order_by("created_at")
+                    .values(
+                        "ticket_code",
+                        "status",
+                    )
+                )
+
+                full_name = (
+                    f"{profile.user.first_name} "
+                    f"{profile.user.last_name}"
+                ).strip() or profile.user.username
+
+                technicians.append(
+                    {
+                        "profile_id": profile.id,
+                        "user_id": profile.user.id,
+                        "name": full_name,
+                        "username": profile.user.username,
+                        "email": profile.user.email,
+                        "availability_status": (
+                            profile.availability_status
+                        ),
+                        "workload": current_workload,
+                        "workload_limit": workload_limit,
+                        "workload_ratio": workload_ratio,
+                        "tickets": list(
+                            workload_tickets
+                        ),
+                    }
+                )
+
+            workload_paginator = getattr(
+                paginator,
+                "workload_paginator",
+                None,
+            )
+
+            if workload_paginator is not None:
+                requested_page = getattr(
+                    paginator,
+                    "workload_page_number",
+                    1,
+                )
+
+                total_pages = workload_paginator.num_pages
+
+                if paginator.page is not None:
+                    current_page = paginator.page.number
+                else:
+                    current_page = requested_page
+
+                pagination_data = {
+                    "count": workload_paginator.count,
+                    "page": current_page,
+                    "page_size": paginator.get_page_size(
+                        request
+                    ),
+                    "total_pages": total_pages,
+                    "has_next": current_page < total_pages,
+                    "has_previous": current_page > 1,
+                }
+            else:
+                pagination_data = {
+                    "count": 0,
+                    "page": 1,
+                    "page_size": paginator.get_page_size(
+                        request
+                    ),
+                    "total_pages": 1,
+                    "has_next": False,
+                    "has_previous": False,
+                }
+
+            department_results.append(
+                {
+                    "id": department.id,
+                    "name": department.name,
+                    "technicians": technicians,
+                    "pagination": pagination_data,
+                }
+            )
+
+        return Response(
+            {
+                "scope": scope,
+                "departments": department_results,
             },
             status=status.HTTP_200_OK,
         )

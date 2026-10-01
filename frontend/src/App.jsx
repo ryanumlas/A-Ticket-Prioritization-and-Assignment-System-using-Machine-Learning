@@ -32,6 +32,8 @@ import SystemAdSpecializations from './pages/SystemAdSpecializations'
 import SystemAdSLARules from './pages/SystemAdSLARules'
 import AssistanceQueue from './pages/AssistanceQueue';
 import AssistanceTicket from './pages/AssistanceTicket'
+import ReopenRequest from './pages/ReopenRequest'
+import TeamWorkload from './pages/TeamWorkload'
 
 // function Logout() {
 //   localStorage.clear()
@@ -118,7 +120,20 @@ function App() {
                     </ProtectedRoute>
             }
             />
-
+            <Route path="/team-workload" 
+                element={
+                    <ProtectedRoute>
+                        <TeamWorkload/>
+                    </ProtectedRoute>
+                }
+            />
+            <Route path="/reopen-requests" 
+                element={
+                    <ProtectedRoute>
+                        <ReopenRequest/>
+                    </ProtectedRoute>
+                }
+            />
             {/* IT SERVICE DESK ONLY */}
             <Route
                 path="/flagged-ticket/:id"
