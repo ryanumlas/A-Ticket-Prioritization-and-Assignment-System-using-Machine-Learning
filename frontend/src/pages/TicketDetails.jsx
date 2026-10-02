@@ -11,6 +11,7 @@ import {
     RotateCcw,
     X,
     Info,
+    MessageSquareText,
 } from "lucide-react";
 import { toast } from "sonner";
 import TopBar from "../components/Topbar";
@@ -27,6 +28,21 @@ import EscalateTicketModal from "../components/ManageTickets/EscalateTicketModal
 import RequestAssistanceModal from "../components/ManageTickets/RequestAssistanceModal";
 import AutomatedProcessingModal from "../components/AutomatedProcessingModal";
 import AssistanceRequestModal from "../components/AssistanceRequestModal";
+import ReopenRequestModal from "../components/ReopenRequestModal";
+
+const getFieldValue = (value) => {
+    if (value && typeof value === "object") {
+        return value.id ?? value.value ?? "";
+    }
+    return value ?? "";
+};
+
+const getFieldLabel = (value) => {
+    if (value && typeof value === "object") {
+        return value.name ?? value.label ?? value.code ?? String(value.id ?? "");
+    }
+    return value ?? "";
+};
 
 export default function TicketDetails() {
     const user = getCurrentUser();
@@ -39,8 +55,10 @@ export default function TicketDetails() {
     const [escalateModalOpen, setEscalateModalOpen] = useState(false);
 
     const [reopenRequestModalOpen, setReopenRequestModalOpen] = useState(false);
+    const [reopenDetailsModalOpen, setReopenDetailsModalOpen] = useState(false);
     const [reopenReason, setReopenReason] = useState("");
     const [submittingReopenRequest, setSubmittingReopenRequest] = useState(false);
+    const [reviewingReopenRequest, setReviewingReopenRequest] = useState(false);
 
     const [ticketDetails, setTicketDetails] = useState(null);
     const [automationData, setAutomationData] = useState(null);
@@ -50,6 +68,19 @@ export default function TicketDetails() {
     const [cancellingAssistance, setCancellingAssistance] = useState(false);
     const [completingAssistance, setCompletingAssistance] = useState(false);
     const [assistanceActionError, setAssistanceActionError] = useState("");
+
+    const [pendingClarification, setPendingClarification] = useState(null);
+    const [clarificationModalOpen, setClarificationModalOpen] = useState(false);
+    const [clarificationForm, setClarificationForm] = useState({
+        workstation: "",
+        subject: "",
+        description: "",
+        business_impact: "",
+        affected_scope: "",
+    });
+    const [submittingClarification, setSubmittingClarification] = useState(false);
+    const [clarificationErrors, setClarificationErrors] = useState({});
+    const [clarificationCheckComplete, setClarificationCheckComplete] = useState(false);
 
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState("");
@@ -73,17 +104,209 @@ export default function TicketDetails() {
                 endpoint = `/tickets/supervisor/detail/${ticketId}/`;
             } else {
                 setError("Access Denied / Invalid Role");
-                return;
+                return null;
             }
 
             const response = await api.get(endpoint);
             setTicketDetails(response.data);
             setAutomationData(response.data?.automation || null);
+            return response.data;
         } catch (error) {
             setError(
                 error.response?.data?.error ||
                 "Failed to load ticket details."
             );
+            return null;
+        }
+    };
+
+    const fetchPendingClarification = async (currentTicketId, details) => {
+        if (user?.role !== "Employee" || !currentTicketId) {
+            setPendingClarification(null);
+            setClarificationModalOpen(false);
+            setClarificationCheckComplete(true);
+            return;
+        }
+
+        try {
+            setClarificationCheckComplete(false);
+
+            const response = await api.get(
+                "/tickets/clarification-requests/pending/"
+            );
+
+            const data = response.data;
+            const pendingTicketId = data?.ticket?.id;
+
+            if (
+                data?.pending === true &&
+                Number(pendingTicketId) === Number(currentTicketId)
+            ) {
+                setPendingClarification(data.ticket);
+
+                setClarificationForm({
+                    workstation: String(getFieldValue(details?.workstation)),
+                    subject: details?.subject || "",
+                    description: details?.description || "",
+                    business_impact: details?.business_impact || "",
+                    affected_scope: "",
+                });
+
+                setClarificationErrors({});
+                setClarificationModalOpen(true);
+            } else {
+                setPendingClarification(null);
+                setClarificationModalOpen(false);
+            }
+        } catch (error) {
+            console.error("Failed to check pending clarification:", error);
+            setPendingClarification(null);
+            setClarificationModalOpen(false);
+        } finally {
+            setClarificationCheckComplete(true);
+        }
+    };
+
+    const handleClarificationFieldChange = (event) => {
+        const { name, value } = event.target;
+
+        setClarificationForm((previous) => ({
+            ...previous,
+            [name]: value,
+        }));
+
+        setClarificationErrors((previous) => ({
+            ...previous,
+            [name]: "",
+            non_field_errors: "",
+        }));
+    };
+
+    const validateClarificationForm = () => {
+        const errors = {};
+        const subject = clarificationForm.subject.trim();
+        const description = clarificationForm.description.trim();
+        const businessImpact = clarificationForm.business_impact.trim();
+
+        if (subject.length < 15) {
+            errors.subject = "Subject must be at least 15 characters.";
+        } else if (subject.length > 100) {
+            errors.subject = "Subject cannot exceed 100 characters.";
+        }
+
+        if (description.length < 50) {
+            errors.description = "Description must be at least 50 characters.";
+        } else if (description.length > 750) {
+            errors.description = "Description cannot exceed 750 characters.";
+        }
+
+        if (businessImpact.length < 20) {
+            errors.business_impact = "Business Impact must be at least 20 characters.";
+        } else if (businessImpact.length > 500) {
+            errors.business_impact = "Business Impact cannot exceed 500 characters.";
+        }
+
+        if (!clarificationForm.affected_scope.trim()) {
+            errors.affected_scope = "Affected Scope is required.";
+        }
+
+        setClarificationErrors(errors);
+        return Object.keys(errors).length === 0;
+    };
+
+    const handleSubmitClarification = async (event) => {
+        event.preventDefault();
+
+        if (!validateClarificationForm()) {
+            toast.error("Please correct the highlighted fields.");
+            return;
+        }
+
+        try {
+            setSubmittingClarification(true);
+            setClarificationErrors({});
+
+            const payload = {
+                workstation: clarificationForm.workstation || null,
+                subject: clarificationForm.subject.trim(),
+                description: clarificationForm.description.trim(),
+                business_impact: clarificationForm.business_impact.trim(),
+                affected_scope: clarificationForm.affected_scope,
+            };
+
+            const response = await api.post(
+                `/tickets/flagged/${ticketId}/resubmit/`,
+                payload
+            );
+
+            const message =
+                response.data?.message || "Ticket resubmitted successfully.";
+
+            toast.success(message);
+
+            const refreshedTicket = await fetchTicketDetails();
+            const responseMessage = String(response.data?.message || "").toLowerCase();
+            const stillNeedsClarification =
+                responseMessage.includes("further clarification") ||
+                responseMessage.includes("still needs more information");
+
+            if (stillNeedsClarification) {
+                setPendingClarification({
+                    id: Number(ticketId),
+                    ticket_code:
+                        response.data?.ticket_code ||
+                        pendingClarification?.ticket_code,
+                    subject: clarificationForm.subject.trim(),
+                });
+                setClarificationModalOpen(true);
+
+                if (refreshedTicket) {
+                    setClarificationForm((previous) => ({
+                        ...previous,
+                        workstation: String(
+                            getFieldValue(refreshedTicket.workstation)
+                        ),
+                        subject: refreshedTicket.subject || previous.subject,
+                        description: refreshedTicket.description || previous.description,
+                        business_impact:
+                            refreshedTicket.business_impact || previous.business_impact,
+                        affected_scope: "",
+                    }));
+                } else {
+                    setClarificationForm((previous) => ({
+                        ...previous,
+                        affected_scope: "",
+                    }));
+                }
+            } else {
+                setPendingClarification(null);
+                setClarificationModalOpen(false);
+            }
+        } catch (error) {
+            const responseData = error.response?.data;
+
+            if (responseData && typeof responseData === "object") {
+                const fieldErrors = {};
+
+                Object.entries(responseData).forEach(([key, value]) => {
+                    fieldErrors[key] = Array.isArray(value)
+                        ? value.join(" ")
+                        : typeof value === "string"
+                            ? value
+                            : JSON.stringify(value);
+                });
+
+                setClarificationErrors(fieldErrors);
+            }
+
+            toast.error(
+                responseData?.message ||
+                responseData?.detail ||
+                responseData?.error ||
+                "Failed to resubmit the ticket."
+            );
+        } finally {
+            setSubmittingClarification(false);
         }
     };
 
@@ -127,6 +350,46 @@ export default function TicketDetails() {
             );
         } finally {
             setSubmittingReopenRequest(false);
+        }
+    };
+
+    const handleReviewReopenRequest = async (requestId, decision, reviewRemarks) => {
+        if (!requestId) {
+            toast.error("Reopen request not found.");
+            return;
+        }
+
+        if (decision === "rejected" && !reviewRemarks.trim()) {
+            toast.error("Please provide a reason for rejecting this request.");
+            return;
+        }
+
+        try {
+            setReviewingReopenRequest(true);
+
+            const response = await api.post(
+                `/tickets/reopen-requests/${requestId}/review/`,
+                {
+                    decision,
+                    review_remarks: reviewRemarks.trim(),
+                }
+            );
+
+            toast.success(
+                response.data?.message || "Reopen request reviewed successfully."
+            );
+
+            await fetchTicketDetails();
+            setReopenDetailsModalOpen(false);
+        } catch (error) {
+            toast.error(
+                error.response?.data?.error ||
+                error.response?.data?.detail ||
+                error.response?.data?.message ||
+                "Failed to review the reopen request."
+            );
+        } finally {
+            setReviewingReopenRequest(false);
         }
     };
 
@@ -212,18 +475,36 @@ export default function TicketDetails() {
     };
 
     useEffect(() => {
+        let cancelled = false;
+
         const loadTicketDetails = async () => {
             try {
                 setLoading(true);
-                await fetchTicketDetails();
+                setClarificationCheckComplete(false);
+
+                const details = await fetchTicketDetails();
+
+                if (!cancelled && user?.role === "Employee" && details) {
+                    await fetchPendingClarification(ticketId, details);
+                } else if (!cancelled) {
+                    setPendingClarification(null);
+                    setClarificationModalOpen(false);
+                    setClarificationCheckComplete(true);
+                }
             } finally {
-                setLoading(false);
+                if (!cancelled) {
+                    setLoading(false);
+                }
             }
         };
 
         if (user?.role && ticketId) {
             loadTicketDetails();
         }
+
+        return () => {
+            cancelled = true;
+        };
     }, [ticketId, user?.role]);
 
     useEffect(() => {
@@ -233,7 +514,12 @@ export default function TicketDetails() {
         setCancellingAssistance(false);
         setCompletingAssistance(false);
         setReopenRequestModalOpen(false);
+        setReopenDetailsModalOpen(false);
         setReopenReason("");
+        setPendingClarification(null);
+        setClarificationModalOpen(false);
+        setClarificationErrors({});
+        setClarificationCheckComplete(false);
     }, [ticketId]);
 
     if (loading) {
@@ -291,12 +577,12 @@ export default function TicketDetails() {
         ? ticketDetails.current_assisting
         : [];
 
-    const ongoingAssistingCount = currentAssisting.filter(
+    const ongoingAssistanceCount = currentAssisting.filter(
         (person) =>
             String(person?.status || "").trim().toLowerCase() === "ongoing"
     ).length;
 
-    const hasOngoingAssistance = ongoingAssistingCount > 0;
+    const hasOngoingAssistance = ongoingAssistanceCount > 0;
     const hasMyAssistance = Boolean(ticketDetails?.my_assistance);
 
     const canViewAutomatedDetails =
@@ -321,10 +607,21 @@ export default function TicketDetails() {
         !isAssignedSupport;
 
     const ticketStatus = String(ticketDetails?.status ?? "").toUpperCase();
+
+    const latestReopenRequest = ticketDetails?.latest_reopen_request || null;
+    const reopenRequestStatus = String(latestReopenRequest?.status || "").toLowerCase();
+    const hasPendingReopenRequest = reopenRequestStatus === "pending";
+
     const canRequestReopen =
         user?.role === "Employee" &&
         ticketStatus === "RESOLVED" &&
+        !hasPendingReopenRequest &&
         ticketDetails?.has_pending_reopen_request !== true;
+
+    const canViewReopenDetails =
+        (user?.role === "Employee" ||
+            user?.role === "IT Support Specialist") &&
+        Boolean(latestReopenRequest);
 
     let MainContent;
 
@@ -351,6 +648,9 @@ export default function TicketDetails() {
     } else {
         MainContent = <div className="p-6">Access Denied / Invalid Role</div>;
     }
+
+    const workstationLabel = getFieldLabel(ticketDetails?.workstation);
+    const affectedScopeLabel = getFieldLabel(ticketDetails?.affected_scope);
 
     return (
         <div className="flex h-screen w-full min-w-0 overflow-hidden bg-gray-50">
@@ -382,6 +682,17 @@ export default function TicketDetails() {
                                 >
                                     <RotateCcw size={16} className="min-[1280px]:max-[1535px]:h-[14px] min-[1280px]:max-[1535px]:w-[14px]" />
                                     <span>Reopen Request</span>
+                                </button>
+                            )}
+
+                            {canViewReopenDetails && (
+                                <button
+                                    type="button"
+                                    onClick={() => setReopenDetailsModalOpen(true)}
+                                    className="flex h-9 shrink-0 cursor-pointer items-center gap-2 rounded-lg border border-gray-300 bg-white px-3.5 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50 hover:text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#4C4CF9]/20 min-[1280px]:max-[1535px]:h-8 min-[1280px]:max-[1535px]:gap-1.5 min-[1280px]:max-[1535px]:rounded-md min-[1280px]:max-[1535px]:px-3 min-[1280px]:max-[1535px]:text-[13px]"
+                                >
+                                    <RotateCcw size={16} className="text-[#4C4CF9] min-[1280px]:max-[1535px]:h-[14px] min-[1280px]:max-[1535px]:w-[14px]" />
+                                    <span>Reopen Details</span>
                                 </button>
                             )}
 
@@ -443,6 +754,205 @@ export default function TicketDetails() {
                 </main>
             </div>
 
+            {/* Employee clarification modal */}
+            {user?.role === "Employee" && clarificationModalOpen && pendingClarification && (
+                <div className="fixed inset-0 z-[70] flex items-center justify-center overflow-y-auto bg-black/50 p-3 sm:p-5">
+                    <div
+                        role="dialog"
+                        aria-modal="true"
+                        aria-labelledby="clarification-title"
+                        className="my-auto max-h-[95vh] w-full max-w-2xl overflow-y-auto rounded-2xl bg-white shadow-2xl"
+                    >
+                        <div className="flex items-start justify-between gap-3 border-b border-gray-200 px-5 py-4 sm:px-6">
+                            <div className="flex min-w-0 items-start gap-3">
+                                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-amber-100 text-amber-700">
+                                    <MessageSquareText size={22} />
+                                </div>
+                                <div className="min-w-0">
+                                    <h2 id="clarification-title" className="text-lg font-semibold text-gray-900">
+                                        Provide More Details
+                                    </h2>
+                                    <p className="mt-1 text-sm leading-5 text-gray-500">
+                                        The Service Desk needs more information before your ticket can continue.
+                                    </p>
+                                    <p className="mt-1 text-xs font-medium text-gray-500">
+                                        {pendingClarification.ticket_code || ticketDetails?.ticket_code || `Ticket #${ticketId}`}
+                                    </p>
+                                </div>
+                            </div>
+                            <button
+                                type="button"
+                                onClick={() => setClarificationModalOpen(false)}
+                                disabled={submittingClarification}
+                                className="shrink-0 rounded-lg p-2 text-gray-400 transition hover:bg-gray-100 hover:text-gray-700 disabled:opacity-50"
+                                aria-label="Close clarification modal"
+                            >
+                                <X size={20} />
+                            </button>
+                        </div>
+
+                        <form onSubmit={handleSubmitClarification}>
+                            <div className="space-y-4 px-5 py-5 sm:px-6">
+                                <div className="flex items-start gap-2.5 rounded-lg border border-amber-200 bg-amber-50 px-3.5 py-3 text-sm leading-5 text-amber-800">
+                                    <Info size={18} className="mt-0.5 shrink-0" />
+                                    <p>
+                                        Review the existing information and add enough detail to help the IT Service Desk understand the issue and its impact.
+                                    </p>
+                                </div>
+
+                                <div>
+                                    <label htmlFor="clarification-workstation" className="mb-1.5 block text-sm font-medium text-gray-800">
+                                        Workstation
+                                    </label>
+                                    <input
+                                        id="clarification-workstation"
+                                        name="workstation"
+                                        type="text"
+                                        value={clarificationForm.workstation}
+                                        onChange={handleClarificationFieldChange}
+                                        disabled={submittingClarification}
+                                        className="w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm outline-none focus:border-[#4C4CF9] focus:ring-2 focus:ring-[#4C4CF9]/15 disabled:bg-gray-100"
+                                        placeholder="Enter workstation or asset identifier"
+                                    />
+                                    {clarificationErrors.workstation && (
+                                        <p className="mt-1 text-xs text-red-600">{clarificationErrors.workstation}</p>
+                                    )}
+                                </div>
+
+                                <div>
+                                    <label htmlFor="clarification-subject" className="mb-1.5 block text-sm font-medium text-gray-800">
+                                        Subject <span className="text-red-500">*</span>
+                                    </label>
+                                    <input
+                                        id="clarification-subject"
+                                        name="subject"
+                                        type="text"
+                                        maxLength={100}
+                                        required
+                                        value={clarificationForm.subject}
+                                        onChange={handleClarificationFieldChange}
+                                        disabled={submittingClarification}
+                                        className="w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm outline-none focus:border-[#4C4CF9] focus:ring-2 focus:ring-[#4C4CF9]/15 disabled:bg-gray-100"
+                                    />
+                                    <p className="mt-1 text-right text-xs text-gray-400">
+                                        {clarificationForm.subject.trim().length}/100 characters · minimum 15
+                                    </p>
+                                    {clarificationErrors.subject && (
+                                        <p className="mt-1 text-xs text-red-600">{clarificationErrors.subject}</p>
+                                    )}
+                                </div>
+
+                                <div>
+                                    <label htmlFor="clarification-description" className="mb-1.5 block text-sm font-medium text-gray-800">
+                                        Description <span className="text-red-500">*</span>
+                                    </label>
+                                    <textarea
+                                        id="clarification-description"
+                                        name="description"
+                                        rows={4}
+                                        maxLength={750}
+                                        required
+                                        value={clarificationForm.description}
+                                        onChange={handleClarificationFieldChange}
+                                        disabled={submittingClarification}
+                                        placeholder="Describe what happened, when it started, any error messages, and what you have already tried."
+                                        className="w-full resize-y rounded-lg border border-gray-300 px-3 py-2.5 text-sm outline-none focus:border-[#4C4CF9] focus:ring-2 focus:ring-[#4C4CF9]/15 disabled:bg-gray-100"
+                                    />
+                                    <p className="mt-1 text-right text-xs text-gray-400">
+                                        {clarificationForm.description.trim().length}/750 characters · minimum 50
+                                    </p>
+                                    {clarificationErrors.description && (
+                                        <p className="mt-1 text-xs text-red-600">{clarificationErrors.description}</p>
+                                    )}
+                                </div>
+
+                                <div>
+                                    <label htmlFor="clarification-impact" className="mb-1.5 block text-sm font-medium text-gray-800">
+                                        Business Impact <span className="text-red-500">*</span>
+                                    </label>
+                                    <textarea
+                                        id="clarification-impact"
+                                        name="business_impact"
+                                        rows={3}
+                                        maxLength={500}
+                                        required
+                                        value={clarificationForm.business_impact}
+                                        onChange={handleClarificationFieldChange}
+                                        disabled={submittingClarification}
+                                        placeholder="Explain which work or business activities are affected."
+                                        className="w-full resize-y rounded-lg border border-gray-300 px-3 py-2.5 text-sm outline-none focus:border-[#4C4CF9] focus:ring-2 focus:ring-[#4C4CF9]/15 disabled:bg-gray-100"
+                                    />
+                                    <p className="mt-1 text-right text-xs text-gray-400">
+                                        {clarificationForm.business_impact.trim().length}/500 characters · minimum 20
+                                    </p>
+                                    {clarificationErrors.business_impact && (
+                                        <p className="mt-1 text-xs text-red-600">{clarificationErrors.business_impact}</p>
+                                    )}
+                                </div>
+
+                                <div>
+                                    <label htmlFor="clarification-scope" className="mb-1.5 block text-sm font-medium text-gray-800">
+                                        Affected Scope <span className="text-red-500">*</span>
+                                    </label>
+                                    <select
+                                        id="clarification-scope"
+                                        name="affected_scope"
+                                        required
+                                        value={clarificationForm.affected_scope}
+                                        onChange={handleClarificationFieldChange}
+                                        disabled={submittingClarification}
+                                        className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm outline-none focus:border-[#4C4CF9] focus:ring-2 focus:ring-[#4C4CF9]/15 disabled:bg-gray-100"
+                                    >
+                                        <option value="">Select affected scope</option>
+                                        <option value="individual">Individual</option>
+                                        <option value="group">Group</option>
+                                        <option value="department">Department</option>
+                                        <option value="organization_wide">Organization Wide</option>
+                                    </select>
+
+                                    {clarificationErrors.affected_scope && (
+                                        <p className="mt-1 text-xs text-red-600">
+                                            {clarificationErrors.affected_scope}
+                                        </p>
+                                    )}
+                                </div>
+
+                                {clarificationErrors.non_field_errors && (
+                                    <p className="text-sm text-red-600">{clarificationErrors.non_field_errors}</p>
+                                )}
+                            </div>
+
+                            <div className="flex flex-col-reverse gap-2 border-t border-gray-200 bg-gray-50/70 px-5 py-4 sm:flex-row sm:justify-end sm:px-6">
+                                <button
+                                    type="button"
+                                    onClick={() => setClarificationModalOpen(false)}
+                                    disabled={submittingClarification}
+                                    className="rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm font-medium text-gray-700 transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
+                                >
+                                    Do This Later
+                                </button>
+                                <button
+                                    type="submit"
+                                    disabled={
+                                        submittingClarification ||
+                                        clarificationForm.subject.trim().length < 15 ||
+                                        clarificationForm.subject.trim().length > 100 ||
+                                        clarificationForm.description.trim().length < 50 ||
+                                        clarificationForm.description.trim().length > 750 ||
+                                        clarificationForm.business_impact.trim().length < 20 ||
+                                        clarificationForm.business_impact.trim().length > 500 ||
+                                        !clarificationForm.affected_scope.trim()
+                                    }
+                                    className="rounded-lg bg-[#4C4CF9] px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-[#3D3DE5] focus:outline-none focus:ring-2 focus:ring-[#4C4CF9]/30 disabled:cursor-not-allowed disabled:opacity-50"
+                                >
+                                    {submittingClarification ? "Submitting..." : "Submit Details"}
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            )}
+
             {reopenRequestModalOpen && (
                 <div
                     className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
@@ -458,13 +968,11 @@ export default function TicketDetails() {
                         aria-labelledby="reopen-request-title"
                         className="w-full max-w-lg overflow-hidden rounded-xl border border-gray-200 bg-white shadow-xl"
                     >
-                        {/* Modal header */}
                         <div className="flex items-start justify-between border-b border-gray-200 px-5 py-4">
                             <div className="flex min-w-0 items-start gap-3">
                                 <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#4C4CF9]/10 text-[#4C4CF9]">
                                     <RotateCcw size={20} />
                                 </div>
-
                                 <div className="min-w-0">
                                     <h2 id="reopen-request-title" className="text-base font-semibold text-gray-900">
                                         Request to Reopen Ticket
@@ -474,7 +982,6 @@ export default function TicketDetails() {
                                     </p>
                                 </div>
                             </div>
-
                             <button
                                 type="button"
                                 onClick={() => setReopenRequestModalOpen(false)}
@@ -486,13 +993,11 @@ export default function TicketDetails() {
                             </button>
                         </div>
 
-                        {/* Modal form */}
                         <div className="space-y-4 px-5 py-5">
                             <div>
                                 <label htmlFor="reopen-reason" className="mb-2 block text-sm font-medium text-gray-900">
                                     Reason for reopening <span className="text-red-500">*</span>
                                 </label>
-
                                 <textarea
                                     id="reopen-reason"
                                     value={reopenReason}
@@ -503,7 +1008,6 @@ export default function TicketDetails() {
                                     placeholder="Explain what remains unresolved or why further assistance is needed..."
                                     className="w-full resize-y rounded-lg border border-gray-300 bg-white px-3 py-3 text-sm text-gray-900 outline-none transition placeholder:text-gray-400 focus:border-[#4C4CF9] focus:ring-2 focus:ring-[#4C4CF9]/20 disabled:bg-gray-50"
                                 />
-
                                 <p className="mt-1.5 text-right text-xs text-gray-400">
                                     {reopenReason.length}/1000 characters (minimum 10)
                                 </p>
@@ -518,7 +1022,6 @@ export default function TicketDetails() {
                             </div>
                         </div>
 
-                        {/* Modal footer */}
                         <div className="flex justify-end gap-2 border-t border-gray-200 bg-gray-50/50 px-5 py-4">
                             <button
                                 type="button"
@@ -528,7 +1031,6 @@ export default function TicketDetails() {
                             >
                                 Cancel
                             </button>
-
                             <button
                                 type="button"
                                 disabled={
@@ -545,6 +1047,15 @@ export default function TicketDetails() {
                     </div>
                 </div>
             )}
+
+            <ReopenRequestModal
+                open={reopenDetailsModalOpen}
+                onClose={() => setReopenDetailsModalOpen(false)}
+                reopenRequest={latestReopenRequest}
+                isSupport={user?.role === "IT Support Specialist"}
+                onReview={handleReviewReopenRequest}
+                reviewing={reviewingReopenRequest}
+            />
 
             <RequestPriorityModal
                 open={priorityModalOpen}

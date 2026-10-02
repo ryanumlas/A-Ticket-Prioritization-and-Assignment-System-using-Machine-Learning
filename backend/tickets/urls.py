@@ -1,15 +1,16 @@
 from django.urls import path
-from .views import CategoryListView, SLARulesListView, TeamWorkloadView
+from .views import CategoryListView, PendingClarificationRequestView, RequestClarificationView, ResubmitClarificationView, SLARulesListView, TeamWorkloadView
 from .views import (TicketListEmployeeView, CreateTicketView, ListTicketView, DetailTicketView, UpdateSymptomCodeView, 
 UpdateTicketView, DeleteTicketView, CreateCategoryView, KeywordUpdateView ,KeywordCreateView, 
 UpdateCategoryView, CreateSymptomCodeView, SLARulesCreateView, SLARulesUpdateView, TicketDetailEmployeeView, TicketListServiceDeskView, UpdateTicketStatusView, ManualOverrideTicketView,
 ServiceDeskOverviewView, ServiceDeskClassifiedResultsView, FlaggedTicketsListView, FlaggedTicketDetailView, SymptomCodeListView, 
-AcceptRecommendationView, ApproveOverrideView, ManuallyClassifyView, SupportOverviewView, TicketQueueView, TicketListSupportView, DepartmentSymptomCodesView, 
+AcceptRecommendationView, ApproveOverrideView, ManuallyClassifyView, SupportOverviewView, TicketQueueView, TicketListSupportView, DepartmentSymptomCodesView, AssignTicketToMeView,
 SLAPerformanceView, TicketsByCategoryView, TicketDetailSupportView, TicketStatusHistoryView, TicketCommentListCreateView, RequestTicketAssistanceView, RequestTicketReopenView, ReopenRequestsListView, ReviewTicketReopenRequestView,
 PriorityChangeRequestView, PriorityChangeRequestListView, PriorityRequestDetailView, ApprovePriorityRequestView, ReturnTicketView, CancelTicketAssistanceRequestView,
 ReturnedTicketRequestListView, ReturnedTicketDetailRetrieve, ApproveReturnTicketView, PendingPriorityRequestCountView, PendingReturnTicketRequestCountView, CompleteTicketAssistanceView,
 ServiceDeskDepartmentQueueView, EscalateTicketView, AcceptPriorityView, OverridePriorityView,SLARulesListView, CategoryListView, AssistanceQueueListView, AssistedTicketListView,
-ServiceDeskDepartmentSymptomCodesView, ServiceDeskDepartmentListView, RejectReturnTicketView, TicketDetailSupervisorView, AcknowledgeEscalationView, AcceptTicketAssistanceView,
+ServiceDeskDepartmentSymptomCodesView, ServiceDeskDepartmentListView, RejectReturnTicketView, ServiceDeskSLAPerformanceView,
+TicketDetailSupervisorView, AcknowledgeEscalationView, AcceptTicketAssistanceView,
 RejectPriorityRequestView, EmployeeCurrentActiveTicketView, SupervisorEscalatedTicketsView, CompleteEscalationView, TicketCommentMarkReadView, TicketDetailServiceDeskView)
 
 urlpatterns = [
@@ -36,7 +37,7 @@ urlpatterns = [
     path("priority-change-requests/approve/<int:request_id>/", ApprovePriorityRequestView.as_view(), name="approve-priority-request"),
     path('employee/list/', TicketListEmployeeView.as_view(), name="ticket-list"),
     path('employee/detail/<int:ticket_id>/', TicketDetailEmployeeView.as_view(), name="ticket-detail"),
-
+    path("service-desk/sla-performance/",ServiceDeskSLAPerformanceView.as_view(),name="service-desk-sla-performance",),
     path('service-desk/list/', TicketListServiceDeskView.as_view(), name="ticket-list-service-desk"),
     path('service-desk/overview/', ServiceDeskOverviewView.as_view(), name="service-desk-overview"),
     path('service-desk/classified-results/', ServiceDeskClassifiedResultsView.as_view(), name="service-desk-classified-results"),
@@ -48,6 +49,9 @@ urlpatterns = [
     path('flagged/<int:pk>/manual-classify/', ManuallyClassifyView.as_view(), name='manual-classify'),
     path("flagged/<int:pk>/accept-priority/", AcceptPriorityView.as_view(), name="accept-priority",),
     path("flagged/<int:pk>/override-priority/", OverridePriorityView.as_view(), name="override-priority",),
+    path("flagged/<int:ticket_id>/request-clarification/",RequestClarificationView.as_view(),name="request-clarification",),
+    path("flagged/<int:ticket_id>/resubmit/",ResubmitClarificationView.as_view(),name="resubmit-clarification",),
+    path("clarification-requests/pending/",PendingClarificationRequestView.as_view(),name="pending-clarification-request",),
 
     path("support/detail/<int:ticket_id>/", TicketDetailSupportView.as_view(), name="support-ticket-detail",),
     path('support-specialist/overview/', SupportOverviewView.as_view(), name='support-overview'),
@@ -73,6 +77,7 @@ urlpatterns = [
 
     path("team-workload/",TeamWorkloadView.as_view(),),
 
+    path("assign-to-me/<int:pk>/", AssignTicketToMeView.as_view(), name="assign-ticket-to-me",),
     path(
         "<int:pk>/reopen-request/",
         RequestTicketReopenView.as_view(),

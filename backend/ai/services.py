@@ -114,24 +114,102 @@ def analyze_ticket(ticket):
     ["issue"]
     ["help"]
 
+    
     IS_UNCLEAR
 
-    Set "is_unclear" to true ONLY if:
+    Determine whether the employee has communicated an understandable IT problem,
+    not whether they have provided enough information to diagnose or resolve it.
 
-    - The issue lacks sufficient technical details.
-    - No identifiable technical symptom is described.
-    - The ticket cannot be reasonably classified.
-    - The issue is not IT-related.
+    Set "is_unclear" to true ONLY when the reported issue cannot reasonably
+    be identified from the information provided.
 
-    If true:
+    A ticket is CLEAR when it communicates at least one understandable IT problem,
+    failure, symptom, or unexpected behavior involving a device, application,
+    account, network, or IT service.
 
-    - Return [] for keywords.
-    - Do NOT guess technical symptoms.
-    - Still generate a short summary explaining that more information is needed.
+    The description may be short, informal, grammatically incorrect, or missing
+    technical details. These are NOT reasons to mark it as unclear.
 
-    Otherwise:
+    Mark the ticket as unclear only when:
+    - The employee says something is wrong but does not identify what is wrong.
+    - The employee mentions a device or application without describing any
+    problem, symptom, failure, or unexpected behavior.
+    - The description is so ambiguous that the actual IT issue cannot reasonably
+    be identified.
+    - The description does not communicate an identifiable IT support issue.
 
-    "is_unclear": false
+    CLEAR EXAMPLES:
+
+    - "Printer not working."
+    - "Cannot print."
+    - "My laptop won't turn on."
+    - "Internet is down."
+    - "Outlook keeps crashing."
+    - "Can't log in."
+    - "My mouse stopped working."
+    - "The computer is very slow."
+    - "Teams has no sound."
+    - "The system gives me an access denied error."
+    - "My printer is not working. I tried printing, but nothing comes out."
+    - "My PC is slow and applications take a long time to open."
+
+    All the examples above must have "is_unclear": false because the reported
+    problem or observable symptom can be understood.
+
+    UNCLEAR EXAMPLES:
+
+    - "Something is wrong."
+    - "Please help me."
+    - "I have a problem."
+    - "It's not working." (when the affected device, application, service,
+    or other relevant context cannot be identified)
+    - "My computer." (no problem or symptom is described)
+    - "Please check this." (no identifiable issue is provided)
+
+    IMPORTANT DECISION RULES:
+
+    1. Do NOT require the employee to explain the root cause, error code,
+    troubleshooting steps, business impact, or exact technical details.
+
+    2. Do NOT mark a ticket as unclear solely because the description is short.
+
+    3. Do NOT mark a ticket as unclear solely because the business impact is
+    brief or missing, if the actual IT problem is understandable.
+
+    4. Do NOT require the employee to explain why the issue occurred.
+
+    5. A device or application name alone is not sufficient. The description
+    must communicate a problem or unexpected behavior.
+
+    6. When a recognizable symptom is reported, prefer "is_unclear": false
+    unless the available information genuinely prevents identification
+    of the reported issue.
+
+    7. Evaluate the subject, issue description, and relevant business impact
+    together. Use the subject and context to understand what the employee
+    is reporting, but do not invent missing symptoms.
+
+    8. A clear ticket can still lack information needed for troubleshooting.
+    Missing troubleshooting details do NOT automatically make the ticket
+    unclear. Additional details may be collected during IT investigation.
+
+    9. Do not confuse description clarity with classification confidence.
+    A ticket may be clear even when the classification model is uncertain
+    about its category or symptom code.
+
+    IF IS_UNCLEAR IS TRUE:
+
+    - Return an empty keywords array.
+    - Do not guess or invent technical symptoms.
+    - Generate a short summary explaining that the actual problem needs
+    clarification.
+
+    IF IS_UNCLEAR IS FALSE:
+
+    - Extract keywords only from the reported issue and its explicit context.
+    - Do not invent symptoms or technical causes.
+
+    Return the "is_unclear" field as a JSON boolean: true or false.
 
    TIME CRITICALITY DETECTION
 

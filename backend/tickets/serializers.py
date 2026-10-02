@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Ticket, Category, SymptomCode, TicketComments, TicketCommentRead, SLARules, ReviewFlags, TicketAssistanceRequest,TicketAssistance, Keyword, TicketStatusHistory, TicketReturn, TicketPriorityRequest, TicketEscalation
+from .models import Ticket, Category, SymptomCode, TicketComments, TicketReopenRequest, TicketCommentRead, SLARules, ReviewFlags, TicketAssistanceRequest,TicketAssistance, Keyword, TicketStatusHistory, TicketReturn, TicketPriorityRequest, TicketEscalation
 from users.models import  ITSupportProfile
 from django.db.models import Q
 from ai.models import TicketAnalysis, TicketAIAnalysis
@@ -321,6 +321,7 @@ class TicketSerializer(serializers.ModelSerializer):
         )
 
 class FlaggedTicketsListSerializer(serializers.ModelSerializer):
+    ticket_id = serializers.IntegerField(source="ticket.id", read_only=True)
     ticket_code = serializers.CharField(source="ticket.ticket_code", read_only=True)
     subject = serializers.CharField(source="ticket.subject", read_only=True)
     description = serializers.CharField(source="ticket.description", read_only=True)
@@ -328,13 +329,26 @@ class FlaggedTicketsListSerializer(serializers.ModelSerializer):
     status = serializers.CharField(source="get_status_display", read_only=True)
     first_name = serializers.CharField(source="ticket.submitted_by.first_name", read_only=True)
     last_name = serializers.CharField(source="ticket.submitted_by.last_name", read_only=True)
-    employee_department = serializers.CharField(source='ticket.employee_department.name', read_only=True)
+    employee_department = serializers.CharField(source="ticket.employee_department.name", read_only=True)
+
     class Meta:
         model = ReviewFlags
-        fields = ["id", "ticket_code", "subject", "description", "reason", "status", "created_at", "first_name", "last_name", "employee_department"]
+        fields = [
+            "id",
+            "ticket_id",
+            "ticket_code",
+            "subject",
+            "description",
+            "reason",
+            "status",
+            "created_at",
+            "first_name",
+            "last_name",
+            "employee_department",
+        ]
 
 class FlaggedTicketDetailSerializer(serializers.ModelSerializer):
-
+    ticket_id = serializers.IntegerField(source="ticket.id", read_only=True)
     ticket_code = serializers.CharField(
         source="ticket.ticket_code",
         read_only=True
@@ -521,6 +535,7 @@ class FlaggedTicketDetailSerializer(serializers.ModelSerializer):
         fields = [
             "id",
             "role",
+            "ticket_id",
             "ticket_code",
             "reviewed_by_name",
             "review_remarks",
@@ -593,6 +608,61 @@ class FlaggedTicketDetailSerializer(serializers.ModelSerializer):
             return None
 
         return history.remarks or None
+
+class TicketClarificationResubmitSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Ticket
+        fields = [
+            "workstation",
+            "subject",
+            "description",
+            "business_impact",
+            "affected_scope",
+        ]
+
+    def validate_subject(self, value):
+        value = value.strip()
+        if len(value) < 15:
+            raise serializers.ValidationError(
+                "Subject must be at least 15 characters."
+            )
+        if len(value) > 100:
+            raise serializers.ValidationError(
+                "Subject cannot exceed 100 characters."
+            )
+        return value
+
+    def validate_description(self, value):
+        value = value.strip()
+        if len(value) < 50:
+            raise serializers.ValidationError(
+                "Description must be at least 50 characters."
+            )
+        if len(value) > 750:
+            raise serializers.ValidationError(
+                "Description cannot exceed 750 characters."
+            )
+        return value
+
+    def validate_business_impact(self, value):
+        value = value.strip()
+        if len(value) < 20:
+            raise serializers.ValidationError(
+                "Business Impact must be at least 20 characters."
+            )
+        if len(value) > 500:
+            raise serializers.ValidationError(
+                "Business impact cannot exceed 500 characters."
+            )
+        return value
+
+    def validate(self, attrs):
+        if not attrs.get("affected_scope"):
+            raise serializers.ValidationError({
+                "affected_scope": "Affected Scope is required."
+            })
+        return attrs
+
 
 class TicketCreateSerializer(serializers.ModelSerializer):
     class Meta:
@@ -712,6 +782,7 @@ class TicketDetailEmployeeSerializer(serializers.ModelSerializer):
     )
 
     assigned_to = serializers.SerializerMethodField()
+    latest_reopen_request = serializers.SerializerMethodField()
 
     first_name = serializers.CharField(
         source="submitted_by.first_name",
@@ -766,6 +837,7 @@ class TicketDetailEmployeeSerializer(serializers.ModelSerializer):
             "is_escalated",
             "resolved_at",
             "resolved_by",
+            "latest_reopen_request",
         ]
 
     def get_assigned_to(self, obj):
@@ -785,6 +857,47 @@ class TicketDetailEmployeeSerializer(serializers.ModelSerializer):
                 if obj.assigned_to.role
                 else None
             ),
+        }
+
+    def get_latest_reopen_request(self, obj):
+        reopen_request = (
+            TicketReopenRequest.objects
+            .filter(ticket=obj)
+            .select_related(
+                "requested_by",
+                "reviewed_by",
+            )
+            .order_by("-requested_at")
+            .first()
+        )
+
+        if not reopen_request:
+            return None
+
+        def get_user_name(user):
+            if not user:
+                return None
+
+            return (
+                user.get_full_name().strip()
+                or user.username
+            )
+
+        return {
+            "id": reopen_request.id,
+            "reason": reopen_request.reason,
+            "status": reopen_request.status,
+            "requested_at": reopen_request.requested_at,
+            "requested_by": reopen_request.requested_by_id,
+            "requested_by_name": get_user_name(
+                reopen_request.requested_by
+            ),
+            "reviewed_by": reopen_request.reviewed_by_id,
+            "reviewed_by_name": get_user_name(
+                reopen_request.reviewed_by
+            ),
+            "review_remarks": reopen_request.review_remarks,
+            "reviewed_at": reopen_request.reviewed_at,
         }
 class TicketDetailSupportSerializer(serializers.ModelSerializer):
     status = serializers.CharField(
@@ -892,6 +1005,7 @@ class TicketDetailSupportSerializer(serializers.ModelSerializer):
     pending_assistance_request_id = (
         serializers.SerializerMethodField()
     )
+    latest_reopen_request = serializers.SerializerMethodField()
 
     class Meta:
         model = Ticket
@@ -911,6 +1025,7 @@ class TicketDetailSupportSerializer(serializers.ModelSerializer):
             "business_impact",
             "affected_scope",
             "updated_at",
+            "latest_reopen_request",
             "created_at",
             "response_deadline",
             "resolution_deadline",
@@ -954,6 +1069,46 @@ class TicketDetailSupportSerializer(serializers.ModelSerializer):
             ).strip(),
         }
 
+    def get_latest_reopen_request(self, obj):
+        reopen_request = (
+            TicketReopenRequest.objects
+            .filter(ticket=obj)
+            .select_related(
+                "requested_by",
+                "reviewed_by",
+            )
+            .order_by("-requested_at")
+            .first()
+        )
+
+        if not reopen_request:
+            return None
+
+        def get_user_name(user):
+            if not user:
+                return None
+
+            return (
+                user.get_full_name().strip()
+                or user.username
+            )
+
+        return {
+            "id": reopen_request.id,
+            "reason": reopen_request.reason,
+            "status": reopen_request.status,
+            "requested_at": reopen_request.requested_at,
+            "requested_by": reopen_request.requested_by_id,
+            "requested_by_name": get_user_name(
+                reopen_request.requested_by
+            ),
+            "reviewed_by": reopen_request.reviewed_by_id,
+            "reviewed_by_name": get_user_name(
+                reopen_request.reviewed_by
+            ),
+            "review_remarks": reopen_request.review_remarks,
+            "reviewed_at": reopen_request.reviewed_at,
+        }
     def get_is_assisting(self, obj):
         request = self.context.get("request")
 

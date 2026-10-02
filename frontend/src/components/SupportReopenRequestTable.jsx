@@ -20,7 +20,10 @@ export default function SupportReopenRequestTable({
     const getRemark = (requestId) => remarks[requestId] ?? "";
 
     const getSubject = (request) =>
-        request.subject || request.ticket_title || request.title || "Untitled ticket";
+        request.subject ||
+        request.ticket_title ||
+        request.title ||
+        "Untitled ticket";
 
     const getPriority = (request) => {
         const rawPriority =
@@ -92,26 +95,22 @@ export default function SupportReopenRequestTable({
             return;
         }
 
-        const confirmed = window.confirm(
-            decision === "approved"
-                ? `Approve the reopen request for ${request.ticket_code || "this ticket"} and assign it to yourself?`
-                : `Reject the reopen request for ${request.ticket_code || "this ticket"}?`
-        );
-
-        if (!confirmed) return;
-
         setReviewingId(requestId);
 
         try {
-            await api.post(`/tickets/reopen-requests/${requestId}/review/`, {
-                decision,
-                review_remarks: reviewRemarks,
-            });
+            const response = await api.post(
+                `/tickets/reopen-requests/${requestId}/review/`,
+                {
+                    decision,
+                    review_remarks: reviewRemarks,
+                }
+            );
 
             toast.success(
-                decision === "approved"
-                    ? "Request approved. The ticket has been assigned to you."
-                    : "Reopen request rejected."
+                response.data?.message ||
+                    (decision === "approved"
+                        ? "Request approved. The ticket has been assigned to you."
+                        : "Reopen request rejected.")
             );
 
             setRejectingId(null);
@@ -295,7 +294,9 @@ export default function SupportReopenRequestTable({
 
                                             <button
                                                 type="button"
-                                                onClick={() => setRejectingId(isRejecting ? null : request.id)}
+                                                onClick={() =>
+                                                    setRejectingId(isRejecting ? null : request.id)
+                                                }
                                                 disabled={isReviewing}
                                                 className="inline-flex items-center justify-center gap-1 rounded-md bg-red-600 px-3 py-2 text-xs font-medium text-white transition hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-50"
                                             >
@@ -433,7 +434,9 @@ export default function SupportReopenRequestTable({
 
                                     <button
                                         type="button"
-                                        onClick={() => setRejectingId(isRejecting ? null : request.id)}
+                                        onClick={() =>
+                                            setRejectingId(isRejecting ? null : request.id)
+                                        }
                                         disabled={isReviewing}
                                         className="inline-flex items-center justify-center gap-1 rounded-md bg-red-600 px-3 py-2 text-sm font-medium text-white hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-50"
                                     >

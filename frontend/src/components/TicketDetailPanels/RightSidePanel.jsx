@@ -45,6 +45,32 @@ export default function RightSidePanel({
     const canEditStatus =
         canEditStatusOverride ?? roleCanEditStatus;
 
+    const userRole = String(
+        typeof user?.role === "object"
+            ? user?.role?.name ||
+                  user?.role?.role_name ||
+                  user?.role?.label ||
+                  ""
+            : user?.role ||
+                  user?.role_name ||
+                  user?.user_role ||
+                  ""
+    )
+        .trim()
+        .toLowerCase()
+        .replace(/[_-]+/g, " ")
+        .replace(/\s+/g, " ");
+
+    const isITSupportSpecialist =
+        userRole === "it support specialist";
+
+    const currentTicketStatus = normalizeStatus(
+        ticketDetails?.status
+    );
+
+    const isInProgress =
+        currentTicketStatus === "in_progress";
+
     const escalation =
         ticketDetails?.escalation || null;
 
@@ -168,12 +194,28 @@ export default function RightSidePanel({
     const handleStatusChange = newStatus => {
         if (
             !canEditStatus ||
+            isITSupportSpecialist ||
             newStatus === status
         ) {
             return;
         }
 
         setPendingStatus(newStatus);
+        setRemarks("");
+        setRemarksError("");
+        setShowConfirm(true);
+    };
+
+    const handleMarkAsResolved = () => {
+        if (
+            !isITSupportSpecialist ||
+            !isInProgress ||
+            isUpdating
+        ) {
+            return;
+        }
+
+        setPendingStatus("resolved");
         setRemarks("");
         setRemarksError("");
         setShowConfirm(true);
@@ -187,10 +229,20 @@ export default function RightSidePanel({
     };
 
     const confirmStatusChange = async () => {
+        const isAllowedSupportResolution =
+            isITSupportSpecialist &&
+            pendingStatus === "resolved" &&
+            isInProgress;
+
         if (
-            !canEditStatus ||
-            !pendingStatus
+            isITSupportSpecialist
+                ? !isAllowedSupportResolution
+                : !canEditStatus
         ) {
+            return;
+        }
+
+        if (!pendingStatus) {
             return;
         }
 
@@ -579,7 +631,6 @@ export default function RightSidePanel({
                 }}
                 className="box-border flex h-full w-[350px] min-w-[350px] max-w-[350px] shrink-0 basis-[350px] flex-col overflow-hidden border-gray-300 bg-white min-[1280px]:max-[1535px]:w-[280px] min-[1280px]:max-[1535px]:min-w-[280px] min-[1280px]:max-[1535px]:max-w-[280px] min-[1280px]:max-[1535px]:basis-[280px]"
             >
-                {/* Header */}
                 <motion.div
                     initial={{
                         opacity: 0,
@@ -613,7 +664,6 @@ export default function RightSidePanel({
                     </p>
                 </motion.div>
 
-                {/* Current Status */}
                 <motion.div
                     initial={{
                         opacity: 0,
@@ -633,7 +683,42 @@ export default function RightSidePanel({
                         Current Status
                     </p>
 
-                    {canEditStatus ? (
+                    {isITSupportSpecialist ? (
+                        <div className="mt-2 min-[1280px]:max-[1535px]:mt-1.5">
+                            {isInProgress ? (
+                                <motion.button
+                                    type="button"
+                                    disabled={isUpdating}
+                                    onClick={handleMarkAsResolved}
+                                    whileHover={
+                                        !isUpdating
+                                            ? { y: -1 }
+                                            : undefined
+                                    }
+                                    whileTap={
+                                        !isUpdating
+                                            ? { scale: 0.98 }
+                                            : undefined
+                                    }
+                                    className="flex w-full items-center justify-center gap-2 rounded-lg bg-[#4C4CF9] px-3 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-[#1D4ED8] disabled:cursor-not-allowed disabled:opacity-60 min-[1280px]:max-[1535px]:py-2 min-[1280px]:max-[1535px]:text-[12px]"
+                                >
+                                    <CircleCheck
+                                        size={16}
+                                        className="shrink-0 min-[1280px]:max-[1535px]:size-[14px]"
+                                    />
+                                    Mark as Resolved
+                                </motion.button>
+                            ) : (
+                                <div className="flex w-full items-center rounded-lg border border-gray-300 bg-gray-50 px-3 py-2.5 min-[1280px]:max-[1535px]:px-2.5 min-[1280px]:max-[1535px]:py-2">
+                                    <span className="text-sm font-medium text-black min-[1280px]:max-[1535px]:text-[12px]">
+                                        {formatStatus(
+                                            ticketDetails?.status
+                                        ) || "-"}
+                                    </span>
+                                </div>
+                            )}
+                        </div>
+                    ) : canEditStatus ? (
                         <div className="relative mt-2 min-[1280px]:max-[1535px]:mt-1.5">
                             <select
                                 value={status}
@@ -684,7 +769,6 @@ export default function RightSidePanel({
                     </p>
                 </motion.div>
 
-                {/* Escalation / History Tabs */}
                 <AnimatePresence initial={false}>
                     {isEscalated && (
                         <motion.div
@@ -765,7 +849,6 @@ export default function RightSidePanel({
                     )}
                 </AnimatePresence>
 
-                {/* History */}
                 <AnimatePresence
                     mode="wait"
                     initial={false}
@@ -956,10 +1039,13 @@ export default function RightSidePanel({
                 }
             />
 
-            {/* Status Confirmation Modal */}
             <AnimatePresence>
-                {canEditStatus &&
-                    showConfirm && (
+                {showConfirm &&
+                    (isITSupportSpecialist
+                        ? pendingStatus ===
+                              "resolved" &&
+                          isInProgress
+                        : canEditStatus) && (
                         <motion.div
                             initial={{
                                 opacity: 0,
@@ -1237,8 +1323,6 @@ function EscalationContent({
     return (
         <div className="min-h-0 min-w-0 flex-1 overflow-y-auto px-4 py-5 2xl:px-5 min-[1280px]:max-[1535px]:px-4 min-[1280px]:max-[1535px]:py-4 [&::-webkit-scrollbar]:w-1 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-transparent hover:[&::-webkit-scrollbar-thumb]:bg-gray-300">
             <div className="space-y-4 min-[1280px]:max-[1535px]:space-y-3">
-
-                {/* Escalated Ticket Notice */}
                 <motion.div
                     initial={{
                         opacity: 0,
@@ -1272,7 +1356,6 @@ function EscalationContent({
                     </p>
                 </motion.div>
 
-                {/* Escalation Information */}
                 <motion.div
                     initial={{
                         opacity: 0,
@@ -1295,8 +1378,6 @@ function EscalationContent({
                     </div>
 
                     <div className="space-y-4 p-3.5 2xl:p-4 min-[1280px]:max-[1535px]:space-y-3 min-[1280px]:max-[1535px]:p-3">
-
-                        {/* Reason */}
                         <div>
                             <p className="text-[10px] font-semibold uppercase tracking-wide text-gray-400">
                                 Reason
@@ -1311,7 +1392,6 @@ function EscalationContent({
                         </div>
 
                         <div className="grid grid-cols-1 gap-4 2xl:grid-cols-2 min-[1280px]:max-[1535px]:gap-3">
-
                             <div className="min-w-0">
                                 <p className="text-[10px] font-semibold uppercase tracking-wide text-gray-400">
                                     Escalated By
@@ -1341,12 +1421,10 @@ function EscalationContent({
                                         : "-"}
                                 </p>
                             </div>
-
                         </div>
                     </div>
                 </motion.div>
 
-                {/* Escalation Status */}
                 <motion.div
                     initial={{
                         opacity: 0,
@@ -1563,7 +1641,6 @@ function EscalationContent({
                         )}
                 </motion.div>
 
-                {/* Escalation Resolution */}
                 <AnimatePresence initial={false}>
                     {isCompleted && (
                         <motion.div

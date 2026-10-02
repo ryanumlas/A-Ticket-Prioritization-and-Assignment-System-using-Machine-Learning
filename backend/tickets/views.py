@@ -13,7 +13,7 @@ from rest_framework.permissions import IsAuthenticated, AllowAny
 from .models import (Ticket, Category, SymptomCode, TicketComments, SLARules, ReviewFlags, TicketCommentRead, TicketAssistance,  TicketReopenRequest,
                      TicketAssistanceRequest, Keyword, TicketStatusHistory as TicketStatusHistoryModel, TicketReturn, TicketPriorityRequest, TicketEscalation)
 from .serializers import (SymptomCodeSerializer, TicketSerializer, CategorySerializer, 
-TicketAssistanceSerializer, TicketCommentSerializer, TicketStatusHistory, SLARulesSerializer, TicketAssistanceRequestSerializer,
+TicketAssistanceSerializer, TicketCommentSerializer, TicketStatusHistory, SLARulesSerializer, TicketAssistanceRequestSerializer,TicketClarificationResubmitSerializer, 
 SLARulesUpdateSerializer, KeywordSerializer, KeywordUpdateSerializer, UpdateSymptomCodeSerializer, CreateSymptomCodeSerializer,TicketAssistanceRequestCreateSerializer, 
 TicketCreateSerializer, TicketUpdateSerializer, TicketDetailEmployeeSerializer, CategoryUpdateSerializer, FlaggedTicketsListSerializer, TicketAssistanceRequestQueueListSerializer,
 FlaggedTicketDetailSerializer, TicketDetailSupportSerializer, TicketStatusHistorySerializer, PriorityChangeRequestSerializer, PriorityRequestListSerializer, 
@@ -591,6 +591,1155 @@ class CreateTicketView(generics.CreateAPIView):
             )
 
         ticket._automation_result = automation_result
+
+
+class ResubmitClarificationView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    @transaction.atomic
+    def post(self, request, ticket_id):
+        # ============================================================
+        # 1. GET + LOCK TICKET
+        # ============================================================
+
+        ticket = (
+            Ticket.objects
+            .select_for_update()
+            .filter(
+                id=ticket_id,
+                submitted_by=request.user,
+            )
+            .first()
+        )
+
+        if not ticket:
+            return Response(
+                {
+                    "success": False,
+                    "message": (
+                        "Ticket not found or you do not have "
+                        "permission to update it."
+                    ),
+                },
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        if ticket.status in [
+            Ticket.TicketStatus.RESOLVED,
+            Ticket.TicketStatus.CLOSED,
+            Ticket.TicketStatus.CANCELLED,
+        ]:
+            return Response(
+                {
+                    "success": False,
+                    "message": (
+                        "This ticket can no longer be resubmitted."
+                    ),
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        # ============================================================
+        # 2. FIND ORIGINAL UNCLEAR-DESCRIPTION FLAG
+        # ============================================================
+
+        review_flag = (
+            ReviewFlags.objects
+            .filter(
+                ticket=ticket,
+                reason=ReviewFlags.Reasons.UNCLEAR_DESCRIPTION,
+                status=ReviewFlags.Status.PENDING,
+            )
+            .order_by("-created_at")
+            .first()
+        )
+
+        if not review_flag:
+            return Response(
+                {
+                    "success": False,
+                    "message": (
+                        "This ticket has no pending "
+                        "unclear-description review."
+                    ),
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        # ============================================================
+        # 3. MAKE SURE SERVICE DESK REQUESTED CLARIFICATION
+        # ============================================================
+
+        clarification_requested = (
+            TicketStatusHistoryModel.objects
+            .filter(
+                ticket=ticket,
+                remarks__icontains="requested clarification",
+            )
+            .exists()
+        )
+
+        if not clarification_requested:
+            return Response(
+                {
+                    "success": False,
+                    "message": (
+                        "The Service Desk has not requested "
+                        "clarification for this ticket."
+                    ),
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        # Keep the status before processing so we can record history.
+        old_status = ticket.status
+
+        # ============================================================
+        # 4. VALIDATE + SAVE EMPLOYEE RESUBMISSION
+        # ============================================================
+
+        serializer = TicketClarificationResubmitSerializer(
+            ticket,
+            data=request.data,
+            partial=False,
+        )
+
+        serializer.is_valid(raise_exception=True)
+
+        ticket = serializer.save(
+            updated_by=request.user
+        )
+
+        # ============================================================
+        # 5. RUN GEMINI ANALYSIS AGAIN
+        # ============================================================
+
+        analysis = analyze_ticket(ticket)
+
+        TicketAIAnalysis.objects.update_or_create(
+            ticket=ticket,
+            defaults={
+                "cleaned_text": analysis.get(
+                    "cleaned_text",
+                    "",
+                ),
+                "summary": analysis.get(
+                    "summary",
+                    "",
+                ),
+                "keywords": analysis.get(
+                    "keywords",
+                    [],
+                ),
+                "model_version": "gemini-2.5-flash",
+                "business_critical": analysis.get(
+                    "business_critical",
+                    False,
+                ),
+                "is_time_critical": analysis.get(
+                    "is_time_critical",
+                    False,
+                ),
+                "is_unclear": analysis.get(
+                    "is_unclear",
+                    False,
+                ),
+            },
+        )
+
+        # ============================================================
+        # 6. STILL UNCLEAR?
+        #
+        # If yes:
+        # - Keep original UNCLEAR_DESCRIPTION flag pending.
+        # - Keep ticket UNDER_REVIEW.
+        # - Do NOT classify yet.
+        # - Modal remains compatible with this response.
+        # ============================================================
+
+        if analysis.get("is_unclear", False):
+            ticket.is_under_review = True
+            ticket.status = Ticket.TicketStatus.UNDER_REVIEW
+
+            ticket.save(
+                update_fields=[
+                    "is_under_review",
+                    "status",
+                    "updated_at",
+                ]
+            )
+
+            automation_result = {
+                "status": "completed",
+                "method": "rule_based",
+                "symptom_code": None,
+                "required_specialization": None,
+                "required_specialization_id": None,
+                "department": None,
+                "priority": None,
+                "priority_assessment": None,
+                "processing_time": 0,
+                "matched_keywords": [],
+                "best_score": 0,
+                "assignment": {
+                    "status": "unassigned",
+                    "technician": None,
+                    "reason": (
+                        "Ticket still requires Service Desk "
+                        "review because the description is unclear."
+                    ),
+                },
+                "department_candidates": 0,
+                "available_candidates": 0,
+                "exact_specialization_matches": 0,
+                "technicians_considered": [],
+            }
+
+            ticket._automation_result = automation_result
+
+            AuditLogs.objects.create(
+                user=request.user,
+                module="Tickets",
+                action="TICKET_RESUBMITTED",
+                reference_id=ticket.ticket_code,
+                remarks=(
+                    "Employee resubmitted ticket, but additional "
+                    "clarification is still required."
+                ),
+                created_by=request.user,
+            )
+
+            TicketStatusHistoryModel.objects.create(
+                ticket=ticket,
+                event_type=(
+                    TicketStatusHistoryModel.EventType.STATUS_CHANGED
+                ),
+                old_value=old_status,
+                new_value=ticket.status,
+                remarks=(
+                    "Ticket resubmitted after clarification, "
+                    "but the description is still unclear."
+                ),
+                changed_by=request.user,
+                created_by=request.user,
+                visibility=(
+                    TicketStatusHistoryModel.Visibility.ALL
+                ),
+            )
+
+            create_notification(
+                user=ticket.submitted_by,
+                ticket=ticket,
+                notification_type=(
+                    Notifications.NotificationType.REVIEW_REQUIRED
+                ),
+                message=(
+                    f"Ticket {ticket.ticket_code} still needs "
+                    "more information. Please provide additional "
+                    "details."
+                ),
+                created_by=request.user,
+            )
+
+            return Response(
+                {
+                    "success": True,
+                    "message": (
+                        "Ticket resubmitted, but further "
+                        "clarification is required."
+                    ),
+                    "ticket_id": ticket.id,
+                    "ticket_code": ticket.ticket_code,
+                    "status": ticket.status,
+                    "review_flag_status": review_flag.status,
+                    "automation": automation_result,
+                },
+                status=status.HTTP_200_OK,
+            )
+
+        # ============================================================
+        # 7. DESCRIPTION IS NOW CLEAR
+        #
+        # IMPORTANT:
+        # Resolve the OLD UNCLEAR_DESCRIPTION flag NOW.
+        #
+        # Anything after this point is a CLASSIFICATION problem,
+        # not a clarification problem.
+        # ============================================================
+
+        review_flag.status = ReviewFlags.Status.RESOLVED
+        review_flag.reviewed_by = request.user
+        review_flag.reviewed_at = timezone.now()
+
+        review_flag.save(
+            update_fields=[
+                "status",
+                "reviewed_by",
+                "reviewed_at",
+                "updated_at",
+            ]
+        )
+
+        # ============================================================
+        # 8. RULE-BASED CLASSIFICATION
+        # ============================================================
+
+        used_ml = False
+
+        result = classify_ticket(ticket)
+
+        symptom = (
+            SymptomCode.objects
+            .filter(
+                code=result.get("symptom_code")
+            )
+            .first()
+        )
+
+        # ============================================================
+        # 9. RULE-BASED FAILED -> ML FALLBACK
+        # ============================================================
+
+        if not symptom:
+            used_ml = True
+
+            ml_result = predict_ticket(ticket)
+
+            symptom = (
+                SymptomCode.objects
+                .filter(
+                    code=ml_result.get("predicted_code")
+                )
+                .first()
+            )
+
+            # ========================================================
+            # 9A. ML COULD NOT PRODUCE A VALID SYMPTOM
+            # ========================================================
+
+            if not symptom:
+                ticket.is_under_review = True
+                ticket.status = Ticket.TicketStatus.UNDER_REVIEW
+
+                ticket.save(
+                    update_fields=[
+                        "is_under_review",
+                        "status",
+                        "updated_at",
+                    ]
+                )
+
+                automation_result = {
+                    "status": "completed",
+                    "method": "machine_learning",
+                    "symptom_code": None,
+                    "required_specialization": None,
+                    "required_specialization_id": None,
+                    "department": None,
+                    "priority": None,
+                    "priority_assessment": None,
+                    "processing_time": 0,
+                    "matched_keywords": result.get(
+                        "matched_keywords",
+                        [],
+                    ),
+                    "best_score": result.get(
+                        "best_score",
+                        0,
+                    ),
+                    "assignment": {
+                        "status": "unassigned",
+                        "technician": None,
+                        "reason": (
+                            "No symptom code could be identified. "
+                            "Ticket requires Service Desk review."
+                        ),
+                    },
+                    "department_candidates": 0,
+                    "available_candidates": 0,
+                    "exact_specialization_matches": 0,
+                    "technicians_considered": [],
+                }
+
+                ticket._automation_result = automation_result
+
+                # Notify Service Desk.
+                service_desk_profiles = (
+                    ITServiceDeskProfile.objects
+                    .select_related("user")
+                    .all()
+                )
+
+                for profile in service_desk_profiles:
+                    create_notification(
+                        user=profile.user,
+                        ticket=ticket,
+                        notification_type=(
+                            Notifications
+                            .NotificationType
+                            .REVIEW_REQUIRED
+                        ),
+                        message=(
+                            f"Ticket {ticket.ticket_code} "
+                            "requires Service Desk review "
+                            "after employee resubmission."
+                        ),
+                        created_by=request.user,
+                    )
+
+                create_notification(
+                    user=ticket.submitted_by,
+                    ticket=ticket,
+                    notification_type=(
+                        Notifications
+                        .NotificationType
+                        .REVIEW_REQUIRED
+                    ),
+                    message=(
+                        f"Your ticket {ticket.ticket_code} "
+                        "has been resubmitted and requires "
+                        "Service Desk classification review."
+                    ),
+                    created_by=request.user,
+                )
+
+                AuditLogs.objects.create(
+                    user=request.user,
+                    module="Tickets",
+                    action="TICKET_RESUBMITTED",
+                    reference_id=ticket.ticket_code,
+                    remarks=(
+                        "Employee resubmitted ticket. "
+                        "Description is clear, but no symptom "
+                        "code could be identified."
+                    ),
+                    created_by=request.user,
+                )
+
+                TicketStatusHistoryModel.objects.create(
+                    ticket=ticket,
+                    event_type=(
+                        TicketStatusHistoryModel
+                        .EventType
+                        .STATUS_CHANGED
+                    ),
+                    old_value=old_status,
+                    new_value=ticket.status,
+                    remarks=(
+                        "Ticket resubmitted after clarification. "
+                        "The unclear-description review was "
+                        "resolved, but classification requires "
+                        "Service Desk review."
+                    ),
+                    changed_by=request.user,
+                    created_by=request.user,
+                    visibility=(
+                        TicketStatusHistoryModel
+                        .Visibility
+                        .ALL
+                    ),
+                )
+
+                return Response(
+                    {
+                        "success": True,
+                        "message": (
+                            "Ticket resubmitted and requires "
+                            "Service Desk review."
+                        ),
+                        "ticket_id": ticket.id,
+                        "ticket_code": ticket.ticket_code,
+                        "status": ticket.status,
+                        "review_flag_status": (
+                            review_flag.status
+                        ),
+                        "automation": automation_result,
+                    },
+                    status=status.HTTP_200_OK,
+                )
+
+            # ========================================================
+            # 9B. ML FOUND SYMPTOM BUT CONFIDENCE IS LOW
+            #
+            # predict_ticket() already creates LOW_CONFIDENCE
+            # ReviewFlags when requires_review=True.
+            #
+            # DO NOT reactivate UNCLEAR_DESCRIPTION.
+            # ========================================================
+
+            if ml_result.get("requires_review", False):
+                ticket.is_under_review = True
+                ticket.status = Ticket.TicketStatus.UNDER_REVIEW
+
+                ticket.save(
+                    update_fields=[
+                        "is_under_review",
+                        "status",
+                        "updated_at",
+                    ]
+                )
+
+                automation_result = {
+                    "status": "completed",
+                    "method": "machine_learning",
+                    "symptom_code": symptom.code,
+                    "required_specialization": (
+                        str(
+                            symptom.required_specialization
+                        )
+                        if symptom.required_specialization
+                        else None
+                    ),
+                    "required_specialization_id": (
+                        getattr(
+                            symptom.required_specialization,
+                            "id",
+                            None,
+                        )
+                        if symptom.required_specialization
+                        else None
+                    ),
+                    "department": None,
+                    "priority": None,
+                    "priority_assessment": None,
+                    "processing_time": 0,
+                    "matched_keywords": result.get(
+                        "matched_keywords",
+                        [],
+                    ),
+                    "best_score": result.get(
+                        "best_score",
+                        0,
+                    ),
+                    "assignment": {
+                        "status": "unassigned",
+                        "technician": None,
+                        "reason": (
+                            "Ticket classification requires "
+                            "Service Desk review because the "
+                            "machine-learning confidence is low."
+                        ),
+                    },
+                    "department_candidates": 0,
+                    "available_candidates": 0,
+                    "exact_specialization_matches": 0,
+                    "technicians_considered": [],
+                }
+
+                ticket._automation_result = automation_result
+
+                # Notify Service Desk.
+                service_desk_profiles = (
+                    ITServiceDeskProfile.objects
+                    .select_related("user")
+                    .all()
+                )
+
+                for profile in service_desk_profiles:
+                    create_notification(
+                        user=profile.user,
+                        ticket=ticket,
+                        notification_type=(
+                            Notifications
+                            .NotificationType
+                            .REVIEW_REQUIRED
+                        ),
+                        message=(
+                            f"Ticket {ticket.ticket_code} "
+                            "requires Service Desk review "
+                            "because the ML classification "
+                            "confidence is low."
+                        ),
+                        created_by=request.user,
+                    )
+
+                create_notification(
+                    user=ticket.submitted_by,
+                    ticket=ticket,
+                    notification_type=(
+                        Notifications
+                        .NotificationType
+                        .REVIEW_REQUIRED
+                    ),
+                    message=(
+                        f"Your ticket {ticket.ticket_code} "
+                        "has been resubmitted and is being "
+                        "reviewed by the Service Desk."
+                    ),
+                    created_by=request.user,
+                )
+
+                AuditLogs.objects.create(
+                    user=request.user,
+                    module="Tickets",
+                    action="TICKET_RESUBMITTED",
+                    reference_id=ticket.ticket_code,
+                    remarks=(
+                        "Employee resubmitted ticket. "
+                        "Description is clear, but ML "
+                        "classification requires review."
+                    ),
+                    created_by=request.user,
+                )
+
+                TicketStatusHistoryModel.objects.create(
+                    ticket=ticket,
+                    event_type=(
+                        TicketStatusHistoryModel
+                        .EventType
+                        .STATUS_CHANGED
+                    ),
+                    old_value=old_status,
+                    new_value=ticket.status,
+                    remarks=(
+                        "Ticket resubmitted after clarification. "
+                        "The unclear-description review was "
+                        "resolved. ML classification requires "
+                        "Service Desk review."
+                    ),
+                    changed_by=request.user,
+                    created_by=request.user,
+                    visibility=(
+                        TicketStatusHistoryModel
+                        .Visibility
+                        .ALL
+                    ),
+                )
+
+                return Response(
+                    {
+                        "success": True,
+                        "message": (
+                            "Ticket resubmitted and requires "
+                            "Service Desk review."
+                        ),
+                        "ticket_id": ticket.id,
+                        "ticket_code": ticket.ticket_code,
+                        "status": ticket.status,
+                        "review_flag_status": (
+                            review_flag.status
+                        ),
+                        "automation": automation_result,
+                    },
+                    status=status.HTTP_200_OK,
+                )
+
+        # ============================================================
+        # 10. GET CATEGORY + DEPARTMENT
+        # ============================================================
+
+        category = (
+            symptom.category
+            if symptom
+            else None
+        )
+
+        department = (
+            category.it_department
+            if category
+            else None
+        )
+
+        # ============================================================
+        # 11. NO ROUTABLE DEPARTMENT
+        #
+        # This is NOT an unclear-description problem.
+        # The original unclear flag remains RESOLVED.
+        # ============================================================
+
+        if not department:
+            ticket.is_under_review = True
+            ticket.status = Ticket.TicketStatus.UNDER_REVIEW
+
+            ticket.save(
+                update_fields=[
+                    "is_under_review",
+                    "status",
+                    "updated_at",
+                ]
+            )
+
+            automation_result = {
+                "status": "completed",
+                "method": (
+                    "machine_learning"
+                    if used_ml
+                    else "rule_based"
+                ),
+                "symptom_code": symptom.code,
+                "required_specialization": (
+                    str(
+                        symptom.required_specialization
+                    )
+                    if symptom.required_specialization
+                    else None
+                ),
+                "required_specialization_id": (
+                    getattr(
+                        symptom.required_specialization,
+                        "id",
+                        None,
+                    )
+                    if symptom.required_specialization
+                    else None
+                ),
+                "department": None,
+                "priority": None,
+                "priority_assessment": None,
+                "processing_time": 0,
+                "matched_keywords": result.get(
+                    "matched_keywords",
+                    [],
+                ),
+                "best_score": result.get(
+                    "best_score",
+                    0,
+                ),
+                "assignment": {
+                    "status": "unassigned",
+                    "technician": None,
+                    "reason": (
+                        "No IT department could be determined. "
+                        "Ticket requires Service Desk review."
+                    ),
+                },
+                "department_candidates": 0,
+                "available_candidates": 0,
+                "exact_specialization_matches": 0,
+                "technicians_considered": [],
+            }
+
+            ticket._automation_result = automation_result
+
+            service_desk_profiles = (
+                ITServiceDeskProfile.objects
+                .select_related("user")
+                .all()
+            )
+
+            for profile in service_desk_profiles:
+                create_notification(
+                    user=profile.user,
+                    ticket=ticket,
+                    notification_type=(
+                        Notifications
+                        .NotificationType
+                        .REVIEW_REQUIRED
+                    ),
+                    message=(
+                        f"Ticket {ticket.ticket_code} "
+                        "requires Service Desk review because "
+                        "no IT department could be determined."
+                    ),
+                    created_by=request.user,
+                )
+
+            create_notification(
+                user=ticket.submitted_by,
+                ticket=ticket,
+                notification_type=(
+                    Notifications
+                    .NotificationType
+                    .REVIEW_REQUIRED
+                ),
+                message=(
+                    f"Your ticket {ticket.ticket_code} "
+                    "has been resubmitted and is being "
+                    "reviewed by the Service Desk."
+                ),
+                created_by=request.user,
+            )
+
+            AuditLogs.objects.create(
+                user=request.user,
+                module="Tickets",
+                action="TICKET_RESUBMITTED",
+                reference_id=ticket.ticket_code,
+                remarks=(
+                    "Employee resubmitted ticket. "
+                    "Description is clear, but no IT "
+                    "department could be determined."
+                ),
+                created_by=request.user,
+            )
+
+            TicketStatusHistoryModel.objects.create(
+                ticket=ticket,
+                event_type=(
+                    TicketStatusHistoryModel
+                    .EventType
+                    .STATUS_CHANGED
+                ),
+                old_value=old_status,
+                new_value=ticket.status,
+                remarks=(
+                    "Ticket resubmitted after clarification. "
+                    "The unclear-description review was resolved, "
+                    "but routing requires Service Desk review."
+                ),
+                changed_by=request.user,
+                created_by=request.user,
+                visibility=(
+                    TicketStatusHistoryModel
+                    .Visibility
+                    .ALL
+                ),
+            )
+
+            return Response(
+                {
+                    "success": True,
+                    "message": (
+                        "Ticket resubmitted but requires "
+                        "Service Desk review."
+                    ),
+                    "ticket_id": ticket.id,
+                    "ticket_code": ticket.ticket_code,
+                    "status": ticket.status,
+                    "review_flag_status": review_flag.status,
+                    "automation": automation_result,
+                },
+                status=status.HTTP_200_OK,
+            )
+
+        # ============================================================
+        # 12. APPLY CLASSIFICATION
+        # ============================================================
+
+        ticket.symptom_code = symptom
+        ticket.category = category
+        ticket.it_department = department
+
+        # ============================================================
+        # 13. SAVE RULE-BASED ANALYSIS RECORD
+        #
+        # ML already creates/updates TicketAnalysis inside
+        # predict_ticket().
+        # ============================================================
+
+        if not used_ml:
+            TicketAnalysis.objects.update_or_create(
+                ticket=ticket,
+                defaults={
+                    "model_type": (
+                        TicketAnalysis.ModelType.RULE_BASED
+                    ),
+                    "model_used": (
+                        "Rule-Based Classifier"
+                    ),
+                    "predicted_symptom_code": symptom,
+                    "created_by": request.user,
+                },
+            )
+
+        # ============================================================
+        # 14. PRIORITY CALCULATION
+        # ============================================================
+
+        priority_details = calculate_priority_details(
+            symptom.based_priority,
+            ticket.affected_scope,
+            analysis.get(
+                "business_critical",
+                False,
+            ),
+            analysis.get(
+                "is_time_critical",
+                False,
+            ),
+        )
+
+        final_priority = priority_details[
+            "final_priority"
+        ]
+
+        # ============================================================
+        # 15. SLA
+        # ============================================================
+
+        sla_rule = (
+            SLARules.objects
+            .filter(
+                priority_level=final_priority
+            )
+            .first()
+        )
+
+        if not sla_rule:
+            return Response(
+                {
+                    "success": False,
+                    "message": (
+                        "No matching SLA rule exists for "
+                        "the calculated priority."
+                    ),
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        ticket.priority = sla_rule
+
+        ticket.response_deadline = (
+            ticket.created_at +
+            sla_rule.response_time
+        )
+
+        ticket.resolution_deadline = (
+            ticket.created_at +
+            sla_rule.resolution_time
+        )
+
+        # Ticket has successfully returned to normal workflow.
+        ticket.is_under_review = False
+        ticket.status = Ticket.TicketStatus.OPEN
+
+        ticket.save()
+
+        update_sla(ticket)
+
+
+        assigned_profile = assign_ticket_automatically(
+            ticket
+        )
+
+        # assign_ticket_automatically() creates the base
+        # automation result on the ticket.
+        automation_result = getattr(
+            ticket,
+            "_automation_result",
+            None,
+        )
+
+        if automation_result is None:
+            automation_result = {
+                "status": "completed",
+                "method": (
+                    "machine_learning"
+                    if used_ml
+                    else "rule_based"
+                ),
+                "symptom_code": symptom.code,
+                "required_specialization": (
+                    str(
+                        symptom.required_specialization
+                    )
+                    if symptom.required_specialization
+                    else None
+                ),
+                "required_specialization_id": (
+                    getattr(
+                        symptom.required_specialization,
+                        "id",
+                        None,
+                    )
+                    if symptom.required_specialization
+                    else None
+                ),
+                "department": (
+                    str(department)
+                    if department
+                    else None
+                ),
+                "priority": final_priority,
+                "priority_assessment": (
+                    priority_details
+                ),
+                "processing_time": 0,
+                "matched_keywords": result.get(
+                    "matched_keywords",
+                    [],
+                ),
+                "best_score": result.get(
+                    "best_score",
+                    0,
+                ),
+                "assignment": {
+                    "status": (
+                        "assigned"
+                        if assigned_profile
+                        else "unassigned"
+                    ),
+                    "technician": None,
+                    "reason": None,
+                },
+                "department_candidates": 0,
+                "available_candidates": 0,
+                "exact_specialization_matches": 0,
+                "technicians_considered": [],
+            }
+
+        else:
+            automation_result["method"] = (
+                "machine_learning"
+                if used_ml
+                else "rule_based"
+            )
+
+            automation_result[
+                "matched_keywords"
+            ] = result.get(
+                "matched_keywords",
+                [],
+            )
+
+            automation_result[
+                "best_score"
+            ] = result.get(
+                "best_score",
+                0,
+            )
+
+            automation_result[
+                "priority_assessment"
+            ] = priority_details
+
+        ticket._automation_result = automation_result
+
+
+        AuditLogs.objects.create(
+            user=request.user,
+            module="Tickets",
+            action="TICKET_RESUBMITTED",
+            reference_id=ticket.ticket_code,
+            remarks=(
+                "Employee resubmitted ticket after "
+                "clarification. The ticket was reanalyzed "
+                "and returned to the automated workflow."
+            ),
+            created_by=request.user,
+        )
+
+
+        TicketStatusHistoryModel.objects.create(
+            ticket=ticket,
+            event_type=(
+                TicketStatusHistoryModel
+                .EventType
+                .STATUS_CHANGED
+            ),
+            old_value=old_status,
+            new_value=ticket.status,
+            remarks=(
+                "Ticket resubmitted after clarification. "
+                "The unclear-description review was resolved "
+                "and automated processing completed."
+            ),
+            changed_by=request.user,
+            created_by=request.user,
+            visibility=(
+                TicketStatusHistoryModel
+                .Visibility
+                .ALL
+            ),
+        )
+
+        if assigned_profile:
+            technician_name = (
+                f"{assigned_profile.user.first_name} "
+                f"{assigned_profile.user.last_name}"
+            ).strip() or assigned_profile.user.username
+
+            create_notification(
+                user=ticket.submitted_by,
+                ticket=ticket,
+                notification_type=(
+                    Notifications
+                    .NotificationType
+                    .REVIEW_COMPLETED
+                ),
+                message=(
+                    f"Your ticket {ticket.ticket_code} "
+                    "has been reviewed after resubmission "
+                    f"and assigned to {technician_name}."
+                ),
+                created_by=request.user,
+            )
+
+            create_notification(
+                user=assigned_profile.user,
+                ticket=ticket,
+                notification_type=(
+                    Notifications
+                    .NotificationType
+                    .TICKET_ASSIGNED
+                ),
+                message=(
+                    f"Ticket {ticket.ticket_code} "
+                    "has been assigned to you."
+                ),
+                created_by=request.user,
+            )
+
+        else:
+            create_notification(
+                user=ticket.submitted_by,
+                ticket=ticket,
+                notification_type=(
+                    Notifications
+                    .NotificationType
+                    .REVIEW_COMPLETED
+                ),
+                message=(
+                    f"Your ticket {ticket.ticket_code} "
+                    "has been reviewed after resubmission "
+                    "and returned to the normal workflow."
+                ),
+                created_by=request.user,
+            )
+
+        return Response(
+            {
+                "success": True,
+                "message": (
+                    "Ticket resubmitted successfully."
+                ),
+                "ticket_id": ticket.id,
+                "ticket_code": ticket.ticket_code,
+                "status": ticket.status,
+                "review_flag_status": review_flag.status,
+                "assigned": (
+                    assigned_profile is not None
+                ),
+                "automation": automation_result,
+            },
+            status=status.HTTP_200_OK,
+        )
+
+class PendingClarificationRequestView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        clarification = (
+            ReviewFlags.objects
+            .filter(
+                ticket__submitted_by=request.user,
+                status=ReviewFlags.Status.PENDING,
+                reason=ReviewFlags.Reasons.UNCLEAR_DESCRIPTION,
+            )
+            .select_related("ticket")
+            .order_by("-id")
+            .first()
+        )
+
+        if not clarification:
+            return Response(
+                {"pending": False},
+                status=status.HTTP_200_OK,
+            )
+
+        ticket = clarification.ticket
+
+        return Response(
+            {
+                "pending": True,
+                "ticket": {
+                    "id": ticket.id,
+                    "ticket_code": ticket.ticket_code,
+                    "subject": ticket.subject,
+                },
+            },
+            status=status.HTTP_200_OK,
+        )
 class ManualOverrideTicketView(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -816,6 +1965,7 @@ class RequestTicketReopenView(APIView):
             status=status.HTTP_201_CREATED,
         )
 
+
 class ReopenRequestsListView(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -846,7 +1996,10 @@ class ReopenRequestsListView(APIView):
                 "ticket",
                 "ticket__submitted_by",
                 "ticket__assigned_to",
+                "ticket__it_department",
                 "requested_by",
+                "requested_by__profile",
+                "requested_by__profile__employee_department",
             )
             .order_by("requested_at")
         )
@@ -856,20 +2009,31 @@ class ReopenRequestsListView(APIView):
         for reopen_request in reopen_requests:
             ticket = reopen_request.ticket
 
-            eligible_profiles = get_eligible_technicians(ticket)
-
-            can_approve = any(
-                item["profile"].id == profile.id
-                for item in eligible_profiles
-            )
-
             results.append({
                 "id": reopen_request.id,
                 "ticket_id": ticket.id,
                 "ticket_code": ticket.ticket_code,
                 "ticket_title": ticket.subject,
                 "ticket_status": ticket.status,
-                "department": profile.it_department.name,
+
+                # IT department responsible for the ticket
+                "department": (
+                    ticket.it_department.name
+                    if ticket.it_department
+                    else None
+                ),
+                "department_id": ticket.it_department_id,
+
+                # Department belonging to the employee who requested reopening
+                "employee_department": (
+                    reopen_request.requested_by.profile.employee_department.name
+                    if (
+                        hasattr(reopen_request.requested_by, "profile")
+                        and reopen_request.requested_by.profile.employee_department
+                    )
+                    else None
+                ),
+
                 "requested_by": (
                     reopen_request.requested_by.get_full_name()
                     or reopen_request.requested_by.username
@@ -882,13 +2046,14 @@ class ReopenRequestsListView(APIView):
                     if ticket.assigned_to
                     else None
                 ),
-                "can_approve": can_approve,
+                "can_approve": True,
             })
 
         return Response(
             {"results": results},
             status=status.HTTP_200_OK,
         )
+
 class ReviewTicketReopenRequestView(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -905,22 +2070,18 @@ class ReviewTicketReopenRequestView(APIView):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        if decision == TicketReopenRequest.RequestStatus.REJECTED and not review_remarks:
+        if (
+            decision == TicketReopenRequest.RequestStatus.REJECTED
+            and not review_remarks
+        ):
             return Response(
-                {"error": "Please provide remarks explaining why the request was rejected."},
+                {
+                    "error": (
+                        "Please provide remarks explaining why "
+                        "the request was rejected."
+                    )
+                },
                 status=status.HTTP_400_BAD_REQUEST,
-            )
-
-        profile = (
-            ITSupportProfile.objects
-            .filter(user=request.user)
-            .first()
-        )
-
-        if not profile:
-            return Response(
-                {"error": "Only IT Support Specialists can review reopen requests."},
-                status=status.HTTP_403_FORBIDDEN,
             )
 
         with transaction.atomic():
@@ -956,18 +2117,48 @@ class ReviewTicketReopenRequestView(APIView):
                     status=status.HTTP_400_BAD_REQUEST,
                 )
 
+            # Only IT Support Specialists belonging to the ticket's
+            # department may approve or reject the request.
+            profile = (
+                ITSupportProfile.objects
+                .select_related("it_department")
+                .filter(user=request.user)
+                .first()
+            )
+
+            if not profile:
+                return Response(
+                    {
+                        "error": (
+                            "Only IT Support Specialists can "
+                            "review reopen requests."
+                        )
+                    },
+                    status=status.HTTP_403_FORBIDDEN,
+                )
+
             if (
                 not profile.it_department
                 or profile.it_department_id != ticket.it_department_id
             ):
                 return Response(
-                    {"error": "You can only review requests for your own department."},
+                    {
+                        "error": (
+                            "You can only review requests for "
+                            "tickets in your own department."
+                        )
+                    },
                     status=status.HTTP_403_FORBIDDEN,
                 )
 
             if ticket.status != Ticket.TicketStatus.RESOLVED:
                 return Response(
-                    {"error": "This ticket is no longer resolved and cannot be reopened through this request."},
+                    {
+                        "error": (
+                            "This ticket is no longer resolved and "
+                            "cannot be reopened through this request."
+                        )
+                    },
                     status=status.HTTP_400_BAD_REQUEST,
                 )
 
@@ -984,25 +2175,9 @@ class ReviewTicketReopenRequestView(APIView):
             reopen_request.status = decision
 
             if decision == TicketReopenRequest.RequestStatus.APPROVED:
-                eligible_profiles = get_eligible_technicians(ticket)
-
-                is_eligible = any(
-                    item["profile"].id == profile.id
-                    for item in eligible_profiles
-                )
-
-                if not is_eligible:
-                    return Response(
-                        {
-                            "error": (
-                                "You are not currently eligible to take this ticket. "
-                                "Check your availability, specialization, and workload."
-                            )
-                        },
-                        status=status.HTTP_400_BAD_REQUEST,
-                    )
-
                 # The approving technician becomes the new assignee.
+                # No availability, specialization, workload, or
+                # previous-assignee eligibility check is required.
                 ticket.assigned_to = request.user
                 ticket.status = Ticket.TicketStatus.IN_PROGRESS
                 ticket.resolved_at = None
@@ -1034,8 +2209,7 @@ class ReviewTicketReopenRequestView(APIView):
                     old_value=old_assignee_name,
                     new_value=technician_name,
                     remarks=(
-                        f"Ticket reassigned after reopen request "
-                        f"#{reopen_request.id} was approved."
+                        "Ticket reassigned following approval of the reopen request."
                     ),
                     visibility=TicketStatusHistory.Visibility.ALL,
                     changed_by=request.user,
@@ -1050,7 +2224,6 @@ class ReviewTicketReopenRequestView(APIView):
                     remarks=(
                         f"Reopen request approved. "
                         f"Employee reason: {reopen_request.reason}. "
-                        f"Review remarks: {review_remarks or 'None'}"
                     ),
                     visibility=TicketStatusHistory.Visibility.ALL,
                     changed_by=request.user,
@@ -1412,6 +2585,124 @@ class UpdateTicketView(APIView):
 
 
 # --- Service Desk ---
+
+
+class RequestClarificationView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    @transaction.atomic
+    def post(self, request, ticket_id):
+        ticket = Ticket.objects.select_for_update().filter(
+            id=ticket_id
+        ).first()
+
+        if not ticket:
+            return Response(
+                {"success": False, "message": "Ticket not found."},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        # Only IT Service Desk users may request clarification.
+        if not ITServiceDeskProfile.objects.filter(
+            user=request.user
+        ).exists():
+            return Response(
+                {
+                    "success": False,
+                    "message": "Only IT Service Desk users can request clarification.",
+                },
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
+        # Find the pending unclear-description review flag.
+        review_flag = ReviewFlags.objects.filter(
+            ticket=ticket,
+            reason=ReviewFlags.Reasons.UNCLEAR_DESCRIPTION,
+            status=ReviewFlags.Status.PENDING,
+        ).first()
+
+        if not review_flag:
+            return Response(
+                {
+                    "success": False,
+                    "message": (
+                        "This ticket has no pending Unclear Description review."
+                    ),
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        # Prevent requesting clarification for a completed ticket.
+        if ticket.status in [
+            Ticket.TicketStatus.RESOLVED,
+            Ticket.TicketStatus.CLOSED,
+            Ticket.TicketStatus.CANCELLED,
+        ]:
+            return Response(
+                {
+                    "success": False,
+                    "message": "Clarification cannot be requested for a completed ticket.",
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        now = timezone.now()
+
+        # Keep the unclear-description flag pending.
+        # The ticket remains under Service Desk review.
+        old_status = ticket.status
+        ticket.is_under_review = True
+        ticket.status = Ticket.TicketStatus.UNDER_REVIEW
+        ticket.updated_by = request.user
+        ticket.save(
+            update_fields=[
+                "is_under_review",
+                "status",
+                "updated_by",
+                "updated_at",
+            ]
+        )
+
+        # Record the clarification request in the ticket history.
+        TicketStatusHistory.objects.create(
+            ticket=ticket,
+            event_type=TicketStatusHistory.EventType.REVIEW_COMPLETED,
+            old_value=old_status,
+            new_value=ticket.status,
+            remarks=(
+                "IT Service Desk requested clarification from the employee. "
+                "The Unclear Description review flag remains pending."
+            ),
+            changed_by=request.user,
+            created_by=request.user,
+            visibility=TicketStatusHistory.Visibility.ALL,
+        )
+
+        # Notify the employee.
+        create_notification(
+            user=ticket.submitted_by,
+            ticket=ticket,
+            notification_type=Notifications.NotificationType.CLARIFICATION_REQUESTED,
+            message=(
+                f"Please provide more technical details "
+                f"about the reported issue so your ticket can be assessed ({ticket.ticket_code})."
+            ),
+            created_by=request.user,
+        )
+
+        return Response(
+            {
+                "success": True,
+                "message": "Clarification requested successfully.",
+                "ticket_id": ticket.id,
+                "ticket_code": ticket.ticket_code,
+                "status": ticket.status,
+                "review_flag_status": review_flag.status,
+            },
+            status=status.HTTP_200_OK,
+        )
+
+
 class FlaggedTicketsListView(generics.ListAPIView):
     serializer_class = FlaggedTicketsListSerializer
     permission_classes = [IsAuthenticated]
@@ -2931,60 +4222,28 @@ class ServiceDeskOverviewView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
-        user = request.user
+        # 1. Total tickets across all departments
+        total_tickets = Ticket.objects.count()
 
-        assigned_tickets = Ticket.objects.filter(
-            assigned_to=user
-        )
+        # 2. Resolved tickets across all departments
+        resolved_tickets = Ticket.objects.filter(
+            status=Ticket.TicketStatus.RESOLVED
+        ).count()
 
-        count_assigned_tickets = assigned_tickets.count()
+        # 3. Returned tickets across all departments
+        returned_tickets = Ticket.objects.filter(
+            status=Ticket.TicketStatus.RETURNED
+        ).count()
 
-        # Rule-based automated classifications
-        rule_based_tickets = TicketAnalysis.objects.filter(
-            model_type=TicketAnalysis.ModelType.RULE_BASED,
-        ).values("ticket").distinct().count()
-
-        # ML classifications that were accepted/not overridden
-        machine_learning_tickets = TicketAnalysis.objects.filter(
-            model_type=TicketAnalysis.ModelType.MACHINE_LEARNING,
-            was_overridden=False,
-        ).values("ticket").distinct().count()
-
-        # Automated = Rule-Based + accepted ML classifications
-        automated_tickets = (
-            rule_based_tickets
-            + machine_learning_tickets
-        )
-
-        # Human overrides
-        manual_override_tickets = TicketAnalysis.objects.filter(
-            was_overridden=True,
-        ).values("ticket").distinct().count()
-
-        # Pending review tickets
+        # 4. Tickets with pending review flags
         flagged_tickets = ReviewFlags.objects.filter(
             status=ReviewFlags.Status.PENDING
         ).values("ticket").distinct().count()
 
-        total_classified_tickets = (
-            automated_tickets
-            + manual_override_tickets
-        )
-
-        if total_classified_tickets > 0:
-            auto_classified_percentage = (
-                automated_tickets
-                / total_classified_tickets
-            ) * 100
-        else:
-            auto_classified_percentage = 0
-
         return Response({
-            "assigned_tickets": count_assigned_tickets,
-            "auto_classified_tickets": round(
-                auto_classified_percentage,
-                1
-            ),
+            "total_tickets": total_tickets,
+            "resolved_tickets": resolved_tickets,
+            "returned_tickets": returned_tickets,
             "flagged_tickets": flagged_tickets,
         })
 
@@ -3142,6 +4401,72 @@ class SLAPerformanceView(APIView):
             )
         else:
             overall_compliance = 0.0
+
+        return Response({
+            "overall_compliance": overall_compliance,
+            "response_sla": response_sla,
+            "resolution_sla": resolution_sla,
+
+            "response": {
+                "met": response_met,
+                "breached": response_breached,
+                "evaluated": response_evaluated,
+            },
+
+            "resolution": {
+                "met": resolution_met,
+                "breached": resolution_breached,
+                "evaluated": resolution_evaluated,
+            },
+        })
+
+class ServiceDeskSLAPerformanceView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+
+        all_department_tickets = Ticket.objects.all()
+
+        response_met = all_department_tickets.filter(
+            response_sla_status=Ticket.SLAStatus.MET
+        ).count()
+
+        response_breached = all_department_tickets.filter(
+            response_sla_status=Ticket.SLAStatus.BREACHED
+        ).count()
+
+        response_evaluated = response_met + response_breached
+
+        response_sla = (
+            round((response_met / response_evaluated) * 100, 1)
+            if response_evaluated > 0
+            else 0.0
+        )
+
+        resolution_met = all_department_tickets.filter(
+            resolution_sla_status=Ticket.SLAStatus.MET
+        ).count()
+
+        resolution_breached = all_department_tickets.filter(
+            resolution_sla_status=Ticket.SLAStatus.BREACHED
+        ).count()
+
+        resolution_evaluated = resolution_met + resolution_breached
+
+        resolution_sla = (
+            round((resolution_met / resolution_evaluated) * 100, 1)
+            if resolution_evaluated > 0
+            else 0.0
+        )
+
+        total_met = response_met + resolution_met
+        total_evaluated = response_evaluated + resolution_evaluated
+
+        overall_compliance = (
+            round((total_met / total_evaluated) * 100, 1)
+            if total_evaluated > 0
+            else 0.0
+        )
 
         return Response({
             "overall_compliance": overall_compliance,
@@ -7422,6 +8747,187 @@ class TeamWorkloadView(APIView):
             {
                 "scope": scope,
                 "departments": department_results,
+            },
+            status=status.HTTP_200_OK,
+        )
+
+class AssignTicketToMeView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    @transaction.atomic
+    def post(self, request, pk):
+        profile = (
+            ITSupportProfile.objects
+            .select_related("it_department")
+            .filter(user=request.user)
+            .first()
+        )
+
+        if not profile:
+            return Response(
+                {
+                    "error": (
+                        "Only IT Support Specialists can "
+                        "assign tickets to themselves."
+                    )
+                },
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
+        if not profile.it_department:
+            return Response(
+                {
+                    "error": (
+                        "You must belong to an IT department "
+                        "to claim tickets."
+                    )
+                },
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
+        try:
+            ticket = (
+                Ticket.objects
+                .select_for_update(of=("self",))
+                .select_related(
+                    "it_department",
+                    "assigned_to",
+                )
+                .get(pk=pk)
+            )
+        except Ticket.DoesNotExist:
+            return Response(
+                {"error": "Ticket not found."},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        if ticket.is_under_review or (
+            ticket.status == Ticket.TicketStatus.UNDER_REVIEW
+        ):
+            return Response(
+                {
+                    "error": (
+                        "This ticket is under Service Desk "
+                        "review and cannot be claimed."
+                    )
+                },
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
+        if (
+            not ticket.it_department_id
+            or ticket.it_department_id != profile.it_department_id
+        ):
+            return Response(
+                {
+                    "error": (
+                        "You can only claim tickets belonging "
+                        "to your own IT department."
+                    )
+                },
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
+        if ticket.status != Ticket.TicketStatus.OPEN:
+            return Response(
+                {
+                    "error": (
+                        "Only open tickets can be claimed."
+                    ),
+                    "ticket_status": ticket.status,
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        if ticket.assigned_to_id:
+            if ticket.assigned_to_id == request.user.id:
+                return Response(
+                    {
+                        "success": True,
+                        "message": "You are already assigned to this ticket.",
+                        "ticket_id": ticket.id,
+                        "ticket_code": ticket.ticket_code,
+                        "assigned_to": request.user.username,
+                        "status": ticket.status,
+                    },
+                    status=status.HTTP_200_OK,
+                )
+
+            return Response(
+                {
+                    "error": (
+                        "This ticket has already been assigned "
+                        "to another technician."
+                    )
+                },
+                status=status.HTTP_409_CONFLICT,
+            )
+
+        old_status = ticket.status
+        technician_name = (
+            request.user.get_full_name()
+            or request.user.username
+        )
+        now = timezone.now()
+
+        ticket.assigned_to = request.user
+        ticket.status = Ticket.TicketStatus.IN_PROGRESS
+        ticket.assigned_at = now
+        ticket.updated_by = request.user
+
+        ticket.save(
+            update_fields=[
+                "assigned_to",
+                "status",
+                "assigned_at",
+                "updated_by",
+                "updated_at",
+            ]
+        )
+
+        profile.last_assigned_at = now
+        profile.save(
+            update_fields=[
+                "last_assigned_at",
+                "updated_at",
+            ]
+        )
+
+        TicketStatusHistory.objects.create(
+            ticket=ticket,
+            event_type=TicketStatusHistory.EventType.ASSIGNED,
+            old_value=None,
+            new_value=technician_name,
+            remarks="Ticket manually claimed by the assigned IT Support.",
+            visibility=TicketStatusHistory.Visibility.ALL,
+            changed_by=request.user,
+            created_by=request.user,
+        )
+
+        TicketStatusHistory.objects.create(
+            ticket=ticket,
+            event_type=TicketStatusHistory.EventType.STATUS_CHANGED,
+            old_value=old_status,
+            new_value=ticket.status,
+            visibility=TicketStatusHistory.Visibility.ALL,
+            changed_by=request.user,
+            created_by=request.user,
+        )
+
+        update_sla(ticket)
+
+        return Response(
+            {
+                "success": True,
+                "message": "Ticket assigned to you successfully.",
+                "ticket_id": ticket.id,
+                "ticket_code": ticket.ticket_code,
+                "assigned_to": request.user.username,
+                "assigned_to_name": technician_name,
+                "status": ticket.status,
+                "assigned_at": ticket.assigned_at,
+                "response_sla_status": ticket.response_sla_status,
+                "resolution_sla_status": ticket.resolution_sla_status,
             },
             status=status.HTTP_200_OK,
         )

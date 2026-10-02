@@ -13,22 +13,53 @@ import { formatDate } from "../../utils/formatDate";
 export default function AuditLogsListContent({
     auditLogs = [],
     loading = false,
+    dashboard = false,
+    maxRows = 5,
 }) {
+    // Dashboard only shows the latest 5 records.
+    // Full audit log page shows everything.
+    const displayedLogs = dashboard
+        ? auditLogs.slice(0, maxRows)
+        : auditLogs;
+
     if (loading) {
         return (
             <div
-                className="
-                    flex h-[510px] items-center justify-center bg-white
-                    min-[1280px]:max-[1365px]:h-[450px]
-                    min-[1366px]:max-[1537px]:h-[500px]
-                "
+                className={
+                    dashboard
+                        ? `
+                            w-full
+                            overflow-x-auto
+                            overflow-y-hidden
+                            bg-white
+                        `
+                        : `
+                            h-[calc(100vh-250px)]
+                            min-h-[420px]
+                            max-h-[637px]
+                            w-full
+                            overflow-auto
+                            bg-white
+
+                            [&::-webkit-scrollbar]:w-px
+                            [&::-webkit-scrollbar]:h-px
+                            [&::-webkit-scrollbar]:track:bg-transparent
+                            [&::-webkit-scrollbar]:thumb:bg-transparent
+                            hover:[&::-webkit-scrollbar]:thumb:bg-gray-300
+                            [&::-webkit-scrollbar]:thumb:rounded-full
+                        `
+                }
             >
                 <p
-                    className="
-                        text-sm text-gray-500
-                        min-[1280px]:max-[1365px]:text-[11px]
-                        min-[1366px]:max-[1537px]:text-xs
-                    "
+                    className={
+                        dashboard
+                            ? "text-xs text-gray-500"
+                            : `
+                                text-sm text-gray-500
+                                min-[1280px]:max-[1365px]:text-[11px]
+                                min-[1366px]:max-[1537px]:text-xs
+                            `
+                    }
                 >
                     Loading audit logs...
                 </p>
@@ -38,140 +69,158 @@ export default function AuditLogsListContent({
 
     return (
         <div
-            className="
-                h-[calc(100vh-250px)]
-                min-h-[420px]
-                max-h-[637px]
-                w-full
-                overflow-auto
-                bg-white
-                [&::-webkit-scrollbar]:w-px
-                [&::-webkit-scrollbar]:h-px
-                [&::-webkit-scrollbar-track]:bg-transparent
-                [&::-webkit-scrollbar-thumb]:rounded-full
-                [&::-webkit-scrollbar-thumb]:bg-transparent
-                hover:[&::-webkit-scrollbar-thumb]:bg-gray-300
-            "
+            className={
+                dashboard
+                    ? `
+                        h-[280px]
+                        w-full
+                        overflow-hidden
+                        bg-white
+                    `
+                    : `
+                        h-[calc(100vh-250px)]
+                        min-h-[420px]
+                        max-h-[637px]
+                        w-full
+                        overflow-auto
+                        bg-white
+                        [&::-webkit-scrollbar]:w-px
+                        [&::-webkit-scrollbar]:h-px
+                        [&::-webkit-scrollbar-track]:bg-transparent
+                        [&::-webkit-scrollbar-thumb]:rounded-full
+                        [&::-webkit-scrollbar-thumb]:bg-transparent
+                        hover:[&::-webkit-scrollbar-thumb]:bg-gray-300
+                    `
+            }
         >
             <table
-                className="
+                className={`
                     w-full
                     table-fixed
                     text-sm
+                    ${dashboard ? "text-xs" : ""}
                     min-[1280px]:max-[1365px]:text-[11px]
                     min-[1366px]:max-[1537px]:text-xs
-                "
+                `}
             >
                 <thead className="sticky top-0 z-20 bg-gray-50">
                     <tr className="border-b border-gray-300 text-left">
+
+                        {/* USER CODE */}
                         <th
-                            className="
+                            className={`
                                 w-[8%]
                                 px-2.5
-                                py-3.5
+                                ${dashboard ? "py-2.5" : "py-3.5"}
                                 font-semibold
                                 text-black
                                 min-[1280px]:max-[1365px]:px-2
                                 min-[1280px]:max-[1365px]:py-2.5
                                 min-[1366px]:max-[1537px]:px-2
                                 min-[1366px]:max-[1537px]:py-3
-                            "
+                            `}
                         >
                             User Code
                         </th>
 
+                        {/* USER */}
                         <th
-                            className="
-                                w-[10%]
+                            className={`
+                                w-[15%]
                                 px-2.5
-                                py-3.5
+                                ${dashboard ? "py-2.5" : "py-3.5"}
                                 font-semibold
                                 text-black
                                 min-[1280px]:max-[1365px]:px-2
                                 min-[1280px]:max-[1365px]:py-2.5
                                 min-[1366px]:max-[1537px]:px-2
                                 min-[1366px]:max-[1537px]:py-3
-                            "
+                            `}
                         >
                             User
                         </th>
 
+                        {/* ROLE */}
                         <th
-                            className="
-                                w-[8%]
+                            className={`
+                                w-[12%]
                                 px-2.5
-                                py-3.5
+                                ${dashboard ? "py-2.5" : "py-3.5"}
                                 font-semibold
                                 text-black
                                 min-[1280px]:max-[1365px]:px-2
                                 min-[1280px]:max-[1365px]:py-2.5
                                 min-[1366px]:max-[1537px]:px-2
                                 min-[1366px]:max-[1537px]:py-3
-                            "
+                            `}
                         >
                             Role
                         </th>
 
+                        {/* DEPARTMENT */}
                         <th
-                            className="
-                                w-[10%]
+                            className={`
+                                w-[12%]
                                 px-2.5
-                                py-3.5
+                                ${dashboard ? "py-2.5" : "py-3.5"}
                                 font-semibold
                                 text-black
                                 min-[1280px]:max-[1365px]:px-2
                                 min-[1280px]:max-[1365px]:py-2.5
                                 min-[1366px]:max-[1537px]:px-2
                                 min-[1366px]:max-[1537px]:py-3
-                            "
+                            `}
                         >
                             Department
                         </th>
 
+                        {/* ACTION */}
                         <th
-                            className="
-                                w-[11%]
+                            className={`
+                                w-[13%]
                                 px-2.5
-                                py-3.5
+                                ${dashboard ? "py-2.5" : "py-3.5"}
                                 font-semibold
                                 text-black
                                 min-[1280px]:max-[1365px]:px-2
                                 min-[1280px]:max-[1365px]:py-2.5
                                 min-[1366px]:max-[1537px]:px-2
                                 min-[1366px]:max-[1537px]:py-3
-                            "
+                            `}
                         >
                             Action
                         </th>
 
+                        {/* DETAILS */}
                         <th
-                            className="
-                                w-[15%]
+                            className={`
+                                w-[25%]
                                 px-2.5
-                                py-3.5
+                                ${dashboard ? "py-2.5" : "py-3.5"}
                                 font-semibold
                                 text-black
                                 min-[1280px]:max-[1365px]:px-2
                                 min-[1280px]:max-[1365px]:py-2.5
                                 min-[1366px]:max-[1537px]:px-2
                                 min-[1366px]:max-[1537px]:py-3
-                            "
+                            `}
                         >
                             Details
                         </th>
 
+                        {/* CREATED */}
                         <th
-                            className="
-                                w-[12%]
+                            className={`
+                                w-[15%]
                                 px-2.5
-                                py-3.5
+                                ${dashboard ? "py-2.5" : "py-3.5"}
                                 font-semibold
                                 text-black
                                 min-[1280px]:max-[1365px]:px-2
                                 min-[1280px]:max-[1365px]:py-2.5
                                 min-[1366px]:max-[1537px]:px-2
                                 min-[1366px]:max-[1537px]:py-3
-                            "
+                            `}
                         >
                             Created
                         </th>
@@ -179,42 +228,51 @@ export default function AuditLogsListContent({
                 </thead>
 
                 <tbody>
-                    {auditLogs.length > 0 ? (
-                        auditLogs.map((log) => (
+                    {displayedLogs.length > 0 ? (
+                        displayedLogs.map((log) => (
                             <AuditLogRow
                                 key={
                                     log.id ||
                                     `${log.action}-${log.created_at}`
                                 }
                                 log={log}
+                                dashboard={dashboard}
                             />
                         ))
                     ) : (
                         <tr>
                             <td
                                 colSpan={7}
-                                className="
-                                    px-6
-                                    py-16
-                                    text-center
-                                    min-[1280px]:max-[1365px]:px-4
-                                    min-[1280px]:max-[1365px]:py-10
-                                    min-[1366px]:max-[1537px]:px-5
-                                    min-[1366px]:max-[1537px]:py-12
-                                "
+                                className={
+                                    dashboard
+                                        ? "px-4 py-10 text-center"
+                                        : `
+                                            px-6
+                                            py-16
+                                            text-center
+                                            min-[1280px]:max-[1365px]:px-4
+                                            min-[1280px]:max-[1365px]:py-10
+                                            min-[1366px]:max-[1537px]:px-5
+                                            min-[1366px]:max-[1537px]:py-12
+                                        `
+                                }
                             >
                                 <p className="font-medium text-black">
                                     No audit logs found
                                 </p>
 
                                 <p
-                                    className="
-                                        mt-1
-                                        text-sm
-                                        text-gray-500
-                                        min-[1280px]:max-[1365px]:text-[11px]
-                                        min-[1366px]:max-[1537px]:text-xs
-                                    "
+                                    className={
+                                        dashboard
+                                            ? "mt-1 text-xs text-gray-500"
+                                            : `
+                                                mt-1
+                                                text-sm
+                                                text-gray-500
+                                                min-[1280px]:max-[1365px]:text-[11px]
+                                                min-[1366px]:max-[1537px]:text-xs
+                                            `
+                                    }
                                 >
                                     There are currently no audit logs
                                     matching your search or filters.
@@ -228,21 +286,29 @@ export default function AuditLogsListContent({
     );
 }
 
-function AuditLogRow({ log }) {
+function AuditLogRow({ log, dashboard }) {
     const action = log.action || "";
 
     return (
-        <tr className="border-b border-gray-200 transition-colors last:border-b-0 hover:bg-gray-50">
+        <tr
+            className="
+                border-b
+                border-gray-200
+                transition-colors
+                last:border-b-0
+                hover:bg-gray-50
+            "
+        >
             {/* USER CODE */}
             <td
-                className="
+                className={`
                     px-2.5
-                    py-4
+                    ${dashboard ? "py-2.5" : "py-4"}
                     min-[1280px]:max-[1365px]:px-2
                     min-[1280px]:max-[1365px]:py-2.5
                     min-[1366px]:max-[1537px]:px-2
                     min-[1366px]:max-[1537px]:py-3
-                "
+                `}
             >
                 <p
                     className="truncate font-semibold text-black"
@@ -254,14 +320,14 @@ function AuditLogRow({ log }) {
 
             {/* USER */}
             <td
-                className="
+                className={`
                     px-2.5
-                    py-4
+                    ${dashboard ? "py-2.5" : "py-4"}
                     min-[1280px]:max-[1365px]:px-2
                     min-[1280px]:max-[1365px]:py-2.5
                     min-[1366px]:max-[1537px]:px-2
                     min-[1366px]:max-[1537px]:py-3
-                "
+                `}
             >
                 <div className="min-w-0">
                     <p
@@ -285,36 +351,35 @@ function AuditLogRow({ log }) {
                             "No email provided"
                         }
                     >
-                        {log.email ||
-                            "No email provided"}
+                        {log.email || "No email provided"}
                     </p>
                 </div>
             </td>
 
             {/* ROLE */}
             <td
-                className="
+                className={`
                     px-2.5
-                    py-4
+                    ${dashboard ? "py-2.5" : "py-4"}
                     min-[1280px]:max-[1365px]:px-2
                     min-[1280px]:max-[1365px]:py-2.5
                     min-[1366px]:max-[1537px]:px-2
                     min-[1366px]:max-[1537px]:py-3
-                "
+                `}
             >
                 <RoleBadge role={log.role} />
             </td>
 
             {/* DEPARTMENT */}
             <td
-                className="
+                className={`
                     px-2.5
-                    py-4
+                    ${dashboard ? "py-2.5" : "py-4"}
                     min-[1280px]:max-[1365px]:px-2
                     min-[1280px]:max-[1365px]:py-2.5
                     min-[1366px]:max-[1537px]:px-2
                     min-[1366px]:max-[1537px]:py-3
-                "
+                `}
             >
                 <p
                     className="truncate text-black"
@@ -323,35 +388,34 @@ function AuditLogRow({ log }) {
                         "No Department"
                     }
                 >
-                    {log.department ||
-                        "No Department"}
+                    {log.department || "No Department"}
                 </p>
             </td>
 
             {/* ACTION */}
             <td
-                className="
+                className={`
                     px-2.5
-                    py-4
+                    ${dashboard ? "py-2.5" : "py-4"}
                     min-[1280px]:max-[1365px]:px-2
                     min-[1280px]:max-[1365px]:py-2.5
                     min-[1366px]:max-[1537px]:px-2
                     min-[1366px]:max-[1537px]:py-3
-                "
+                `}
             >
                 <ActionBadge action={action} />
             </td>
 
             {/* DETAILS */}
             <td
-                className="
+                className={`
                     px-2.5
-                    py-4
+                    ${dashboard ? "py-2.5" : "py-4"}
                     min-[1280px]:max-[1365px]:px-2
                     min-[1280px]:max-[1365px]:py-2.5
                     min-[1366px]:max-[1537px]:px-2
                     min-[1366px]:max-[1537px]:py-3
-                "
+                `}
             >
                 <div className="min-w-0">
                     <p
@@ -371,9 +435,6 @@ function AuditLogRow({ log }) {
                                 items-center
                                 gap-1.5
                                 text-xs
-                                min-[1280px]:max-[1365px]:gap-1
-                                min-[1280px]:max-[1365px]:text-[10px]
-                                min-[1366px]:max-[1537px]:text-[11px]
                             "
                         >
                             {log.old_value && (
@@ -386,9 +447,6 @@ function AuditLogRow({ log }) {
                                         px-1.5
                                         py-0.5
                                         text-gray-600
-                                        min-[1280px]:max-[1365px]:max-w-[80px]
-                                        min-[1280px]:max-[1365px]:px-1
-                                        min-[1366px]:max-[1537px]:max-w-[90px]
                                     "
                                     title={String(
                                         log.old_value
@@ -405,12 +463,7 @@ function AuditLogRow({ log }) {
                                 log.new_value && (
                                     <ArrowRight
                                         size={12}
-                                        className="
-                                            shrink-0
-                                            text-gray-400
-                                            min-[1280px]:max-[1365px]:size-2.5
-                                            min-[1366px]:max-[1537px]:size-2.5
-                                        "
+                                        className="shrink-0 text-gray-400"
                                     />
                                 )}
 
@@ -424,9 +477,6 @@ function AuditLogRow({ log }) {
                                         px-1.5
                                         py-0.5
                                         text-blue-700
-                                        min-[1280px]:max-[1365px]:max-w-[80px]
-                                        min-[1280px]:max-[1365px]:px-1
-                                        min-[1366px]:max-[1537px]:max-w-[90px]
                                     "
                                     title={String(
                                         log.new_value
@@ -445,29 +495,25 @@ function AuditLogRow({ log }) {
 
             {/* CREATED */}
             <td
-                className="
+                className={`
                     px-2.5
-                    py-4
+                    ${dashboard ? "py-2.5" : "py-4"}
                     min-[1280px]:max-[1365px]:px-2
                     min-[1280px]:max-[1365px]:py-2.5
                     min-[1366px]:max-[1537px]:px-2
                     min-[1366px]:max-[1537px]:py-3
-                "
+                `}
             >
                 <span
                     className="whitespace-nowrap font-medium text-black"
                     title={
                         log.created_at
-                            ? formatDate(
-                                  log.created_at
-                              )
+                            ? formatDate(log.created_at)
                             : "-"
                     }
                 >
                     {log.created_at
-                        ? formatDate(
-                              log.created_at
-                          )
+                        ? formatDate(log.created_at)
                         : "-"}
                 </span>
             </td>

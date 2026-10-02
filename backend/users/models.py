@@ -197,6 +197,13 @@ class Notifications(models.Model):
         REVIEW_COMPLETED = 'review_completed', 'Review Completed'
         TICKET_CLOSED = 'ticket_closed', 'Ticket Closed'
         TICKET_ESCALATED = 'ticket_escalated', 'Ticket Escalated'
+        TICKET_BREACHED = 'ticket_breached', 'Ticket Breached'
+        TICKET_WARNING = 'ticket_warning', 'Ticket Warning'
+        TICKET_CRITICAL = 'ticket_critical', 'Ticket Critical'
+        CLARIFICATION_REQUESTED = (
+            "clarification_requested",
+            "Clarification Requested",
+        )
         ESCALATION_ACKNOWLEDGED = (
             "escalation_acknowledged",
             "Escalation Acknowledged",

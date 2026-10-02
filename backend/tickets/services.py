@@ -1,4 +1,8 @@
 from datetime import datetime, timezone as dt_timezone
+from django.db import transaction
+
+from users.models import Notifications, ITSupportProfile, ITSupervisorProfile
+from tickets.models import Ticket
 from h11 import Response
 from .models import Keyword, SymptomCode, Ticket, ReviewFlags, Category, SLARules, TicketStatusHistory
 from users.models import ITSupportProfile
@@ -443,6 +447,77 @@ def calculate_priority(
 
     return details["final_priority"]
 
+def notify_resolution_sla(ticket, new_sla_status):
+    """
+    Notify the assigned IT Support Specialist and the IT Supervisor
+    when the ticket's resolution SLA enters WARNING, CRITICAL, or BREACHED.
+
+    Duplicate prevention is handled by checking existing notifications
+    for the same ticket, recipient, alert type, and resolution alert.
+    """
+
+    alert_types = {
+        Ticket.SLAStatus.WARNING: Notifications.NotificationType.TICKET_WARNING,
+        Ticket.SLAStatus.CRITICAL: Notifications.NotificationType.TICKET_CRITICAL,
+        Ticket.SLAStatus.BREACHED: Notifications.NotificationType.TICKET_BREACHED,
+    }
+
+    notification_type = alert_types.get(new_sla_status)
+
+    if not notification_type:
+        return
+
+    recipients = set()
+
+    # Assigned IT Support Specialist
+    if ticket.assigned_to_id:
+        support_profile = (
+            ITSupportProfile.objects
+            .filter(user_id=ticket.assigned_to_id)
+            .first()
+        )
+
+        if support_profile:
+            recipients.add(support_profile.user_id)
+
+            # Notify the supervisor in the same department.
+            if support_profile.it_department_id:
+                supervisor_ids = ITSupervisorProfile.objects.filter(
+                    it_department_id=support_profile.it_department_id
+                ).values_list("user_id", flat=True)
+
+                recipients.update(supervisor_ids)
+
+    if not recipients:
+        return
+
+    alert_label = new_sla_status.lower()
+
+    message = (
+        f"Resolution SLA {alert_label} for ticket "
+        f"{ticket.ticket_code}: {ticket.subject}."
+    )
+
+    for recipient_id in recipients:
+        # A matching notification prevents another notification of
+        # this type for this ticket and recipient, even if it was read.
+        already_notified = Notifications.objects.filter(
+            user_id=recipient_id,
+            ticket_id=ticket.pk,
+            notification_type=notification_type,
+            message=message,
+        ).exists()
+
+        if already_notified:
+            continue
+
+        Notifications.objects.create(
+            user_id=recipient_id,
+            ticket=ticket,
+            notification_type=notification_type,
+            message=message,
+        )
+
 def calculate_status(remaining, total_duration):
     WARNING_THRESHOLD = 50
     CRITICAL_THRESHOLD = 25
@@ -464,7 +539,11 @@ def calculate_status(remaining, total_duration):
     return Ticket.SLAStatus.SAFE
 
 
-def update_sla(ticket, response_start=None, recalculate_deadlines=False):
+def update_sla(
+    ticket,
+    response_start=None,
+    recalculate_deadlines=False,
+):
     if not ticket.priority:
         return
 
@@ -473,6 +552,10 @@ def update_sla(ticket, response_start=None, recalculate_deadlines=False):
     if not response_start:
         response_start = ticket.created_at
 
+
+    previous_resolution_status = ticket.resolution_sla_status
+
+    # Calculate deadlines.
     if not ticket.response_deadline or recalculate_deadlines:
         ticket.response_deadline = (
             response_start + ticket.priority.response_time
@@ -483,7 +566,7 @@ def update_sla(ticket, response_start=None, recalculate_deadlines=False):
             ticket.created_at + ticket.priority.resolution_time
         )
 
-    # Response SLA
+
     if ticket.status in [
         Ticket.TicketStatus.IN_PROGRESS,
         Ticket.TicketStatus.RESOLVED,
@@ -499,16 +582,13 @@ def update_sla(ticket, response_start=None, recalculate_deadlines=False):
         )
 
     else:
-        response_remaining = (
-            ticket.response_deadline - now
-        )
+        response_remaining = ticket.response_deadline - now
 
         ticket.response_sla_status = calculate_status(
             response_remaining,
             ticket.priority.response_time,
         )
 
-    # Resolution SLA
     if ticket.status in [
         Ticket.TicketStatus.RESOLVED,
         Ticket.TicketStatus.CLOSED,
@@ -520,15 +600,18 @@ def update_sla(ticket, response_start=None, recalculate_deadlines=False):
                 else Ticket.SLAStatus.BREACHED
             )
 
+    elif ticket.status == Ticket.TicketStatus.CANCELLED:
+
+        pass
+
     else:
-        resolution_remaining = (
-            ticket.resolution_deadline - now
-        )
+        resolution_remaining = ticket.resolution_deadline - now
 
         ticket.resolution_sla_status = calculate_status(
             resolution_remaining,
             ticket.priority.resolution_time,
         )
+
 
     ticket.save(
         update_fields=[
@@ -539,6 +622,23 @@ def update_sla(ticket, response_start=None, recalculate_deadlines=False):
             "resolution_sla_status",
         ]
     )
+
+    new_resolution_status = ticket.resolution_sla_status
+
+    alert_statuses = {
+        Ticket.SLAStatus.WARNING,
+        Ticket.SLAStatus.CRITICAL,
+        Ticket.SLAStatus.BREACHED,
+    }
+
+    if (
+        new_resolution_status in alert_statuses
+        and new_resolution_status != previous_resolution_status
+    ):
+        notify_resolution_sla(
+            ticket,
+            new_resolution_status,
+        )
 
 def predict_ticket(ticket):
     result = predict_symptom_code(

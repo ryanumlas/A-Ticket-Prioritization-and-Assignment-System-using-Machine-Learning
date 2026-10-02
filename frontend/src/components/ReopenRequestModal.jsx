@@ -1,387 +1,299 @@
+import { useEffect, useState } from "react";
+import { RotateCcw, X, CheckCircle2, XCircle, Clock, Info } from "lucide-react";
 
-import { useState } from "react";
-import {
-    X,
-    RotateCcw,
-    Clock3,
-    UserRound,
-    Building2,
-    CalendarDays,
-    FileText,
-    CheckCircle2,
-    XCircle,
-} from "lucide-react";
-import { formatDate } from "../utils/formatDate";
+const formatDate = (value) => {
+    if (!value) return "Not available";
+
+    const date = new Date(value);
+
+    if (Number.isNaN(date.getTime())) {
+        return "Not available";
+    }
+
+    return date.toLocaleString();
+};
+
+const statusConfig = {
+    pending: {
+        label: "Pending Review",
+        className: "border-amber-200 bg-amber-50 text-amber-700",
+        icon: Clock,
+    },
+    approved: {
+        label: "Approved",
+        className: "border-green-200 bg-green-50 text-green-700",
+        icon: CheckCircle2,
+    },
+    rejected: {
+        label: "Rejected",
+        className: "border-red-200 bg-red-50 text-red-700",
+        icon: XCircle,
+    },
+};
 
 export default function ReopenRequestModal({
     open,
-    isOpen,
     onClose,
-    request,
-    canReview = false,
-    onApprove,
-    onReject,
+    reopenRequest,
+    isSupport = false,
+    onReview,
     reviewing = false,
 }) {
+    const [decision, setDecision] = useState("approved");
     const [reviewRemarks, setReviewRemarks] = useState("");
 
-    const visible = open ?? isOpen;
+    useEffect(() => {
+        if (open) {
+            setDecision("approved");
+            setReviewRemarks("");
+        }
+    }, [open, reopenRequest?.id]);
 
-    if (!visible || !request) return null;
+    if (!open || !reopenRequest) {
+        return null;
+    }
 
-    const requesterName =
-        request.requester_name ||
-        request.employee_name ||
-        request.requester?.full_name ||
-        request.requester?.username ||
-        "Unknown requester";
+    const status = String(reopenRequest.status || "pending").toLowerCase();
+    const config = statusConfig[status] || statusConfig.pending;
+    const StatusIcon = config.icon;
+    const canReview = isSupport && status === "pending";
 
-    const department =
-        request.employee_department ||
-        request.requester_department ||
-        request.requester?.department_name ||
-        request.requester?.department?.name ||
-        "—";
+    const handleSubmitReview = () => {
+        const remarks = reviewRemarks.trim();
 
-    const ticketId =
-        request.ticket_number ||
-        request.ticket_code ||
-        request.ticket?.ticket_number ||
-        request.ticket?.ticket_code ||
-        (request.ticket_id ? `Ticket #${request.ticket_id}` : "—");
+        if (decision === "rejected" && !remarks) {
+            return;
+        }
 
-    const ticketTitle =
-        request.ticket_title ||
-        request.ticket?.title ||
-        request.subject ||
-        request.title ||
-        "Untitled ticket";
-
-    const reason =
-        request.reason ||
-        request.reopen_reason ||
-        "No reason provided.";
-
-    const status = String(
-        request.request_status ||
-        request.reopen_request_status ||
-        request.status ||
-        "pending"
-    ).toLowerCase();
-
-    const isPending = status === "pending";
-    const isApproved = status === "approved";
-    const isRejected = status === "rejected";
-
-    const statusStyles = {
-        pending: "border-amber-200 bg-amber-50 text-amber-700",
-        approved: "border-green-200 bg-green-50 text-green-700",
-        rejected: "border-red-200 bg-red-50 text-red-700",
-    };
-
-    const statusLabel =
-        status.charAt(0).toUpperCase() + status.slice(1);
-
-    const handleClose = () => {
-        setReviewRemarks("");
-        onClose?.();
-    };
-
-    const handleReject = () => {
-        onReject?.(request, reviewRemarks.trim());
+        onReview?.(reopenRequest.id, decision, remarks);
     };
 
     return (
         <div
-            className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
+            className="fixed inset-0 z-[60] flex items-center justify-center bg-black/40 p-4"
             onMouseDown={(event) => {
-                if (
-                    event.target === event.currentTarget &&
-                    !reviewing
-                ) {
-                    handleClose();
+                if (event.target === event.currentTarget && !reviewing) {
+                    onClose();
                 }
             }}
         >
             <div
                 role="dialog"
                 aria-modal="true"
-                aria-labelledby="reopen-request-title"
+                aria-labelledby="reopen-details-title"
                 className="max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-xl border border-gray-200 bg-white shadow-xl"
             >
-                {/* Header */}
                 <div className="flex items-start justify-between border-b border-gray-200 px-5 py-4">
                     <div className="flex min-w-0 items-start gap-3">
                         <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#4C4CF9]/10 text-[#4C4CF9]">
                             <RotateCcw size={20} />
                         </div>
-
                         <div className="min-w-0">
-                            <h2
-                                id="reopen-request-title"
-                                className="text-base font-semibold text-gray-900"
-                            >
+                            <h2 id="reopen-details-title" className="text-base font-semibold text-gray-900">
                                 Reopen Request Details
                             </h2>
-
                             <p className="mt-1 text-sm leading-5 text-gray-500">
-                                Review the request and its current status.
+                                View the employee's request and its review status.
                             </p>
                         </div>
                     </div>
 
                     <button
                         type="button"
-                        onClick={handleClose}
+                        onClick={onClose}
                         disabled={reviewing}
+                        className="ml-3 rounded-lg p-1.5 text-gray-400 transition hover:bg-gray-100 hover:text-gray-700 disabled:cursor-not-allowed disabled:opacity-50"
                         aria-label="Close modal"
-                        className="ml-3 rounded-lg p-1.5 text-gray-400 transition hover:bg-gray-100 hover:text-gray-700 disabled:opacity-50"
                     >
                         <X size={20} />
                     </button>
                 </div>
 
-                {/* Content */}
                 <div className="space-y-5 px-5 py-5">
-                    {/* Status */}
-                    <div className="flex items-center justify-between gap-3">
-                        <span className="text-xs font-medium uppercase tracking-wide text-gray-500">
+                    <div className="flex flex-wrap items-center justify-between gap-3">
+                        <span className="text-sm font-medium text-gray-700">
                             Request Status
                         </span>
-
-                        <span
-                            className={`inline-flex items-center gap-1.5 rounded-md border px-2.5 py-1 text-xs font-medium ${
-                                statusStyles[status] ||
-                                "border-gray-200 bg-gray-50 text-gray-600"
-                            }`}
-                        >
-                            {isPending && <Clock3 size={13} />}
-                            {isApproved && <CheckCircle2 size={13} />}
-                            {isRejected && <XCircle size={13} />}
-                            {statusLabel}
+                        <span className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-semibold ${config.className}`}>
+                            <StatusIcon size={14} />
+                            {config.label}
                         </span>
                     </div>
 
-                    {/* Ticket */}
-                    <div className="rounded-lg border border-gray-200 bg-gray-50 p-4">
-                        <p className="text-xs font-medium uppercase tracking-wide text-gray-500">
-                            Ticket Information
-                        </p>
-
-                        <p className="mt-2 text-sm font-semibold text-[#4C4CF9]">
-                            {ticketId}
-                        </p>
-
-                        <p className="mt-1 break-words text-sm font-medium leading-5 text-black">
-                            {ticketTitle}
-                        </p>
-                    </div>
-
-                    {/* Requester */}
-                    <div>
-                        <p className="mb-3 text-xs font-medium uppercase tracking-wide text-gray-500">
-                            Requester Information
-                        </p>
-
-                        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                            <div className="flex min-w-0 items-start gap-2.5">
-                                <div className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[#4C4CF9]/10 text-[#4C4CF9]">
-                                    <UserRound size={16} />
-                                </div>
-
-                                <div className="min-w-0">
-                                    <p className="text-xs text-gray-500">
-                                        Requested By
-                                    </p>
-                                    <p className="mt-1 break-words text-sm font-medium text-black">
-                                        {requesterName}
-                                    </p>
-                                </div>
-                            </div>
-
-                            <div className="flex min-w-0 items-start gap-2.5">
-                                <div className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[#4C4CF9]/10 text-[#4C4CF9]">
-                                    <Building2 size={16} />
-                                </div>
-
-                                <div className="min-w-0">
-                                    <p className="text-xs text-gray-500">
-                                        Department
-                                    </p>
-                                    <p className="mt-1 break-words text-sm font-medium text-black">
-                                        {department}
-                                    </p>
-                                </div>
-                            </div>
-
-                            <div className="flex min-w-0 items-start gap-2.5 sm:col-span-2">
-                                <div className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[#4C4CF9]/10 text-[#4C4CF9]">
-                                    <CalendarDays size={16} />
-                                </div>
-
-                                <div className="min-w-0">
-                                    <p className="text-xs text-gray-500">
-                                        Requested At
-                                    </p>
-                                    <p className="mt-1 text-sm font-medium text-black">
-                                        {formatDate(
-                                            request.requested_at ||
-                                            request.created_at
-                                        )}
-                                    </p>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* Reason */}
-                    <div>
-                        <div className="mb-2 flex items-center gap-2">
-                            <FileText size={15} className="text-gray-500" />
-                            <p className="text-xs font-medium uppercase tracking-wide text-gray-500">
-                                Reason for Reopening
+                    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                        <div className="rounded-lg border border-gray-200 bg-gray-50 p-3">
+                            <p className="text-xs font-medium text-gray-500">
+                                Requested By
+                            </p>
+                            <p className="mt-1 break-words text-sm font-semibold text-gray-900">
+                                {reopenRequest.requested_by_name || "Employee"}
                             </p>
                         </div>
 
-                        <div className="min-h-[90px] rounded-lg border border-gray-200 bg-white px-3 py-3">
-                            <p className="whitespace-pre-wrap break-words text-sm leading-6 text-black">
-                                {reason}
+                        <div className="rounded-lg border border-gray-200 bg-gray-50 p-3">
+                            <p className="text-xs font-medium text-gray-500">
+                                Requested At
+                            </p>
+                            <p className="mt-1 text-sm font-semibold text-gray-900">
+                                {formatDate(reopenRequest.requested_at)}
                             </p>
                         </div>
                     </div>
 
-                    {/* Final decision */}
-                    {!isPending && (
-                        <div
-                            className={`rounded-lg border px-3.5 py-3 ${
-                                isApproved
-                                    ? "border-green-200 bg-green-50"
-                                    : "border-red-200 bg-red-50"
-                            }`}
-                        >
-                            <div className="flex items-start gap-2.5">
-                                {isApproved ? (
-                                    <CheckCircle2
-                                        size={18}
-                                        className="mt-0.5 shrink-0 text-green-600"
-                                    />
-                                ) : (
-                                    <XCircle
-                                        size={18}
-                                        className="mt-0.5 shrink-0 text-red-600"
-                                    />
-                                )}
+                    <div>
+                        <p className="mb-2 text-sm font-semibold text-gray-900">
+                            Reason for Reopening
+                        </p>
+                        <div className="whitespace-pre-wrap break-words rounded-lg border border-gray-200 bg-white px-3.5 py-3 text-sm leading-6 text-gray-700">
+                            {reopenRequest.reason || "No reason provided."}
+                        </div>
+                    </div>
 
-                                <div>
-                                    <p
-                                        className={`text-sm font-semibold ${
-                                            isApproved
-                                                ? "text-green-800"
-                                                : "text-red-800"
-                                        }`}
-                                    >
-                                        Request {statusLabel}
-                                    </p>
+                    {!canReview && status !== "pending" && (
+                        <div className="space-y-3 rounded-lg border border-gray-200 bg-gray-50 p-4">
+                            <h3 className="text-sm font-semibold text-gray-900">
+                                Review Details
+                            </h3>
 
-                                    <p
-                                        className={`mt-1 text-xs leading-5 ${
-                                            isApproved
-                                                ? "text-green-700"
-                                                : "text-red-700"
-                                        }`}
-                                    >
-                                        {isApproved
-                                            ? "This reopen request has been approved."
-                                            : "This reopen request has been rejected."}
-                                    </p>
-                                </div>
+                            <div>
+                                <p className="text-xs font-medium text-gray-500">
+                                    Reviewed By
+                                </p>
+                                <p className="mt-1 text-sm text-gray-800">
+                                    {reopenRequest.reviewed_by_name || "Not available"}
+                                </p>
                             </div>
 
-                            {request.review_remarks && (
-                                <div className="mt-3 border-t border-current/10 pt-3">
-                                    <p className="text-xs font-semibold uppercase tracking-wide">
-                                        {isRejected
-                                            ? "Reason for Rejection"
-                                            : "Review Remarks"}
-                                    </p>
+                            <div>
+                                <p className="text-xs font-medium text-gray-500">
+                                    Reviewed At
+                                </p>
+                                <p className="mt-1 text-sm text-gray-800">
+                                    {formatDate(reopenRequest.reviewed_at)}
+                                </p>
+                            </div>
 
-                                    <p className="mt-1 whitespace-pre-wrap break-words text-sm leading-5">
-                                        {request.review_remarks}
+                            <div>
+                                <p className="text-xs font-medium text-gray-500">
+                                    Review Remarks
+                                </p>
+                                <div className="mt-1 whitespace-pre-wrap break-words text-sm leading-6 text-gray-800">
+                                    {reopenRequest.review_remarks || "No review remarks provided."}
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {status === "pending" && !isSupport && (
+                        <div className="flex items-start gap-2.5 rounded-lg border border-blue-200 bg-blue-50 px-3.5 py-3">
+                            <Info size={17} className="mt-0.5 shrink-0 text-blue-600" />
+                            <p className="text-sm leading-5 text-blue-700">
+                                Your reopen request is waiting for IT Support to review it.
+                            </p>
+                        </div>
+                    )}
+
+                    {canReview && (
+                        <div className="space-y-4 border-t border-gray-200 pt-4">
+                            <h3 className="text-sm font-semibold text-gray-900">
+                                Review Request
+                            </h3>
+
+                            <div className="grid grid-cols-2 gap-3">
+                                <button
+                                    type="button"
+                                    onClick={() => setDecision("approved")}
+                                    disabled={reviewing}
+                                    className={`flex items-center justify-center gap-2 rounded-lg border px-3 py-2.5 text-sm font-semibold transition disabled:cursor-not-allowed disabled:opacity-50 ${
+                                        decision === "approved"
+                                            ? "border-green-300 bg-green-50 text-green-700 ring-2 ring-green-100"
+                                            : "border-gray-300 bg-white text-gray-600 hover:bg-gray-50"
+                                    }`}
+                                >
+                                    <CheckCircle2 size={16} />
+                                    Approve
+                                </button>
+
+                                <button
+                                    type="button"
+                                    onClick={() => setDecision("rejected")}
+                                    disabled={reviewing}
+                                    className={`flex items-center justify-center gap-2 rounded-lg border px-3 py-2.5 text-sm font-semibold transition disabled:cursor-not-allowed disabled:opacity-50 ${
+                                        decision === "rejected"
+                                            ? "border-red-300 bg-red-50 text-red-700 ring-2 ring-red-100"
+                                            : "border-gray-300 bg-white text-gray-600 hover:bg-gray-50"
+                                    }`}
+                                >
+                                    <XCircle size={16} />
+                                    Reject
+                                </button>
+                            </div>
+
+                            <div>
+                                <label htmlFor="reopen-review-remarks" className="mb-2 block text-sm font-medium text-gray-900">
+                                    Review Remarks {decision === "rejected" && <span className="text-red-500">*</span>}
+                                </label>
+                                <textarea
+                                    id="reopen-review-remarks"
+                                    value={reviewRemarks}
+                                    onChange={(event) => setReviewRemarks(event.target.value)}
+                                    disabled={reviewing}
+                                    maxLength={1000}
+                                    rows={4}
+                                    placeholder={
+                                        decision === "rejected"
+                                            ? "Explain why this reopen request is being rejected..."
+                                            : "Add optional remarks about this decision..."
+                                    }
+                                    className="w-full resize-y rounded-lg border border-gray-300 bg-white px-3 py-3 text-sm text-gray-900 outline-none transition placeholder:text-gray-400 focus:border-[#4C4CF9] focus:ring-2 focus:ring-[#4C4CF9]/20 disabled:bg-gray-50"
+                                />
+                                <p className="mt-1 text-right text-xs text-gray-400">
+                                    {reviewRemarks.length}/1000 characters
+                                </p>
+                            </div>
+
+                            {decision === "approved" && (
+                                <div className="flex items-start gap-2 rounded-lg border border-green-200 bg-green-50 px-3.5 py-3">
+                                    <Info size={16} className="mt-0.5 shrink-0 text-green-600" />
+                                    <p className="text-xs leading-5 text-green-700">
+                                        Approving this request will reopen the ticket according to the backend review workflow.
                                     </p>
                                 </div>
                             )}
                         </div>
                     )}
-
-                    {/* Rejection remarks: reviewer only */}
-                    {canReview && isPending && (
-                        <div>
-                            <label
-                                htmlFor="reopen-review-remarks"
-                                className="mb-2 block text-sm font-medium text-gray-900"
-                            >
-                                Review Remarks
-                                <span className="ml-1 font-normal text-gray-400">
-                                    (Required when rejecting)
-                                </span>
-                            </label>
-
-                            <textarea
-                                id="reopen-review-remarks"
-                                value={reviewRemarks}
-                                onChange={(event) =>
-                                    setReviewRemarks(event.target.value)
-                                }
-                                disabled={reviewing}
-                                rows={3}
-                                maxLength={1000}
-                                placeholder="Enter the reason for your decision..."
-                                className="w-full resize-y rounded-lg border border-gray-300 bg-white px-3 py-3 text-sm text-gray-900 outline-none transition placeholder:text-gray-400 focus:border-[#4C4CF9] focus:ring-2 focus:ring-[#4C4CF9]/20 disabled:bg-gray-50"
-                            />
-
-                            <p className="mt-1.5 text-right text-xs text-gray-400">
-                                {reviewRemarks.length}/1000 characters
-                            </p>
-                        </div>
-                    )}
                 </div>
 
-                {/* Footer */}
-                <div className="flex flex-col-reverse justify-end gap-2 border-t border-gray-200 bg-gray-50/50 px-5 py-4 sm:flex-row">
+                <div className="flex justify-end gap-2 border-t border-gray-200 bg-gray-50/50 px-5 py-4">
                     <button
                         type="button"
-                        onClick={handleClose}
+                        onClick={onClose}
                         disabled={reviewing}
-                        className="rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-50 disabled:opacity-50"
+                        className="rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
                     >
                         Close
                     </button>
 
-                    {canReview && isPending && (
-                        <>
-                            <button
-                                type="button"
-                                onClick={handleReject}
-                                disabled={
-                                    reviewing ||
-                                    reviewRemarks.trim().length < 3
-                                }
-                                className="rounded-lg border border-red-200 bg-white px-4 py-2 text-sm font-medium text-red-600 transition hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50"
-                            >
-                                {reviewing ? "Processing..." : "Reject Request"}
-                            </button>
-
-                            <button
-                                type="button"
-                                onClick={() =>
-                                    onApprove?.(request, reviewRemarks.trim())
-                                }
-                                disabled={reviewing}
-                                className="rounded-lg bg-[#4C4CF9] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#3D3DE5] disabled:cursor-not-allowed disabled:opacity-50"
-                            >
-                                {reviewing ? "Processing..." : "Approve Request"}
-                            </button>
-                        </>
+                    {canReview && (
+                        <button
+                            type="button"
+                            onClick={handleSubmitReview}
+                            disabled={
+                                reviewing ||
+                                (decision === "rejected" && !reviewRemarks.trim())
+                            }
+                            className={`rounded-lg px-4 py-2 text-sm font-semibold text-white transition focus:outline-none focus:ring-2 disabled:cursor-not-allowed disabled:opacity-50 ${
+                                decision === "approved"
+                                    ? "bg-green-600 hover:bg-green-700 focus:ring-green-500/30"
+                                    : "bg-red-600 hover:bg-red-700 focus:ring-red-500/30"
+                            }`}
+                        >
+                            {reviewing
+                                ? "Submitting..."
+                                : decision === "approved"
+                                    ? "Approve Request"
+                                    : "Reject Request"}
+                        </button>
                     )}
                 </div>
             </div>

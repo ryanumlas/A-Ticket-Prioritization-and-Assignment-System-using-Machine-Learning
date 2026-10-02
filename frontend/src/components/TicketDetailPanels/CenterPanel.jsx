@@ -344,137 +344,84 @@ export default function CenterPanel({
         setActiveTab("public");
 
         const startLongPolling = async () => {
-            if (pollingRef.current) {
-                return;
-            }
+            if (pollingRef.current) return;
 
             pollingRef.current = true;
 
-            // ----------------------------------------------------
-            // Initial load
-            // ----------------------------------------------------
+            try {
+                await loadInitialComments();
 
-            await loadInitialComments();
+                if (cancelled) return;
 
-            if (cancelled) {
-                pollingRef.current = false;
-                return;
-            }
+                while (!cancelled) {
+                    try {
+                        const response = await api.get(
+                            `/tickets/${ticketId}/comments/`,
+                            {
+                                params: {
+                                    last_comment_id: lastCommentIdRef.current,
+                                },
+                            }
+                        );
 
-            // ----------------------------------------------------
-            // Long-poll loop
-            // ----------------------------------------------------
+                        if (cancelled) break;
 
-            while (!cancelled) {
-                try {
-                    const lastCommentId =
-                        lastCommentIdRef.current;
-
-                    const response = await api.get(
-                        `/tickets/${ticketId}/comments/`,
-                        {
-                            params: {
-                                last_comment_id:
-                                    lastCommentId,
-                            },
-                        }
-                    );
-
-                    if (cancelled) {
-                        break;
-                    }
-
-                    const newComments =
-                        Array.isArray(response.data)
+                        const newComments = Array.isArray(response.data)
                             ? response.data
                             : [];
 
-                    // ------------------------------------------------
-                    // No new message
-                    // ------------------------------------------------
-
-                    if (newComments.length === 0) {
-                        continue;
-                    }
-
-                    // ------------------------------------------------
-                    // Remove returned comments from pending list
-                    // ------------------------------------------------
-
-                    newComments.forEach((comment) => {
-                        if (
-                            comment?.id !== null &&
-                            comment?.id !== undefined
-                        ) {
-                            pendingMessageIdsRef.current.delete(
-                                comment.id
+                        if (newComments.length === 0) {
+                            // Avoid rapid repeated requests if the backend
+                            // returns immediately instead of waiting.
+                            await new Promise((resolve) =>
+                                setTimeout(resolve, 5000)
                             );
+                            continue;
                         }
-                    });
 
-                    // ------------------------------------------------
-                    // Remember newest comment ID
-                    // ------------------------------------------------
-
-                    const newestComment =
-                        newComments[
-                            newComments.length - 1
-                        ];
-
-                    const newestCommentId =
-                        Number(newestComment?.id) || 0;
-
-                    if (
-                        newestCommentId >
-                        lastCommentIdRef.current
-                    ) {
-                        lastCommentIdRef.current =
-                            newestCommentId;
-                    }
-
-                    // ------------------------------------------------
-                    // Add new messages
-                    // ------------------------------------------------
-
-                    mergeComments(newComments);
-
-                    // ------------------------------------------------
-                    // Handle scrolling
-                    // ------------------------------------------------
-
-                    if (isNearBottomRef.current) {
-                        requestAnimationFrame(() => {
-                            requestAnimationFrame(() => {
-                                scrollToBottom("smooth");
-                            });
+                        newComments.forEach((comment) => {
+                            if (comment?.id != null) {
+                                pendingMessageIdsRef.current.delete(comment.id);
+                            }
                         });
-                    } else {
-                        setShowScrollButton(true);
+
+                        const newestCommentId = Math.max(
+                            ...newComments.map((comment) => Number(comment.id) || 0)
+                        );
+
+                        if (newestCommentId > lastCommentIdRef.current) {
+                            lastCommentIdRef.current = newestCommentId;
+                        }
+
+                        mergeComments(newComments);
+
+                        if (isNearBottomRef.current) {
+                            requestAnimationFrame(() => {
+                                requestAnimationFrame(() => {
+                                    scrollToBottom("smooth");
+                                });
+                            });
+                        } else {
+                            setShowScrollButton(true);
+                        }
+
+                        await markCommentsAsRead();
+                    } catch (error) {
+                        if (cancelled) break;
+
+                        console.error(
+                            "Long polling failed:",
+                            error.response?.data || error
+                        );
+
+                        await new Promise((resolve) =>
+                            setTimeout(resolve, 2000)
+                        );
                     }
-
-                    // ------------------------------------------------
-                    // Mark conversation as read
-                    // ------------------------------------------------
-
-                    await markCommentsAsRead();
-                } catch (error) {
-                    if (cancelled) {
-                        break;
-                    }
-
-                    console.error(
-                        "Long polling failed:",
-                        error.response?.data || error
-                    );
-
-                    // Give connection a short break before retrying.
-                    await new Promise((resolve) =>
-                        setTimeout(resolve, 2000)
-                    );
                 }
+            } finally {
+                pollingRef.current = false;
             }
-
-            pollingRef.current = false;
         };
 
         startLongPolling();

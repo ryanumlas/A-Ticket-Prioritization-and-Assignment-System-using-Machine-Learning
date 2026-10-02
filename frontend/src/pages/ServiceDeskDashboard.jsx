@@ -5,7 +5,7 @@ import FlaggedTicketsTable from "../components/FlaggedTicketsTable";
 import { Link } from "react-router-dom";
 import api from "../api";
 import { useEffect, useState } from "react";
-import SLAOverview from "../components/SLAOverview";
+import OverallSLAOverview from "../components/OverallSLAOverview";
 import AIResultPieChart from "../components/AIResultPieChart";
 import { motion } from "motion/react";
 
@@ -112,7 +112,7 @@ export default function ServiceDeskDashboard() {
                         md:col-span-6
                     "
                 >
-                    <SLAOverview />
+                    <OverallSLAOverview/>
                 </motion.div>
 
                 {/* FLAGGED TICKETS */}

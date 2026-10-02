@@ -14,26 +14,41 @@ logger = logging.getLogger(__name__)
 
 @shared_task
 def update_all_sla():
-    active_tickets = Ticket.objects.filter(
-        resolved_at__isnull=True
-    ).exclude(
-        status=Ticket.TicketStatus.CLOSED
+    active_tickets = (
+        Ticket.objects
+        .filter(resolved_at__isnull=True)
+        .exclude(
+            status__in=[
+                Ticket.TicketStatus.RESOLVED,
+                Ticket.TicketStatus.CLOSED,
+                Ticket.TicketStatus.CANCELLED,
+            ]
+        )
     )
+
+    total = active_tickets.count()
 
     logger.info(
-        f"Updating {active_tickets.count()} active ticket(s)."
+        "Updating SLA for %s active ticket(s).",
+        total,
     )
 
-    for ticket in active_tickets:
-        logger.info(
-            f"Updating SLA for {ticket.ticket_code}"
-        )
+    for ticket in active_tickets.iterator():
+        try:
+            logger.info(
+                "Updating SLA for %s",
+                ticket.ticket_code,
+            )
 
-        update_sla(ticket)
+            update_sla(ticket)
 
-    return (
-        f"Updated {active_tickets.count()} ticket(s)."
-    )
+        except Exception:
+            logger.exception(
+                "Failed to update SLA for %s",
+                ticket.ticket_code,
+            )
+
+    return f"Updated {total} ticket(s)."
 
 
 @shared_task

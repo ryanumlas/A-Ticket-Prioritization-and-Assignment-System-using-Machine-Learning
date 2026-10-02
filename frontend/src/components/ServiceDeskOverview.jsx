@@ -1,8 +1,9 @@
+
 import {
-    Bot,
+    ClipboardList,
+    CheckCircle2,
     Flag,
     Undo2,
-    UserCheck,
     Headphones,
     ShieldCheck,
 } from "lucide-react";
@@ -59,7 +60,7 @@ export default function ServiceDeskOverview() {
                             </h1>
 
                             <p className="mt-0.5 truncate text-[10px] leading-tight text-indigo-100 sm:mt-1 sm:text-sm min-[1280px]:max-[1365px]:text-[11px] min-[1366px]:max-[1537px]:text-xs">
-                                Monitor active tickets, reviews, and automated ticket processing.
+                                Monitor tickets, resolutions, reviews, and returned requests.
                             </p>
                         </div>
                     </div>
@@ -74,53 +75,53 @@ export default function ServiceDeskOverview() {
             {/* Overview Cards */}
             <div className="p-3 sm:p-4 min-[1280px]:max-[1365px]:p-3 min-[1366px]:max-[1537px]:p-3.5">
                 <div className="grid grid-cols-2 gap-3 xl:grid-cols-4 min-[1280px]:max-[1365px]:gap-3 min-[1366px]:max-[1537px]:gap-4">
-                    {/* Assigned Tickets */}
+                    {/* Total Tickets */}
                     <div className="rounded-xl border border-gray-200 p-3 transition hover:border-blue-200 hover:shadow-md sm:p-4 min-[1280px]:max-[1365px]:rounded-lg min-[1280px]:max-[1365px]:p-3 min-[1366px]:max-[1537px]:p-3.5">
                         <div className="flex items-center justify-between gap-2">
                             <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-blue-100 sm:h-10 sm:w-10 min-[1280px]:max-[1365px]:h-9 min-[1280px]:max-[1365px]:w-9 min-[1366px]:max-[1537px]:h-9 min-[1366px]:max-[1537px]:w-9">
-                                <UserCheck className="text-blue-600" size={18} aria-hidden="true" />
+                                <ClipboardList className="text-blue-600" size={18} aria-hidden="true" />
                             </div>
 
                             <span className="rounded-lg border border-blue-200 bg-blue-50 px-1.5 py-0.5 text-[10px] font-semibold text-blue-600 sm:px-2 sm:py-1 sm:text-xs min-[1280px]:max-[1365px]:px-1.5 min-[1280px]:max-[1365px]:py-0.5 min-[1280px]:max-[1365px]:text-[10px] min-[1366px]:max-[1537px]:px-1.5 min-[1366px]:max-[1537px]:py-0.5 min-[1366px]:max-[1537px]:text-[11px]">
-                                Active
+                                All
                             </span>
                         </div>
 
                         <p className="mt-4 text-xs text-gray-500 sm:mt-5 sm:text-sm min-[1280px]:max-[1365px]:mt-4 min-[1280px]:max-[1365px]:text-[11px] min-[1366px]:max-[1537px]:mt-4 min-[1366px]:max-[1537px]:text-xs">
-                            Assigned Tickets
+                            Total Tickets
                         </p>
 
                         <h2 className="mt-1 text-xl font-bold text-gray-900 sm:text-2xl min-[1280px]:max-[1365px]:text-xl min-[1366px]:max-[1537px]:text-xl">
-                            {overviewData?.assigned_tickets || 0}
+                            {overviewData?.total_tickets ?? 0}
                         </h2>
 
                         <p className="mt-1.5 text-[10px] leading-tight text-gray-400 sm:mt-2 sm:text-xs min-[1280px]:max-[1365px]:mt-1.5 min-[1280px]:max-[1365px]:text-[10px] min-[1366px]:max-[1537px]:text-[11px]">
-                            Currently assigned to you
+                            Across all departments
                         </p>
                     </div>
 
-                    {/* Auto Classified */}
-                    <div className="rounded-xl border border-gray-200 p-3 transition hover:border-purple-200 hover:shadow-md sm:p-4 min-[1280px]:max-[1365px]:rounded-lg min-[1280px]:max-[1365px]:p-3 min-[1366px]:max-[1537px]:p-3.5">
+                    {/* Resolved Tickets */}
+                    <div className="rounded-xl border border-gray-200 p-3 transition hover:border-green-200 hover:shadow-md sm:p-4 min-[1280px]:max-[1365px]:rounded-lg min-[1280px]:max-[1365px]:p-3 min-[1366px]:max-[1537px]:p-3.5">
                         <div className="flex items-center justify-between gap-2">
-                            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-purple-100 sm:h-10 sm:w-10 min-[1280px]:max-[1365px]:h-9 min-[1280px]:max-[1365px]:w-9 min-[1366px]:max-[1537px]:h-9 min-[1366px]:max-[1537px]:w-9">
-                                <Bot className="text-purple-600" size={18} aria-hidden="true" />
+                            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-green-100 sm:h-10 sm:w-10 min-[1280px]:max-[1365px]:h-9 min-[1280px]:max-[1365px]:w-9 min-[1366px]:max-[1537px]:h-9 min-[1366px]:max-[1537px]:w-9">
+                                <CheckCircle2 className="text-green-600" size={18} aria-hidden="true" />
                             </div>
 
-                            <span className="rounded-lg border border-purple-200 bg-purple-50 px-1.5 py-0.5 text-[10px] font-semibold text-purple-600 sm:px-2 sm:py-1 sm:text-xs min-[1280px]:max-[1365px]:px-1.5 min-[1280px]:max-[1365px]:py-0.5 min-[1280px]:max-[1365px]:text-[10px] min-[1366px]:max-[1537px]:px-1.5 min-[1366px]:max-[1537px]:py-0.5 min-[1366px]:max-[1537px]:text-[11px]">
-                                AI
+                            <span className="rounded-lg border border-green-200 bg-green-50 px-1.5 py-0.5 text-[10px] font-semibold text-green-600 sm:px-2 sm:py-1 sm:text-xs min-[1280px]:max-[1365px]:px-1.5 min-[1280px]:max-[1365px]:py-0.5 min-[1280px]:max-[1365px]:text-[10px] min-[1366px]:max-[1537px]:px-1.5 min-[1366px]:max-[1537px]:py-0.5 min-[1366px]:max-[1537px]:text-[11px]">
+                                Completed
                             </span>
                         </div>
 
                         <p className="mt-4 text-xs text-gray-500 sm:mt-5 sm:text-sm min-[1280px]:max-[1365px]:mt-4 min-[1280px]:max-[1365px]:text-[11px] min-[1366px]:max-[1537px]:mt-4 min-[1366px]:max-[1537px]:text-xs">
-                            Auto Classified
+                            Resolved Tickets
                         </p>
 
                         <h2 className="mt-1 text-xl font-bold text-gray-900 sm:text-2xl min-[1280px]:max-[1365px]:text-xl min-[1366px]:max-[1537px]:text-xl">
-                            {overviewData?.auto_classified_tickets || 0} %
+                            {overviewData?.resolved_tickets ?? 0}
                         </h2>
 
                         <p className="mt-1.5 text-[10px] leading-tight text-gray-400 sm:mt-2 sm:text-xs min-[1280px]:max-[1365px]:mt-1.5 min-[1280px]:max-[1365px]:text-[10px] min-[1366px]:max-[1537px]:text-[11px]">
-                            Classified automatically
+                            Tickets marked as resolved
                         </p>
                     </div>
 
@@ -141,7 +142,7 @@ export default function ServiceDeskOverview() {
                         </p>
 
                         <h2 className="mt-1 text-xl font-bold text-gray-900 sm:text-2xl min-[1280px]:max-[1365px]:text-xl min-[1366px]:max-[1537px]:text-xl">
-                            {overviewData?.flagged_tickets || 0}
+                            {overviewData?.flagged_tickets ?? 0}
                         </h2>
 
                         <p className="mt-1.5 text-[10px] leading-tight text-gray-400 sm:mt-2 sm:text-xs min-[1280px]:max-[1365px]:mt-1.5 min-[1280px]:max-[1365px]:text-[10px] min-[1366px]:max-[1537px]:text-[11px]">
@@ -166,7 +167,7 @@ export default function ServiceDeskOverview() {
                         </p>
 
                         <h2 className="mt-1 text-xl font-bold text-gray-900 sm:text-2xl min-[1280px]:max-[1365px]:text-xl min-[1366px]:max-[1537px]:text-xl">
-                            3
+                            {overviewData?.returned_tickets ?? 0}
                         </h2>
 
                         <p className="mt-1.5 text-[10px] leading-tight text-gray-400 sm:mt-2 sm:text-xs min-[1280px]:max-[1365px]:mt-1.5 min-[1280px]:max-[1365px]:text-[10px] min-[1366px]:max-[1537px]:text-[11px]">
