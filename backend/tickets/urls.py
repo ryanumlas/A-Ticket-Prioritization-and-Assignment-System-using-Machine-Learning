@@ -1,5 +1,5 @@
 from django.urls import path
-from .views import CategoryListView, PendingClarificationRequestView, RequestClarificationView, ResubmitClarificationView, SLARulesListView, TeamWorkloadView
+from .views import CategoryListView, ManualPriorityUpdateView, ManualSymptomCodeUpdateView, PendingClarificationRequestView, RequestClarificationView, ResubmitClarificationView, SLARulesListView, SystemAdOverviewView, SystemAdUserChartView, TeamWorkloadView
 from .views import (TicketListEmployeeView, CreateTicketView, ListTicketView, DetailTicketView, UpdateSymptomCodeView, 
 UpdateTicketView, DeleteTicketView, CreateCategoryView, KeywordUpdateView ,KeywordCreateView, 
 UpdateCategoryView, CreateSymptomCodeView, SLARulesCreateView, SLARulesUpdateView, TicketDetailEmployeeView, TicketListServiceDeskView, UpdateTicketStatusView, ManualOverrideTicketView,
@@ -93,7 +93,11 @@ urlpatterns = [
         ReviewTicketReopenRequestView.as_view(),
         name="ticket-reopen-request-review",
     ),
+    path("admin/overview/",SystemAdOverviewView.as_view(),name="system-admin-overview",),
+    path("admin/user-chart/",SystemAdUserChartView.as_view(),name="system-admin-user-chart",),
 
+    path("<int:pk>/priority/",ManualPriorityUpdateView.as_view(),name="manual-priority-update",),
+    path("<int:pk>/symptom-code/",ManualSymptomCodeUpdateView.as_view(),name="manual-symptom-code-update",),
     # --- Assistance ---
     path("assistance/<int:ticket_id>/request/", RequestTicketAssistanceView.as_view(), name="request-ticket-assistance",),
     path("assistance/queue/list/", AssistanceQueueListView.as_view(),name="assistance-queue",),

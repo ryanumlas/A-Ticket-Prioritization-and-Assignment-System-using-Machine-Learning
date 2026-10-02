@@ -197,12 +197,6 @@ export const sidebarItems = {
             path: "/user-management",
             icon: Users
         },
-        {
-            type: "link",
-            name: "IT Support",
-            path: "/it-support",
-            icon: UserCog
-        },
 
         {
             type: "section",
@@ -249,12 +243,7 @@ export const sidebarItems = {
             path: "/audit-logs",
             icon: FileClock
         },
-        {
-            type: "link",
-            name: "Notifications",
-            path: "/notifications",
-            icon: Bell
-        }
+
     ],
     "IT Supervisor": [
         {

@@ -19,12 +19,12 @@ TicketCreateSerializer, TicketUpdateSerializer, TicketDetailEmployeeSerializer, 
 FlaggedTicketDetailSerializer, TicketDetailSupportSerializer, TicketStatusHistorySerializer, PriorityChangeRequestSerializer, PriorityRequestListSerializer, 
 PriorityRequestDetailSerializer, ReturnTicketSerializer, ReturnedTicketRequestListSerializer, ReturnedTicketDetailSerializer, ApproveReturnTicketSerializer, 
 ServiceDeskDepartmentSerializer, RejectReturnTicketSerializer, EmployeeCurrentActiveTicketSerializer, SupervisorEscalatedTicketSerializer)
-from users.models import User, ITSupportProfile, Notifications, AuditLogs, ITServiceDeskProfile, ITSupervisorProfile, SystemAdministratorProfile
+from users.models import User, ITSupportProfile, Notifications, AuditLogs, ITServiceDeskProfile, ITSupervisorProfile, SystemAdministratorProfile, UserRoles
 from users.services import create_notification
 from .services import predict_ticket, assign_ticket_automatically, get_current_workload, WORKLOAD_STATUSES
 from ai.models import TicketAnalysis, TicketAIAnalysis
 from ai.services import analyze_ticket
-from departments.models import ITDepartment
+from departments.models import ITDepartment, EmployeeDepartment
 from tickets.services import classify_ticket, calculate_priority, update_sla, finalize_ticket_classification, calculate_priority_details, get_eligible_technicians
 
 # Create your views here.
@@ -1723,11 +1723,39 @@ class PendingClarificationRequestView(APIView):
 
         if not clarification:
             return Response(
-                {"pending": False},
+                {
+                    "pending": False,
+                },
                 status=status.HTTP_200_OK,
             )
 
         ticket = clarification.ticket
+
+        # ------------------------------------------------------------
+        # IMPORTANT:
+        # An UNCLEAR_DESCRIPTION flag by itself does NOT mean that
+        # the employee has been asked to provide clarification.
+        #
+        # Only show the clarification modal after the Service Desk
+        # has explicitly requested clarification.
+        # ------------------------------------------------------------
+
+        clarification_requested = (
+            TicketStatusHistoryModel.objects
+            .filter(
+                ticket=ticket,
+                remarks__icontains="requested clarification",
+            )
+            .exists()
+        )
+
+        if not clarification_requested:
+            return Response(
+                {
+                    "pending": False,
+                },
+                status=status.HTTP_200_OK,
+            )
 
         return Response(
             {
@@ -5250,6 +5278,507 @@ class PriorityChangeRequestView(APIView):
             status=status.HTTP_201_CREATED,
         )
 
+class ManualPriorityUpdateView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    @transaction.atomic
+    def patch(self, request, pk):
+        ticket = (
+            Ticket.objects
+            .select_for_update()
+            .filter(pk=pk)
+            .first()
+        )
+
+        if not ticket:
+            return Response(
+                {"error": "Ticket not found."},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        role_name = (
+            request.user.role.name
+            if request.user.role
+            else None
+        )
+
+        # Role permission.
+        if role_name not in [
+            "IT Support Specialist",
+            "IT Supervisor",
+        ]:
+            return Response(
+                {
+                    "error": (
+                        "You do not have permission to "
+                        "edit ticket priority."
+                    )
+                },
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
+        # Support must be assigned or actively assisting.
+        if role_name == "IT Support Specialist":
+            is_assigned_support = (
+                ticket.assigned_to_id == request.user.id
+            )
+
+            is_assisting_support = (
+                TicketAssistance.objects.filter(
+                    ticket=ticket,
+                    assisted_by=request.user,
+                    status=(
+                        TicketAssistance
+                        .AssistanceStatus
+                        .ONGOING
+                    ),
+                ).exists()
+            )
+
+            if not (
+                is_assigned_support
+                or is_assisting_support
+            ):
+                return Response(
+                    {
+                        "error": (
+                            "You must be assigned to or "
+                            "actively assisting with this ticket."
+                        )
+                    },
+                    status=status.HTTP_403_FORBIDDEN,
+                )
+
+        # Block while priority review is pending.
+        has_pending_priority_request = (
+            TicketPriorityRequest.objects.filter(
+                ticket=ticket,
+                status=(
+                    TicketPriorityRequest
+                    .RequestStatus
+                    .PENDING
+                ),
+            ).exists()
+        )
+
+        if has_pending_priority_request:
+            return Response(
+                {
+                    "error": (
+                        "Priority cannot be edited while a "
+                        "priority change request is pending."
+                    )
+                },
+                status=status.HTTP_409_CONFLICT,
+            )
+
+        # Block while return review is pending.
+        has_pending_return = (
+            TicketReturn.objects.filter(
+                ticket=ticket,
+                status=TicketReturn.ReturnStatus.PENDING,
+            ).exists()
+        )
+
+        if has_pending_return:
+            return Response(
+                {
+                    "error": (
+                        "Priority cannot be edited while a "
+                        "ticket return request is pending."
+                    )
+                },
+                status=status.HTTP_409_CONFLICT,
+            )
+
+        if not ticket.priority:
+            return Response(
+                {
+                    "error": (
+                        "Ticket has no assigned priority."
+                    )
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        current_priority = (
+            ticket.priority.priority_level
+        )
+
+        # Direct editing is P4/P5 only.
+        if current_priority not in ["P4", "P5"]:
+            return Response(
+                {
+                    "error": (
+                        "Only P4 and P5 tickets can have "
+                        "their priority manually edited."
+                    )
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        new_priority_level = request.data.get("priority")
+
+        if new_priority_level not in ["P4", "P5"]:
+            return Response(
+                {
+                    "error": (
+                        "Manual priority changes are limited "
+                        "to P4 and P5."
+                    )
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        if new_priority_level == current_priority:
+            return Response(
+                {
+                    "error": (
+                        "The ticket already has this priority."
+                    )
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        new_priority = (
+            SLARules.objects
+            .filter(
+                priority_level=new_priority_level
+            )
+            .first()
+        )
+
+        if not new_priority:
+            return Response(
+                {
+                    "error": (
+                        "Priority SLA rule not found."
+                    )
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        old_priority = current_priority
+
+        ticket.priority = new_priority
+        ticket.save(
+            update_fields=["priority"]
+        )
+
+        # Preserve elapsed SLA time.
+        update_sla(
+            ticket,
+            response_start=ticket.created_at,
+            recalculate_deadlines=True,
+        )
+
+        # Internal audit history.
+        TicketStatusHistory.objects.create(
+            ticket=ticket,
+            event_type=(
+                TicketStatusHistory
+                .EventType
+                .PRIORITY_CHANGED
+            ),
+            old_value=old_priority,
+            new_value=new_priority_level,
+            remarks=(
+                f"Priority manually changed from "
+                f"{old_priority} to "
+                f"{new_priority_level}."
+            ),
+            created_by=request.user,
+            changed_by=request.user,
+            visibility=(
+                TicketStatusHistory
+                .Visibility
+                .INTERNAL
+            ),
+        )
+
+        return Response(
+            {
+                "success": True,
+                "message": (
+                    "Priority updated successfully."
+                ),
+                "priority": new_priority_level,
+                "response_deadline": (
+                    ticket.response_deadline
+                ),
+                "resolution_deadline": (
+                    ticket.resolution_deadline
+                ),
+                "response_sla_status": (
+                    ticket.response_sla_status
+                ),
+                "resolution_sla_status": (
+                    ticket.resolution_sla_status
+                ),
+            },
+            status=status.HTTP_200_OK,
+        )
+
+
+class ManualSymptomCodeUpdateView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    @transaction.atomic
+    def patch(self, request, pk):
+        ticket = (
+            Ticket.objects
+            .select_for_update()
+            .filter(pk=pk)
+            .first()
+        )
+
+        if not ticket:
+            return Response(
+                {"error": "Ticket not found."},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        role_name = (
+            request.user.role.name
+            if request.user.role
+            else None
+        )
+
+        # Only IT Support Specialist and IT Supervisor
+        # can directly edit the symptom code.
+        if role_name not in [
+            "IT Support Specialist",
+            "IT Supervisor",
+        ]:
+            return Response(
+                {
+                    "error": (
+                        "You do not have permission to "
+                        "edit the ticket symptom code."
+                    )
+                },
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
+        # IT Support Specialist must be assigned to
+        # the ticket or actively assisting with it.
+        if role_name == "IT Support Specialist":
+            is_assigned_support = (
+                ticket.assigned_to_id == request.user.id
+            )
+
+            is_assisting_support = (
+                TicketAssistance.objects.filter(
+                    ticket=ticket,
+                    assisted_by=request.user,
+                    status=(
+                        TicketAssistance
+                        .AssistanceStatus
+                        .ONGOING
+                    ),
+                ).exists()
+            )
+
+            if not (
+                is_assigned_support
+                or is_assisting_support
+            ):
+                return Response(
+                    {
+                        "error": (
+                            "You must be assigned to or "
+                            "actively assisting with this ticket."
+                        )
+                    },
+                    status=status.HTTP_403_FORBIDDEN,
+                )
+
+        # Do not allow symptom-code editing while
+        # a ticket return request is being reviewed.
+        has_pending_return = (
+            TicketReturn.objects.filter(
+                ticket=ticket,
+                status=(
+                    TicketReturn
+                    .ReturnStatus
+                    .PENDING
+                ),
+            ).exists()
+        )
+
+        if has_pending_return:
+            return Response(
+                {
+                    "error": (
+                        "Symptom code cannot be edited while "
+                        "a ticket return request is pending."
+                    )
+                },
+                status=status.HTTP_409_CONFLICT,
+            )
+
+        # Direct symptom editing depends on the
+        # ticket's existing category.
+        if not ticket.category_id:
+            return Response(
+                {
+                    "error": (
+                        "This ticket does not have a category."
+                    )
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        symptom_code_id = request.data.get(
+            "symptom_code_id"
+        )
+
+        if not symptom_code_id:
+            return Response(
+                {
+                    "error": (
+                        "A symptom code must be selected."
+                    )
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        new_symptom_code = (
+            SymptomCode.objects
+            .select_related(
+                "category",
+                "required_specialization",
+            )
+            .filter(pk=symptom_code_id)
+            .first()
+        )
+
+        if not new_symptom_code:
+            return Response(
+                {
+                    "error": (
+                        "Selected symptom code was not found."
+                    )
+                },
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        # The selected symptom must belong to the
+        # ticket's CURRENT category.
+        #
+        # This automatically keeps the classification
+        # inside the category's IT department because
+        # Category owns the ITDepartment relationship.
+        if (
+            new_symptom_code.category_id
+            != ticket.category_id
+        ):
+            return Response(
+                {
+                    "error": (
+                        "You can only select a symptom code "
+                        "from this ticket's current category."
+                    )
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        # Do not save the same symptom code again.
+        if (
+            ticket.symptom_code_id
+            == new_symptom_code.id
+        ):
+            return Response(
+                {
+                    "error": (
+                        "The ticket already uses this "
+                        "symptom code."
+                    )
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        old_symptom_code = (
+            ticket.symptom_code.code
+            if ticket.symptom_code
+            else None
+        )
+
+        new_symptom_code_value = (
+            new_symptom_code.code
+        )
+
+        # IMPORTANT:
+        # Only the symptom code changes.
+        #
+        # Do NOT change:
+        # - category
+        # - it_department
+        # - priority
+        # - assigned_to
+        ticket.symptom_code = new_symptom_code
+        ticket.updated_by = request.user
+
+        ticket.save(
+            update_fields=[
+                "symptom_code",
+                "updated_by",
+                "updated_at",
+            ]
+        )
+
+        # Internal audit history.
+        TicketStatusHistory.objects.create(
+            ticket=ticket,
+            event_type=(
+                TicketStatusHistory
+                .EventType
+                .SYMPTOM_CODE_CHANGED
+            ),
+            old_value=old_symptom_code or "",
+            new_value=new_symptom_code_value,
+            remarks=(
+                f"Symptom code manually changed from "
+                f"{old_symptom_code or 'None'} to "
+                f"{new_symptom_code_value}."
+            ),
+            created_by=request.user,
+            changed_by=request.user,
+            visibility=(
+                TicketStatusHistory
+                .Visibility
+                .INTERNAL
+            ),
+        )
+
+        return Response(
+            {
+                "success": True,
+                "message": (
+                    "Symptom code updated successfully."
+                ),
+                "symptom_code": (
+                    new_symptom_code.code
+                ),
+                "symptom_code_id": (
+                    new_symptom_code.id
+                ),
+                "category": (
+                    ticket.category.name
+                ),
+                "required_specialization": (
+                    new_symptom_code
+                    .required_specialization
+                    .name
+                    if (
+                        new_symptom_code
+                        .required_specialization
+                    )
+                    else None
+                ),
+            },
+            status=status.HTTP_200_OK,
+        )
 class PriorityChangeRequestListView(generics.ListAPIView):
     serializer_class = PriorityRequestListSerializer
     permission_classes = [IsAuthenticated]
@@ -8571,6 +9100,10 @@ class TeamWorkloadView(APIView):
             None,
         )
 
+        # ---------------------------------------------------------
+        # Determine workload scope
+        # ---------------------------------------------------------
+
         if support_profile:
             department = support_profile.it_department
 
@@ -8580,6 +9113,8 @@ class TeamWorkloadView(APIView):
                         "scope": "department",
                         "department": None,
                         "departments": [],
+                        "assigned_to_me_count": 0,
+                        "total_technicians": 0,
                     },
                     status=status.HTTP_200_OK,
                 )
@@ -8607,9 +9142,68 @@ class TeamWorkloadView(APIView):
                 status=status.HTTP_403_FORBIDDEN,
             )
 
+        # ---------------------------------------------------------
+        # TOP CARD COUNTS
+        # ---------------------------------------------------------
+
+        # IT Support:
+        # Number of active/workload tickets assigned specifically
+        # to the currently logged-in support user.
+        if support_profile:
+            assigned_to_me_count = (
+                Ticket.objects
+                .filter(
+                    assigned_to=user,
+                    status__in=WORKLOAD_STATUSES,
+                )
+                .count()
+            )
+        else:
+            assigned_to_me_count = 0
+
+        # Supervisor:
+        # Total number of IT Support technicians across all
+        # departments.
+        #
+        # For support this value is harmless because the frontend
+        # does not display it.
+        total_technicians = (
+            ITSupportProfile.objects
+            .filter(
+                it_department__in=departments,
+            )
+            .count()
+        )
+
         department_results = []
 
         for department in departments:
+
+            # -----------------------------------------------------
+            # ACTIVE WORKLOAD FOR THIS DEPARTMENT
+            # -----------------------------------------------------
+            #
+            # IMPORTANT:
+            # This count is calculated independently of technician
+            # pagination.
+            #
+            # Therefore page=1/page=2/etc. will not change the
+            # Active Workload card.
+            # -----------------------------------------------------
+
+            active_workload_count = (
+                Ticket.objects
+                .filter(
+                    assigned_to__it_support_profile__it_department=department,
+                    status__in=WORKLOAD_STATUSES,
+                )
+                .count()
+            )
+
+            # -----------------------------------------------------
+            # TECHNICIANS
+            # -----------------------------------------------------
+
             profiles_queryset = (
                 ITSupportProfile.objects
                 .filter(
@@ -8692,6 +9286,10 @@ class TeamWorkloadView(APIView):
                     }
                 )
 
+            # -----------------------------------------------------
+            # PAGINATION
+            # -----------------------------------------------------
+
             workload_paginator = getattr(
                 paginator,
                 "workload_paginator",
@@ -8722,6 +9320,7 @@ class TeamWorkloadView(APIView):
                     "has_next": current_page < total_pages,
                     "has_previous": current_page > 1,
                 }
+
             else:
                 pagination_data = {
                     "count": 0,
@@ -8734,10 +9333,20 @@ class TeamWorkloadView(APIView):
                     "has_previous": False,
                 }
 
+            # -----------------------------------------------------
+            # DEPARTMENT RESULT
+            # -----------------------------------------------------
+
             department_results.append(
                 {
                     "id": department.id,
                     "name": department.name,
+
+                    # Needed by SupportWorkload.jsx
+                    "active_workload_count": (
+                        active_workload_count
+                    ),
+
                     "technicians": technicians,
                     "pagination": pagination_data,
                 }
@@ -8746,6 +9355,19 @@ class TeamWorkloadView(APIView):
         return Response(
             {
                 "scope": scope,
+
+                # Needed by Support card:
+                # "Assigned to Me"
+                "assigned_to_me_count": (
+                    assigned_to_me_count
+                ),
+
+                # Needed by Supervisor card:
+                # "IT Support"
+                "total_technicians": (
+                    total_technicians
+                ),
+
                 "departments": department_results,
             },
             status=status.HTTP_200_OK,
@@ -8931,3 +9553,51 @@ class AssignTicketToMeView(APIView):
             },
             status=status.HTTP_200_OK,
         )
+
+class SystemAdOverviewView(APIView):
+    def get(self, request):
+        return Response({
+            "total_users": User.objects.count(),
+            "active_accounts": User.objects.filter(is_active=True).count(),
+            "departments": (
+                ITDepartment.objects.count()
+                + EmployeeDepartment.objects.count()
+            ),
+            "system_roles": UserRoles.objects.count(),
+        })
+
+class SystemAdUserChartView(APIView):
+    def get(self, request):
+        users_by_role = list(
+            UserRoles.objects.annotate(
+                users=Count("user")
+            ).values("name", "users")
+        )
+
+        users_by_role = [
+            {
+                "role": item["name"],
+                "users": item["users"],
+            }
+            for item in users_by_role
+        ]
+
+        # Include users whose role is not assigned.
+        unassigned_users = User.objects.filter(role__isnull=True).count()
+
+        if unassigned_users:
+            users_by_role.append({
+                "role": "Unassigned",
+                "users": unassigned_users,
+            })
+
+        active_count = User.objects.filter(is_active=True).count()
+        inactive_count = User.objects.filter(is_active=False).count()
+
+        return Response({
+            "users_by_role": users_by_role,
+            "account_status": [
+                {"name": "Active", "value": active_count},
+                {"name": "Inactive", "value": inactive_count},
+            ],
+        })

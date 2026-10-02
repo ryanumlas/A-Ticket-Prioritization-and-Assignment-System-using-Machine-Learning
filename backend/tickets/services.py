@@ -448,48 +448,57 @@ def calculate_priority(
     return details["final_priority"]
 
 def notify_resolution_sla(ticket, new_sla_status):
-    """
-    Notify the assigned IT Support Specialist and the IT Supervisor
-    when the ticket's resolution SLA enters WARNING, CRITICAL, or BREACHED.
-
-    Duplicate prevention is handled by checking existing notifications
-    for the same ticket, recipient, alert type, and resolution alert.
-    """
-
     alert_types = {
-        Ticket.SLAStatus.WARNING: Notifications.NotificationType.TICKET_WARNING,
-        Ticket.SLAStatus.CRITICAL: Notifications.NotificationType.TICKET_CRITICAL,
-        Ticket.SLAStatus.BREACHED: Notifications.NotificationType.TICKET_BREACHED,
+        Ticket.SLAStatus.WARNING:
+            Notifications.NotificationType.TICKET_WARNING,
+
+        Ticket.SLAStatus.CRITICAL:
+            Notifications.NotificationType.TICKET_CRITICAL,
+
+        Ticket.SLAStatus.BREACHED:
+            Notifications.NotificationType.TICKET_BREACHED,
     }
 
-    notification_type = alert_types.get(new_sla_status)
+    notification_type = alert_types.get(
+        new_sla_status
+    )
 
     if not notification_type:
         return
 
+
     recipients = set()
 
-    # Assigned IT Support Specialist
-    if ticket.assigned_to_id:
-        support_profile = (
+
+    if ticket.it_department_id:
+        support_ids = (
             ITSupportProfile.objects
-            .filter(user_id=ticket.assigned_to_id)
-            .first()
+            .filter(
+                it_department_id=ticket.it_department_id
+            )
+            .values_list(
+                "user_id",
+                flat=True,
+            )
         )
 
-        if support_profile:
-            recipients.add(support_profile.user_id)
+        recipients.update(support_ids)
 
-            # Notify the supervisor in the same department.
-            if support_profile.it_department_id:
-                supervisor_ids = ITSupervisorProfile.objects.filter(
-                    it_department_id=support_profile.it_department_id
-                ).values_list("user_id", flat=True)
 
-                recipients.update(supervisor_ids)
+    supervisor_ids = (
+        ITSupervisorProfile.objects
+        .values_list(
+            "user_id",
+            flat=True,
+        )
+    )
+
+    recipients.update(supervisor_ids)
+
 
     if not recipients:
         return
+
 
     alert_label = new_sla_status.lower()
 
@@ -499,17 +508,21 @@ def notify_resolution_sla(ticket, new_sla_status):
     )
 
     for recipient_id in recipients:
-        # A matching notification prevents another notification of
-        # this type for this ticket and recipient, even if it was read.
-        already_notified = Notifications.objects.filter(
-            user_id=recipient_id,
-            ticket_id=ticket.pk,
-            notification_type=notification_type,
-            message=message,
-        ).exists()
+
+        already_notified = (
+            Notifications.objects
+            .filter(
+                user_id=recipient_id,
+                ticket_id=ticket.pk,
+                notification_type=notification_type,
+                message=message,
+            )
+            .exists()
+        )
 
         if already_notified:
             continue
+
 
         Notifications.objects.create(
             user_id=recipient_id,

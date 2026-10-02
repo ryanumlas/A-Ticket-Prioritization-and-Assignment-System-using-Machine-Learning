@@ -179,6 +179,11 @@ class AuditLogSerializer(serializers.ModelSerializer):
             return profile.it_department.name
 
         return None
+
+class AvailabilityUpdateSerializer(serializers.Serializer):
+    availability_status = serializers.ChoiceField(
+        choices=ITSupportProfile.AvailabilityStatus.choices
+    )
    
 class ITSupportProfileSerializer(serializers.ModelSerializer):
     class Meta:
@@ -261,10 +266,24 @@ class NotificationSerializer(serializers.ModelSerializer):
         source="ticket.id",
         read_only=True,
     )
+
     ticket_code = serializers.CharField(
         source="ticket.ticket_code",
         read_only=True,
     )
+
+    it_department_id = serializers.IntegerField(
+        source="ticket.it_department.id",
+        read_only=True,
+        allow_null=True,
+    )
+
+    it_department = serializers.CharField(
+        source="ticket.it_department.name",
+        read_only=True,
+        allow_null=True,
+    )
+
     notification_type_display = serializers.CharField(
         source="get_notification_type_display",
         read_only=True,
@@ -272,10 +291,13 @@ class NotificationSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Notifications
+
         fields = [
             "id",
             "ticket_id",
             "ticket_code",
+            "it_department_id",
+            "it_department",
             "message",
             "notification_type",
             "notification_type_display",

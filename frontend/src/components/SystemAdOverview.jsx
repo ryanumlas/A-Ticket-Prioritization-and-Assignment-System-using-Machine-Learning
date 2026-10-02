@@ -1,16 +1,37 @@
-
+import { useEffect, useState } from "react";
 import {
     Users,
     UserCheck,
     Building2,
     ShieldCheck,
 } from "lucide-react";
+import api from "../api"; // Adjust the path if your api.js is elsewhere
 
 const SystemAdOverview = () => {
+    const [overview, setOverview] = useState({
+        total_users: 0,
+        active_accounts: 0,
+        departments: 0,
+        system_roles: 0,
+    });
+
+    useEffect(() => {
+        const fetchOverview = async () => {
+            try {
+                const response = await api.get("/tickets/admin/overview/");
+                setOverview(response.data);
+            } catch (error) {
+                console.error("Failed to fetch system overview:", error);
+            }
+        };
+
+        fetchOverview();
+    }, []);
+
     const overviewCards = [
         {
             title: "Total Users",
-            value: "125",
+            value: overview.total_users,
             description: "Registered users in the system",
             status: "Users",
             icon: Users,
@@ -20,7 +41,7 @@ const SystemAdOverview = () => {
         },
         {
             title: "Active Accounts",
-            value: "118",
+            value: overview.active_accounts,
             description: "Currently active user accounts",
             status: "Active",
             icon: UserCheck,
@@ -30,7 +51,7 @@ const SystemAdOverview = () => {
         },
         {
             title: "Departments",
-            value: "8",
+            value: overview.departments,
             description: "Registered departments",
             status: "Organized",
             icon: Building2,
@@ -40,7 +61,7 @@ const SystemAdOverview = () => {
         },
         {
             title: "System Roles",
-            value: "4",
+            value: overview.system_roles,
             description: "Configured roles and permissions",
             status: "Configured",
             icon: ShieldCheck,
@@ -52,16 +73,13 @@ const SystemAdOverview = () => {
 
     return (
         <div className="w-full bg-gray-50">
-
             {/* Header */}
             <div className="relative overflow-hidden rounded-t-xl border border-gray-300 bg-gradient-to-r from-indigo-600 to-indigo-500 px-6 py-5 text-white">
-
                 {/* Decorative Background */}
                 <div className="absolute -right-5 -top-16 h-48 w-48 rounded-full bg-white/5" />
                 <div className="absolute right-20 -bottom-20 h-40 w-40 rounded-full bg-white/5" />
 
                 <div className="relative z-10 flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
-
                     <div className="flex items-center gap-4">
                         <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border border-white/20 bg-white/10">
                             <ShieldCheck size={25} />
@@ -71,7 +89,6 @@ const SystemAdOverview = () => {
                             <h1 className="text-xl font-bold tracking-tight">
                                 Welcome back, Admin!
                             </h1>
-
                             <p className="mt-1 text-sm text-indigo-100">
                                 Manage users, system roles, departments, and configurations.
                             </p>
@@ -82,15 +99,12 @@ const SystemAdOverview = () => {
                         <ShieldCheck size={16} />
                         System Administration
                     </div>
-
                 </div>
             </div>
 
             {/* Overview Cards */}
             <div className="rounded-b-xl border border-t-0 border-gray-300 bg-white p-4 md:p-5">
-
                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
-
                     {overviewCards.map((card, index) => {
                         const Icon = card.icon;
 
@@ -99,26 +113,19 @@ const SystemAdOverview = () => {
                                 key={index}
                                 className="rounded-xl border border-gray-300 bg-white p-4 transition-shadow duration-200 hover:shadow-md"
                             >
-
                                 {/* Icon and Status */}
                                 <div className="flex items-center justify-between">
-
                                     <div className={`flex h-10 w-10 items-center justify-center rounded-full ${card.iconBg}`}>
-                                        <Icon
-                                            size={19}
-                                            className={card.iconColor}
-                                        />
+                                        <Icon size={19} className={card.iconColor} />
                                     </div>
 
                                     <span className={`rounded-lg border px-2.5 py-1 text-xs font-medium ${card.statusColor}`}>
                                         {card.status}
                                     </span>
-
                                 </div>
 
                                 {/* Card Information */}
                                 <div className="mt-5">
-
                                     <p className="text-sm font-medium text-gray-500">
                                         {card.title}
                                     </p>
@@ -130,17 +137,12 @@ const SystemAdOverview = () => {
                                     <p className="mt-2 text-xs text-gray-400">
                                         {card.description}
                                     </p>
-
                                 </div>
-
                             </div>
                         );
                     })}
-
                 </div>
-
             </div>
-
         </div>
     );
 };

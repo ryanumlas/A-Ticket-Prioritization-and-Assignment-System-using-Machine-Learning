@@ -22,6 +22,7 @@ export default function AssignedTicketDetails({
             <div className="h-full min-h-0 w-[450px] min-w-[450px] shrink-0 overflow-hidden min-[1280px]:max-[1535px]:w-[320px] min-[1280px]:max-[1535px]:min-w-[320px]">
                 <LeftSidePanel
                     ticketDetails={ticketDetails}
+                    onTicketUpdated={onTicketUpdated}
                 />
             </div>
 

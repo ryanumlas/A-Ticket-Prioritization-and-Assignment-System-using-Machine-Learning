@@ -1,5 +1,5 @@
 from django.urls import path
-from .views import (CreateITSupportProfileView, RegisterView, UserListView, CreateITSupportProfileView, UserUpdateView, UserRoleCreateView, UserRoleDeleteView, 
+from .views import (CreateITSupportProfileView, MyAvailabilityUpdateView, MyProfileView, RegisterView, UserListView, CreateITSupportProfileView, UserUpdateView, UserRoleCreateView, UserRoleDeleteView, 
 UserRoleListView, EmployeeOverviewAPIView, UserProfileUpdateView, SpecializationCreateView, ITSupportProfileCreateView, 
 ITSupportSpecializationCreateView, ITSupportProfileUpdateView, NotificationListView, NotificationMarkReadView, NotificationUnreadCountView, AdminUserListView, 
 ITDepartmentOptionsView, EmployeeDepartmentOptionsView, OfficeLocationOptionsView, 
@@ -39,4 +39,16 @@ urlpatterns = [
     path("notifications/list/",NotificationListView.as_view(), name="notification-list",),
     path("notifications/unread-count/",NotificationUnreadCountView.as_view(), name="notification-unread-count",),
     path("notifications/<int:pk>/read/",NotificationMarkReadView.as_view(), name="notification-mark-read",),
+
+    path(
+        "profile/",
+        MyProfileView.as_view(),
+        name="my-profile",
+    ),
+
+    path(
+    "profile/availability/",
+        MyAvailabilityUpdateView.as_view(),
+        name="my-profile-availability",
+    ),
 ]   

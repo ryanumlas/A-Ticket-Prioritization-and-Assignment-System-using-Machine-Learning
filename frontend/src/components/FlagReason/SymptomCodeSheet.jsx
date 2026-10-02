@@ -13,6 +13,7 @@ export default function SymptomCodeSheet({
     onClose,
     onSelect,
     excludeDepartment,
+    onlyCategory,
 }) {
     const [search, setSearch] = useState("");
     const [category, setCategory] = useState("All");
@@ -46,18 +47,25 @@ export default function SymptomCodeSheet({
         }
     }, [open]);
 
-    const categories = [
-        "All",
-        ...new Set(
-            symptomCodes
-                .map((item) => item.category)
-                .filter(Boolean)
-        ),
-    ];
+    const categories = onlyCategory
+        ? [onlyCategory]
+        : [
+            "All",
+            ...new Set(
+                symptomCodes
+                    .map((item) => item.category)
+                    .filter(Boolean)
+            ),
+        ];
 
     const normalizedExcludeDepartment =
         typeof excludeDepartment === "string"
             ? excludeDepartment.trim().toLowerCase()
+            : "";
+
+    const normalizedOnlyCategory =
+        typeof onlyCategory === "string"
+            ? onlyCategory.trim().toLowerCase()
             : "";
 
     const filteredSymptoms = useMemo(() => {
@@ -68,17 +76,35 @@ export default function SymptomCodeSheet({
                 symptom.code?.trim().toLowerCase() || "";
 
             const description =
-                symptom.description?.toLowerCase() || "";
+                symptom.description
+                    ?.trim()
+                    .toLowerCase() || "";
 
             const symptomCategory =
-                symptom.category?.toLowerCase() || "";
+                symptom.category
+                    ?.trim()
+                    .toLowerCase() || "";
 
             const department =
-                symptom.department?.trim().toLowerCase() || "";
+                symptom.department
+                    ?.trim()
+                    .toLowerCase() || "";
 
-            const belongsToCurrentDepartment =
+            // Existing ITSD behavior:
+            // exclude symptom codes belonging to the
+            // department that returned the ticket.
+            const belongsToExcludedDepartment =
                 normalizedExcludeDepartment &&
-                department === normalizedExcludeDepartment;
+                department ===
+                    normalizedExcludeDepartment;
+
+            // Direct Support/Supervisor edit behavior:
+            // only show symptom codes belonging to
+            // the ticket's CURRENT category.
+            const belongsToRequiredCategory =
+                !normalizedOnlyCategory ||
+                symptomCategory ===
+                    normalizedOnlyCategory;
 
             const matchesSearch =
                 !query ||
@@ -92,7 +118,8 @@ export default function SymptomCodeSheet({
                 symptom.category === category;
 
             return (
-                !belongsToCurrentDepartment &&
+                !belongsToExcludedDepartment &&
+                belongsToRequiredCategory &&
                 matchesSearch &&
                 matchesCategory
             );
@@ -101,6 +128,7 @@ export default function SymptomCodeSheet({
         search,
         category,
         normalizedExcludeDepartment,
+        normalizedOnlyCategory,
         symptomCodes,
     ]);
 
@@ -212,11 +240,16 @@ export default function SymptomCodeSheet({
                                 </label>
 
                                 <select
-                                    value={category}
+                                    value={
+                                        onlyCategory
+                                            ? onlyCategory
+                                            : category
+                                    }
                                     onChange={(e) =>
                                         setCategory(e.target.value)
                                     }
-                                    className="w-full rounded-md border border-gray-300 bg-white px-4 py-3 text-sm text-black outline-none focus:border-[#4C4CF9]"
+                                    disabled={Boolean(onlyCategory)}
+                                    className="w-full rounded-md border border-gray-300 bg-white px-4 py-3 text-sm text-black outline-none focus:border-[#4C4CF9] disabled:cursor-not-allowed disabled:bg-gray-100 disabled:text-gray-500"
                                 >
                                     {categories.map((item) => (
                                         <option

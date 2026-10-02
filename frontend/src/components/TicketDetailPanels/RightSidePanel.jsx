@@ -28,6 +28,7 @@ import { getHistoryColor } from "../../utils/historyColor";
 import { getTicketPermissions } from "../../utils/getTicketPermission";
 import CompleteEscalationModal from "../EscalatedTickets/CompleteEscalationModal";
 
+
 export default function RightSidePanel({
     ticketDetails,
     onTicketUpdated,
@@ -700,12 +701,13 @@ export default function RightSidePanel({
                                             ? { scale: 0.98 }
                                             : undefined
                                     }
-                                    className="flex w-full items-center justify-center gap-2 rounded-lg bg-[#4C4CF9] px-3 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-[#1D4ED8] disabled:cursor-not-allowed disabled:opacity-60 min-[1280px]:max-[1535px]:py-2 min-[1280px]:max-[1535px]:text-[12px]"
+                                    className="flex w-full items-center justify-center gap-2 rounded-lg bg-green-600 px-3 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-green-700 disabled:cursor-not-allowed disabled:opacity-60 min-[1280px]:max-[1535px]:py-2 min-[1280px]:max-[1535px]:text-[12px]"
                                 >
                                     <CircleCheck
                                         size={16}
                                         className="shrink-0 min-[1280px]:max-[1535px]:size-[14px]"
                                     />
+
                                     Mark as Resolved
                                 </motion.button>
                             ) : (
@@ -985,7 +987,7 @@ export default function RightSidePanel({
                                 transition={{
                                     duration: 0.2,
                                 }}
-                                className="min-h-0 min-w-0 flex-1"
+                                className="min-h-0 min-w-0 flex flex-1 flex-col overflow-hidden"
                             >
                                 <EscalationContent
                                     escalation={
@@ -1295,10 +1297,14 @@ function EscalationContent({
     const acknowledgedByName =
         escalation?.acknowledged_by_name ||
         buildFullName(
-            acknowledgementHistory?.changed_by_first_name ||
-                acknowledgementHistory?.created_by_first_name,
-            acknowledgementHistory?.changed_by_last_name ||
-                acknowledgementHistory?.created_by_last_name
+            acknowledgementHistory
+                ?.changed_by_first_name ||
+                acknowledgementHistory
+                    ?.created_by_first_name,
+            acknowledgementHistory
+                ?.changed_by_last_name ||
+                acknowledgementHistory
+                    ?.created_by_last_name
         );
 
     const acknowledgedAt =
@@ -1309,10 +1315,14 @@ function EscalationContent({
     const completedByName =
         escalation?.resolved_by_name ||
         buildFullName(
-            completionHistory?.changed_by_first_name ||
-                completionHistory?.created_by_first_name,
-            completionHistory?.changed_by_last_name ||
-                completionHistory?.created_by_last_name
+            completionHistory
+                ?.changed_by_first_name ||
+                completionHistory
+                    ?.created_by_first_name,
+            completionHistory
+                ?.changed_by_last_name ||
+                completionHistory
+                    ?.created_by_last_name
         );
 
     const completedAt =
@@ -1321,7 +1331,7 @@ function EscalationContent({
         null;
 
     return (
-        <div className="min-h-0 min-w-0 flex-1 overflow-y-auto px-4 py-5 2xl:px-5 min-[1280px]:max-[1535px]:px-4 min-[1280px]:max-[1535px]:py-4 [&::-webkit-scrollbar]:w-1 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-transparent hover:[&::-webkit-scrollbar-thumb]:bg-gray-300">
+        <div className="h-full min-h-0 min-w-0 flex-1 overflow-x-hidden overflow-y-auto overscroll-contain px-4 py-5 2xl:px-5 min-[1280px]:max-[1535px]:px-4 min-[1280px]:max-[1535px]:py-4 [&::-webkit-scrollbar]:w-1 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-transparent hover:[&::-webkit-scrollbar-thumb]:bg-gray-300">
             <div className="space-y-4 min-[1280px]:max-[1535px]:space-y-3">
                 <motion.div
                     initial={{

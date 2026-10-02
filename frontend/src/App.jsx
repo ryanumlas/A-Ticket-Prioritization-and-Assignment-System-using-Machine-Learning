@@ -34,6 +34,7 @@ import AssistanceQueue from './pages/AssistanceQueue';
 import AssistanceTicket from './pages/AssistanceTicket'
 import ReopenRequest from './pages/ReopenRequest'
 import TeamWorkload from './pages/TeamWorkload'
+import UserProfile from './pages/UserProfile'
 
 // function Logout() {
 //   localStorage.clear()
@@ -56,6 +57,14 @@ function App() {
                 element={
                     <ProtectedRoute>
                         <Dashboard />
+                    </ProtectedRoute>
+                }
+            />
+            <Route
+                path="/profile"
+                element={
+                    <ProtectedRoute>
+                        <UserProfile />
                     </ProtectedRoute>
                 }
             />

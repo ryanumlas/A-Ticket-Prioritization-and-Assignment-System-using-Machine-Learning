@@ -4,6 +4,7 @@ from rest_framework import generics
 from .pagination import UserPagination
 from rest_framework.views import APIView
 from rest_framework import viewsets, generics, status
+from django.db import transaction
 from django.shortcuts import get_object_or_404
 from rest_framework.response import Response
 from rest_framework_simplejwt.views import TokenObtainPairView
@@ -12,13 +13,13 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.exceptions import TokenError
 from rest_framework.permissions import AllowAny, IsAuthenticated
 
-from .models import Specializations, User, ITSupportProfile, UserRoles, UserProfile, ITSupportSpecialization, Notifications, AuditLogs
+from .models import Specializations, User, ITSupportProfile, UserRoles, UserProfile, ITSupportSpecialization, Notifications, AuditLogs, SystemAdministratorProfile, ITSupervisorProfile, ITServiceDeskProfile
 from tickets.models import Ticket
 from departments.models import OfficeLocation, EmployeeDepartment, ITDepartment
 from .serializers import (UserSerializer, ITSupportSpecializationCreateSerializer, ITSupportProfileSerializer,
                           ITSupportProfileCreateSerializer, UserListSerializer, UserRolesSerializer, CustomTokenObtainPairSerializer, 
                           UserProfileUpdateSerializer, SpecializationSerializer, ITSupportProfileUpdateSerializer, NotificationSerializer, AdminUserListSerializer,
-                              EmployeeDepartmentOptionSerializer,
+                              EmployeeDepartmentOptionSerializer, AvailabilityUpdateSerializer,
     ITDepartmentOptionSerializer, UserRolesUpdateSerializer,
     OfficeLocationOptionSerializer, UserRoleOptionSerializer, AdminUserCreateSerializer,
     AdminUserUpdateSerializer, SpecializationOptionSerializer,
@@ -399,6 +400,386 @@ class NotificationMarkReadView(APIView):
         return Response(
             {"success": True},
             status=status.HTTP_200_OK
+        )
+
+class MyProfileView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        user = request.user
+
+        role_name = (
+            user.role.name
+            if user.role
+            else None
+        )
+
+        data = {
+            "id": user.id,
+            "username": user.username,
+            "email": user.email,
+            "first_name": user.first_name,
+            "last_name": user.last_name,
+            "role": role_name,
+            "user_code": user.user_code,
+        }
+
+        # ==========================================
+        # EMPLOYEE
+        # ==========================================
+
+        if role_name == "Employee":
+            profile = (
+                UserProfile.objects
+                .select_related(
+                    "employee_department",
+                    "office_location",
+                )
+                .filter(user=user)
+                .first()
+            )
+
+            data.update({
+                "employee_department": (
+                    profile.employee_department.name
+                    if (
+                        profile and
+                        profile.employee_department
+                    )
+                    else None
+                ),
+                "office_location": (
+                    profile.office_location.name
+                    if (
+                        profile and
+                        profile.office_location
+                    )
+                    else None
+                ),
+            })
+
+        # ==========================================
+        # IT SUPPORT SPECIALIST
+        # ==========================================
+
+        elif role_name == "IT Support Specialist":
+            support_profile = (
+                ITSupportProfile.objects
+                .select_related(
+                    "it_department",
+                )
+                .prefetch_related(
+                    "specializations__specialization",
+                )
+                .filter(user=user)
+                .first()
+            )
+
+            # ITSupportProfile currently does not
+            # contain office_location, so we get it
+            # from the common UserProfile.
+            user_profile = (
+                UserProfile.objects
+                .select_related(
+                    "office_location",
+                )
+                .filter(user=user)
+                .first()
+            )
+
+            specializations = []
+
+            if support_profile:
+                specializations = [
+                    item.specialization.name
+                    for item in (
+                        support_profile
+                        .specializations
+                        .all()
+                    )
+                    if item.specialization
+                ]
+
+            # ======================================
+            # WORKLOAD
+            # ======================================
+            #
+            # We will replace these two values with
+            # the real Ticket / assistance queries
+            # once we use your exact model fields.
+            #
+            # Current workload definition:
+            #
+            # current_workload =
+            #     in_progress_count
+            #     + assisting_count
+            #
+            # ======================================
+
+            in_progress_count = 0
+            assisting_count = 0
+
+            current_workload = (
+                in_progress_count +
+                assisting_count
+            )
+
+            workload_limit = (
+                support_profile.workload_limit
+                if support_profile
+                else 0
+            )
+
+            data.update({
+                "it_department": (
+                    support_profile.it_department.name
+                    if (
+                        support_profile and
+                        support_profile.it_department
+                    )
+                    else None
+                ),
+
+                "office_location": (
+                    user_profile.office_location.name
+                    if (
+                        user_profile and
+                        user_profile.office_location
+                    )
+                    else None
+                ),
+
+                "specializations": specializations,
+
+                "workload": {
+                    "in_progress": (
+                        in_progress_count
+                    ),
+                    "assisting": (
+                        assisting_count
+                    ),
+                    "current": (
+                        current_workload
+                    ),
+                    "limit": (
+                        workload_limit
+                    ),
+                },
+
+                "availability_status": (
+                    support_profile.availability_status
+                    if support_profile
+                    else None
+                ),
+            })
+
+        # ==========================================
+        # IT SUPERVISOR
+        # ==========================================
+
+        elif role_name == "IT Supervisor":
+            profile = (
+                ITSupervisorProfile.objects
+                .select_related(
+                    "it_department",
+                    "office_location",
+                )
+                .filter(user=user)
+                .first()
+            )
+
+            data.update({
+                "it_department": (
+                    profile.it_department.name
+                    if (
+                        profile and
+                        profile.it_department
+                    )
+                    else None
+                ),
+
+                "office_location": (
+                    profile.office_location.name
+                    if (
+                        profile and
+                        profile.office_location
+                    )
+                    else None
+                ),
+            })
+
+        # ==========================================
+        # IT SERVICE DESK
+        # ==========================================
+
+        elif role_name == "IT Service Desk":
+            profile = (
+                ITServiceDeskProfile.objects
+                .select_related(
+                    "it_department",
+                    "office_location",
+                )
+                .filter(user=user)
+                .first()
+            )
+
+            data.update({
+                "it_department": (
+                    profile.it_department.name
+                    if (
+                        profile and
+                        profile.it_department
+                    )
+                    else None
+                ),
+
+                "office_location": (
+                    profile.office_location.name
+                    if (
+                        profile and
+                        profile.office_location
+                    )
+                    else None
+                ),
+            })
+
+        # ==========================================
+        # SYSTEM ADMINISTRATOR
+        # ==========================================
+
+        elif role_name in [
+            "System Admin",
+            "System Administrator",
+        ]:
+            profile = (
+                SystemAdministratorProfile.objects
+                .select_related(
+                    "it_department",
+                    "office_location",
+                )
+                .filter(user=user)
+                .first()
+            )
+
+            data.update({
+                "it_department": (
+                    profile.it_department.name
+                    if (
+                        profile and
+                        profile.it_department
+                    )
+                    else None
+                ),
+
+                "office_location": (
+                    profile.office_location.name
+                    if (
+                        profile and
+                        profile.office_location
+                    )
+                    else None
+                ),
+            })
+
+        return Response(
+            data,
+            status=status.HTTP_200_OK,
+        )
+
+
+class MyAvailabilityUpdateView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    @transaction.atomic
+    def patch(self, request):
+        user = request.user
+
+        role_name = (
+            user.role.name
+            if user.role
+            else None
+        )
+
+        # Only Support Specialists can modify
+        # their availability.
+        if role_name != "IT Support Specialist":
+            return Response(
+                {
+                    "error": (
+                        "Only IT Support Specialists "
+                        "can update availability."
+                    )
+                },
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
+        serializer = AvailabilityUpdateSerializer(
+            data=request.data
+        )
+
+        serializer.is_valid(
+            raise_exception=True
+        )
+
+        profile = (
+            ITSupportProfile.objects
+            .select_for_update()
+            .filter(user=user)
+            .first()
+        )
+
+        if not profile:
+            return Response(
+                {
+                    "error": (
+                        "IT Support profile not found."
+                    )
+                },
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        new_status = (
+            serializer.validated_data[
+                "availability_status"
+            ]
+        )
+
+        if (
+            profile.availability_status ==
+            new_status
+        ):
+            return Response(
+                {
+                    "error": (
+                        "Availability is already set "
+                        "to this status."
+                    )
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        profile.availability_status = new_status
+        profile.updated_by = user
+
+        profile.save(
+            update_fields=[
+                "availability_status",
+                "updated_by",
+                "updated_at",
+            ]
+        )
+
+        return Response(
+            {
+                "success": True,
+                "message": (
+                    "Availability updated successfully."
+                ),
+                "availability_status": (
+                    profile.availability_status
+                ),
+            },
+            status=status.HTTP_200_OK,
         )
 
 class AdminUserListView(APIView):
