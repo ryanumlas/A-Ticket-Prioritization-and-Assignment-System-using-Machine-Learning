@@ -2405,7 +2405,7 @@ class CategorySerializer(serializers.ModelSerializer):
 class CategoryUpdateSerializer(serializers.ModelSerializer):
     class Meta:
         model = Category
-        fields = ['it_department']
+        fields = ['name', 'it_department']
 
 # --- Keyword Serializer ---
 class KeywordSerializer(serializers.ModelSerializer):
@@ -2419,6 +2419,7 @@ class KeywordUpdateSerializer(serializers.ModelSerializer):
         model = Keyword
         fields = ['weight']
 class SymptomCodeSerializer(serializers.ModelSerializer):
+    category_id = serializers.IntegerField(read_only=True)
     category = serializers.CharField(
         source="category.name",
         read_only=True
@@ -2435,6 +2436,7 @@ class SymptomCodeSerializer(serializers.ModelSerializer):
             "id",
             "code",
             "category",
+            "category_id",
             "department",
             "description",
             "created_by",
@@ -2453,7 +2455,7 @@ class SymptomCodeSerializer(serializers.ModelSerializer):
 class UpdateSymptomCodeSerializer(serializers.ModelSerializer):
     class Meta:
         model = SymptomCode
-        fields = ['description']
+        fields = ['code', 'category', 'description', 'based_priority']
 
 class CreateSymptomCodeSerializer(serializers.ModelSerializer):
     class Meta:

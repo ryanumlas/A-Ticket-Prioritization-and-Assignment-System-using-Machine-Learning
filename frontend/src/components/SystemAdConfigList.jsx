@@ -11,6 +11,15 @@ const sections = {
             {
                 label: "IT Departments",
                 endpoint: "/departments/list/",
+                crud: {
+                    label: "Department",
+                    createEndpoint: "/departments/create/",
+                    updateEndpoint: (row) => `/departments/update/${row.id}/`,
+                    fields: [
+                        { key: "name", label: "Department name", required: true, maxLength: 100 },
+                        { key: "description", label: "Description", type: "textarea" },
+                    ],
+                },
                 columns: [
                     { key: "name", label: "Department" },
                     { key: "description", label: "Description" },
@@ -20,6 +29,13 @@ const sections = {
             {
                 label: "Employee Departments",
                 endpoint: "/departments/employee/list/",
+                crud: {
+                    label: "Employee Department",
+                    createEndpoint: "/departments/employee/create/",
+                    fields: [
+                        { key: "name", label: "Department name", required: true, maxLength: 100 },
+                    ],
+                },
                 columns: [
                     { key: "name", label: "Department" },
                     { key: "created_at", label: "Created", format: "date" },
@@ -34,6 +50,23 @@ const sections = {
             {
                 label: "Categories",
                 endpoint: "/tickets/categories/list/",
+                crud: {
+                    label: "Category",
+                    createEndpoint: "/tickets/categories/create/",
+                    updateEndpoint: (row) => `/tickets/categories/update/${row.id}/`,
+                    fields: [
+                        { key: "name", label: "Category name", required: true, maxLength: 100 },
+                        {
+                            key: "it_department",
+                            label: "IT Department",
+                            type: "select",
+                            required: true,
+                            optionsEndpoint: "/departments/list/",
+                            optionValue: "id",
+                            optionLabel: "name",
+                        },
+                    ],
+                },
                 columns: [
                     { key: "name", label: "Category" },
                     { key: "it_department_name", label: "IT Department" },
@@ -49,6 +82,31 @@ const sections = {
             {
                 label: "Symptom Codes",
                 endpoint: "/tickets/symptom-code/list/",
+                crud: {
+                    label: "Symptom Code",
+                    createEndpoint: "/tickets/symptom-code/create/",
+                    updateEndpoint: (row) => `/tickets/symptom-codes/update/${row.id}/`,
+                    fields: [
+                        { key: "code", label: "Code", required: true, maxLength: 50 },
+                        {
+                            key: "category",
+                            rowKey: "category_id",
+                            label: "Category",
+                            type: "select",
+                            required: true,
+                            optionsEndpoint: "/tickets/categories/list/",
+                            optionValue: "id",
+                            optionLabel: "name",
+                        },
+                        { key: "description", label: "Description", type: "textarea" },
+                        {
+                            key: "based_priority",
+                            label: "Base Priority",
+                            type: "select",
+                            options: ["P1", "P2", "P3", "P4", "P5"],
+                        },
+                    ],
+                },
                 columns: [
                     { key: "code", label: "Code" },
                     { key: "description", label: "Description" },
@@ -67,9 +125,16 @@ const sections = {
             {
                 label: "Specializations",
                 endpoint: "/users/admin/create-options/specializations/",
+                crud: {
+                    label: "Specialization",
+                    createEndpoint: "/users/specializations/create/",
+                    updateEndpoint: (row) => `/users/specializations/update/${row.id}/`,
+                    fields: [
+                        { key: "name", label: "Specialization name", required: true, maxLength: 100 },
+                    ],
+                },
                 columns: [
                     { key: "name", label: "Specialization" },
-                    { key: "created_at_formatted", label: "Created" },
                 ],
             },
         ],
@@ -120,9 +185,10 @@ export default function SystemAdConfigList({ sectionKey }) {
     const [page, setPage] = useState(1);
     const [pageSize, setPageSize] = useState(15);
     const [loading, setLoading] = useState(true);
-    const [departmentDialog, setDepartmentDialog] = useState(null);
-    const [departmentForm, setDepartmentForm] = useState({ name: "", description: "" });
-    const [savingDepartment, setSavingDepartment] = useState(false);
+    const [configDialog, setConfigDialog] = useState(null);
+    const [configForm, setConfigForm] = useState({});
+    const [configOptions, setConfigOptions] = useState({});
+    const [savingConfig, setSavingConfig] = useState(false);
     const [refreshKey, setRefreshKey] = useState(0);
 
     useEffect(() => {
@@ -168,6 +234,8 @@ export default function SystemAdConfigList({ sectionKey }) {
     }, [section, refreshKey]);
 
     const dataset = section.datasets[selectedDataset];
+    const crud = dataset.crud;
+    const hasRowActions = Boolean(crud?.updateEndpoint);
     const rows = rowsByDataset[selectedDataset] || [];
     const normalizedSearch = search.trim().toLowerCase();
     const filteredRows = rows.filter((row) =>
@@ -186,46 +254,80 @@ export default function SystemAdConfigList({ sectionKey }) {
         setPage(1);
     };
 
-    const openDepartmentDialog = (mode, row = null) => {
-        setDepartmentForm({
-            name: row?.name || "",
-            description: row?.description || "",
-        });
-        setDepartmentDialog({ mode, row });
+    const openConfigDialog = (mode, row = null) => {
+        setConfigForm(
+            Object.fromEntries(
+                crud.fields.map((field) => [
+                    field.key,
+                    row?.[field.rowKey || field.key] ?? field.defaultValue ?? "",
+                ])
+            )
+        );
+        setConfigDialog({ mode, row });
     };
 
-    const saveDepartment = async (event) => {
-        event.preventDefault();
-        setSavingDepartment(true);
+    useEffect(() => {
+        if (!configDialog) {
+            return undefined;
+        }
 
-        const isITDepartment = selectedDataset === 0;
-        const endpoint = isITDepartment
-            ? departmentDialog.mode === "edit"
-                ? `/departments/update/${departmentDialog.row.id}/`
-                : "/departments/create/"
-            : "/departments/employee/create/";
-        const payload = isITDepartment
-            ? departmentForm
-            : { name: departmentForm.name };
+        let active = true;
+        const optionFields = crud.fields.filter((field) => field.optionsEndpoint);
+
+        Promise.all(
+            optionFields.map(async (field) => {
+                const response = await api.get(field.optionsEndpoint);
+                const data = response.data;
+                return [field.key, Array.isArray(data) ? data : data?.results || []];
+            })
+        )
+            .then((entries) => {
+                if (active) {
+                    setConfigOptions(Object.fromEntries(entries));
+                }
+            })
+            .catch(() => {
+                if (active) {
+                    setConfigOptions({});
+                    toast.error("Failed to load form options.");
+                }
+            });
+
+        return () => {
+            active = false;
+        };
+    }, [configDialog, crud]);
+
+    const saveConfig = async (event) => {
+        event.preventDefault();
+        setSavingConfig(true);
+        const isEditing = configDialog.mode === "edit";
+        const endpoint = isEditing
+            ? crud.updateEndpoint(configDialog.row)
+            : crud.createEndpoint;
+        const payload = Object.fromEntries(
+            crud.fields.map((field) => [
+                field.apiKey || field.key,
+                field.type === "select" && configForm[field.key] === ""
+                    ? null
+                    : configForm[field.key],
+            ])
+        );
 
         try {
-            if (departmentDialog.mode === "edit") {
+            if (isEditing) {
                 await api.put(endpoint, payload);
             } else {
                 await api.post(endpoint, payload);
             }
 
-            toast.success(
-                departmentDialog.mode === "edit"
-                    ? "Department updated successfully."
-                    : "Department added successfully."
-            );
-            setDepartmentDialog(null);
+            toast.success(`${crud.label} ${isEditing ? "updated" : "added"} successfully.`);
+            setConfigDialog(null);
             setRefreshKey((current) => current + 1);
         } catch {
-            toast.error("Failed to save department. Check that the name is unique.");
+            toast.error(`Failed to save ${crud.label.toLowerCase()}. Check that the name or code is unique.`);
         } finally {
-            setSavingDepartment(false);
+            setSavingConfig(false);
         }
     };
 
@@ -236,14 +338,14 @@ export default function SystemAdConfigList({ sectionKey }) {
                     <h1 className="text-xl font-semibold text-gray-900">{section.title}</h1>
                     <p className="mt-0.5 text-sm text-gray-500">{section.description}</p>
                 </div>
-                {sectionKey === "departments" && (
+                {crud && (
                     <button
                         type="button"
-                        onClick={() => openDepartmentDialog("add")}
+                        onClick={() => openConfigDialog("add")}
                         className="inline-flex h-10 shrink-0 items-center gap-2 rounded-md bg-[#2563EB] px-4 text-sm font-medium text-white transition hover:bg-[#1D4ED8]"
                     >
                         <Plus size={16} />
-                        Add Department
+                        Add {crud.label}
                     </button>
                 )}
             </div>
@@ -307,7 +409,7 @@ export default function SystemAdConfigList({ sectionKey }) {
                                     {column.label}
                                 </th>
                             ))}
-                            {sectionKey === "departments" && selectedDataset === 0 && (
+                            {hasRowActions && (
                                 <th className="w-20 px-4 py-3 text-right font-semibold text-gray-900">Actions</th>
                             )}
                         </tr>
@@ -315,7 +417,7 @@ export default function SystemAdConfigList({ sectionKey }) {
                     <tbody>
                         {loading ? (
                             <tr>
-                                <td colSpan={dataset.columns.length + (sectionKey === "departments" && selectedDataset === 0 ? 1 : 0)} className="px-6 py-16 text-center text-gray-500">
+                                <td colSpan={dataset.columns.length + (hasRowActions ? 1 : 0)} className="px-6 py-16 text-center text-gray-500">
                                     Loading {dataset.label.toLowerCase()}...
                                 </td>
                             </tr>
@@ -329,11 +431,11 @@ export default function SystemAdConfigList({ sectionKey }) {
                                             </span>
                                         </td>
                                     ))}
-                                    {sectionKey === "departments" && selectedDataset === 0 && (
+                                    {hasRowActions && (
                                         <td className="px-4 py-3 text-right">
                                             <button
                                                 type="button"
-                                                onClick={() => openDepartmentDialog("edit", row)}
+                                                onClick={() => openConfigDialog("edit", row)}
                                                 className="rounded-md bg-[#2563EB] px-3 py-1.5 text-sm font-medium text-white transition hover:bg-[#1D4ED8]"
                                             >
                                                 Edit
@@ -344,7 +446,7 @@ export default function SystemAdConfigList({ sectionKey }) {
                             ))
                         ) : (
                             <tr>
-                                <td colSpan={dataset.columns.length + (sectionKey === "departments" && selectedDataset === 0 ? 1 : 0)} className="px-6 py-16 text-center">
+                                <td colSpan={dataset.columns.length + (hasRowActions ? 1 : 0)} className="px-6 py-16 text-center">
                                     <p className="font-medium text-gray-900">No {dataset.label.toLowerCase()} found</p>
                                     <p className="mt-1 text-sm text-gray-500">There are no records matching your search.</p>
                                 </td>
@@ -389,19 +491,19 @@ export default function SystemAdConfigList({ sectionKey }) {
                 </div>
             </div>
 
-            {departmentDialog && (
+            {configDialog && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
                     <form
-                        onSubmit={saveDepartment}
+                        onSubmit={saveConfig}
                         className="w-full max-w-lg rounded-lg border border-gray-200 bg-white shadow-xl"
                     >
                         <div className="flex items-center justify-between border-b border-gray-200 px-5 py-4">
                             <h2 className="text-lg font-semibold text-gray-900">
-                                {departmentDialog.mode === "edit" ? "Edit Department" : "Add Department"}
+                                {configDialog.mode === "edit" ? `Edit ${crud.label}` : `Add ${crud.label}`}
                             </h2>
                             <button
                                 type="button"
-                                onClick={() => setDepartmentDialog(null)}
+                                onClick={() => setConfigDialog(null)}
                                 aria-label="Close dialog"
                                 className="rounded-md p-1.5 text-gray-500 transition hover:bg-gray-100 hover:text-gray-900"
                             >
@@ -409,47 +511,66 @@ export default function SystemAdConfigList({ sectionKey }) {
                             </button>
                         </div>
                         <div className="space-y-4 p-5">
-                            <label className="block text-sm font-medium text-gray-700">
-                                Department name
-                                <input
-                                    autoFocus
-                                    required
-                                    maxLength={100}
-                                    value={departmentForm.name}
-                                    onChange={(event) =>
-                                        setDepartmentForm((current) => ({ ...current, name: event.target.value }))
-                                    }
-                                    className="mt-1.5 h-10 w-full rounded-md border border-gray-300 px-3 text-sm text-gray-900 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
-                                />
-                            </label>
-                            {selectedDataset === 0 && (
-                                <label className="block text-sm font-medium text-gray-700">
-                                    Description
-                                    <textarea
-                                        rows={4}
-                                        value={departmentForm.description}
-                                        onChange={(event) =>
-                                            setDepartmentForm((current) => ({ ...current, description: event.target.value }))
-                                        }
-                                        className="mt-1.5 w-full resize-y rounded-md border border-gray-300 px-3 py-2 text-sm text-gray-900 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
-                                    />
+                            {crud.fields.map((field, index) => (
+                                <label key={field.key} className="block text-sm font-medium text-gray-700">
+                                    {field.label}
+                                    {field.type === "textarea" ? (
+                                        <textarea
+                                            autoFocus={index === 0}
+                                            rows={4}
+                                            required={field.required}
+                                            value={configForm[field.key]}
+                                            onChange={(event) =>
+                                                setConfigForm((current) => ({ ...current, [field.key]: event.target.value }))
+                                            }
+                                            className="mt-1.5 w-full resize-y rounded-md border border-gray-300 px-3 py-2 text-sm text-gray-900 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+                                        />
+                                    ) : field.type === "select" ? (
+                                        <select
+                                            autoFocus={index === 0}
+                                            required={field.required}
+                                            value={configForm[field.key]}
+                                            onChange={(event) =>
+                                                setConfigForm((current) => ({ ...current, [field.key]: event.target.value }))
+                                            }
+                                            className="mt-1.5 h-10 w-full rounded-md border border-gray-300 bg-white px-3 text-sm text-gray-900 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+                                        >
+                                            <option value="">Select {field.label.toLowerCase()}</option>
+                                            {(field.optionsEndpoint ? configOptions[field.key] || [] : field.options || []).map((option) => {
+                                                const value = field.optionsEndpoint ? option[field.optionValue] : option;
+                                                const label = field.optionsEndpoint ? option[field.optionLabel] : option;
+                                                return <option key={value} value={value}>{label}</option>;
+                                            })}
+                                        </select>
+                                    ) : (
+                                        <input
+                                            autoFocus={index === 0}
+                                            required={field.required}
+                                            maxLength={field.maxLength}
+                                            value={configForm[field.key]}
+                                            onChange={(event) =>
+                                                setConfigForm((current) => ({ ...current, [field.key]: event.target.value }))
+                                            }
+                                            className="mt-1.5 h-10 w-full rounded-md border border-gray-300 px-3 text-sm text-gray-900 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+                                        />
+                                    )}
                                 </label>
-                            )}
+                            ))}
                         </div>
                         <div className="flex justify-end gap-2 border-t border-gray-200 px-5 py-4">
                             <button
                                 type="button"
-                                onClick={() => setDepartmentDialog(null)}
+                                onClick={() => setConfigDialog(null)}
                                 className="h-9 rounded-md border border-gray-300 px-4 text-sm font-medium text-gray-700 transition hover:bg-gray-50"
                             >
                                 Cancel
                             </button>
                             <button
                                 type="submit"
-                                disabled={savingDepartment}
+                                disabled={savingConfig}
                                 className="h-9 rounded-md bg-[#2563EB] px-4 text-sm font-medium text-white transition hover:bg-[#1D4ED8] disabled:cursor-not-allowed disabled:opacity-60"
                             >
-                                {savingDepartment ? "Saving..." : "Save Department"}
+                                {savingConfig ? "Saving..." : `Save ${crud.label}`}
                             </button>
                         </div>
                     </form>

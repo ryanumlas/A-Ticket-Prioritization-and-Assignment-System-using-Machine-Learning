@@ -321,6 +321,12 @@ class SpecializationCreateView(generics.CreateAPIView):
     permission_classes = [AllowAny]
 
 
+class SpecializationUpdateView(generics.UpdateAPIView):
+    queryset = Specializations.objects.all()
+    serializer_class = SpecializationSerializer
+    permission_classes = [AllowAny]
+
+
 class ITSupportProfileCreateView(generics.CreateAPIView):
     queryset = ITSupportProfile.objects.all()
     serializer_class = ITSupportProfileCreateSerializer

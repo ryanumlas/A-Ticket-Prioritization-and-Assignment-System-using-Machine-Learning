@@ -1,6 +1,6 @@
 from django.urls import path
 from .views import (CreateITSupportProfileView, RegisterView, UserListView, CreateITSupportProfileView, UserUpdateView, UserRoleCreateView, UserRoleDeleteView, 
-UserRoleListView, EmployeeOverviewAPIView, UserProfileUpdateView, SpecializationCreateView, ITSupportProfileCreateView, 
+UserRoleListView, EmployeeOverviewAPIView, UserProfileUpdateView, SpecializationCreateView, SpecializationUpdateView, ITSupportProfileCreateView,
 ITSupportSpecializationCreateView, ITSupportProfileUpdateView, NotificationListView, NotificationMarkReadView, NotificationUnreadCountView, AdminUserListView, 
 ITDepartmentOptionsView, EmployeeDepartmentOptionsView, OfficeLocationOptionsView, 
 UserRoleOptionsView, AdminUserCreateView, AdminUserUpdateView,
@@ -18,6 +18,7 @@ urlpatterns = [
     path('employee/list/overview/', EmployeeOverviewAPIView.as_view(), name="overview-list"),
     path('roles/delete/<int:pk>/', UserRoleDeleteView.as_view(), name='user-role-delete'),
     path('specializations/create/', SpecializationCreateView.as_view(), name='specialization-create'),
+    path('specializations/update/<int:pk>/', SpecializationUpdateView.as_view(), name='specialization-update'),
     path('it-support-profile/create/', ITSupportProfileCreateView.as_view(), name='it-support-profile-create'),
     path('it-support-specializations/create/', ITSupportSpecializationCreateView.as_view(), name='it-support-specialization-create'),
     path('it-support-profile/update/<int:pk>/', ITSupportProfileUpdateView.as_view(), name='it-support-profile-update'),
