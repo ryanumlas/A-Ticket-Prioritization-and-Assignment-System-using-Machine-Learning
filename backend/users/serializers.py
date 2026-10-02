@@ -228,7 +228,8 @@ class SpecializationSerializer(serializers.ModelSerializer):
     created_at_formatted = serializers.SerializerMethodField()
     class Meta:
         model = Specializations
-        fields = ['name', 'created_at_formatted']
+        fields = ['id', 'name', 'created_at_formatted']
+        read_only_fields = ['id', 'created_at_formatted']
 
     def get_created_at_formatted(self, obj):
         return timezone.localtime(obj.created_at).strftime("%B %d, %Y %I:%M %p")
