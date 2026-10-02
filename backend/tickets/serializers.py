@@ -3326,3 +3326,146 @@ class TicketAssistanceRequestQueueListSerializer(serializers.ModelSerializer):
             or obj.requested_by.username
             or "-"
         )
+
+class SLAMonitoringTicketSerializer(serializers.ModelSerializer):
+    status = serializers.CharField(
+        source="get_status_display",
+        read_only=True,
+    )
+
+    priority = serializers.CharField(
+        source="priority.priority_level",
+        read_only=True,
+        allow_null=True,
+    )
+
+    assigned_to_name = serializers.SerializerMethodField()
+    department_name = serializers.SerializerMethodField()
+
+    response_time_remaining = serializers.SerializerMethodField()
+    resolution_time_remaining = serializers.SerializerMethodField()
+    overall_sla_status = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Ticket
+
+        fields = [
+            "id",
+            "ticket_code",
+            "subject",
+            "status",
+            "priority",
+
+            "department_name",
+            "assigned_to_name",
+
+            "response_sla_status",
+            "response_deadline",
+            "response_time_remaining",
+
+            "resolution_sla_status",
+            "resolution_deadline",
+            "resolution_time_remaining",
+
+            "overall_sla_status",
+            "created_at",
+        ]
+
+    def get_assigned_to_name(self, obj):
+        if not obj.assigned_to:
+            return None
+
+        return (
+            obj.assigned_to.get_full_name().strip()
+            or obj.assigned_to.username
+        )
+
+    def get_department_name(self, obj):
+        if not obj.it_department:
+            return None
+
+        return obj.it_department.name
+
+    def _remaining(self, deadline, completed_at, sla_status):
+        if completed_at:
+            return (
+                sla_status.upper()
+                if sla_status
+                else "MET"
+            )
+
+        if not deadline:
+            return None
+
+        remaining = deadline - timezone.now()
+
+        if remaining.total_seconds() <= 0:
+            return "BREACHED"
+
+        total_seconds = int(remaining.total_seconds())
+
+        days, remainder = divmod(
+            total_seconds,
+            86400,
+        )
+
+        hours, remainder = divmod(
+            remainder,
+            3600,
+        )
+
+        minutes, seconds = divmod(
+            remainder,
+            60,
+        )
+
+        if days > 0:
+            return f"{days}d {hours}h {minutes}m"
+
+        if hours > 0:
+            return f"{hours}h {minutes}m"
+
+        if minutes > 0:
+            return f"{minutes}m {seconds}s"
+
+        return f"{seconds}s"
+
+    def get_response_time_remaining(self, obj):
+        return self._remaining(
+            obj.response_deadline,
+            obj.response_at,
+            obj.response_sla_status,
+        )
+
+    def get_resolution_time_remaining(self, obj):
+        return self._remaining(
+            obj.resolution_deadline,
+            obj.resolved_at,
+            obj.resolution_sla_status,
+        )
+
+    def get_overall_sla_status(self, obj):
+        statuses = {
+            str(obj.response_sla_status or "").upper(),
+            str(obj.resolution_sla_status or "").upper(),
+        }
+
+        # Any breach makes the active ticket breached.
+        if "BREACHED" in statuses:
+            return "BREACHED"
+
+        # Highest operational risk wins.
+        if "CRITICAL" in statuses:
+            return "CRITICAL"
+
+        if "WARNING" in statuses:
+            return "WARNING"
+
+        if "SAFE" in statuses:
+            return "SAFE"
+
+        # Response may already be MET while resolution is active.
+        if "MET" in statuses:
+            return "SAFE"
+
+        return "SAFE"

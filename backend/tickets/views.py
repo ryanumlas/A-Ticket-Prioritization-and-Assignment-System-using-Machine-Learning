@@ -18,7 +18,7 @@ from rest_framework.views import APIView
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from .models import (Ticket, Category, SymptomCode, TicketComments, SLARules, ReviewFlags, TicketCommentRead, TicketAssistance,  TicketReopenRequest,
                      TicketAssistanceRequest, Keyword, TicketStatusHistory as TicketStatusHistoryModel, TicketReturn, TicketPriorityRequest, TicketEscalation)
-from .serializers import (SymptomCodeSerializer, TicketSerializer, CategorySerializer, 
+from .serializers import (SymptomCodeSerializer, TicketSerializer, CategorySerializer, SLAMonitoringTicketSerializer,
 TicketAssistanceSerializer, TicketCommentSerializer, TicketStatusHistory, SLARulesSerializer, TicketAssistanceRequestSerializer,TicketClarificationResubmitSerializer, 
 SLARulesUpdateSerializer, KeywordSerializer, KeywordUpdateSerializer, UpdateSymptomCodeSerializer, CreateSymptomCodeSerializer,TicketAssistanceRequestCreateSerializer, 
 TicketCreateSerializer, TicketUpdateSerializer, TicketDetailEmployeeSerializer, CategoryUpdateSerializer, FlaggedTicketsListSerializer, TicketAssistanceRequestQueueListSerializer,
@@ -7909,7 +7909,8 @@ class SupervisorEscalatedTicketsView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
-        tickets = (
+
+        base_tickets = (
             Ticket.objects
             .filter(is_escalated=True)
             .select_related(
@@ -7921,8 +7922,28 @@ class SupervisorEscalatedTicketsView(APIView):
                 "symptom_code",
                 "priority",
             )
-            .order_by("-escalated_at")
         )
+
+
+        total_escalated = base_tickets.count()
+
+        critical_priority = base_tickets.filter(
+            priority__priority_level="P1"
+        ).count()
+
+        sla_breached = base_tickets.filter(
+            Q(response_sla_status="BREACHED")
+            | Q(resolution_sla_status="BREACHED")
+        ).distinct().count()
+
+        summary = {
+            "total_escalated": total_escalated,
+            "critical_priority": critical_priority,
+            "sla_breached": sla_breached,
+        }
+
+
+        tickets = base_tickets.order_by("-escalated_at")
 
         search = request.query_params.get(
             "search",
@@ -7970,7 +7991,7 @@ class SupervisorEscalatedTicketsView(APIView):
 
         if priority:
             tickets = tickets.filter(
-                priority__name=priority
+                priority__priority_level=priority
             )
 
         paginator = TicketPagination()
@@ -7987,9 +8008,14 @@ class SupervisorEscalatedTicketsView(APIView):
             context={"request": request},
         )
 
-        return paginator.get_paginated_response(
+        response = paginator.get_paginated_response(
             serializer.data
         )
+
+        # Add overview without changing existing pagination.
+        response.data["summary"] = summary
+
+        return response
 class RequestTicketAssistanceView(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -12224,3 +12250,418 @@ class SupervisorReportsExcelExportView(APIView):
         )
 
         self.auto_width(sheet)
+
+class SLAMonitoringView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        # ---------------------------------------------------------
+        # SUPERVISOR ACCESS ONLY
+        # ---------------------------------------------------------
+        role = getattr(
+            request.user,
+            "role",
+            None,
+        )
+
+        role_name = (
+            role.name
+            if role
+            else None
+        )
+
+        if role_name != "IT Supervisor":
+            return Response(
+                {
+                    "detail": (
+                        "Only IT Supervisors can access "
+                        "SLA Monitoring."
+                    )
+                },
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
+        # ---------------------------------------------------------
+        # ACTIVE SLA TICKETS ONLY
+        #
+        # SLA Monitoring is operational, so resolved, closed,
+        # and cancelled tickets are excluded.
+        # ---------------------------------------------------------
+        base_tickets = (
+            Ticket.objects
+            .exclude(
+                status__in=[
+                    Ticket.TicketStatus.RESOLVED,
+                    Ticket.TicketStatus.CLOSED,
+                    Ticket.TicketStatus.CANCELLED,
+                ]
+            )
+            .filter(
+                Q(response_deadline__isnull=False)
+                | Q(resolution_deadline__isnull=False)
+            )
+            .select_related(
+                "priority",
+                "it_department",
+                "assigned_to",
+                "submitted_by",
+            )
+        )
+
+        # ---------------------------------------------------------
+        # DETERMINE OVERALL SLA STATUS
+        #
+        # Highest risk wins:
+        # BREACHED > CRITICAL > WARNING > SAFE
+        #
+        # Example:
+        # Response = MET
+        # Resolution = CRITICAL
+        # Overall = CRITICAL
+        #
+        # Response = BREACHED
+        # Resolution = SAFE
+        # Overall = BREACHED
+        # ---------------------------------------------------------
+        def get_overall_sla(ticket):
+            response_status = str(
+                ticket.response_sla_status or ""
+            ).upper()
+
+            resolution_status = str(
+                ticket.resolution_sla_status or ""
+            ).upper()
+
+            statuses = {
+                response_status,
+                resolution_status,
+            }
+
+            if "BREACHED" in statuses:
+                return "BREACHED"
+
+            if "CRITICAL" in statuses:
+                return "CRITICAL"
+
+            if "WARNING" in statuses:
+                return "WARNING"
+
+            # MET + SAFE should still be considered SAFE
+            # for active monitoring.
+            return "SAFE"
+
+        # ---------------------------------------------------------
+        # SUMMARY CARDS
+        #
+        # These are calculated BEFORE table filters so the cards
+        # always represent the complete active SLA situation.
+        # ---------------------------------------------------------
+        summary = {
+            "safe": 0,
+            "warning": 0,
+            "critical": 0,
+            "breached": 0,
+        }
+
+        for ticket in base_tickets:
+            overall_status = get_overall_sla(
+                ticket
+            )
+
+            if overall_status == "BREACHED":
+                summary["breached"] += 1
+
+            elif overall_status == "CRITICAL":
+                summary["critical"] += 1
+
+            elif overall_status == "WARNING":
+                summary["warning"] += 1
+
+            else:
+                summary["safe"] += 1
+
+        # ---------------------------------------------------------
+        # TABLE QUERYSET
+        # ---------------------------------------------------------
+        tickets = base_tickets
+
+        # ---------------------------------------------------------
+        # SEARCH
+        # ---------------------------------------------------------
+        search = request.query_params.get(
+            "search",
+            "",
+        ).strip()
+
+        if search:
+            tickets = tickets.filter(
+                Q(ticket_code__icontains=search)
+                | Q(subject__icontains=search)
+                | Q(
+                    assigned_to__first_name__icontains=search
+                )
+                | Q(
+                    assigned_to__last_name__icontains=search
+                )
+                | Q(
+                    assigned_to__username__icontains=search
+                )
+                | Q(
+                    it_department__name__icontains=search
+                )
+            )
+
+        # ---------------------------------------------------------
+        # PRIORITY FILTER
+        # ---------------------------------------------------------
+        priority = request.query_params.get(
+            "priority",
+            "",
+        ).strip()
+
+        if priority:
+            tickets = tickets.filter(
+                priority__priority_level=priority
+            )
+
+        # ---------------------------------------------------------
+        # DEPARTMENT FILTER
+        # ---------------------------------------------------------
+        department = request.query_params.get(
+            "department",
+            "",
+        ).strip()
+
+        if department:
+            try:
+                department_id = int(department)
+
+                tickets = tickets.filter(
+                    it_department_id=department_id
+                )
+
+            except (TypeError, ValueError):
+                pass
+
+        # ---------------------------------------------------------
+        # SLA STATUS FILTER
+        #
+        # Overall SLA is calculated from both response and
+        # resolution SLA statuses.
+        # ---------------------------------------------------------
+        sla_status = request.query_params.get(
+            "sla_status",
+            "",
+        ).strip().upper()
+
+        valid_sla_filters = {
+            "SAFE",
+            "WARNING",
+            "CRITICAL",
+            "BREACHED",
+        }
+
+        if sla_status in valid_sla_filters:
+            matching_ids = []
+
+            for ticket in tickets:
+                if (
+                    get_overall_sla(ticket)
+                    == sla_status
+                ):
+                    matching_ids.append(
+                        ticket.id
+                    )
+
+            tickets = tickets.filter(
+                id__in=matching_ids
+            )
+
+        # ---------------------------------------------------------
+        # ORDERING
+        #
+        # Nearest resolution deadline appears first.
+        # If resolution deadline is unavailable, response
+        # deadline is considered next.
+        # ---------------------------------------------------------
+        tickets = tickets.order_by(
+            "resolution_deadline",
+            "response_deadline",
+            "-created_at",
+        )
+
+        # ---------------------------------------------------------
+        # DEPARTMENT DROPDOWN
+        #
+        # Supervisor can monitor ALL IT departments.
+        # ---------------------------------------------------------
+        departments = list(
+            ITDepartment.objects
+            .all()
+            .order_by("name")
+            .values(
+                "id",
+                "name",
+            )
+        )
+
+        # ---------------------------------------------------------
+        # PAGE SIZE
+        # ---------------------------------------------------------
+        try:
+            page_size = int(
+                request.query_params.get(
+                    "page_size",
+                    15,
+                )
+            )
+
+        except (TypeError, ValueError):
+            page_size = 15
+
+        allowed_page_sizes = {
+            10,
+            15,
+            25,
+            50,
+        }
+
+        if page_size not in allowed_page_sizes:
+            page_size = 15
+
+        # ---------------------------------------------------------
+        # PAGE NUMBER
+        # ---------------------------------------------------------
+        try:
+            page_number = int(
+                request.query_params.get(
+                    "page",
+                    1,
+                )
+            )
+
+        except (TypeError, ValueError):
+            page_number = 1
+
+        if page_number < 1:
+            page_number = 1
+
+        # ---------------------------------------------------------
+        # PAGINATION
+        # ---------------------------------------------------------
+        paginator = Paginator(
+            tickets,
+            page_size,
+        )
+
+        page_obj = paginator.get_page(
+            page_number
+        )
+
+        # ---------------------------------------------------------
+        # SERIALIZE RESULTS
+        # ---------------------------------------------------------
+        serializer = (
+            SLAMonitoringTicketSerializer(
+                page_obj.object_list,
+                many=True,
+            )
+        )
+
+        # ---------------------------------------------------------
+        # RESPONSE
+        # ---------------------------------------------------------
+        return Response(
+            {
+                "summary": {
+                    "safe": summary["safe"],
+                    "warning": summary["warning"],
+                    "critical": summary["critical"],
+                    "breached": summary["breached"],
+                },
+
+                "departments": departments,
+
+                "count": paginator.count,
+
+                "page": page_obj.number,
+
+                "page_size": page_size,
+
+                "total_pages": (
+                    paginator.num_pages
+                    if paginator.num_pages > 0
+                    else 1
+                ),
+
+                "has_next": (
+                    page_obj.has_next()
+                ),
+
+                "has_previous": (
+                    page_obj.has_previous()
+                ),
+
+                "results": serializer.data,
+            },
+            status=status.HTTP_200_OK,
+        )
+
+class SupervisorDashboardOverviewView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        role = getattr(request.user, "role", None)
+        role_name = role.name if role else None
+
+        if role_name != "IT Supervisor":
+            return Response(
+                {
+                    "detail": (
+                        "Only IT Supervisors can access "
+                        "the supervisor dashboard overview."
+                    )
+                },
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
+        active_tickets = Ticket.objects.exclude(
+            status__in=[
+                "resolved",
+                "closed",
+                "cancelled",
+            ]
+        )
+
+        active_count = active_tickets.count()
+
+        sla_breached_count = (
+            active_tickets
+            .filter(
+                Q(response_sla_status="BREACHED")
+                | Q(resolution_sla_status="BREACHED")
+            )
+            .distinct()
+            .count()
+        )
+
+
+        escalated_count = active_tickets.filter(
+            is_escalated=True
+        ).count()
+
+        today = timezone.localdate()
+
+        resolved_today_count = Ticket.objects.filter(
+            resolved_at__date=today
+        ).count()
+
+        return Response(
+            {
+                "active_tickets": active_count,
+                "sla_breached": sla_breached_count,
+                "escalated_tickets": escalated_count,
+                "resolved_today": resolved_today_count,
+            },
+            status=status.HTTP_200_OK,
+        )

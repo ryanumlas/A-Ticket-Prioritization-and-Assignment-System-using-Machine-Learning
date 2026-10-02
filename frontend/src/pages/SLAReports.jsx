@@ -13,6 +13,7 @@ import {
     Timer,
     TrendingUp,
     Download,
+    FileSpreadsheet,
 } from "lucide-react";
 import { motion } from "motion/react";
 import { toast } from "sonner";
@@ -356,6 +357,77 @@ export default function SLAReports() {
     const [error, setError] = useState("");
     const [breachSearch, setBreachSearch] = useState("");
     const [breachPage, setBreachPage] = useState(1);
+    const [exporting, setExporting] = useState(false);
+
+    const handleExportExcel = async () => {
+        if (dateFilter === "custom") {
+            if (!startDate || !endDate) {
+                toast.error("Please select both start and end dates.");
+                return;
+            }
+
+            if (startDate > endDate) {
+                toast.error("Start date cannot be after end date.");
+                return;
+            }
+        }
+
+        try {
+            setExporting(true);
+
+            const params =
+                dateFilter === "overall"
+                    ? {}
+                    : {
+                        start_date: startDate,
+                        end_date: endDate,
+                    };
+
+            const response = await api.get(
+                "/tickets/supervisor/reports/export/",
+                {
+                    params,
+                    responseType: "blob",
+                }
+            );
+
+            const blob = new Blob(
+                [response.data],
+                {
+                    type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                }
+            );
+
+            const url = window.URL.createObjectURL(blob);
+
+            const link = document.createElement("a");
+
+            link.href = url;
+
+            link.download =
+                dateFilter === "overall"
+                    ? "IT_Reports_Overall.xlsx"
+                    : `IT_Reports_${startDate}_to_${endDate}.xlsx`;
+
+            document.body.appendChild(link);
+
+            link.click();
+
+            document.body.removeChild(link);
+
+            window.URL.revokeObjectURL(url);
+
+            toast.success("Excel report exported successfully.");
+        } catch (error) {
+            console.error("Excel export failed:", error);
+
+            toast.error(
+                "Unable to export the Excel report."
+            );
+        } finally {
+            setExporting(false);
+        }
+    };
 
     const fetchReport = async (start = startDate, end = endDate, filter = dateFilter) => {
         if (filter === "custom") {
@@ -536,15 +608,38 @@ export default function SLAReports() {
                             SLA Reports
                         </h1>
                     </div>
+
                     <p className="mt-1 max-w-3xl text-sm leading-6 text-gray-500">
                         Review response and resolution SLA compliance, current SLA risk,
                         department performance, and breached ticket details.
                     </p>
                 </div>
 
-                <div className="flex items-center gap-2 text-xs text-gray-500">
-                    <CalendarDays size={15} />
-                    <span>{periodText}</span>
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+                    <div className="flex items-center gap-2 text-xs text-gray-500">
+                        <CalendarDays size={15} />
+                        <span>{periodText}</span>
+                    </div>
+
+                    <button
+                        type="button"
+                        onClick={handleExportExcel}
+                        disabled={exporting || loading}
+                        className="inline-flex cursor-pointer h-10 items-center justify-center gap-2 rounded-lg border border-green-700 bg-green-600 px-4 text-sm font-semibold text-white transition hover:bg-green-700 disabled:cursor-not-allowed disabled:opacity-50"
+                    >
+                        {exporting ? (
+                            <RefreshCw
+                                size={17}
+                                className="animate-spin"
+                            />
+                        ) : (
+                            <FileSpreadsheet size={18} />
+                        )}
+
+                        {exporting
+                            ? "Exporting..."
+                            : "Export Excel"}
+                    </button>
                 </div>
             </div>
 

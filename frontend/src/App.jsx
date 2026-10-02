@@ -37,6 +37,7 @@ import TeamWorkload from './pages/TeamWorkload'
 import UserProfile from './pages/UserProfile'
 import TicketReports from './pages/TicketReports'
 import SLAReports from './pages/SLAReports'
+import SLAMonitoring from './pages/SLAMonitoring'
 
 // function Logout() {
 //   localStorage.clear()
@@ -344,6 +345,16 @@ function App() {
                         allowedRoles={["IT Supervisor"]}
                     >
                         <EscalatedTicket />
+                    </ProtectedRoute>
+                }
+            />
+            <Route
+                path="/sla-monitoring"
+                element={
+                    <ProtectedRoute
+                        allowedRoles={["IT Supervisor"]}
+                    >
+                        <SLAMonitoring />
                     </ProtectedRoute>
                 }
             />
