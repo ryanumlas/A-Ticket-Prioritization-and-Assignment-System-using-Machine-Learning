@@ -13042,65 +13042,6 @@ class SupervisorDashboardOverviewView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
-        role = getattr(request.user, "role", None)
-        role_name = role.name if role else None
-
-        if role_name != "IT Supervisor":
-            return Response(
-                {
-                    "detail": (
-                        "Only IT Supervisors can access "
-                        "the supervisor dashboard overview."
-                    )
-                },
-                status=status.HTTP_403_FORBIDDEN,
-            )
-
-        active_tickets = Ticket.objects.exclude(
-            status__in=[
-                "resolved",
-                "closed",
-                "cancelled",
-            ]
-        )
-
-        active_count = active_tickets.count()
-
-        sla_breached_count = (
-            active_tickets
-            .filter(
-                Q(response_sla_status="BREACHED")
-                | Q(resolution_sla_status="BREACHED")
-            )
-            .distinct()
-            .count()
-        )
-
-
-        escalated_count = active_tickets.filter(
-            is_escalated=True
-        ).count()
-
-        today = timezone.localdate()
-
-        resolved_today_count = Ticket.objects.filter(
-            resolved_at__date=today
-        ).count()
-
-        return Response(
-            {
-                "active_tickets": active_count,
-                "sla_breached": sla_breached_count,
-                "escalated_tickets": escalated_count,
-                "resolved_today": resolved_today_count,
-            },
-            status=status.HTTP_200_OK,
-        )
-
-class SupervisorDashboardOverviewView(APIView):
-    permission_classes = [IsAuthenticated]
-
-    def get(self, request):
         # ---------------------------------------------------------
         # PERMISSION
         # ---------------------------------------------------------
@@ -13379,3 +13320,125 @@ class SupervisorDashboardOverviewView(APIView):
             },
             status=status.HTTP_200_OK,
         )
+
+
+class TicketsNeedingAttentionView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    ATTENTION_STATUSES = [
+        Ticket.SLAStatus.WARNING,
+        Ticket.SLAStatus.CRITICAL,
+        Ticket.SLAStatus.BREACHED,
+    ]
+
+    def get(self, request):
+        now = timezone.now()
+
+        # ------------------------------------------------------
+        # GET ASSIGNED ACTIVE TICKETS WITH RESOLUTION SLA
+        # WARNING / CRITICAL / BREACHED
+        # ------------------------------------------------------
+
+        tickets = (
+            Ticket.objects
+            .filter(
+                assigned_to=request.user,
+                resolution_sla_status__in=self.ATTENTION_STATUSES,
+                resolution_deadline__isnull=False,
+            )
+            .exclude(
+                status__in=[
+                    Ticket.TicketStatus.RESOLVED,
+                    Ticket.TicketStatus.CLOSED,
+                    Ticket.TicketStatus.CANCELLED,
+                ]
+            )
+            .select_related("priority")
+        )
+
+        results = []
+
+        for ticket in tickets:
+            remaining_seconds = int(
+                (
+                    ticket.resolution_deadline - now
+                ).total_seconds()
+            )
+
+            results.append(
+                {
+                    "id": ticket.id,
+                    "ticket_code": ticket.ticket_code,
+                    "subject": ticket.subject,
+
+                    "priority": (
+                        ticket.priority.priority_level
+                        if ticket.priority
+                        else None
+                    ),
+
+                    # Resolution SLA only
+                    "sla_type": "Resolution SLA",
+
+                    "sla_status": (
+                        ticket.resolution_sla_status
+                        .replace("_", " ")
+                        .title()
+                    ),
+
+                    "remaining": self.format_remaining(
+                        remaining_seconds
+                    ),
+
+                    "deadline": ticket.resolution_deadline,
+                    "remaining_seconds": remaining_seconds,
+                }
+            )
+
+        # ------------------------------------------------------
+        # MOST IMPORTANT FIRST
+        #
+        # Breached -> Critical -> Warning
+        # ------------------------------------------------------
+
+        severity = {
+            "Breached": 3,
+            "Critical": 2,
+            "Warning": 1,
+        }
+
+        results.sort(
+            key=lambda item: (
+                -severity.get(
+                    item["sla_status"],
+                    0,
+                ),
+                item["remaining_seconds"],
+            )
+        )
+
+        # Dashboard only shows top 5
+        return Response(results[:5])
+
+    def format_remaining(self, seconds):
+        overdue = seconds < 0
+
+        seconds = abs(seconds)
+
+        days = seconds // 86400
+        hours = (seconds % 86400) // 3600
+        minutes = (seconds % 3600) // 60
+
+        if days > 0:
+            time_text = f"{days}d {hours}h"
+
+        elif hours > 0:
+            time_text = f"{hours}h {minutes}m"
+
+        else:
+            time_text = f"{max(1, minutes)}m"
+
+        if overdue:
+            return f"{time_text} overdue"
+
+        return f"{time_text} remaining"

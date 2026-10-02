@@ -25,35 +25,22 @@ export default function EmployeeProfile({
 
                 {/* Header */}
 
-                <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
-                    <div className="h-24 bg-gradient-to-r from-[#4C4CF9] to-[#7474FF]" />
+                <div className="rounded-xl border border-gray-300 bg-white p-5 sm:p-6">
+                    <div className="min-w-0">
+                        <h1 className="break-words text-2xl font-bold text-black">
+                            {fullName || profile.username}
+                        </h1>
 
-                    <div className="px-6 pb-6">
-                        <div className="-mt-10 flex flex-col gap-4 sm:flex-row sm:items-end">
-                            <div className="flex h-20 w-20 shrink-0 items-center justify-center rounded-2xl border-4 border-white bg-[#EEEEFF] shadow-sm">
-                                <UserRound
-                                    size={34}
-                                    className="text-[#4C4CF9]"
-                                />
-                            </div>
+                        <div className="mt-2 flex flex-wrap items-center gap-2">
+                            <span className="rounded-md bg-[#EEEEFF] px-3 py-1 text-xs font-semibold text-[#4C4CF9]">
+                                {profile.role || "Employee"}
+                            </span>
 
-                            <div className="min-w-0 pb-1">
-                                <h1 className="truncate text-2xl font-bold text-gray-900">
-                                    {fullName || profile.username}
-                                </h1>
-
-                                <div className="mt-1 flex flex-wrap items-center gap-2">
-                                    <span className="rounded-full bg-[#EEEEFF] px-3 py-1 text-xs font-semibold text-[#4C4CF9]">
-                                        {profile.role || "Employee"}
-                                    </span>
-
-                                    {profile.user_code && (
-                                        <span className="text-sm text-gray-500">
-                                            {profile.user_code}
-                                        </span>
-                                    )}
-                                </div>
-                            </div>
+                            {profile.user_code && (
+                                <span className="text-sm text-gray-500">
+                                    {profile.user_code}
+                                </span>
+                            )}
                         </div>
                     </div>
                 </div>
@@ -112,17 +99,13 @@ export default function EmployeeProfile({
                     <ProfileField
                         icon={Building2}
                         label="Employee Department"
-                        value={
-                            profile.employee_department
-                        }
+                        value={profile.employee_department}
                     />
 
                     <ProfileField
                         icon={MapPin}
                         label="Office Location"
-                        value={
-                            profile.office_location
-                        }
+                        value={profile.office_location}
                     />
                 </ProfileSection>
             </div>
@@ -137,9 +120,9 @@ function ProfileSection({
     children,
 }) {
     return (
-        <section className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
-            <div className="border-b border-gray-100 pb-4">
-                <h2 className="text-base font-semibold text-gray-900">
+        <section className="rounded-xl border border-gray-300 bg-white p-5 sm:p-6">
+            <div className="border-b border-gray-200 pb-4">
+                <h2 className="text-base font-semibold text-black">
                     {title}
                 </h2>
 
@@ -175,7 +158,7 @@ function ProfileField({
                     {label}
                 </p>
 
-                <p className="mt-1 break-words text-sm font-medium text-gray-900">
+                <p className="mt-1 break-words text-sm font-medium text-black">
                     {value || "-"}
                 </p>
             </div>

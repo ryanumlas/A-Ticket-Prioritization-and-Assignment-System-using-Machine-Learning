@@ -115,18 +115,6 @@ export const sidebarItems = {
 
         {
             type: "section",
-            title: "ACTIONS",
-        },
-
-        {
-            type: "link",
-            name: "Create Ticket",
-            path: "/",
-            icon: TicketPlus,
-        },
-
-        {
-            type: "section",
             title: "OTHER",
         },
 
