@@ -1,10 +1,16 @@
 from django.utils import timezone
+from io import BytesIO
+from django.http import HttpResponse
+from openpyxl import Workbook
+from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
+from openpyxl.utils import get_column_letter
 import time
 from django.core.paginator import Paginator
 from django.shortcuts import render, get_object_or_404
 from .pagination import TicketPagination, WorkloadPagination
-from django.db.models import Count
-from django.db.models import Q, Subquery, OuterRef
+from django.db.models.functions import TruncDate
+from django.utils.dateparse import parse_date
+from django.db.models import Q, Subquery, OuterRef, Avg, F, ExpressionWrapper, DurationField, Count
 from django.db import transaction
 from rest_framework.response import Response
 from rest_framework import viewsets, generics, status
@@ -4054,17 +4060,34 @@ class TicketDetailSupportView(APIView):
     def get(self, request, ticket_id):
         user = request.user
 
-        try:
-            support_profile = user.it_support_profile
-        except ITSupportProfile.DoesNotExist:
-            return Response(
-                {
-                    "error": (
-                        "You do not have an IT Support profile."
-                    )
-                },
-                status=status.HTTP_403_FORBIDDEN,
-            )
+        # --------------------------------------------------
+        # DETERMINE USER TYPE
+        # --------------------------------------------------
+
+        is_supervisor = hasattr(
+            user,
+            "it_supervisor_profile",
+        )
+
+        support_profile = None
+
+        if not is_supervisor:
+            try:
+                support_profile = user.it_support_profile
+            except ITSupportProfile.DoesNotExist:
+                return Response(
+                    {
+                        "error": (
+                            "You do not have permission "
+                            "to view this ticket."
+                        )
+                    },
+                    status=status.HTTP_403_FORBIDDEN,
+                )
+
+        # --------------------------------------------------
+        # GET TICKET
+        # --------------------------------------------------
 
         try:
             ticket = (
@@ -4092,6 +4115,29 @@ class TicketDetailSupportView(APIView):
                 },
                 status=status.HTTP_404_NOT_FOUND,
             )
+
+        # --------------------------------------------------
+        # SUPERVISOR
+        # Can view tickets from ALL departments.
+        # --------------------------------------------------
+
+        if is_supervisor:
+            serializer = TicketDetailSupportSerializer(
+                ticket,
+                context={
+                    "request": request,
+                },
+            )
+
+            return Response(
+                serializer.data,
+                status=status.HTTP_200_OK,
+            )
+
+        # --------------------------------------------------
+        # IT SUPPORT ACCESS RULES
+        # Existing behavior remains unchanged.
+        # --------------------------------------------------
 
         is_assigned = (
             ticket.assigned_to_id == user.id
@@ -4156,6 +4202,10 @@ class TicketDetailSupportView(APIView):
                 status=status.HTTP_404_NOT_FOUND,
             )
 
+        # --------------------------------------------------
+        # RESPONSE
+        # --------------------------------------------------
+
         serializer = TicketDetailSupportSerializer(
             ticket,
             context={
@@ -4179,7 +4229,9 @@ class TicketDetailSupervisorView(APIView):
         except ITSupervisorProfile.DoesNotExist:
             return Response(
                 {
-                    "error": "You do not have an IT Supervisor profile."
+                    "error": (
+                        "You do not have an IT Supervisor profile."
+                    )
                 },
                 status=status.HTTP_403_FORBIDDEN,
             )
@@ -4201,19 +4253,13 @@ class TicketDetailSupervisorView(APIView):
                     "ai_prediction",
                     "ai_analysis",
                 )
-                .get(
-                    id=ticket_id,
-                    is_escalated=True,
-                )
+                .get(id=ticket_id)
             )
 
         except Ticket.DoesNotExist:
             return Response(
                 {
-                    "error": (
-                        "Ticket not found or you do not have "
-                        "permission to view this ticket."
-                    )
+                    "error": "Ticket not found."
                 },
                 status=status.HTTP_404_NOT_FOUND,
             )
@@ -4225,7 +4271,10 @@ class TicketDetailSupervisorView(APIView):
             },
         )
 
-        return Response(serializer.data)
+        return Response(
+            serializer.data,
+            status=status.HTTP_200_OK,
+        )
 # --- End --- 
 
 #
@@ -9601,3 +9650,2577 @@ class SystemAdUserChartView(APIView):
                 {"name": "Inactive", "value": inactive_count},
             ],
         })
+
+
+# --- REPORTSSSSSSS --- 
+class TicketReportView(APIView):
+    permission_classes = [AllowAny]
+
+    def get(self, request):
+        # ============================================================
+        # DATE FILTER
+        # ============================================================
+        start_date_raw = request.query_params.get("start_date")
+        end_date_raw = request.query_params.get("end_date")
+
+        start_date = parse_date(start_date_raw) if start_date_raw else None
+        end_date = parse_date(end_date_raw) if end_date_raw else None
+
+        if start_date_raw and not start_date:
+            return Response(
+                {"detail": "Invalid start_date. Use YYYY-MM-DD."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        if end_date_raw and not end_date:
+            return Response(
+                {"detail": "Invalid end_date. Use YYYY-MM-DD."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        if start_date and end_date and start_date > end_date:
+            return Response(
+                {"detail": "start_date cannot be after end_date."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        tickets = Ticket.objects.all()
+
+        if start_date:
+            tickets = tickets.filter(created_at__date__gte=start_date)
+
+        if end_date:
+            tickets = tickets.filter(created_at__date__lte=end_date)
+
+        # ============================================================
+        # SUMMARY
+        # ============================================================
+        total_tickets = tickets.count()
+
+        resolved_tickets = tickets.filter(
+            resolved_at__isnull=False
+        ).count()
+
+        resolution_rate = (
+            round((resolved_tickets / total_tickets) * 100, 2)
+            if total_tickets
+            else 0
+        )
+
+        breached_tickets = tickets.filter(
+            Q(response_sla_status=Ticket.SLAStatus.BREACHED)
+            | Q(resolution_sla_status=Ticket.SLAStatus.BREACHED)
+        ).distinct().count()
+
+        escalated_tickets = tickets.filter(
+            is_escalated=True
+        ).count()
+
+        resolution_duration = ExpressionWrapper(
+            F("resolved_at") - F("created_at"),
+            output_field=DurationField(),
+        )
+
+        average_resolution = (
+            tickets
+            .filter(resolved_at__isnull=False)
+            .annotate(resolution_duration=resolution_duration)
+            .aggregate(avg=Avg("resolution_duration"))
+            .get("avg")
+        )
+
+        average_resolution_seconds = (
+            round(average_resolution.total_seconds(), 2)
+            if average_resolution
+            else 0
+        )
+
+        # ============================================================
+        # TICKET VOLUME
+        # Submitted = grouped by created_at
+        # Resolved = grouped by resolved_at
+        # ============================================================
+        submitted_volume = (
+            tickets
+            .annotate(date=TruncDate("created_at"))
+            .values("date")
+            .annotate(count=Count("id"))
+            .order_by("date")
+        )
+
+        resolved_volume = (
+            tickets
+            .filter(resolved_at__isnull=False)
+            .annotate(date=TruncDate("resolved_at"))
+            .values("date")
+            .annotate(count=Count("id"))
+            .order_by("date")
+        )
+
+        volume_map = {}
+
+        for item in submitted_volume:
+            key = item["date"].isoformat()
+
+            volume_map[key] = {
+                "date": key,
+                "submitted": item["count"],
+                "resolved": 0,
+            }
+
+        for item in resolved_volume:
+            key = item["date"].isoformat()
+
+            if key not in volume_map:
+                volume_map[key] = {
+                    "date": key,
+                    "submitted": 0,
+                    "resolved": 0,
+                }
+
+            volume_map[key]["resolved"] = item["count"]
+
+        ticket_volume = sorted(
+            volume_map.values(),
+            key=lambda item: item["date"],
+        )
+
+        status_rows = (
+            tickets
+            .values("status")
+            .annotate(count=Count("id"))
+            .order_by("-count")
+        )
+
+        status_labels = dict(Ticket.TicketStatus.choices)
+
+        tickets_by_status = [
+            {
+                "status": row["status"],
+                "label": status_labels.get(
+                    row["status"],
+                    row["status"],
+                ),
+                "count": row["count"],
+            }
+            for row in status_rows
+        ]
+
+        # ============================================================
+        # PRIORITY BREAKDOWN
+        # ============================================================
+        priority_rows = (
+            tickets
+            .values("priority__priority_level")
+            .annotate(count=Count("id"))
+            .order_by("priority__priority_level")
+        )
+
+        tickets_by_priority = [
+            {
+                "priority": (
+                    row["priority__priority_level"]
+                    or "Unassigned"
+                ),
+                "count": row["count"],
+            }
+            for row in priority_rows
+        ]
+
+        # ============================================================
+        # CATEGORY BREAKDOWN
+        # ============================================================
+        category_rows = (
+            tickets
+            .values("category_id", "category__name")
+            .annotate(count=Count("id"))
+            .order_by("-count")
+        )
+
+        tickets_by_category = [
+            {
+                "category_id": row["category_id"],
+                "category": (
+                    row["category__name"]
+                    or "Uncategorized"
+                ),
+                "count": row["count"],
+            }
+            for row in category_rows
+        ]
+
+        # ============================================================
+        # IT DEPARTMENT BREAKDOWN
+        # ============================================================
+        department_rows = (
+            tickets
+            .values(
+                "it_department_id",
+                "it_department__name",
+            )
+            .annotate(count=Count("id"))
+            .order_by("-count")
+        )
+
+        tickets_by_department = [
+            {
+                "department_id": row["it_department_id"],
+                "department": (
+                    row["it_department__name"]
+                    or "Unassigned"
+                ),
+                "count": row["count"],
+            }
+            for row in department_rows
+        ]
+
+        # ============================================================
+        # RESOLUTION REMARKS
+        #
+        # Latest RESOLVED history entry per ticket.
+        # ============================================================
+        resolved_ticket_ids = list(
+            tickets
+            .filter(resolved_at__isnull=False)
+            .values_list("id", flat=True)
+        )
+
+        resolved_histories = (
+            TicketStatusHistoryModel.objects
+            .filter(
+                ticket_id__in=resolved_ticket_ids,
+            )
+            .filter(
+                Q(
+                    event_type=(
+                        TicketStatusHistoryModel
+                        .EventType
+                        .RESOLVED
+                    )
+                )
+                |
+                Q(
+                    event_type=(
+                        TicketStatusHistoryModel
+                        .EventType
+                        .STATUS_CHANGED
+                    ),
+                    new_value=Ticket.TicketStatus.RESOLVED,
+                )
+            )
+            .exclude(remarks__isnull=True)
+            .exclude(remarks="")
+            .select_related(
+                "ticket",
+                "ticket__resolved_by",
+            )
+            .order_by(
+                "ticket_id",
+                "-created_at",
+            )
+        )
+
+        latest_resolution_history = {}
+
+        for history in resolved_histories:
+            if history.ticket_id not in latest_resolution_history:
+                latest_resolution_history[
+                    history.ticket_id
+                ] = history
+
+        resolution_remarks = []
+
+        resolved_ticket_objects = (
+            tickets
+            .filter(resolved_at__isnull=False)
+            .select_related(
+                "resolved_by",
+                "it_department",
+                "category",
+                "symptom_code",
+                "priority",
+            )
+            .order_by("-resolved_at")
+        )
+
+        for ticket in resolved_ticket_objects:
+            history = latest_resolution_history.get(ticket.id)
+
+            resolver = ticket.resolved_by
+
+            resolver_name = None
+
+            if resolver:
+                resolver_name = (
+                    f"{resolver.first_name} "
+                    f"{resolver.last_name}"
+                ).strip() or resolver.username
+
+            resolution_remarks.append(
+                {
+                    "ticket_id": ticket.id,
+                    "ticket_code": ticket.ticket_code,
+                    "subject": ticket.subject,
+                    "priority": (
+                        ticket.priority.priority_level
+                        if ticket.priority
+                        else None
+                    ),
+                    "category": (
+                        ticket.category.name
+                        if ticket.category
+                        else None
+                    ),
+                    "department": (
+                        str(ticket.it_department)
+                        if ticket.it_department
+                        else None
+                    ),
+                    "resolved_by": resolver_name,
+                    "resolved_at": ticket.resolved_at,
+                    "remarks": (
+                        history.remarks
+                        if history
+                        else ""
+                    ),
+                }
+            )
+
+        # ============================================================
+        # RETURNED TICKETS
+        # ============================================================
+        return_rows = (
+            TicketReturn.objects
+            .filter(ticket__in=tickets)
+            .values("status")
+            .annotate(count=Count("id"))
+            .order_by("status")
+        )
+
+        returned_tickets = {
+            "total": TicketReturn.objects.filter(
+                ticket__in=tickets
+            ).count(),
+            "breakdown": list(return_rows),
+        }
+
+        # ============================================================
+        # PRIORITY CHANGE REQUESTS
+        # ============================================================
+        priority_request_rows = (
+            TicketPriorityRequest.objects
+            .filter(ticket__in=tickets)
+            .values("status")
+            .annotate(count=Count("id"))
+            .order_by("status")
+        )
+
+        priority_change_requests = {
+            "total": TicketPriorityRequest.objects.filter(
+                ticket__in=tickets
+            ).count(),
+            "breakdown": list(priority_request_rows),
+        }
+
+        # ============================================================
+        # REVIEW FLAGS
+        # ============================================================
+        review_flag_rows = (
+            ReviewFlags.objects
+            .filter(ticket__in=tickets)
+            .values("status")
+            .annotate(count=Count("id"))
+            .order_by("status")
+        )
+
+        review_flags = {
+            "total": ReviewFlags.objects.filter(
+                ticket__in=tickets
+            ).count(),
+            "breakdown": list(review_flag_rows),
+        }
+
+        # ============================================================
+        # RECURRING WORKSTATIONS
+        #
+        # Normalize with lower/trim in Python so:
+        # "PC-101", " pc-101 ", "PC-101 "
+        # are treated as the same workstation.
+        # ============================================================
+        workstation_map = {}
+
+        workstation_tickets = (
+            tickets
+            .exclude(workstation__isnull=True)
+            .exclude(workstation="")
+            .values(
+                "id",
+                "ticket_code",
+                "workstation",
+            )
+        )
+
+        for item in workstation_tickets:
+            raw_workstation = item["workstation"]
+
+            normalized = raw_workstation.strip().lower()
+
+            if not normalized:
+                continue
+
+            if normalized not in workstation_map:
+                workstation_map[normalized] = {
+                    "workstation": raw_workstation.strip(),
+                    "ticket_count": 0,
+                    "ticket_codes": [],
+                }
+
+            workstation_map[normalized]["ticket_count"] += 1
+
+            workstation_map[normalized][
+                "ticket_codes"
+            ].append(
+                item["ticket_code"]
+            )
+
+        recurring_workstations = []
+
+        for item in workstation_map.values():
+            if item["ticket_count"] < 2:
+                continue
+
+            if item["ticket_count"] >= 5:
+                recurrence_level = "high"
+            elif item["ticket_count"] >= 3:
+                recurrence_level = "review"
+            else:
+                recurrence_level = "watch"
+
+            item["recurrence_level"] = recurrence_level
+
+            recurring_workstations.append(item)
+
+        recurring_workstations.sort(
+            key=lambda item: item["ticket_count"],
+            reverse=True,
+        )
+
+
+        symptom_rows = (
+            tickets
+            .exclude(symptom_code__isnull=True)
+            .values(
+                "symptom_code_id",
+                "symptom_code__code",
+            )
+            .annotate(count=Count("id"))
+            .filter(count__gte=2)
+            .order_by("-count")
+        )
+
+        recurring_problems = [
+            {
+                "symptom_code_id": row["symptom_code_id"],
+                "symptom_code": row["symptom_code__code"],
+                "ticket_count": row["count"],
+            }
+            for row in symptom_rows
+        ]
+
+
+        return Response(
+            {
+                "filters": {
+                    "start_date": (
+                        start_date.isoformat()
+                        if start_date
+                        else None
+                    ),
+                    "end_date": (
+                        end_date.isoformat()
+                        if end_date
+                        else None
+                    ),
+                },
+
+                "summary": {
+                    "total_tickets": total_tickets,
+                    "resolved_tickets": resolved_tickets,
+                    "resolution_rate": resolution_rate,
+                    "breached_tickets": breached_tickets,
+                    "escalated_tickets": escalated_tickets,
+                    "average_resolution_seconds": (
+                        average_resolution_seconds
+                    ),
+                },
+
+                "ticket_volume": ticket_volume,
+
+                "tickets_by_status": tickets_by_status,
+
+                "tickets_by_priority": tickets_by_priority,
+
+                "tickets_by_category": tickets_by_category,
+
+                "tickets_by_department": tickets_by_department,
+
+                "resolution_remarks": resolution_remarks,
+
+                "returned_tickets": returned_tickets,
+
+                "priority_change_requests": (
+                    priority_change_requests
+                ),
+
+                "review_flags": review_flags,
+
+                "recurring_workstations": (
+                    recurring_workstations
+                ),
+
+                "recurring_problems": recurring_problems,
+            },
+            status=status.HTTP_200_OK,
+        )
+
+class SLAReportView(APIView):
+    permission_classes = [AllowAny]
+
+    def get(self, request):
+
+        start_date_raw = request.query_params.get("start_date")
+        end_date_raw = request.query_params.get("end_date")
+
+        start_date = parse_date(start_date_raw) if start_date_raw else None
+        end_date = parse_date(end_date_raw) if end_date_raw else None
+
+        if start_date_raw and not start_date:
+            return Response(
+                {"detail": "Invalid start_date. Use YYYY-MM-DD."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        if end_date_raw and not end_date:
+            return Response(
+                {"detail": "Invalid end_date. Use YYYY-MM-DD."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        if start_date and end_date and start_date > end_date:
+            return Response(
+                {"detail": "start_date cannot be after end_date."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        tickets = Ticket.objects.all()
+
+        if start_date:
+            tickets = tickets.filter(created_at__date__gte=start_date)
+
+        if end_date:
+            tickets = tickets.filter(created_at__date__lte=end_date)
+
+        def percentage(part, whole):
+            if not whole:
+                return 0
+            return round((part / whole) * 100, 2)
+
+        def user_name(user):
+            if not user:
+                return None
+
+            full_name = (
+                f"{user.first_name} {user.last_name}"
+            ).strip()
+
+            return full_name or user.username
+
+
+        response_tracked = tickets.exclude(
+            response_sla_status__isnull=True
+        ).exclude(
+            response_sla_status=""
+        )
+
+        resolution_tracked = tickets.exclude(
+            resolution_sla_status__isnull=True
+        ).exclude(
+            resolution_sla_status=""
+        )
+
+        sla_tracked = tickets.filter(
+            Q(response_sla_status__isnull=False)
+            | Q(resolution_sla_status__isnull=False)
+        ).distinct()
+
+        total_sla_tracked = sla_tracked.count()
+
+        response_total = response_tracked.count()
+
+        response_breached = response_tracked.filter(
+            response_sla_status=Ticket.SLAStatus.BREACHED
+        ).count()
+
+        response_met = response_tracked.exclude(
+            response_sla_status=Ticket.SLAStatus.BREACHED
+        ).filter(
+            response_at__isnull=False
+        ).count()
+
+        response_met_rate = percentage(
+            response_met,
+            response_met + response_breached,
+        )
+
+        resolution_total = resolution_tracked.count()
+
+        resolution_breached = resolution_tracked.filter(
+            resolution_sla_status=Ticket.SLAStatus.BREACHED
+        ).count()
+
+        resolution_met = resolution_tracked.exclude(
+            resolution_sla_status=Ticket.SLAStatus.BREACHED
+        ).filter(
+            resolved_at__isnull=False
+        ).count()
+
+        resolution_met_rate = percentage(
+            resolution_met,
+            resolution_met + resolution_breached,
+        )
+
+        resolution_safe = resolution_tracked.filter(
+            resolution_sla_status=Ticket.SLAStatus.SAFE
+        ).count()
+
+        resolution_warning = resolution_tracked.filter(
+            resolution_sla_status=Ticket.SLAStatus.WARNING
+        ).count()
+
+        resolution_critical = resolution_tracked.filter(
+            resolution_sla_status=Ticket.SLAStatus.CRITICAL
+        ).count()
+
+        breached_tickets = tickets.filter(
+            Q(response_sla_status=Ticket.SLAStatus.BREACHED)
+            | Q(resolution_sla_status=Ticket.SLAStatus.BREACHED)
+        ).distinct()
+
+        total_breached_tickets = breached_tickets.count()
+
+        response_duration = ExpressionWrapper(
+            F("response_at") - F("created_at"),
+            output_field=DurationField(),
+        )
+
+        average_response = (
+            tickets
+            .filter(response_at__isnull=False)
+            .annotate(response_duration=response_duration)
+            .aggregate(avg=Avg("response_duration"))
+            .get("avg")
+        )
+
+        average_response_seconds = (
+            round(average_response.total_seconds(), 2)
+            if average_response
+            else 0
+        )
+
+
+        resolution_duration = ExpressionWrapper(
+            F("resolved_at") - F("created_at"),
+            output_field=DurationField(),
+        )
+
+        average_resolution = (
+            tickets
+            .filter(resolved_at__isnull=False)
+            .annotate(resolution_duration=resolution_duration)
+            .aggregate(avg=Avg("resolution_duration"))
+            .get("avg")
+        )
+
+        average_resolution_seconds = (
+            round(average_resolution.total_seconds(), 2)
+            if average_resolution
+            else 0
+        )
+
+
+        performance_rows = (
+            tickets
+            .annotate(date=TruncDate("created_at"))
+            .values("date")
+            .annotate(
+                response_met=Count(
+                    "id",
+                    filter=(
+                        ~Q(
+                            response_sla_status=(
+                                Ticket.SLAStatus.BREACHED
+                            )
+                        )
+                        & Q(response_at__isnull=False)
+                    ),
+                ),
+                response_breached=Count(
+                    "id",
+                    filter=Q(
+                        response_sla_status=(
+                            Ticket.SLAStatus.BREACHED
+                        )
+                    ),
+                ),
+                resolution_met=Count(
+                    "id",
+                    filter=(
+                        ~Q(
+                            resolution_sla_status=(
+                                Ticket.SLAStatus.BREACHED
+                            )
+                        )
+                        & Q(resolved_at__isnull=False)
+                    ),
+                ),
+                resolution_breached=Count(
+                    "id",
+                    filter=Q(
+                        resolution_sla_status=(
+                            Ticket.SLAStatus.BREACHED
+                        )
+                    ),
+                ),
+            )
+            .order_by("date")
+        )
+
+        sla_performance_over_time = [
+            {
+                "date": row["date"].isoformat(),
+                "response_met": row["response_met"],
+                "response_breached": row["response_breached"],
+                "resolution_met": row["resolution_met"],
+                "resolution_breached": row[
+                    "resolution_breached"
+                ],
+            }
+            for row in performance_rows
+        ]
+
+        response_status_rows = (
+            response_tracked
+            .values("response_sla_status")
+            .annotate(count=Count("id"))
+            .order_by("-count")
+        )
+
+        response_sla_breakdown = [
+            {
+                "status": row["response_sla_status"],
+                "count": row["count"],
+            }
+            for row in response_status_rows
+        ]
+
+
+        resolution_status_rows = (
+            resolution_tracked
+            .values("resolution_sla_status")
+            .annotate(count=Count("id"))
+            .order_by("-count")
+        )
+
+        resolution_sla_breakdown = [
+            {
+                "status": row["resolution_sla_status"],
+                "count": row["count"],
+            }
+            for row in resolution_status_rows
+        ]
+
+        priority_rows = (
+            tickets
+            .values("priority__priority_level")
+            .annotate(
+                total=Count("id"),
+                response_met=Count(
+                    "id",
+                    filter=(
+                        ~Q(
+                            response_sla_status=(
+                                Ticket.SLAStatus.BREACHED
+                            )
+                        )
+                        & Q(response_at__isnull=False)
+                    ),
+                ),
+                response_breached=Count(
+                    "id",
+                    filter=Q(
+                        response_sla_status=(
+                            Ticket.SLAStatus.BREACHED
+                        )
+                    ),
+                ),
+                resolution_met=Count(
+                    "id",
+                    filter=(
+                        ~Q(
+                            resolution_sla_status=(
+                                Ticket.SLAStatus.BREACHED
+                            )
+                        )
+                        & Q(resolved_at__isnull=False)
+                    ),
+                ),
+                resolution_breached=Count(
+                    "id",
+                    filter=Q(
+                        resolution_sla_status=(
+                            Ticket.SLAStatus.BREACHED
+                        )
+                    ),
+                ),
+            )
+            .order_by("priority__priority_level")
+        )
+
+        sla_by_priority = []
+
+        for row in priority_rows:
+            response_completed = (
+                row["response_met"]
+                + row["response_breached"]
+            )
+
+            resolution_completed = (
+                row["resolution_met"]
+                + row["resolution_breached"]
+            )
+
+            sla_by_priority.append(
+                {
+                    "priority": (
+                        row["priority__priority_level"]
+                        or "Unassigned"
+                    ),
+                    "total": row["total"],
+                    "response_met": row["response_met"],
+                    "response_breached": row[
+                        "response_breached"
+                    ],
+                    "response_met_rate": percentage(
+                        row["response_met"],
+                        response_completed,
+                    ),
+                    "resolution_met": row["resolution_met"],
+                    "resolution_breached": row[
+                        "resolution_breached"
+                    ],
+                    "resolution_met_rate": percentage(
+                        row["resolution_met"],
+                        resolution_completed,
+                    ),
+                }
+            )
+
+        # ============================================================
+        # SLA PERFORMANCE BY IT DEPARTMENT
+        # ============================================================
+        department_rows = (
+            tickets
+            .values(
+                "it_department_id",
+                "it_department__name",
+            )
+            .annotate(
+                total=Count("id"),
+                response_met=Count(
+                    "id",
+                    filter=(
+                        ~Q(
+                            response_sla_status=(
+                                Ticket.SLAStatus.BREACHED
+                            )
+                        )
+                        & Q(response_at__isnull=False)
+                    ),
+                ),
+                response_breached=Count(
+                    "id",
+                    filter=Q(
+                        response_sla_status=(
+                            Ticket.SLAStatus.BREACHED
+                        )
+                    ),
+                ),
+                resolution_met=Count(
+                    "id",
+                    filter=(
+                        ~Q(
+                            resolution_sla_status=(
+                                Ticket.SLAStatus.BREACHED
+                            )
+                        )
+                        & Q(resolved_at__isnull=False)
+                    ),
+                ),
+                resolution_breached=Count(
+                    "id",
+                    filter=Q(
+                        resolution_sla_status=(
+                            Ticket.SLAStatus.BREACHED
+                        )
+                    ),
+                ),
+            )
+            .order_by("it_department__name")
+        )
+
+        sla_by_department = []
+
+        for row in department_rows:
+            response_completed = (
+                row["response_met"]
+                + row["response_breached"]
+            )
+
+            resolution_completed = (
+                row["resolution_met"]
+                + row["resolution_breached"]
+            )
+
+            sla_by_department.append(
+                {
+                    "department_id": row["it_department_id"],
+                    "department": (
+                        row["it_department__name"]
+                        or "Unassigned"
+                    ),
+                    "total": row["total"],
+                    "response_met": row["response_met"],
+                    "response_breached": row[
+                        "response_breached"
+                    ],
+                    "response_met_rate": percentage(
+                        row["response_met"],
+                        response_completed,
+                    ),
+                    "resolution_met": row["resolution_met"],
+                    "resolution_breached": row[
+                        "resolution_breached"
+                    ],
+                    "resolution_met_rate": percentage(
+                        row["resolution_met"],
+                        resolution_completed,
+                    ),
+                }
+            )
+
+        # ============================================================
+        # SLA BREACH DETAILS
+        # ============================================================
+        breach_objects = (
+            breached_tickets
+            .select_related(
+                "priority",
+                "it_department",
+                "assigned_to",
+                "resolved_by",
+            )
+            .order_by("-created_at")
+        )
+
+        sla_breach_details = []
+
+        for ticket in breach_objects:
+            actual_response_seconds = None
+            actual_resolution_seconds = None
+
+            if ticket.response_at:
+                actual_response_seconds = round(
+                    (
+                        ticket.response_at
+                        - ticket.created_at
+                    ).total_seconds(),
+                    2,
+                )
+
+            if ticket.resolved_at:
+                actual_resolution_seconds = round(
+                    (
+                        ticket.resolved_at
+                        - ticket.created_at
+                    ).total_seconds(),
+                    2,
+                )
+
+            sla_breach_details.append(
+                {
+                    "ticket_id": ticket.id,
+                    "ticket_code": ticket.ticket_code,
+                    "subject": ticket.subject,
+                    "priority": (
+                        ticket.priority.priority_level
+                        if ticket.priority
+                        else None
+                    ),
+                    "department": (
+                        str(ticket.it_department)
+                        if ticket.it_department
+                        else None
+                    ),
+                    "response_sla_status": (
+                        ticket.response_sla_status
+                    ),
+                    "resolution_sla_status": (
+                        ticket.resolution_sla_status
+                    ),
+                    "response_deadline": (
+                        ticket.response_deadline
+                    ),
+                    "resolution_deadline": (
+                        ticket.resolution_deadline
+                    ),
+                    "response_at": ticket.response_at,
+                    "resolved_at": ticket.resolved_at,
+                    "actual_response_seconds": (
+                        actual_response_seconds
+                    ),
+                    "actual_resolution_seconds": (
+                        actual_resolution_seconds
+                    ),
+                    "assigned_to": user_name(
+                        ticket.assigned_to
+                    ),
+                    "resolved_by": user_name(
+                        ticket.resolved_by
+                    ),
+                    "created_at": ticket.created_at,
+                }
+            )
+        return Response(
+            {
+                "filters": {
+                    "start_date": (
+                        start_date.isoformat()
+                        if start_date
+                        else None
+                    ),
+                    "end_date": (
+                        end_date.isoformat()
+                        if end_date
+                        else None
+                    ),
+                },
+
+                "summary": {
+                    "total_sla_tracked": total_sla_tracked,
+
+                    "response_total": response_total,
+                    "response_met": response_met,
+                    "response_breached": response_breached,
+                    "response_met_rate": response_met_rate,
+                    "resolution_safe": resolution_safe,
+                    "resolution_warning": resolution_warning,
+                    "resolution_critical": resolution_critical,
+
+                    "resolution_total": resolution_total,
+                    "resolution_met": resolution_met,
+                    "resolution_breached": (
+                        resolution_breached
+                    ),
+                    "resolution_met_rate": (
+                        resolution_met_rate
+                    ),
+
+                    "total_breached_tickets": (
+                        total_breached_tickets
+                    ),
+
+                    "average_response_seconds": (
+                        average_response_seconds
+                    ),
+                    "average_resolution_seconds": (
+                        average_resolution_seconds
+                    ),
+                },
+
+                "sla_performance_over_time": (
+                    sla_performance_over_time
+                ),
+
+                "response_sla_breakdown": (
+                    response_sla_breakdown
+                ),
+
+                "resolution_sla_breakdown": (
+                    resolution_sla_breakdown
+                ),
+
+                "sla_by_priority": sla_by_priority,
+
+                "sla_by_department": sla_by_department,
+
+                "sla_breach_details": sla_breach_details,
+            },
+            status=status.HTTP_200_OK,
+        )
+
+
+class SupervisorReportsExcelExportView(APIView):
+    permission_classes = [AllowAny]
+
+    HEADER_FILL = "4C4CF9"
+    HEADER_FONT = "FFFFFF"
+    SUBHEADER_FILL = "EEEEFF"
+    BORDER_COLOR = "D1D5DB"
+
+    def get(self, request):
+        # ------------------------------------------------------------
+        # Reuse the exact same report calculations already used by UI.
+        # Query params are preserved automatically:
+        # ?start_date=YYYY-MM-DD&end_date=YYYY-MM-DD
+        # ------------------------------------------------------------
+        ticket_response = TicketReportView().get(request)
+        if ticket_response.status_code != status.HTTP_200_OK:
+            return ticket_response
+
+        sla_response = SLAReportView().get(request)
+        if sla_response.status_code != status.HTTP_200_OK:
+            return sla_response
+
+        ticket_data = ticket_response.data
+        sla_data = sla_response.data
+
+        workbook = Workbook()
+
+        # Remove default sheet.
+        default_sheet = workbook.active
+        workbook.remove(default_sheet)
+
+        # ------------------------------------------------------------
+        # SHEETS
+        # ------------------------------------------------------------
+        self.create_ticket_summary_sheet(
+            workbook,
+            ticket_data,
+        )
+
+        self.create_resolution_sheet(
+            workbook,
+            ticket_data,
+        )
+
+        self.create_recurring_issues_sheet(
+            workbook,
+            ticket_data,
+        )
+
+        self.create_workflow_sheet(
+            workbook,
+            ticket_data,
+        )
+
+        self.create_sla_summary_sheet(
+            workbook,
+            sla_data,
+        )
+
+        self.create_sla_breaches_sheet(
+            workbook,
+            sla_data,
+        )
+
+        # ------------------------------------------------------------
+        # RESPONSE
+        # ------------------------------------------------------------
+        output = BytesIO()
+        workbook.save(output)
+        output.seek(0)
+
+        filters = ticket_data.get("filters", {})
+
+        start_date = filters.get("start_date")
+        end_date = filters.get("end_date")
+
+        if start_date and end_date:
+            filename = (
+                f"IT_Reports_{start_date}_to_{end_date}.xlsx"
+            )
+        else:
+            filename = "IT_Reports_Overall.xlsx"
+
+        response = HttpResponse(
+            output.getvalue(),
+            content_type=(
+                "application/vnd.openxmlformats-officedocument."
+                "spreadsheetml.sheet"
+            ),
+        )
+
+        response["Content-Disposition"] = (
+            f'attachment; filename="{filename}"'
+        )
+
+        return response
+
+    # ================================================================
+    # COMMON HELPERS
+    # ================================================================
+
+    def apply_title(self, sheet, title, subtitle=None):
+        sheet.merge_cells(
+            start_row=1,
+            start_column=1,
+            end_row=1,
+            end_column=8,
+        )
+
+        cell = sheet.cell(row=1, column=1)
+        cell.value = title
+        cell.font = Font(
+            bold=True,
+            size=16,
+            color="FFFFFF",
+        )
+        cell.fill = PatternFill(
+            "solid",
+            fgColor=self.HEADER_FILL,
+        )
+        cell.alignment = Alignment(
+            vertical="center",
+        )
+
+        sheet.row_dimensions[1].height = 28
+
+        if subtitle:
+            sheet.merge_cells(
+                start_row=2,
+                start_column=1,
+                end_row=2,
+                end_column=8,
+            )
+
+            subtitle_cell = sheet.cell(
+                row=2,
+                column=1,
+            )
+
+            subtitle_cell.value = subtitle
+            subtitle_cell.font = Font(
+                italic=True,
+                color="6B7280",
+            )
+
+    def write_headers(self, sheet, row, headers):
+        thin = Side(
+            style="thin",
+            color=self.BORDER_COLOR,
+        )
+
+        for column, header in enumerate(
+            headers,
+            start=1,
+        ):
+            cell = sheet.cell(
+                row=row,
+                column=column,
+                value=header,
+            )
+
+            cell.font = Font(
+                bold=True,
+                color=self.HEADER_FONT,
+            )
+
+            cell.fill = PatternFill(
+                "solid",
+                fgColor=self.HEADER_FILL,
+            )
+
+            cell.alignment = Alignment(
+                vertical="center",
+                wrap_text=True,
+            )
+
+            cell.border = Border(
+                left=thin,
+                right=thin,
+                top=thin,
+                bottom=thin,
+            )
+
+    def write_row(self, sheet, row, values):
+        thin = Side(
+            style="thin",
+            color=self.BORDER_COLOR,
+        )
+
+        for column, value in enumerate(
+            values,
+            start=1,
+        ):
+            cell = sheet.cell(
+                row=row,
+                column=column,
+                value=value,
+            )
+
+            cell.alignment = Alignment(
+                vertical="top",
+                wrap_text=True,
+            )
+
+            cell.border = Border(
+                left=thin,
+                right=thin,
+                top=thin,
+                bottom=thin,
+            )
+
+    def write_section_title(
+        self,
+        sheet,
+        row,
+        title,
+        columns=8,
+    ):
+        sheet.merge_cells(
+            start_row=row,
+            start_column=1,
+            end_row=row,
+            end_column=columns,
+        )
+
+        cell = sheet.cell(
+            row=row,
+            column=1,
+        )
+
+        cell.value = title
+
+        cell.font = Font(
+            bold=True,
+            color="4C4CF9",
+        )
+
+        cell.fill = PatternFill(
+            "solid",
+            fgColor=self.SUBHEADER_FILL,
+        )
+
+    def auto_width(self, sheet):
+        for column_cells in sheet.columns:
+            max_length = 0
+
+            column_letter = get_column_letter(
+                column_cells[0].column
+            )
+
+            for cell in column_cells:
+                try:
+                    if cell.value is not None:
+                        length = len(str(cell.value))
+
+                        if length > max_length:
+                            max_length = length
+                except Exception:
+                    pass
+
+            adjusted_width = min(
+                max(max_length + 2, 12),
+                45,
+            )
+
+            sheet.column_dimensions[
+                column_letter
+            ].width = adjusted_width
+
+    def period_label(self, data):
+        filters = data.get("filters", {})
+
+        start_date = filters.get("start_date")
+        end_date = filters.get("end_date")
+
+        if start_date and end_date:
+            return (
+                f"Reporting Period: "
+                f"{start_date} to {end_date}"
+            )
+
+        return "Reporting Period: Overall"
+
+    def seconds_to_text(self, seconds):
+        if seconds is None:
+            return ""
+
+        try:
+            seconds = int(round(float(seconds)))
+        except (TypeError, ValueError):
+            return ""
+
+        days, remainder = divmod(
+            seconds,
+            86400,
+        )
+
+        hours, remainder = divmod(
+            remainder,
+            3600,
+        )
+
+        minutes, seconds = divmod(
+            remainder,
+            60,
+        )
+
+        parts = []
+
+        if days:
+            parts.append(f"{days}d")
+
+        if hours:
+            parts.append(f"{hours}h")
+
+        if minutes:
+            parts.append(f"{minutes}m")
+
+        if seconds and not days:
+            parts.append(f"{seconds}s")
+
+        return " ".join(parts) or "0s"
+
+    def format_datetime(self, value):
+        if not value:
+            return ""
+
+        # DRF may give datetime objects or serialized strings.
+        if hasattr(value, "strftime"):
+            return value.strftime(
+                "%Y-%m-%d %H:%M:%S"
+            )
+
+        return str(value)
+
+    # ================================================================
+    # 1. TICKET SUMMARY
+    # ================================================================
+
+    def create_ticket_summary_sheet(
+        self,
+        workbook,
+        data,
+    ):
+        sheet = workbook.create_sheet(
+            "Ticket Summary"
+        )
+
+        self.apply_title(
+            sheet,
+            "Ticket Report Summary",
+            self.period_label(data),
+        )
+
+        summary = data.get("summary", {})
+
+        row = 4
+
+        self.write_section_title(
+            sheet,
+            row,
+            "Key Performance Indicators",
+            3,
+        )
+
+        row += 1
+
+        self.write_headers(
+            sheet,
+            row,
+            [
+                "Metric",
+                "Value",
+                "Description",
+            ],
+        )
+
+        metrics = [
+            (
+                "Total Tickets",
+                summary.get(
+                    "total_tickets",
+                    0,
+                ),
+                "Tickets submitted within the selected period.",
+            ),
+            (
+                "Resolved Tickets",
+                summary.get(
+                    "resolved_tickets",
+                    0,
+                ),
+                "Tickets with a recorded resolution.",
+            ),
+            (
+                "Resolution Rate",
+                (
+                    f"{summary.get('resolution_rate', 0)}%"
+                ),
+                "Resolved tickets divided by total submitted tickets.",
+            ),
+            (
+                "Breached Tickets",
+                summary.get(
+                    "breached_tickets",
+                    0,
+                ),
+                (
+                    "Unique tickets where response SLA or "
+                    "resolution SLA was breached."
+                ),
+            ),
+            (
+                "Escalated Tickets",
+                summary.get(
+                    "escalated_tickets",
+                    0,
+                ),
+                "Tickets marked as escalated.",
+            ),
+            (
+                "Average Resolution Time",
+                self.seconds_to_text(
+                    summary.get(
+                        "average_resolution_seconds"
+                    )
+                ),
+                (
+                    "Average actual duration from ticket "
+                    "creation to resolution."
+                ),
+            ),
+        ]
+
+        for metric in metrics:
+            row += 1
+            self.write_row(
+                sheet,
+                row,
+                metric,
+            )
+
+        # ------------------------------------------------------------
+        # Status breakdown
+        # ------------------------------------------------------------
+        row += 2
+
+        self.write_section_title(
+            sheet,
+            row,
+            "Tickets by Status",
+            3,
+        )
+
+        row += 1
+
+        self.write_headers(
+            sheet,
+            row,
+            [
+                "Status",
+                "Label",
+                "Count",
+            ],
+        )
+
+        for item in data.get(
+            "tickets_by_status",
+            [],
+        ):
+            row += 1
+
+            self.write_row(
+                sheet,
+                row,
+                [
+                    item.get("status"),
+                    item.get("label"),
+                    item.get("count"),
+                ],
+            )
+
+        # ------------------------------------------------------------
+        # Priority
+        # ------------------------------------------------------------
+        row += 2
+
+        self.write_section_title(
+            sheet,
+            row,
+            "Tickets by Priority",
+            2,
+        )
+
+        row += 1
+
+        self.write_headers(
+            sheet,
+            row,
+            [
+                "Priority",
+                "Count",
+            ],
+        )
+
+        for item in data.get(
+            "tickets_by_priority",
+            [],
+        ):
+            row += 1
+
+            self.write_row(
+                sheet,
+                row,
+                [
+                    item.get("priority"),
+                    item.get("count"),
+                ],
+            )
+
+        # ------------------------------------------------------------
+        # Category
+        # ------------------------------------------------------------
+        row += 2
+
+        self.write_section_title(
+            sheet,
+            row,
+            "Tickets by Category",
+            2,
+        )
+
+        row += 1
+
+        self.write_headers(
+            sheet,
+            row,
+            [
+                "Category",
+                "Count",
+            ],
+        )
+
+        for item in data.get(
+            "tickets_by_category",
+            [],
+        ):
+            row += 1
+
+            self.write_row(
+                sheet,
+                row,
+                [
+                    item.get("category"),
+                    item.get("count"),
+                ],
+            )
+
+        # ------------------------------------------------------------
+        # Department
+        # ------------------------------------------------------------
+        row += 2
+
+        self.write_section_title(
+            sheet,
+            row,
+            "Tickets by IT Department",
+            2,
+        )
+
+        row += 1
+
+        self.write_headers(
+            sheet,
+            row,
+            [
+                "IT Department",
+                "Count",
+            ],
+        )
+
+        for item in data.get(
+            "tickets_by_department",
+            [],
+        ):
+            row += 1
+
+            self.write_row(
+                sheet,
+                row,
+                [
+                    item.get("department"),
+                    item.get("count"),
+                ],
+            )
+
+        # ------------------------------------------------------------
+        # Volume
+        # ------------------------------------------------------------
+        row += 2
+
+        self.write_section_title(
+            sheet,
+            row,
+            "Ticket Volume Over Time",
+            3,
+        )
+
+        row += 1
+
+        self.write_headers(
+            sheet,
+            row,
+            [
+                "Date",
+                "Submitted",
+                "Resolved",
+            ],
+        )
+
+        for item in data.get(
+            "ticket_volume",
+            [],
+        ):
+            row += 1
+
+            self.write_row(
+                sheet,
+                row,
+                [
+                    item.get("date"),
+                    item.get("submitted"),
+                    item.get("resolved"),
+                ],
+            )
+
+        sheet.freeze_panes = "A5"
+
+        self.auto_width(sheet)
+
+    # ================================================================
+    # 2. RESOLUTION DOCUMENTATION
+    # ================================================================
+
+    def create_resolution_sheet(
+        self,
+        workbook,
+        data,
+    ):
+        sheet = workbook.create_sheet(
+            "Resolution Documentation"
+        )
+
+        self.apply_title(
+            sheet,
+            "Resolution Documentation",
+            self.period_label(data),
+        )
+
+        headers = [
+            "Ticket Code",
+            "Subject",
+            "Priority",
+            "Category",
+            "IT Department",
+            "Resolved By",
+            "Resolved At",
+            "Resolution Remarks",
+        ]
+
+        self.write_headers(
+            sheet,
+            4,
+            headers,
+        )
+
+        row = 4
+
+        for item in data.get(
+            "resolution_remarks",
+            [],
+        ):
+            row += 1
+
+            self.write_row(
+                sheet,
+                row,
+                [
+                    item.get("ticket_code"),
+                    item.get("subject"),
+                    item.get("priority"),
+                    item.get("category"),
+                    item.get("department"),
+                    item.get("resolved_by"),
+                    self.format_datetime(
+                        item.get("resolved_at")
+                    ),
+                    item.get("remarks"),
+                ],
+            )
+
+        sheet.freeze_panes = "A5"
+        sheet.auto_filter.ref = (
+            f"A4:H{max(row, 4)}"
+        )
+
+        self.auto_width(sheet)
+
+    # ================================================================
+    # 3. RECURRING ISSUES
+    # ================================================================
+
+    def create_recurring_issues_sheet(
+        self,
+        workbook,
+        data,
+    ):
+        sheet = workbook.create_sheet(
+            "Recurring Issues"
+        )
+
+        self.apply_title(
+            sheet,
+            "Recurring Issues",
+            self.period_label(data),
+        )
+
+        row = 4
+
+        self.write_section_title(
+            sheet,
+            row,
+            "Recurring Workstations",
+            4,
+        )
+
+        row += 1
+
+        self.write_headers(
+            sheet,
+            row,
+            [
+                "Workstation",
+                "Ticket Count",
+                "Recurrence Level",
+                "Ticket Codes",
+            ],
+        )
+
+        for item in data.get(
+            "recurring_workstations",
+            [],
+        ):
+            row += 1
+
+            ticket_codes = ", ".join(
+                item.get(
+                    "ticket_codes",
+                    [],
+                )
+            )
+
+            self.write_row(
+                sheet,
+                row,
+                [
+                    item.get("workstation"),
+                    item.get("ticket_count"),
+                    item.get("recurrence_level"),
+                    ticket_codes,
+                ],
+            )
+
+        row += 2
+
+        self.write_section_title(
+            sheet,
+            row,
+            "Recurring Problems / Symptoms",
+            3,
+        )
+
+        row += 1
+
+        self.write_headers(
+            sheet,
+            row,
+            [
+                "Symptom Code",
+                "Ticket Count",
+                "Symptom Code ID",
+            ],
+        )
+
+        for item in data.get(
+            "recurring_problems",
+            [],
+        ):
+            row += 1
+
+            self.write_row(
+                sheet,
+                row,
+                [
+                    item.get("symptom_code"),
+                    item.get("ticket_count"),
+                    item.get(
+                        "symptom_code_id"
+                    ),
+                ],
+            )
+
+        self.auto_width(sheet)
+
+    # ================================================================
+    # 4. WORKFLOW
+    # ================================================================
+
+    def create_workflow_sheet(
+        self,
+        workbook,
+        data,
+    ):
+        sheet = workbook.create_sheet(
+            "Workflow"
+        )
+
+        self.apply_title(
+            sheet,
+            "Ticket Workflow Activity",
+            self.period_label(data),
+        )
+
+        row = 4
+
+        workflow_sections = [
+            (
+                "Returned Tickets",
+                data.get(
+                    "returned_tickets",
+                    {},
+                ),
+            ),
+            (
+                "Priority Change Requests",
+                data.get(
+                    "priority_change_requests",
+                    {},
+                ),
+            ),
+            (
+                "Review Flags",
+                data.get(
+                    "review_flags",
+                    {},
+                ),
+            ),
+        ]
+
+        for title, section in workflow_sections:
+            self.write_section_title(
+                sheet,
+                row,
+                title,
+                3,
+            )
+
+            row += 1
+
+            self.write_headers(
+                sheet,
+                row,
+                [
+                    "Status",
+                    "Count",
+                    "Total Activity",
+                ],
+            )
+
+            breakdown = section.get(
+                "breakdown",
+                [],
+            )
+
+            if breakdown:
+                for item in breakdown:
+                    row += 1
+
+                    self.write_row(
+                        sheet,
+                        row,
+                        [
+                            item.get("status"),
+                            item.get("count"),
+                            section.get(
+                                "total",
+                                0,
+                            ),
+                        ],
+                    )
+            else:
+                row += 1
+
+                self.write_row(
+                    sheet,
+                    row,
+                    [
+                        "No records",
+                        0,
+                        section.get(
+                            "total",
+                            0,
+                        ),
+                    ],
+                )
+
+            row += 2
+
+        self.auto_width(sheet)
+
+    # ================================================================
+    # 5. SLA SUMMARY
+    # ================================================================
+
+    def create_sla_summary_sheet(
+        self,
+        workbook,
+        data,
+    ):
+        sheet = workbook.create_sheet(
+            "SLA Summary"
+        )
+
+        self.apply_title(
+            sheet,
+            "SLA Report Summary",
+            self.period_label(data),
+        )
+
+        summary = data.get(
+            "summary",
+            {},
+        )
+
+        row = 4
+
+        self.write_section_title(
+            sheet,
+            row,
+            "SLA Key Performance Indicators",
+            3,
+        )
+
+        row += 1
+
+        self.write_headers(
+            sheet,
+            row,
+            [
+                "Metric",
+                "Value",
+                "Description",
+            ],
+        )
+
+        metrics = [
+            (
+                "Total SLA Tracked",
+                summary.get(
+                    "total_sla_tracked",
+                    0,
+                ),
+                "Tickets included in SLA tracking.",
+            ),
+            (
+                "Response SLA Total",
+                summary.get(
+                    "response_total",
+                    0,
+                ),
+                "Tickets with response SLA tracking.",
+            ),
+            (
+                "Response SLA Met",
+                summary.get(
+                    "response_met",
+                    0,
+                ),
+                "Finalized response SLA outcomes met.",
+            ),
+            (
+                "Response SLA Breached",
+                summary.get(
+                    "response_breached",
+                    0,
+                ),
+                "Response SLA breaches.",
+            ),
+            (
+                "Response SLA Met Rate",
+                (
+                    f"{summary.get('response_met_rate', 0)}%"
+                ),
+                (
+                    "Met response outcomes divided by "
+                    "finalized response outcomes."
+                ),
+            ),
+            (
+                "Resolution SLA Total",
+                summary.get(
+                    "resolution_total",
+                    0,
+                ),
+                "Tickets with resolution SLA tracking.",
+            ),
+            (
+                "Resolution SLA Met",
+                summary.get(
+                    "resolution_met",
+                    0,
+                ),
+                "Finalized resolution SLA outcomes met.",
+            ),
+            (
+                "Resolution SLA Breached",
+                summary.get(
+                    "resolution_breached",
+                    0,
+                ),
+                "Resolution SLA breaches.",
+            ),
+            (
+                "Resolution SLA Met Rate",
+                (
+                    f"{summary.get('resolution_met_rate', 0)}%"
+                ),
+                (
+                    "Met resolution outcomes divided by "
+                    "finalized resolution outcomes."
+                ),
+            ),
+            (
+                "Resolution SAFE",
+                summary.get(
+                    "resolution_safe",
+                    0,
+                ),
+                "Active resolution SLAs currently safe.",
+            ),
+            (
+                "Resolution WARNING",
+                summary.get(
+                    "resolution_warning",
+                    0,
+                ),
+                "Active resolution SLAs in warning state.",
+            ),
+            (
+                "Resolution CRITICAL",
+                summary.get(
+                    "resolution_critical",
+                    0,
+                ),
+                "Active resolution SLAs in critical state.",
+            ),
+            (
+                "Unique Breached Tickets",
+                summary.get(
+                    "total_breached_tickets",
+                    0,
+                ),
+                (
+                    "Unique tickets with response or "
+                    "resolution SLA breach."
+                ),
+            ),
+            (
+                "Average Response Time",
+                self.seconds_to_text(
+                    summary.get(
+                        "average_response_seconds"
+                    )
+                ),
+                "Average actual response duration.",
+            ),
+            (
+                "Average Resolution Time",
+                self.seconds_to_text(
+                    summary.get(
+                        "average_resolution_seconds"
+                    )
+                ),
+                "Average actual resolution duration.",
+            ),
+        ]
+
+        for metric in metrics:
+            row += 1
+            self.write_row(
+                sheet,
+                row,
+                metric,
+            )
+
+        # ------------------------------------------------------------
+        # Response breakdown
+        # ------------------------------------------------------------
+        row += 2
+
+        self.write_section_title(
+            sheet,
+            row,
+            "Response SLA Status Breakdown",
+            2,
+        )
+
+        row += 1
+
+        self.write_headers(
+            sheet,
+            row,
+            [
+                "Status",
+                "Count",
+            ],
+        )
+
+        for item in data.get(
+            "response_sla_breakdown",
+            [],
+        ):
+            row += 1
+
+            self.write_row(
+                sheet,
+                row,
+                [
+                    item.get("status"),
+                    item.get("count"),
+                ],
+            )
+
+        # ------------------------------------------------------------
+        # Resolution breakdown
+        # ------------------------------------------------------------
+        row += 2
+
+        self.write_section_title(
+            sheet,
+            row,
+            "Resolution SLA Status Breakdown",
+            2,
+        )
+
+        row += 1
+
+        self.write_headers(
+            sheet,
+            row,
+            [
+                "Status",
+                "Count",
+            ],
+        )
+
+        for item in data.get(
+            "resolution_sla_breakdown",
+            [],
+        ):
+            row += 1
+
+            self.write_row(
+                sheet,
+                row,
+                [
+                    item.get("status"),
+                    item.get("count"),
+                ],
+            )
+
+        # ------------------------------------------------------------
+        # SLA by priority
+        # ------------------------------------------------------------
+        row += 2
+
+        self.write_section_title(
+            sheet,
+            row,
+            "SLA Performance by Priority",
+            8,
+        )
+
+        row += 1
+
+        self.write_headers(
+            sheet,
+            row,
+            [
+                "Priority",
+                "Total",
+                "Response Met",
+                "Response Breached",
+                "Response Met Rate",
+                "Resolution Met",
+                "Resolution Breached",
+                "Resolution Met Rate",
+            ],
+        )
+
+        for item in data.get(
+            "sla_by_priority",
+            [],
+        ):
+            row += 1
+
+            self.write_row(
+                sheet,
+                row,
+                [
+                    item.get("priority"),
+                    item.get("total"),
+                    item.get("response_met"),
+                    item.get(
+                        "response_breached"
+                    ),
+                    (
+                        f"{item.get('response_met_rate', 0)}%"
+                    ),
+                    item.get("resolution_met"),
+                    item.get(
+                        "resolution_breached"
+                    ),
+                    (
+                        f"{item.get('resolution_met_rate', 0)}%"
+                    ),
+                ],
+            )
+
+        # ------------------------------------------------------------
+        # SLA by department
+        # ------------------------------------------------------------
+        row += 2
+
+        self.write_section_title(
+            sheet,
+            row,
+            "SLA Performance by IT Department",
+            8,
+        )
+
+        row += 1
+
+        self.write_headers(
+            sheet,
+            row,
+            [
+                "IT Department",
+                "Total",
+                "Response Met",
+                "Response Breached",
+                "Response Met Rate",
+                "Resolution Met",
+                "Resolution Breached",
+                "Resolution Met Rate",
+            ],
+        )
+
+        for item in data.get(
+            "sla_by_department",
+            [],
+        ):
+            row += 1
+
+            self.write_row(
+                sheet,
+                row,
+                [
+                    item.get("department"),
+                    item.get("total"),
+                    item.get("response_met"),
+                    item.get(
+                        "response_breached"
+                    ),
+                    (
+                        f"{item.get('response_met_rate', 0)}%"
+                    ),
+                    item.get("resolution_met"),
+                    item.get(
+                        "resolution_breached"
+                    ),
+                    (
+                        f"{item.get('resolution_met_rate', 0)}%"
+                    ),
+                ],
+            )
+
+        # ------------------------------------------------------------
+        # SLA performance over time
+        # ------------------------------------------------------------
+        row += 2
+
+        self.write_section_title(
+            sheet,
+            row,
+            "SLA Performance Over Time",
+            5,
+        )
+
+        row += 1
+
+        self.write_headers(
+            sheet,
+            row,
+            [
+                "Date",
+                "Response Met",
+                "Response Breached",
+                "Resolution Met",
+                "Resolution Breached",
+            ],
+        )
+
+        for item in data.get(
+            "sla_performance_over_time",
+            [],
+        ):
+            row += 1
+
+            self.write_row(
+                sheet,
+                row,
+                [
+                    item.get("date"),
+                    item.get("response_met"),
+                    item.get(
+                        "response_breached"
+                    ),
+                    item.get("resolution_met"),
+                    item.get(
+                        "resolution_breached"
+                    ),
+                ],
+            )
+
+        sheet.freeze_panes = "A5"
+
+        self.auto_width(sheet)
+
+    # ================================================================
+    # 6. SLA BREACHES
+    # ================================================================
+
+    def create_sla_breaches_sheet(
+        self,
+        workbook,
+        data,
+    ):
+        sheet = workbook.create_sheet(
+            "SLA Breaches"
+        )
+
+        self.apply_title(
+            sheet,
+            "SLA Breach Details",
+            self.period_label(data),
+        )
+
+        headers = [
+            "Ticket Code",
+            "Subject",
+            "Priority",
+            "IT Department",
+            "Response SLA",
+            "Resolution SLA",
+            "Response Deadline",
+            "Resolution Deadline",
+            "Response At",
+            "Resolved At",
+            "Actual Response Time",
+            "Actual Resolution Time",
+            "Assigned To",
+            "Resolved By",
+            "Created At",
+        ]
+
+        self.write_headers(
+            sheet,
+            4,
+            headers,
+        )
+
+        row = 4
+
+        for item in data.get(
+            "sla_breach_details",
+            [],
+        ):
+            row += 1
+
+            self.write_row(
+                sheet,
+                row,
+                [
+                    item.get("ticket_code"),
+                    item.get("subject"),
+                    item.get("priority"),
+                    item.get("department"),
+                    item.get(
+                        "response_sla_status"
+                    ),
+                    item.get(
+                        "resolution_sla_status"
+                    ),
+                    self.format_datetime(
+                        item.get(
+                            "response_deadline"
+                        )
+                    ),
+                    self.format_datetime(
+                        item.get(
+                            "resolution_deadline"
+                        )
+                    ),
+                    self.format_datetime(
+                        item.get("response_at")
+                    ),
+                    self.format_datetime(
+                        item.get("resolved_at")
+                    ),
+                    self.seconds_to_text(
+                        item.get(
+                            "actual_response_seconds"
+                        )
+                    ),
+                    self.seconds_to_text(
+                        item.get(
+                            "actual_resolution_seconds"
+                        )
+                    ),
+                    item.get("assigned_to"),
+                    item.get("resolved_by"),
+                    self.format_datetime(
+                        item.get("created_at")
+                    ),
+                ],
+            )
+
+        sheet.freeze_panes = "A5"
+
+        sheet.auto_filter.ref = (
+            f"A4:O{max(row, 4)}"
+        )
+
+        self.auto_width(sheet)

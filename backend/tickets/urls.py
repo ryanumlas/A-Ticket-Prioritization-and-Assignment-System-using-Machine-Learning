@@ -1,5 +1,5 @@
 from django.urls import path
-from .views import CategoryListView, ManualPriorityUpdateView, ManualSymptomCodeUpdateView, PendingClarificationRequestView, RequestClarificationView, ResubmitClarificationView, SLARulesListView, SystemAdOverviewView, SystemAdUserChartView, TeamWorkloadView
+from .views import CategoryListView, ManualPriorityUpdateView, ManualSymptomCodeUpdateView, PendingClarificationRequestView, RequestClarificationView, ResubmitClarificationView, SLAReportView, SLARulesListView, SupervisorReportsExcelExportView, SystemAdOverviewView, SystemAdUserChartView, TeamWorkloadView, TicketReportView
 from .views import (TicketListEmployeeView, CreateTicketView, ListTicketView, DetailTicketView, UpdateSymptomCodeView, 
 UpdateTicketView, DeleteTicketView, CreateCategoryView, KeywordUpdateView ,KeywordCreateView, 
 UpdateCategoryView, CreateSymptomCodeView, SLARulesCreateView, SLARulesUpdateView, TicketDetailEmployeeView, TicketListServiceDeskView, UpdateTicketStatusView, ManualOverrideTicketView,
@@ -131,4 +131,10 @@ urlpatterns = [
     path('symptom-codes/update/<int:pk>/', UpdateSymptomCodeView.as_view(), name='update-symptom-code'),
     # path('<int:ticket_id>/assignees/add/', AddTicketAssigneeView.as_view(), name='add-ticket-assignee'),
     # path('<int:ticket_id>/assignees/update/', UpdateTicketAssigneeView.as_view(), name='update-ticket-assignee'),
+
+
+    # --- REPORTS ---
+    path("supervisor/reports/tickets/", TicketReportView.as_view(),name="supervisor-ticket-reports",),
+    path("supervisor/reports/sla/",SLAReportView.as_view(),name="supervisor-sla-report",),
+    path("supervisor/reports/export/",SupervisorReportsExcelExportView.as_view(),name="supervisor-reports-excel-export",),
 ]

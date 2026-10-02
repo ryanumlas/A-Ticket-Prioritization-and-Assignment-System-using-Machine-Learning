@@ -35,6 +35,8 @@ import AssistanceTicket from './pages/AssistanceTicket'
 import ReopenRequest from './pages/ReopenRequest'
 import TeamWorkload from './pages/TeamWorkload'
 import UserProfile from './pages/UserProfile'
+import TicketReports from './pages/TicketReports'
+import SLAReports from './pages/SLAReports'
 
 // function Logout() {
 //   localStorage.clear()
@@ -342,6 +344,26 @@ function App() {
                         allowedRoles={["IT Supervisor"]}
                     >
                         <EscalatedTicket />
+                    </ProtectedRoute>
+                }
+            />
+            <Route
+                path="/ticket-reports"
+                element={
+                    <ProtectedRoute
+                        allowedRoles={["IT Supervisor"]}
+                    >
+                        <TicketReports />
+                    </ProtectedRoute>
+                }
+            />
+            <Route
+                path="/sla-reports"
+                element={
+                    <ProtectedRoute
+                        allowedRoles={["IT Supervisor"]}
+                    >
+                        <SLAReports />
                     </ProtectedRoute>
                 }
             />
