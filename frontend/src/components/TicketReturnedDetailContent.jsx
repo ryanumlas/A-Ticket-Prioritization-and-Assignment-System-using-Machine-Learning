@@ -1,4 +1,5 @@
 import { useState } from "react";
+
 import {
     Ticket,
     ArrowRight,
@@ -7,8 +8,10 @@ import {
     Info,
     MessageSquareText,
 } from "lucide-react";
+
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
+
 import SymptomCodeSheet from "./FlagReason/SymptomCodeSheet";
 import api from "../api";
 
@@ -18,11 +21,17 @@ export default function TicketReturnedDetailContent({ request }) {
     const [symptomSheetOpen, setSymptomSheetOpen] = useState(false);
     const [selectedSymptomCode, setSelectedSymptomCode] = useState(null);
     const [reviewRemarks, setReviewRemarks] = useState("");
-    const [approving, setApproving] = useState(false);
 
-    const isApproved = request.status === "approved";
-    const isRejected = request.status === "rejected";
+    const [approving, setApproving] = useState(false);
+    const [rejecting, setRejecting] = useState(false);
+
+    const normalizedStatus = String(request?.status ?? "").toLowerCase();
+
+    const isApproved = normalizedStatus === "approved";
+    const isRejected = normalizedStatus === "rejected";
     const isReviewed = isApproved || isRejected;
+
+    const isProcessing = approving || rejecting;
 
     const submittedByName = [
         request.submitted_by_first_name,
@@ -65,8 +74,19 @@ export default function TicketReturnedDetailContent({ request }) {
         role: request.reviewed_by_role,
     };
 
+    // ============================================================
+    // APPROVE RETURN REQUEST
+    // ============================================================
     const handleApprove = async () => {
-        if (!selectedSymptomCode || approving) {
+        if (isReviewed || isProcessing) {
+            return;
+        }
+
+        if (!selectedSymptomCode) {
+            toast.error("Symptom code is required", {
+                description:
+                    "Please select the correct symptom code before approving the return request.",
+            });
             return;
         }
 
@@ -98,12 +118,62 @@ export default function TicketReturnedDetailContent({ request }) {
 
             navigate("/returned-tickets");
         } catch (err) {
+            console.error("Approve return request error:", err);
+
             toast.error(
                 err.response?.data?.error ||
+                    err.response?.data?.detail ||
                     "Failed to approve return request."
             );
         } finally {
             setApproving(false);
+        }
+    };
+
+    // ============================================================
+    // REJECT RETURN REQUEST
+    // ============================================================
+    const handleReject = async () => {
+        if (isReviewed || isProcessing) {
+            return;
+        }
+
+        const trimmedRemarks = reviewRemarks.trim();
+
+        if (!trimmedRemarks) {
+            toast.error("Review remarks are required", {
+                description:
+                    "Please provide remarks before rejecting the return request.",
+            });
+            return;
+        }
+
+        try {
+            setRejecting(true);
+
+            const response = await api.post(
+                `/tickets/return-ticket/${request.id}/reject/`,
+                {
+                    review_remarks: trimmedRemarks,
+                }
+            );
+
+            toast.success(
+                response.data?.message ||
+                    "Return request rejected successfully."
+            );
+
+            navigate("/returned-tickets");
+        } catch (err) {
+            console.error("Reject return request error:", err);
+
+            toast.error(
+                err.response?.data?.error ||
+                    err.response?.data?.detail ||
+                    "Failed to reject return request."
+            );
+        } finally {
+            setRejecting(false);
         }
     };
 
@@ -194,9 +264,7 @@ export default function TicketReturnedDetailContent({ request }) {
                                         min-[1366px]:max-[1537px]:px-2
                                         min-[1366px]:max-[1537px]:py-0.5
                                         min-[1366px]:max-[1537px]:text-[11px]
-                                        ${getStatusStyle(
-                                            request.status
-                                        )}
+                                        ${getStatusStyle(request.status)}
                                     `}
                                 >
                                     {formatStatus(request.status)}
@@ -303,7 +371,9 @@ export default function TicketReturnedDetailContent({ request }) {
 
                                 <InfoRow
                                     label="Returned At"
-                                    value={formatDate(request.returned_at)}
+                                    value={formatDate(
+                                        request.returned_at
+                                    )}
                                 />
                             </div>
                         </div>
@@ -386,7 +456,7 @@ export default function TicketReturnedDetailContent({ request }) {
                             min-[1366px]:max-[1537px]:p-4
                         "
                     >
-                        {/* CLASSIFICATION */}
+                        {/* CURRENT / PROPOSED ROUTING */}
                         <div
                             className="
                                 grid
@@ -394,206 +464,117 @@ export default function TicketReturnedDetailContent({ request }) {
                                 items-center
                                 gap-4
                                 min-[1280px]:max-[1365px]:grid-cols-[1fr_36px_1fr]
-                                min-[1280px]:max-[1365px]:gap-2.5
-                                min-[1366px]:max-[1537px]:grid-cols-[1fr_40px_1fr]
+                                min-[1280px]:max-[1365px]:gap-2
                                 min-[1366px]:max-[1537px]:gap-3
                             "
                         >
                             <RoutingCard
-                                label="Current"
-                                symptom={request.symptom_code}
-                                department={request.department}
+                                label="Current Classification"
+                                symptom={
+                                    request.current_symptom_code ||
+                                    request.symptom_code ||
+                                    "-"
+                                }
+                                department={
+                                    request.current_department ||
+                                    request.department ||
+                                    "-"
+                                }
                             />
 
-                            <div className="flex justify-center">
+                            <div className="flex items-center justify-center">
                                 <ArrowRight
-                                    size={22}
-                                    className="
-                                        text-gray-400
-                                        min-[1280px]:max-[1365px]:h-4
-                                        min-[1280px]:max-[1365px]:w-4
-                                        min-[1366px]:max-[1537px]:h-5
-                                        min-[1366px]:max-[1537px]:w-5
-                                    "
+                                    size={20}
+                                    className="text-gray-400"
                                 />
                             </div>
 
                             <RoutingCard
-                                label="Proposed"
-                                symptom={selectedSymptomCode?.code}
+                                label="Proposed Classification"
+                                symptom={
+                                    selectedSymptomCode?.name ||
+                                    selectedSymptomCode?.code ||
+                                    request.proposed_symptom_code ||
+                                    "-"
+                                }
                                 department={
-                                    selectedSymptomCode?.department
+                                    selectedSymptomCode?.department_name ||
+                                    selectedSymptomCode?.department ||
+                                    request.proposed_department ||
+                                    "-"
                                 }
                                 proposed
                             />
                         </div>
 
-                        {/* REASON */}
-                        <div
-                            className="
-                                mt-5
-                                min-[1280px]:max-[1365px]:mt-4
-                                min-[1366px]:max-[1537px]:mt-4
-                            "
-                        >
-                            <p
-                                className="
-                                    text-xs
-                                    font-medium
-                                    uppercase
-                                    text-gray-500
-                                    min-[1280px]:max-[1365px]:text-[10px]
-                                "
-                            >
-                                Reason for Return
-                            </p>
-
-                            <div
-                                className="
-                                    mt-2
-                                    rounded-lg
-                                    border
-                                    border-gray-200
-                                    bg-gray-50
-                                    px-4
-                                    py-3
-                                    min-[1280px]:max-[1365px]:px-3
-                                    min-[1280px]:max-[1365px]:py-2.5
-                                    min-[1366px]:max-[1537px]:px-3
-                                    min-[1366px]:max-[1537px]:py-2.5
-                                "
-                            >
-                                <p
-                                    className="
-                                        whitespace-pre-wrap
-                                        break-words
-                                        text-sm
-                                        leading-6
-                                        text-black
-                                        min-[1280px]:max-[1365px]:text-[11px]
-                                        min-[1280px]:max-[1365px]:leading-5
-                                        min-[1366px]:max-[1537px]:text-xs
-                                        min-[1366px]:max-[1537px]:leading-5
-                                    "
-                                >
-                                    {request.reason || "-"}
-                                </p>
-                            </div>
-                        </div>
-
-                        {/* SYMPTOM SELECTION */}
                         {!isReviewed && (
-                            <div
-                                className="
-                                    mt-5
-                                    min-[1280px]:max-[1365px]:mt-4
-                                    min-[1366px]:max-[1537px]:mt-4
-                                "
-                            >
-                                <label
-                                    className="
-                                        text-xs
-                                        font-medium
-                                        uppercase
-                                        text-gray-500
-                                        min-[1280px]:max-[1365px]:text-[10px]
-                                    "
-                                >
-                                    Select Correct Symptom Code
-                                </label>
-
+                            <div className="mt-5">
                                 <button
                                     type="button"
+                                    disabled={isProcessing}
                                     onClick={() =>
                                         setSymptomSheetOpen(true)
                                     }
-                                    className="
-                                        mt-2
-                                        flex
+                                    className={`
                                         w-full
-                                        items-center
-                                        justify-between
                                         rounded-lg
                                         border
                                         border-gray-300
                                         bg-white
                                         px-4
-                                        py-3
-                                        text-left
-                                        transition
-                                        hover:bg-gray-50
-                                        focus:border-blue-500
-                                        focus:ring-2
-                                        focus:ring-blue-500/10
-                                        min-[1280px]:max-[1365px]:px-3
-                                        min-[1280px]:max-[1365px]:py-2.5
-                                        min-[1366px]:max-[1537px]:px-3
-                                        min-[1366px]:max-[1537px]:py-2.5
-                                    "
+                                        py-2.5
+                                        text-sm
+                                        font-medium
+                                        transition-colors
+                                        ${
+                                            isProcessing
+                                                ? "cursor-not-allowed text-gray-400"
+                                                : "cursor-pointer text-black hover:bg-gray-50"
+                                        }
+                                    `}
                                 >
-                                    <div className="min-w-0">
-                                        <p
-                                            className="
-                                                truncate
-                                                text-sm
-                                                font-medium
-                                                text-black
-                                                min-[1280px]:max-[1365px]:text-[11px]
-                                                min-[1366px]:max-[1537px]:text-xs
-                                            "
-                                        >
-                                            {selectedSymptomCode?.code ||
-                                                "Select symptom code"}
+                                    {selectedSymptomCode
+                                        ? "Change Symptom Code"
+                                        : "Select Symptom Code"}
+                                </button>
+
+                                {selectedSymptomCode && (
+                                    <div
+                                        className="
+                                            mt-3
+                                            rounded-lg
+                                            border
+                                            border-blue-200
+                                            bg-blue-50
+                                            px-3.5
+                                            py-3
+                                        "
+                                    >
+                                        <p className="text-xs font-medium text-blue-800">
+                                            Selected Symptom Code
                                         </p>
 
-                                        {!selectedSymptomCode && (
-                                            <p
-                                                className="
-                                                    mt-0.5
-                                                    text-xs
-                                                    text-gray-500
-                                                    min-[1280px]:max-[1365px]:text-[10px]
-                                                "
-                                            >
-                                                Search and select the correct
-                                                classification
-                                            </p>
-                                        )}
+                                        <p className="mt-1 text-sm font-semibold text-blue-900">
+                                            {selectedSymptomCode.code
+                                                ? `${selectedSymptomCode.code} — `
+                                                : ""}
+                                            {selectedSymptomCode.name ||
+                                                selectedSymptomCode.symptom ||
+                                                "Selected"}
+                                        </p>
                                     </div>
-
-                                    <ArrowRight
-                                        size={17}
-                                        className="
-                                            ml-3
-                                            shrink-0
-                                            text-gray-400
-                                            min-[1280px]:max-[1365px]:h-4
-                                            min-[1280px]:max-[1365px]:w-4
-                                        "
-                                    />
-                                </button>
+                                )}
                             </div>
                         )}
 
-                        {/* REVIEWED STATE */}
                         {isReviewed && (
                             <div
                                 className={`
                                     mt-5
-                                    flex
-                                    items-center
-                                    gap-3
                                     rounded-lg
                                     border
                                     px-4
                                     py-3
-                                    min-[1280px]:max-[1365px]:mt-4
-                                    min-[1280px]:max-[1365px]:gap-2.5
-                                    min-[1280px]:max-[1365px]:px-3
-                                    min-[1280px]:max-[1365px]:py-2.5
-                                    min-[1366px]:max-[1537px]:mt-4
-                                    min-[1366px]:max-[1537px]:px-3
-                                    min-[1366px]:max-[1537px]:py-2.5
                                     ${
                                         isApproved
                                             ? "border-green-200 bg-green-50"
@@ -601,75 +582,26 @@ export default function TicketReturnedDetailContent({ request }) {
                                     }
                                 `}
                             >
-                                <div
+                                <p
                                     className={`
-                                        flex
-                                        h-8
-                                        w-8
-                                        shrink-0
-                                        items-center
-                                        justify-center
-                                        rounded-full
-                                        min-[1280px]:max-[1365px]:h-7
-                                        min-[1280px]:max-[1365px]:w-7
+                                        text-sm
+                                        font-medium
                                         ${
                                             isApproved
-                                                ? "bg-green-100"
-                                                : "bg-red-100"
+                                                ? "text-green-700"
+                                                : "text-red-700"
                                         }
                                     `}
                                 >
-                                    {isApproved ? (
-                                        <Check
-                                            size={16}
-                                            className="text-green-600"
-                                        />
-                                    ) : (
-                                        <X
-                                            size={16}
-                                            className="text-red-600"
-                                        />
-                                    )}
-                                </div>
-
-                                <div>
-                                    <p
-                                        className={`
-                                            text-sm
-                                            font-semibold
-                                            min-[1280px]:max-[1365px]:text-xs
-                                            ${
-                                                isApproved
-                                                    ? "text-green-800"
-                                                    : "text-red-800"
-                                            }
-                                        `}
-                                    >
-                                        Review Completed
-                                    </p>
-
-                                    <p
-                                        className={`
-                                            mt-0.5
-                                            text-xs
-                                            min-[1280px]:max-[1365px]:text-[10px]
-                                            ${
-                                                isApproved
-                                                    ? "text-green-700"
-                                                    : "text-red-700"
-                                            }
-                                        `}
-                                    >
-                                        This return request has already been{" "}
-                                        {isApproved
-                                            ? "approved."
-                                            : "rejected."}
-                                    </p>
-                                </div>
+                                    This return request has already been{" "}
+                                    {isApproved
+                                        ? "approved."
+                                        : "rejected."}
+                                </p>
                             </div>
                         )}
 
-                        {/* BUTTONS */}
+                        {/* ACTION BUTTONS */}
                         <div
                             className="
                                 mt-5
@@ -687,9 +619,15 @@ export default function TicketReturnedDetailContent({ request }) {
                                 min-[1366px]:max-[1537px]:pt-4
                             "
                         >
+                            {/* REJECT */}
                             <button
                                 type="button"
-                                disabled={isReviewed}
+                                onClick={handleReject}
+                                disabled={
+                                    isReviewed ||
+                                    !reviewRemarks.trim() ||
+                                    isProcessing
+                                }
                                 className={`
                                     flex
                                     h-10
@@ -714,7 +652,9 @@ export default function TicketReturnedDetailContent({ request }) {
                                     min-[1366px]:max-[1537px]:py-2
                                     min-[1366px]:max-[1537px]:text-xs
                                     ${
-                                        isReviewed
+                                        isReviewed ||
+                                        !reviewRemarks.trim() ||
+                                        isProcessing
                                             ? "cursor-not-allowed border-gray-200 bg-gray-100 text-gray-400"
                                             : "cursor-pointer border-red-400 bg-white text-red-600 hover:bg-red-50"
                                     }
@@ -727,18 +667,22 @@ export default function TicketReturnedDetailContent({ request }) {
                                         min-[1280px]:max-[1365px]:w-4
                                     "
                                 />
-                                Reject Request
+
+                                {rejecting
+                                    ? "Rejecting..."
+                                    : "Reject Request"}
                             </button>
 
+                            {/* APPROVE */}
                             <button
                                 type="button"
+                                onClick={handleApprove}
                                 disabled={
                                     isReviewed ||
                                     !selectedSymptomCode ||
                                     !reviewRemarks.trim() ||
-                                    approving
+                                    isProcessing
                                 }
-                                onClick={handleApprove}
                                 className={`
                                     flex
                                     h-10
@@ -762,11 +706,10 @@ export default function TicketReturnedDetailContent({ request }) {
                                     min-[1366px]:max-[1537px]:py-2
                                     min-[1366px]:max-[1537px]:text-xs
                                     ${
-                                        isReviewed
-                                            ? "cursor-not-allowed bg-gray-200 text-gray-400"
-                                            : selectedSymptomCode &&
-                                              reviewRemarks.trim() &&
-                                              !approving
+                                        !isReviewed &&
+                                        selectedSymptomCode &&
+                                        reviewRemarks.trim() &&
+                                        !isProcessing
                                             ? "cursor-pointer bg-blue-600 text-white hover:bg-blue-700"
                                             : "cursor-not-allowed bg-gray-200 text-gray-400"
                                     }
@@ -786,7 +729,6 @@ export default function TicketReturnedDetailContent({ request }) {
                             </button>
                         </div>
 
-                        {/* BLUE TIP */}
                         {!isReviewed && (
                             <div
                                 className="
@@ -800,52 +742,18 @@ export default function TicketReturnedDetailContent({ request }) {
                                     bg-blue-50
                                     px-3.5
                                     py-3
-                                    min-[1280px]:max-[1365px]:mt-3
-                                    min-[1280px]:max-[1365px]:gap-2
-                                    min-[1280px]:max-[1365px]:px-3
-                                    min-[1280px]:max-[1365px]:py-2.5
-                                    min-[1366px]:max-[1537px]:px-3
-                                    min-[1366px]:max-[1537px]:py-2.5
                                 "
                             >
                                 <Info
-                                    size={17}
-                                    className="
-                                        mt-0.5
-                                        shrink-0
-                                        text-blue-600
-                                        min-[1280px]:max-[1365px]:h-4
-                                        min-[1280px]:max-[1365px]:w-4
-                                    "
+                                    size={16}
+                                    className="mt-0.5 shrink-0 text-blue-600"
                                 />
 
-                                <div>
-                                    <p
-                                        className="
-                                            text-sm
-                                            font-medium
-                                            text-blue-800
-                                            min-[1280px]:max-[1365px]:text-xs
-                                        "
-                                    >
-                                        Automatic Assignment
-                                    </p>
-
-                                    <p
-                                        className="
-                                            mt-1
-                                            text-xs
-                                            leading-5
-                                            text-blue-700
-                                            min-[1280px]:max-[1365px]:text-[10px]
-                                            min-[1280px]:max-[1365px]:leading-4
-                                        "
-                                    >
-                                        The IT department and assignment will
-                                        be determined automatically from the
-                                        selected symptom code after approval.
-                                    </p>
-                                </div>
+                                <p className="text-xs leading-5 text-blue-800">
+                                    Approval requires a new symptom code and
+                                    review remarks. Rejection only requires
+                                    review remarks.
+                                </p>
                             </div>
                         )}
                     </div>
@@ -905,6 +813,7 @@ export default function TicketReturnedDetailContent({ request }) {
                             "
                         >
                             Review Remarks
+
                             {!isReviewed && (
                                 <span className="ml-1 font-normal text-red-500">
                                     *
@@ -922,7 +831,7 @@ export default function TicketReturnedDetailContent({ request }) {
                         >
                             {isReviewed
                                 ? "Details of the Service Desk review."
-                                : "Review remarks are required before approval."}
+                                : "Review remarks are required before approval or rejection."}
                         </p>
                     </div>
                 </div>
@@ -966,8 +875,6 @@ export default function TicketReturnedDetailContent({ request }) {
                                             items-center
                                             justify-center
                                             rounded-full
-                                            min-[1280px]:max-[1365px]:h-6
-                                            min-[1280px]:max-[1365px]:w-6
                                             ${
                                                 isApproved
                                                     ? "bg-green-100"
@@ -992,7 +899,6 @@ export default function TicketReturnedDetailContent({ request }) {
                                         className={`
                                             text-sm
                                             font-semibold
-                                            min-[1280px]:max-[1365px]:text-xs
                                             ${
                                                 isApproved
                                                     ? "text-green-700"
@@ -1014,40 +920,20 @@ export default function TicketReturnedDetailContent({ request }) {
                                         font-medium
                                         uppercase
                                         text-gray-500
-                                        min-[1280px]:max-[1365px]:text-[10px]
                                     "
                                 >
                                     Reviewed By
                                 </p>
 
                                 <div className="mt-2 flex items-center gap-3">
-                                    <Avatar
-                                        name={reviewedBy.name}
-                                    />
+                                    <Avatar name={reviewedBy.name} />
 
                                     <div className="min-w-0">
-                                        <p
-                                            className="
-                                                truncate
-                                                text-sm
-                                                font-semibold
-                                                text-black
-                                                min-[1280px]:max-[1365px]:text-[11px]
-                                                min-[1366px]:max-[1537px]:text-xs
-                                            "
-                                        >
+                                        <p className="truncate text-sm font-semibold text-black">
                                             {reviewedBy.name || "-"}
                                         </p>
 
-                                        <p
-                                            className="
-                                                mt-0.5
-                                                truncate
-                                                text-xs
-                                                text-gray-500
-                                                min-[1280px]:max-[1365px]:text-[10px]
-                                            "
-                                        >
+                                        <p className="mt-0.5 truncate text-xs text-gray-500">
                                             {reviewedBy.user_code || "-"}
                                             {" • "}
                                             {reviewedBy.role || "-"}
@@ -1057,16 +943,7 @@ export default function TicketReturnedDetailContent({ request }) {
                             </div>
                         </div>
 
-                        <div
-                            className="
-                                mt-5
-                                border-t
-                                border-gray-200
-                                pt-4
-                                min-[1280px]:max-[1365px]:mt-4
-                                min-[1280px]:max-[1365px]:pt-3
-                            "
-                        >
+                        <div className="mt-5 border-t border-gray-200 pt-4">
                             <InfoRow
                                 label="Reviewed At"
                                 value={formatDate(
@@ -1075,23 +952,13 @@ export default function TicketReturnedDetailContent({ request }) {
                             />
                         </div>
 
-                        <div
-                            className="
-                                mt-5
-                                border-t
-                                border-gray-200
-                                pt-4
-                                min-[1280px]:max-[1365px]:mt-4
-                                min-[1280px]:max-[1365px]:pt-3
-                            "
-                        >
+                        <div className="mt-5 border-t border-gray-200 pt-4">
                             <p
                                 className="
                                     text-xs
                                     font-medium
                                     uppercase
                                     text-gray-500
-                                    min-[1280px]:max-[1365px]:text-[10px]
                                 "
                             >
                                 Review Remarks
@@ -1106,10 +973,6 @@ export default function TicketReturnedDetailContent({ request }) {
                                     bg-gray-50
                                     px-4
                                     py-3
-                                    min-[1280px]:max-[1365px]:px-3
-                                    min-[1280px]:max-[1365px]:py-2.5
-                                    min-[1366px]:max-[1537px]:px-3
-                                    min-[1366px]:max-[1537px]:py-2.5
                                 "
                             >
                                 <p
@@ -1119,10 +982,6 @@ export default function TicketReturnedDetailContent({ request }) {
                                         text-sm
                                         leading-6
                                         text-black
-                                        min-[1280px]:max-[1365px]:text-[11px]
-                                        min-[1280px]:max-[1365px]:leading-5
-                                        min-[1366px]:max-[1537px]:text-xs
-                                        min-[1366px]:max-[1537px]:leading-5
                                     "
                                 >
                                     {request.review_remarks || "-"}
@@ -1142,6 +1001,7 @@ export default function TicketReturnedDetailContent({ request }) {
                             rows={4}
                             maxLength={500}
                             value={reviewRemarks}
+                            disabled={isProcessing}
                             onChange={(e) =>
                                 setReviewRemarks(e.target.value)
                             }
@@ -1163,6 +1023,8 @@ export default function TicketReturnedDetailContent({ request }) {
                                 focus:border-blue-500
                                 focus:ring-2
                                 focus:ring-blue-500/10
+                                disabled:cursor-not-allowed
+                                disabled:bg-gray-100
                                 min-[1280px]:max-[1365px]:px-3
                                 min-[1280px]:max-[1365px]:py-2
                                 min-[1280px]:max-[1365px]:text-[11px]
@@ -1189,7 +1051,9 @@ export default function TicketReturnedDetailContent({ request }) {
             {!isReviewed && (
                 <SymptomCodeSheet
                     open={symptomSheetOpen}
-                    onClose={() => setSymptomSheetOpen(false)}
+                    onClose={() =>
+                        setSymptomSheetOpen(false)
+                    }
                     onSelect={(symptom) => {
                         setSelectedSymptomCode(symptom);
                         setSymptomSheetOpen(false);
@@ -1301,150 +1165,93 @@ function UserCard({ label, user }) {
                 {label}
             </p>
 
-            {!user?.name ? (
-                <p
-                    className="
-                        mt-3
-                        text-sm
-                        text-gray-400
-                        min-[1280px]:max-[1365px]:mt-2
-                        min-[1280px]:max-[1365px]:text-[11px]
-                    "
-                >
-                    -
-                </p>
-            ) : (
-                <div
-                    className="
-                        mt-3
-                        flex
-                        items-center
-                        gap-3
-                        min-[1280px]:max-[1365px]:mt-2
-                        min-[1280px]:max-[1365px]:gap-2
-                    "
-                >
-                    <Avatar name={user.name} />
+            <div className="mt-2 flex items-center gap-3">
+                <Avatar name={user?.name} />
 
-                    <div className="min-w-0">
+                <div className="min-w-0">
+                    <p
+                        className="
+                            truncate
+                            text-sm
+                            font-semibold
+                            text-black
+                            min-[1280px]:max-[1365px]:text-[11px]
+                            min-[1366px]:max-[1537px]:text-xs
+                        "
+                    >
+                        {user?.name || "-"}
+                    </p>
+
+                    <p
+                        className="
+                            mt-0.5
+                            truncate
+                            text-xs
+                            text-gray-500
+                            min-[1280px]:max-[1365px]:text-[10px]
+                        "
+                    >
+                        {user?.user_code || "-"}
+
+                        {user?.role && (
+                            <>
+                                {" • "}
+                                {user.role}
+                            </>
+                        )}
+                    </p>
+
+                    {user?.department && (
                         <p
                             className="
-                                truncate
-                                text-sm
-                                font-semibold
-                                text-black
-                                min-[1280px]:max-[1365px]:text-[11px]
-                                min-[1366px]:max-[1537px]:text-xs
-                            "
-                        >
-                            {user.name}
-                        </p>
-
-                        <p
-                            className="
-                                mt-1
+                                mt-0.5
                                 truncate
                                 text-xs
                                 text-gray-500
-                                min-[1280px]:max-[1365px]:mt-0.5
                                 min-[1280px]:max-[1365px]:text-[10px]
                             "
                         >
-                            {user.user_code || "-"}
-                            {" • "}
-                            {user.role || "-"}
+                            {user.department}
                         </p>
-
-                        {user.department && (
-                            <p
-                                className="
-                                    mt-0.5
-                                    truncate
-                                    text-xs
-                                    text-gray-500
-                                    min-[1280px]:max-[1365px]:text-[10px]
-                                "
-                            >
-                                {user.department}
-                            </p>
-                        )}
-                    </div>
+                    )}
                 </div>
-            )}
+            </div>
         </div>
     );
 }
 
-function Avatar({ name, size = "md" }) {
-    const initials = getInitials(name);
-
-    const sizeClass =
-        size === "lg"
-            ? "h-12 w-12 text-sm"
-            : "h-9 w-9 text-xs";
+function Avatar({ name }) {
+    const initials = String(name || "")
+        .split(" ")
+        .filter(Boolean)
+        .slice(0, 2)
+        .map((part) => part[0]?.toUpperCase())
+        .join("");
 
     return (
         <div
-            className={`
+            className="
                 flex
+                h-9
+                w-9
                 shrink-0
                 items-center
                 justify-center
                 rounded-full
-                bg-blue-50
+                border
+                border-gray-300
+                bg-gray-100
+                text-xs
                 font-semibold
-                text-blue-600
-                ${sizeClass}
+                text-gray-700
                 min-[1280px]:max-[1365px]:h-8
                 min-[1280px]:max-[1365px]:w-8
                 min-[1280px]:max-[1365px]:text-[10px]
-            `}
+            "
         >
-            {initials}
+            {initials || "?"}
         </div>
     );
-}
-
-function getInitials(name) {
-    if (!name) {
-        return "?";
-    }
-
-    return name
-        .trim()
-        .split(/\s+/)
-        .slice(0, 2)
-        .map((part) =>
-            part.charAt(0).toUpperCase()
-        )
-        .join("");
-}
-
-function formatStatus(status = "") {
-    if (!status) {
-        return "-";
-    }
-
-    return (
-        status.charAt(0).toUpperCase() +
-        status.slice(1).toLowerCase()
-    );
-}
-
-function getStatusStyle(status = "") {
-    switch (status.toLowerCase()) {
-        case "pending":
-            return "border-amber-300 bg-amber-50 text-amber-700";
-
-        case "approved":
-            return "border-green-300 bg-green-50 text-green-700";
-
-        case "rejected":
-            return "border-red-300 bg-red-50 text-red-700";
-
-        default:
-            return "border-gray-300 bg-gray-100 text-gray-700";
-    }
 }
 
 function RoutingCard({
@@ -1534,23 +1341,6 @@ function RoutingCard({
                         }
                     `}
                 >
-                    IT Department
-                </p>
-
-                <p
-                    className={`
-                        mt-0.5
-                        text-sm
-                        font-semibold
-                        min-[1280px]:max-[1365px]:text-[11px]
-                        min-[1366px]:max-[1537px]:text-xs
-                        ${
-                            proposed
-                                ? "text-orange-800"
-                                : "text-gray-700"
-                        }
-                    `}
-                >
                     {department || "-"}
                 </p>
             </div>
@@ -1558,16 +1348,42 @@ function RoutingCard({
     );
 }
 
+function formatStatus(status) {
+    if (!status) {
+        return "-";
+    }
+
+    return String(status)
+        .replace(/_/g, " ")
+        .replace(/\b\w/g, (char) => char.toUpperCase());
+}
+
+function getStatusStyle(status) {
+    switch (String(status || "").toLowerCase()) {
+        case "pending":
+            return "border-yellow-300 bg-yellow-50 text-yellow-700";
+
+        case "approved":
+            return "border-green-300 bg-green-50 text-green-700";
+
+        case "rejected":
+            return "border-red-300 bg-red-50 text-red-700";
+
+        default:
+            return "border-gray-300 bg-gray-100 text-gray-700";
+    }
+}
+
 function formatDate(value) {
     if (!value) {
         return "-";
     }
 
-    return new Date(value).toLocaleString("en-US", {
-        month: "short",
-        day: "numeric",
-        year: "numeric",
-        hour: "numeric",
-        minute: "2-digit",
-    });
+    const date = new Date(value);
+
+    if (Number.isNaN(date.getTime())) {
+        return value;
+    }
+
+    return date.toLocaleString();
 }

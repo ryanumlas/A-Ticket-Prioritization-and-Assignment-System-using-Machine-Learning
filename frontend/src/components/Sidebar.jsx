@@ -379,27 +379,33 @@ export default function Sidebar() {
                 </button>
             )}
 
-            {/* Desktop Sidebar */}
             <aside
                 className="
+                    sticky
+                    top-0
                     hidden
                     h-screen
                     w-60
                     shrink-0
+                    overflow-y-auto
                     bg-[#4C4CF9]
                     p-4
                     text-white
-                    shadow-lg
                     lg:block
                     xl:w-64
 
                     min-[1280px]:max-[1535px]:w-[220px]
                     min-[1280px]:max-[1535px]:p-3.5
+
+                    [&::-webkit-scrollbar]:w-1
+                    [&::-webkit-scrollbar-track]:bg-transparent
+                    [&::-webkit-scrollbar-thumb]:rounded-full
+                    [&::-webkit-scrollbar-thumb]:bg-transparent
+                    hover:[&::-webkit-scrollbar-thumb]:bg-white/20
                 "
             >
                 {sidebarContent}
             </aside>
-
             <AnimatePresence>
                 {mobileOpen && (
                     <>

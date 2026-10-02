@@ -15,7 +15,6 @@ import EmployeeProfile from "./UserProfiles/EmployeeProfile";
 import ITSupportProfile from "./UserProfiles/ITSupportProfile";
 import ITStaffProfile from "./UserProfiles/ITStaffProfile";
 
-// CHANGE THESE TWO IMPORT PATHS TO YOUR EXISTING COMPONENT PATHS
 import Sidebar from "../components/Sidebar";
 import Topbar from "../components/Topbar";
 
@@ -153,7 +152,7 @@ export default function UserProfile() {
 
         return (
             <div className="flex min-h-[400px] items-center justify-center px-4">
-                <div className="rounded-xl border border-gray-200 bg-white p-6 text-center">
+                <div className="rounded-xl border border-gray-300 bg-white p-6 text-center">
                     <TriangleAlert
                         size={26}
                         className="mx-auto text-amber-500"
@@ -184,7 +183,7 @@ export default function UserProfile() {
                 <Topbar />
 
                 {/* Page Content */}
-                <main className="min-w-0 flex-1 overflow-y-auto">
+                <main className="min-w-0 flex-1">
                     {renderProfileContent()}
                 </main>
             </div>

@@ -590,7 +590,21 @@ export default function TicketDetails() {
         user?.role === "IT Support Specialist" ||
         user?.role === "IT Supervisor";
 
-    const canUseTicketActions = isAssignedSupport || isSupervisor;
+    const ticketStatus = String(ticketDetails?.status ?? "").toUpperCase();
+
+    const lockedTicketStatuses = [
+        "UNDER_REVIEW",
+        "RESOLVED",
+        "CLOSED",
+        "CANCELLED",
+    ];
+
+    const isTicketActionLocked =
+        lockedTicketStatuses.includes(ticketStatus);
+
+    const canUseTicketActions =
+        (isAssignedSupport || isSupervisor) &&
+        !isTicketActionLocked;
 
     const showAssistanceDetails =
         user?.role === "IT Support Specialist" &&
@@ -606,7 +620,6 @@ export default function TicketDetails() {
         isAssisting &&
         !isAssignedSupport;
 
-    const ticketStatus = String(ticketDetails?.status ?? "").toUpperCase();
 
     const latestReopenRequest = ticketDetails?.latest_reopen_request || null;
     const reopenRequestStatus = String(latestReopenRequest?.status || "").toLowerCase();

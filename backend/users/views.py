@@ -14,7 +14,7 @@ from rest_framework_simplejwt.exceptions import TokenError
 from rest_framework.permissions import AllowAny, IsAuthenticated
 
 from .models import Specializations, User, ITSupportProfile, UserRoles, UserProfile, ITSupportSpecialization, Notifications, AuditLogs, SystemAdministratorProfile, ITSupervisorProfile, ITServiceDeskProfile
-from tickets.models import Ticket
+from tickets.models import Ticket, TicketAssistance
 from departments.models import OfficeLocation, EmployeeDepartment, ITDepartment
 from .serializers import (UserSerializer, ITSupportSpecializationCreateSerializer, ITSupportProfileSerializer,
                           ITSupportProfileCreateSerializer, UserListSerializer, UserRolesSerializer, CustomTokenObtainPairSerializer, 
@@ -505,25 +505,34 @@ class MyProfileView(APIView):
                     )
                     if item.specialization
                 ]
+                
+            in_progress_count = (
+                Ticket.objects
+                .filter(
+                    assigned_to=user,
+                    status__in=[
+                        Ticket.TicketStatus.IN_PROGRESS,
+                        Ticket.TicketStatus.REOPENED,
+                    ],
+                )
+                .count()
+            )
 
-            # ======================================
-            # WORKLOAD
-            # ======================================
-            #
-            # We will replace these two values with
-            # the real Ticket / assistance queries
-            # once we use your exact model fields.
-            #
-            # Current workload definition:
-            #
-            # current_workload =
-            #     in_progress_count
-            #     + assisting_count
-            #
-            # ======================================
 
-            in_progress_count = 0
-            assisting_count = 0
+            assisting_count = (
+                TicketAssistance.objects
+                .filter(
+                    assisted_by=user,
+                    status=(
+                        TicketAssistance
+                        .AssistanceStatus
+                        .ONGOING
+                    ),
+                )
+                .values("ticket_id")
+                .distinct()
+                .count()
+            )
 
             current_workload = (
                 in_progress_count +

@@ -65,6 +65,12 @@ export default function RightSidePanel({
     const isITSupportSpecialist =
         userRole === "it support specialist";
 
+    const isITSupervisor =
+        userRole === "it supervisor";
+
+    const canDirectlyResolve =
+        isITSupportSpecialist || isITSupervisor;
+
     const currentTicketStatus = normalizeStatus(
         ticketDetails?.status
     );
@@ -209,7 +215,7 @@ export default function RightSidePanel({
 
     const handleMarkAsResolved = () => {
         if (
-            !isITSupportSpecialist ||
+            !canDirectlyResolve ||
             !isInProgress ||
             isUpdating
         ) {
@@ -230,14 +236,14 @@ export default function RightSidePanel({
     };
 
     const confirmStatusChange = async () => {
-        const isAllowedSupportResolution =
-            isITSupportSpecialist &&
+        const isAllowedDirectResolution =
+            canDirectlyResolve &&
             pendingStatus === "resolved" &&
             isInProgress;
 
         if (
-            isITSupportSpecialist
-                ? !isAllowedSupportResolution
+            canDirectlyResolve
+                ? !isAllowedDirectResolution
                 : !canEditStatus
         ) {
             return;
@@ -684,7 +690,7 @@ export default function RightSidePanel({
                         Current Status
                     </p>
 
-                    {isITSupportSpecialist ? (
+                    {canDirectlyResolve ? (
                         <div className="mt-2 min-[1280px]:max-[1535px]:mt-1.5">
                             {isInProgress ? (
                                 <motion.button
@@ -1043,7 +1049,7 @@ export default function RightSidePanel({
 
             <AnimatePresence>
                 {showConfirm &&
-                    (isITSupportSpecialist
+                    (canDirectlyResolve
                         ? pendingStatus ===
                               "resolved" &&
                           isInProgress

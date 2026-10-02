@@ -572,6 +572,33 @@ export default function TicketReports() {
         [data]
     );
 
+    const classificationData = useMemo(() => {
+        const methods = data?.classification_methods || {};
+        const total = Number(methods.total_classified || 0);
+
+        const normalize = (value) => {
+            if (value && typeof value === "object") {
+                const count = Number(value.count || 0);
+                const percentage = Number(
+                    value.percentage ?? (total ? (count / total) * 100 : 0)
+                );
+                return { count, percentage };
+            }
+
+            const count = Number(value || 0);
+            return {
+                count,
+                percentage: total ? (count / total) * 100 : 0,
+            };
+        };
+
+        return [
+            { code: "rule_based", name: "Rule-Based", ...normalize(methods.rule_based) },
+            { code: "machine_learning", name: "Machine Learning", ...normalize(methods.machine_learning) },
+            { code: "manual_override", name: "Manual Override", ...normalize(methods.manual_override) },
+        ];
+    }, [data]);
+
     const filteredResolutions = useMemo(() => {
         const items = data?.resolution_remarks || [];
         const search = resolutionSearch.trim().toLowerCase();
@@ -1112,6 +1139,65 @@ export default function TicketReports() {
                             </ResponsiveContainer>
                         </div>
                     )}
+                </SectionCard>
+            </div>
+
+            <div className="mb-5">
+                <SectionCard
+                    title="Ticket Classification Method"
+                    description="How tickets were classified during the selected report period."
+                    icon={Tag}
+                >
+                    <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+                        {classificationData.map((item) => (
+                            <div
+                                key={item.code}
+                                className="rounded-lg border border-gray-300 p-4"
+                            >
+                                <div className="flex items-start justify-between gap-4">
+                                    <div>
+                                        <p className="text-sm text-gray-500">{item.name}</p>
+                                        <p className="mt-2 text-2xl font-bold text-black">
+                                            {item.count}
+                                        </p>
+                                        <p className="mt-1 text-sm font-semibold text-[#4C4CF9]">
+                                            {Number(item.percentage || 0).toFixed(2)}%
+                                        </p>
+                                    </div>
+                                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-[#EEEEFF]">
+                                        <Tag size={18} className="text-[#4C4CF9]" />
+                                    </div>
+                                </div>
+                                <p className="mt-3 text-xs leading-5 text-gray-500">
+                                    {item.code === "rule_based" &&
+                                        "Tickets classified automatically using the rule-based classifier."}
+                                    {item.code === "machine_learning" &&
+                                        "Tickets classified automatically using the machine learning classifier."}
+                                    {item.code === "manual_override" &&
+                                        "Tickets whose automatic classification was manually overridden."}
+                                </p>
+                            </div>
+                        ))}
+                    </div>
+
+                    <div className="mt-4 flex items-center justify-between rounded-lg border border-gray-300 bg-gray-50 px-4 py-3">
+                        <div>
+                            <p className="text-sm font-semibold text-black">Total Classified</p>
+                            <p className="mt-0.5 text-xs text-gray-500">
+                                Total tickets with a recorded classification method.
+                            </p>
+                        </div>
+                        <div className="text-right">
+                            <p className="text-xl font-bold text-[#4C4CF9]">
+                                {data?.classification_methods?.total_classified ?? 0}
+                            </p>
+                            <p className="text-xs font-medium text-gray-500">
+                                {(data?.classification_methods?.total_classified ?? 0) > 0
+                                    ? "100.00%"
+                                    : "0.00%"}
+                            </p>
+                        </div>
+                    </div>
                 </SectionCard>
             </div>
 

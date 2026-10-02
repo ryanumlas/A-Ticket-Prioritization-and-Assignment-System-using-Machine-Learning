@@ -1,6 +1,4 @@
-import {
-    useState,
-} from "react";
+import { useState } from "react";
 
 import {
     Activity,
@@ -128,57 +126,32 @@ export default function ITSupportProfile({
         }
     };
 
-
     return (
         <div className="w-full">
-            <div className="mx-auto max-w-6xl space-y-6 p-4 sm:p-6 lg:p-8">
+            <div className="w-full space-y-5 px-6 py-5 xl:px-8">
 
-                {/* Header */}
+                <div className="rounded-xl border border-gray-300 bg-white px-6 py-5">
+                    <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                        <div className="min-w-0">
+                            <p className="text-xs font-medium uppercase tracking-wide text-gray-400">
+                                Profile
+                            </p>
 
-                <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
-                    <div className="h-24 bg-gradient-to-r from-[#4C4CF9] to-[#7474FF]" />
-
-                    <div className="px-6 pb-6">
-                        <div className="-mt-10 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-                            <div className="flex min-w-0 flex-col gap-4 sm:flex-row sm:items-end">
-                                <div className="flex h-20 w-20 shrink-0 items-center justify-center rounded-2xl border-4 border-white bg-[#EEEEFF] shadow-sm">
-                                    <UserRound
-                                        size={34}
-                                        className="text-[#4C4CF9]"
-                                    />
-                                </div>
-
-                                <div className="min-w-0 pb-1">
-                                    <h1 className="truncate text-2xl font-bold text-gray-900">
-                                        {fullName ||
-                                            profile.username}
-                                    </h1>
-
-                                    <div className="mt-1 flex flex-wrap items-center gap-2">
-                                        <span className="rounded-full bg-[#EEEEFF] px-3 py-1 text-xs font-semibold text-[#4C4CF9]">
-                                            {profile.role}
-                                        </span>
-
-                                        {profile.user_code && (
-                                            <span className="text-sm text-gray-500">
-                                                {
-                                                    profile.user_code
-                                                }
-                                            </span>
-                                        )}
-                                    </div>
-                                </div>
-                            </div>
-
-                            <AvailabilityBadge
-                                status={availability}
-                            />
+                            <h1 className="mt-1 truncate text-2xl font-bold text-gray-900">
+                                {fullName || profile.username}
+                            </h1>
                         </div>
+
+                        <AvailabilityBadge
+                            status={availability}
+                        />
                     </div>
                 </div>
 
 
-                {/* Account Information */}
+                {/* ================================================= */}
+                {/* ACCOUNT INFORMATION */}
+                {/* ================================================= */}
 
                 <ProfileSection
                     title="Account Information"
@@ -222,10 +195,12 @@ export default function ITSupportProfile({
                 </ProfileSection>
 
 
-                {/* IT Information */}
+                {/* ================================================= */}
+                {/* IT INFORMATION */}
+                {/* ================================================= */}
 
-                <section className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
-                    <div className="border-b border-gray-100 pb-4">
+                <section className="rounded-xl border border-gray-300 bg-white p-6">
+                    <div className="border-b border-gray-200 pb-4">
                         <h2 className="text-base font-semibold text-gray-900">
                             IT Information
                         </h2>
@@ -254,7 +229,7 @@ export default function ITSupportProfile({
                         />
                     </div>
 
-                    <div className="mt-6 border-t border-gray-100 pt-6">
+                    <div className="mt-6 border-t border-gray-200 pt-6">
                         <div className="flex items-start gap-3">
                             <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-gray-100">
                                 <Tags
@@ -298,10 +273,12 @@ export default function ITSupportProfile({
                 </section>
 
 
-                {/* Workload */}
+                {/* ================================================= */}
+                {/* CURRENT WORKLOAD */}
+                {/* ================================================= */}
 
-                <section className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
-                    <div className="border-b border-gray-100 pb-4">
+                <section className="rounded-xl border border-gray-300 bg-white p-6">
+                    <div className="border-b border-gray-200 pb-4">
                         <h2 className="text-base font-semibold text-gray-900">
                             Current Workload
                         </h2>
@@ -338,7 +315,7 @@ export default function ITSupportProfile({
                         />
                     </div>
 
-                    <div className="mt-6 rounded-xl border border-gray-200 bg-gray-50 p-5">
+                    <div className="mt-6 rounded-xl border border-gray-300 bg-gray-50 p-5">
                         <div className="flex flex-wrap items-center justify-between gap-3">
                             <div>
                                 <p className="text-sm font-semibold text-gray-900">
@@ -352,9 +329,11 @@ export default function ITSupportProfile({
 
                             <p className="text-xl font-bold text-gray-900">
                                 {currentWorkload}
+
                                 <span className="mx-1 text-gray-400">
                                     /
                                 </span>
+
                                 {workloadLimit}
                             </p>
                         </div>
@@ -367,10 +346,12 @@ export default function ITSupportProfile({
                 </section>
 
 
-                {/* Availability */}
+                {/* ================================================= */}
+                {/* AVAILABILITY */}
+                {/* ================================================= */}
 
-                <section className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
-                    <div className="border-b border-gray-100 pb-4">
+                <section className="rounded-xl border border-gray-300 bg-white p-6">
+                    <div className="border-b border-gray-200 pb-4">
                         <h2 className="text-base font-semibold text-gray-900">
                             Availability
                         </h2>
@@ -382,7 +363,8 @@ export default function ITSupportProfile({
                     </div>
 
                     <div className="pt-6">
-                        <div className="flex flex-col gap-5 rounded-xl border border-gray-200 bg-gray-50 p-5 sm:flex-row sm:items-center sm:justify-between">
+                        <div className="flex flex-col gap-5 rounded-xl border border-gray-300 bg-gray-50 p-5 sm:flex-row sm:items-center sm:justify-between">
+
                             <div>
                                 <p className="text-xs font-medium uppercase tracking-wide text-gray-400">
                                     Current Status
@@ -396,6 +378,7 @@ export default function ITSupportProfile({
                                     />
                                 </div>
                             </div>
+
 
                             <div className="w-full sm:w-64">
                                 <label
@@ -466,11 +449,16 @@ export default function ITSupportProfile({
                         )}
                     </div>
                 </section>
+
             </div>
         </div>
     );
 }
 
+
+/* ============================================================= */
+/* PROFILE SECTION */
+/* ============================================================= */
 
 function ProfileSection({
     title,
@@ -478,8 +466,8 @@ function ProfileSection({
     children,
 }) {
     return (
-        <section className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
-            <div className="border-b border-gray-100 pb-4">
+        <section className="rounded-xl border border-gray-300 bg-white p-6">
+            <div className="border-b border-gray-200 pb-4">
                 <h2 className="text-base font-semibold text-gray-900">
                     {title}
                 </h2>
@@ -496,6 +484,10 @@ function ProfileSection({
     );
 }
 
+
+/* ============================================================= */
+/* PROFILE FIELD */
+/* ============================================================= */
 
 function ProfileField({
     icon: Icon,
@@ -525,15 +517,19 @@ function ProfileField({
 }
 
 
+/* ============================================================= */
+/* WORKLOAD CARD */
+/* ============================================================= */
+
 function WorkloadCard({
     icon: Icon,
     label,
     value,
 }) {
     return (
-        <div className="rounded-xl border border-gray-200 bg-gray-50 p-4">
+        <div className="rounded-xl border border-gray-300 bg-gray-50 p-4">
             <div className="flex items-center justify-between gap-3">
-                <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-white shadow-sm">
+                <div className="flex h-9 w-9 items-center justify-center rounded-lg border border-gray-200 bg-white">
                     <Icon
                         size={17}
                         className="text-[#4C4CF9]"
@@ -552,6 +548,10 @@ function WorkloadCard({
     );
 }
 
+
+/* ============================================================= */
+/* WORKLOAD PROGRESS */
+/* ============================================================= */
 
 function WorkloadProgress({
     current,
@@ -593,6 +593,10 @@ function WorkloadProgress({
 }
 
 
+/* ============================================================= */
+/* AVAILABILITY BADGE */
+/* ============================================================= */
+
 function AvailabilityBadge({
     status,
 }) {
@@ -623,11 +627,9 @@ function AvailabilityBadge({
         },
     };
 
-
     const current =
         config[normalizedStatus] ||
         config.offline;
-
 
     return (
         <span

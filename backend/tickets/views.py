@@ -7166,6 +7166,7 @@ class RejectReturnTicketView(APIView):
 
     @transaction.atomic
     def post(self, request, pk):
+        # Validate request body
         serializer = RejectReturnTicketSerializer(
             data=request.data
         )
@@ -7176,6 +7177,7 @@ class RejectReturnTicketView(APIView):
             "",
         )
 
+        # Lock and retrieve the return request
         return_request = (
             TicketReturn.objects
             .select_for_update()
@@ -7189,6 +7191,7 @@ class RejectReturnTicketView(APIView):
                 status=status.HTTP_404_NOT_FOUND,
             )
 
+        # Only pending return requests can be rejected
         if (
             return_request.status
             != TicketReturn.ReturnStatus.PENDING
@@ -7202,6 +7205,7 @@ class RejectReturnTicketView(APIView):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
+        # Return request must belong to a ticket
         if not return_request.ticket_id:
             return Response(
                 {
@@ -7212,6 +7216,7 @@ class RejectReturnTicketView(APIView):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
+        # Lock and retrieve the ticket
         ticket = (
             Ticket.objects
             .select_for_update()
@@ -7225,6 +7230,7 @@ class RejectReturnTicketView(APIView):
                 status=status.HTTP_404_NOT_FOUND,
             )
 
+        # The ticket must still be under Service Desk review
         if not ticket.is_under_review:
             return Response(
                 {
@@ -7236,8 +7242,13 @@ class RejectReturnTicketView(APIView):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        previous_status = return_request.ticket.status
+        # Save the status before changing it so we can record
+        # the status transition in TicketStatusHistory.
+        previous_status = ticket.status
 
+        # =========================================================
+        # REJECT THE RETURN REQUEST
+        # =========================================================
         return_request.status = (
             TicketReturn.ReturnStatus.REJECTED
         )
@@ -7254,17 +7265,31 @@ class RejectReturnTicketView(APIView):
             ]
         )
 
+        # =========================================================
+        # RESTORE TICKET TO ACTIVE IT SUPPORT WORK
+        #
+        # The Service Desk rejected the return request, so the
+        # ticket should no longer be under review.
+        #
+        # Keep the existing IT Support assignment and return the
+        # ticket to IN_PROGRESS.
+        # =========================================================
         ticket.is_under_review = False
+        ticket.status = Ticket.TicketStatus.IN_PROGRESS
         ticket.updated_by = request.user
 
         ticket.save(
             update_fields=[
                 "is_under_review",
+                "status",
                 "updated_by",
                 "updated_at",
             ]
         )
 
+        # =========================================================
+        # STATUS HISTORY
+        # =========================================================
         if previous_status != ticket.status:
             TicketStatusHistory.objects.create(
                 ticket=ticket,
@@ -7275,7 +7300,10 @@ class RejectReturnTicketView(APIView):
                 new_value=ticket.status,
                 remarks=(
                     review_remarks
-                    or "Return request rejected by Service Desk."
+                    or (
+                        "Return request rejected by Service Desk. "
+                        "Ticket returned to In Progress."
+                    )
                 ),
                 created_by=request.user,
                 changed_by=request.user,
@@ -7284,6 +7312,7 @@ class RejectReturnTicketView(APIView):
                 ),
             )
 
+        # Record the actual return-request rejection event
         TicketStatusHistory.objects.create(
             ticket=ticket,
             event_type=(
@@ -7293,7 +7322,10 @@ class RejectReturnTicketView(APIView):
             new_value=ticket.status,
             remarks=(
                 review_remarks
-                or "Return request rejected by Service Desk."
+                or (
+                    "Return request rejected by Service Desk. "
+                    "Ticket returned to IT Support."
+                )
             ),
             created_by=request.user,
             changed_by=request.user,
@@ -7302,6 +7334,9 @@ class RejectReturnTicketView(APIView):
             ),
         )
 
+        # =========================================================
+        # MARK REVIEW NOTIFICATIONS AS READ
+        # =========================================================
         Notifications.objects.filter(
             ticket=ticket,
             notification_type=(
@@ -7313,6 +7348,9 @@ class RejectReturnTicketView(APIView):
             updated_by=request.user,
         )
 
+        # =========================================================
+        # NOTIFY EMPLOYEE
+        # =========================================================
         if ticket.submitted_by:
             create_notification(
                 user=ticket.submitted_by,
@@ -7323,16 +7361,39 @@ class RejectReturnTicketView(APIView):
                 message=(
                     f"Your ticket {ticket.ticket_code} was reviewed "
                     "by the Service Desk, but the return request "
-                    "was rejected."
+                    "was rejected. The ticket remains in progress."
                 ),
                 created_by=request.user,
             )
 
+        # =========================================================
+        # NOTIFY IT SUPPORT SPECIALIST WHO REQUESTED THE RETURN
+        # =========================================================
+        if return_request.returned_by:
+            create_notification(
+                user=return_request.returned_by,
+                ticket=ticket,
+                notification_type=(
+                    Notifications.NotificationType.STATUS_UPDATED
+                ),
+                message=(
+                    f"Your return request for ticket "
+                    f"{ticket.ticket_code} was rejected by the "
+                    "Service Desk. The ticket has been returned "
+                    "to In Progress for continued work."
+                ),
+                created_by=request.user,
+            )
+
+        # =========================================================
+        # RESPONSE
+        # =========================================================
         return Response(
             {
                 "success": True,
                 "message": (
-                    "Return request rejected successfully."
+                    "Return request rejected successfully. "
+                    "Ticket returned to In Progress."
                 ),
                 "request": {
                     "id": return_request.id,
@@ -7348,6 +7409,7 @@ class RejectReturnTicketView(APIView):
                     "id": ticket.id,
                     "ticket_code": ticket.ticket_code,
                     "status": ticket.status,
+                    "is_under_review": ticket.is_under_review,
                 },
             },
             status=status.HTTP_200_OK,
@@ -9713,10 +9775,14 @@ class TicketReportView(APIView):
         tickets = Ticket.objects.all()
 
         if start_date:
-            tickets = tickets.filter(created_at__date__gte=start_date)
+            tickets = tickets.filter(
+                created_at__date__gte=start_date
+            )
 
         if end_date:
-            tickets = tickets.filter(created_at__date__lte=end_date)
+            tickets = tickets.filter(
+                created_at__date__lte=end_date
+            )
 
         # ============================================================
         # SUMMARY
@@ -9728,15 +9794,32 @@ class TicketReportView(APIView):
         ).count()
 
         resolution_rate = (
-            round((resolved_tickets / total_tickets) * 100, 2)
+            round(
+                (resolved_tickets / total_tickets) * 100,
+                2,
+            )
             if total_tickets
             else 0
         )
 
-        breached_tickets = tickets.filter(
-            Q(response_sla_status=Ticket.SLAStatus.BREACHED)
-            | Q(resolution_sla_status=Ticket.SLAStatus.BREACHED)
-        ).distinct().count()
+        breached_tickets = (
+            tickets
+            .filter(
+                Q(
+                    response_sla_status=(
+                        Ticket.SLAStatus.BREACHED
+                    )
+                )
+                |
+                Q(
+                    resolution_sla_status=(
+                        Ticket.SLAStatus.BREACHED
+                    )
+                )
+            )
+            .distinct()
+            .count()
+        )
 
         escalated_tickets = tickets.filter(
             is_escalated=True
@@ -9750,36 +9833,54 @@ class TicketReportView(APIView):
         average_resolution = (
             tickets
             .filter(resolved_at__isnull=False)
-            .annotate(resolution_duration=resolution_duration)
-            .aggregate(avg=Avg("resolution_duration"))
+            .annotate(
+                resolution_duration=resolution_duration
+            )
+            .aggregate(
+                avg=Avg("resolution_duration")
+            )
             .get("avg")
         )
 
         average_resolution_seconds = (
-            round(average_resolution.total_seconds(), 2)
+            round(
+                average_resolution.total_seconds(),
+                2,
+            )
             if average_resolution
             else 0
         )
 
         # ============================================================
         # TICKET VOLUME
+        #
         # Submitted = grouped by created_at
         # Resolved = grouped by resolved_at
         # ============================================================
         submitted_volume = (
             tickets
-            .annotate(date=TruncDate("created_at"))
+            .annotate(
+                date=TruncDate("created_at")
+            )
             .values("date")
-            .annotate(count=Count("id"))
+            .annotate(
+                count=Count("id")
+            )
             .order_by("date")
         )
 
         resolved_volume = (
             tickets
-            .filter(resolved_at__isnull=False)
-            .annotate(date=TruncDate("resolved_at"))
+            .filter(
+                resolved_at__isnull=False
+            )
+            .annotate(
+                date=TruncDate("resolved_at")
+            )
             .values("date")
-            .annotate(count=Count("id"))
+            .annotate(
+                count=Count("id")
+            )
             .order_by("date")
         )
 
@@ -9804,21 +9905,30 @@ class TicketReportView(APIView):
                     "resolved": 0,
                 }
 
-            volume_map[key]["resolved"] = item["count"]
+            volume_map[key]["resolved"] = (
+                item["count"]
+            )
 
         ticket_volume = sorted(
             volume_map.values(),
             key=lambda item: item["date"],
         )
 
+        # ============================================================
+        # STATUS BREAKDOWN
+        # ============================================================
         status_rows = (
             tickets
             .values("status")
-            .annotate(count=Count("id"))
+            .annotate(
+                count=Count("id")
+            )
             .order_by("-count")
         )
 
-        status_labels = dict(Ticket.TicketStatus.choices)
+        status_labels = dict(
+            Ticket.TicketStatus.choices
+        )
 
         tickets_by_status = [
             {
@@ -9837,15 +9947,23 @@ class TicketReportView(APIView):
         # ============================================================
         priority_rows = (
             tickets
-            .values("priority__priority_level")
-            .annotate(count=Count("id"))
-            .order_by("priority__priority_level")
+            .values(
+                "priority__priority_level"
+            )
+            .annotate(
+                count=Count("id")
+            )
+            .order_by(
+                "priority__priority_level"
+            )
         )
 
         tickets_by_priority = [
             {
                 "priority": (
-                    row["priority__priority_level"]
+                    row[
+                        "priority__priority_level"
+                    ]
                     or "Unassigned"
                 ),
                 "count": row["count"],
@@ -9858,14 +9976,21 @@ class TicketReportView(APIView):
         # ============================================================
         category_rows = (
             tickets
-            .values("category_id", "category__name")
-            .annotate(count=Count("id"))
+            .values(
+                "category_id",
+                "category__name",
+            )
+            .annotate(
+                count=Count("id")
+            )
             .order_by("-count")
         )
 
         tickets_by_category = [
             {
-                "category_id": row["category_id"],
+                "category_id": (
+                    row["category_id"]
+                ),
                 "category": (
                     row["category__name"]
                     or "Uncategorized"
@@ -9884,15 +10009,21 @@ class TicketReportView(APIView):
                 "it_department_id",
                 "it_department__name",
             )
-            .annotate(count=Count("id"))
+            .annotate(
+                count=Count("id")
+            )
             .order_by("-count")
         )
 
         tickets_by_department = [
             {
-                "department_id": row["it_department_id"],
+                "department_id": (
+                    row["it_department_id"]
+                ),
                 "department": (
-                    row["it_department__name"]
+                    row[
+                        "it_department__name"
+                    ]
                     or "Unassigned"
                 ),
                 "count": row["count"],
@@ -9901,20 +10032,113 @@ class TicketReportView(APIView):
         ]
 
         # ============================================================
+        # CLASSIFICATION METHOD BREAKDOWN
+        #
+        # IMPORTANT:
+        #
+        # Manual Override:
+        #     was_overridden=True
+        #
+        # Machine Learning:
+        #     model_type=MACHINE_LEARNING
+        #     AND was_overridden=False
+        #
+        # Rule-Based:
+        #     model_type=RULE_BASED
+        #     AND was_overridden=False
+        #
+        # We filter through the already date-filtered "tickets"
+        # queryset so this follows the exact same report period.
+        # ============================================================
+
+        ticket_analysis = (
+            TicketAnalysis.objects
+            .filter(
+                ticket__in=tickets
+            )
+        )
+
+        manual_override_count = (
+            ticket_analysis
+            .filter(
+                was_overridden=True
+            )
+            .values("ticket_id")
+            .distinct()
+            .count()
+        )
+
+        machine_learning_count = (
+            ticket_analysis
+            .filter(
+                model_type=(
+                    TicketAnalysis
+                    .ModelType
+                    .MACHINE_LEARNING
+                ),
+                was_overridden=False,
+            )
+            .values("ticket_id")
+            .distinct()
+            .count()
+        )
+
+        rule_based_count = (
+            ticket_analysis
+            .filter(
+                model_type=(
+                    TicketAnalysis
+                    .ModelType
+                    .RULE_BASED
+                ),
+                was_overridden=False,
+            )
+            .values("ticket_id")
+            .distinct()
+            .count()
+        )
+
+        total_classified = (
+            rule_based_count
+            + machine_learning_count
+            + manual_override_count
+        )
+
+        classification_methods = {
+            "rule_based": rule_based_count,
+            "machine_learning": (
+                machine_learning_count
+            ),
+            "manual_override": (
+                manual_override_count
+            ),
+            "total_classified": (
+                total_classified
+            ),
+        }
+
+        # ============================================================
         # RESOLUTION REMARKS
         #
         # Latest RESOLVED history entry per ticket.
         # ============================================================
         resolved_ticket_ids = list(
             tickets
-            .filter(resolved_at__isnull=False)
-            .values_list("id", flat=True)
+            .filter(
+                resolved_at__isnull=False
+            )
+            .values_list(
+                "id",
+                flat=True,
+            )
         )
 
         resolved_histories = (
             TicketStatusHistoryModel.objects
             .filter(
-                ticket_id__in=resolved_ticket_ids,
+                ticket_id__in=(
+                    resolved_ticket_ids
+                ),
             )
             .filter(
                 Q(
@@ -9931,11 +10155,19 @@ class TicketReportView(APIView):
                         .EventType
                         .STATUS_CHANGED
                     ),
-                    new_value=Ticket.TicketStatus.RESOLVED,
+                    new_value=(
+                        Ticket
+                        .TicketStatus
+                        .RESOLVED
+                    ),
                 )
             )
-            .exclude(remarks__isnull=True)
-            .exclude(remarks="")
+            .exclude(
+                remarks__isnull=True
+            )
+            .exclude(
+                remarks=""
+            )
             .select_related(
                 "ticket",
                 "ticket__resolved_by",
@@ -9949,7 +10181,10 @@ class TicketReportView(APIView):
         latest_resolution_history = {}
 
         for history in resolved_histories:
-            if history.ticket_id not in latest_resolution_history:
+            if (
+                history.ticket_id
+                not in latest_resolution_history
+            ):
                 latest_resolution_history[
                     history.ticket_id
                 ] = history
@@ -9958,7 +10193,9 @@ class TicketReportView(APIView):
 
         resolved_ticket_objects = (
             tickets
-            .filter(resolved_at__isnull=False)
+            .filter(
+                resolved_at__isnull=False
+            )
             .select_related(
                 "resolved_by",
                 "it_department",
@@ -9966,11 +10203,16 @@ class TicketReportView(APIView):
                 "symptom_code",
                 "priority",
             )
-            .order_by("-resolved_at")
+            .order_by(
+                "-resolved_at"
+            )
         )
 
         for ticket in resolved_ticket_objects:
-            history = latest_resolution_history.get(ticket.id)
+            history = (
+                latest_resolution_history
+                .get(ticket.id)
+            )
 
             resolver = ticket.resolved_by
 
@@ -9985,10 +10227,14 @@ class TicketReportView(APIView):
             resolution_remarks.append(
                 {
                     "ticket_id": ticket.id,
-                    "ticket_code": ticket.ticket_code,
+                    "ticket_code": (
+                        ticket.ticket_code
+                    ),
                     "subject": ticket.subject,
                     "priority": (
-                        ticket.priority.priority_level
+                        ticket
+                        .priority
+                        .priority_level
                         if ticket.priority
                         else None
                     ),
@@ -9998,12 +10244,18 @@ class TicketReportView(APIView):
                         else None
                     ),
                     "department": (
-                        str(ticket.it_department)
+                        str(
+                            ticket.it_department
+                        )
                         if ticket.it_department
                         else None
                     ),
-                    "resolved_by": resolver_name,
-                    "resolved_at": ticket.resolved_at,
+                    "resolved_by": (
+                        resolver_name
+                    ),
+                    "resolved_at": (
+                        ticket.resolved_at
+                    ),
                     "remarks": (
                         history.remarks
                         if history
@@ -10017,17 +10269,27 @@ class TicketReportView(APIView):
         # ============================================================
         return_rows = (
             TicketReturn.objects
-            .filter(ticket__in=tickets)
+            .filter(
+                ticket__in=tickets
+            )
             .values("status")
-            .annotate(count=Count("id"))
+            .annotate(
+                count=Count("id")
+            )
             .order_by("status")
         )
 
         returned_tickets = {
-            "total": TicketReturn.objects.filter(
-                ticket__in=tickets
-            ).count(),
-            "breakdown": list(return_rows),
+            "total": (
+                TicketReturn.objects
+                .filter(
+                    ticket__in=tickets
+                )
+                .count()
+            ),
+            "breakdown": list(
+                return_rows
+            ),
         }
 
         # ============================================================
@@ -10035,17 +10297,27 @@ class TicketReportView(APIView):
         # ============================================================
         priority_request_rows = (
             TicketPriorityRequest.objects
-            .filter(ticket__in=tickets)
+            .filter(
+                ticket__in=tickets
+            )
             .values("status")
-            .annotate(count=Count("id"))
+            .annotate(
+                count=Count("id")
+            )
             .order_by("status")
         )
 
         priority_change_requests = {
-            "total": TicketPriorityRequest.objects.filter(
-                ticket__in=tickets
-            ).count(),
-            "breakdown": list(priority_request_rows),
+            "total": (
+                TicketPriorityRequest.objects
+                .filter(
+                    ticket__in=tickets
+                )
+                .count()
+            ),
+            "breakdown": list(
+                priority_request_rows
+            ),
         }
 
         # ============================================================
@@ -10053,17 +10325,27 @@ class TicketReportView(APIView):
         # ============================================================
         review_flag_rows = (
             ReviewFlags.objects
-            .filter(ticket__in=tickets)
+            .filter(
+                ticket__in=tickets
+            )
             .values("status")
-            .annotate(count=Count("id"))
+            .annotate(
+                count=Count("id")
+            )
             .order_by("status")
         )
 
         review_flags = {
-            "total": ReviewFlags.objects.filter(
-                ticket__in=tickets
-            ).count(),
-            "breakdown": list(review_flag_rows),
+            "total": (
+                ReviewFlags.objects
+                .filter(
+                    ticket__in=tickets
+                )
+                .count()
+            ),
+            "breakdown": list(
+                review_flag_rows
+            ),
         }
 
         # ============================================================
@@ -10077,8 +10359,12 @@ class TicketReportView(APIView):
 
         workstation_tickets = (
             tickets
-            .exclude(workstation__isnull=True)
-            .exclude(workstation="")
+            .exclude(
+                workstation__isnull=True
+            )
+            .exclude(
+                workstation=""
+            )
             .values(
                 "id",
                 "ticket_code",
@@ -10087,23 +10373,37 @@ class TicketReportView(APIView):
         )
 
         for item in workstation_tickets:
-            raw_workstation = item["workstation"]
+            raw_workstation = (
+                item["workstation"]
+            )
 
-            normalized = raw_workstation.strip().lower()
+            normalized = (
+                raw_workstation
+                .strip()
+                .lower()
+            )
 
             if not normalized:
                 continue
 
             if normalized not in workstation_map:
-                workstation_map[normalized] = {
-                    "workstation": raw_workstation.strip(),
+                workstation_map[
+                    normalized
+                ] = {
+                    "workstation": (
+                        raw_workstation.strip()
+                    ),
                     "ticket_count": 0,
                     "ticket_codes": [],
                 }
 
-            workstation_map[normalized]["ticket_count"] += 1
+            workstation_map[
+                normalized
+            ]["ticket_count"] += 1
 
-            workstation_map[normalized][
+            workstation_map[
+                normalized
+            ][
                 "ticket_codes"
             ].append(
                 item["ticket_code"]
@@ -10117,43 +10417,69 @@ class TicketReportView(APIView):
 
             if item["ticket_count"] >= 5:
                 recurrence_level = "high"
+
             elif item["ticket_count"] >= 3:
                 recurrence_level = "review"
+
             else:
                 recurrence_level = "watch"
 
-            item["recurrence_level"] = recurrence_level
+            item[
+                "recurrence_level"
+            ] = recurrence_level
 
-            recurring_workstations.append(item)
+            recurring_workstations.append(
+                item
+            )
 
         recurring_workstations.sort(
-            key=lambda item: item["ticket_count"],
+            key=lambda item: (
+                item["ticket_count"]
+            ),
             reverse=True,
         )
 
-
+        # ============================================================
+        # RECURRING PROBLEMS
+        # ============================================================
         symptom_rows = (
             tickets
-            .exclude(symptom_code__isnull=True)
+            .exclude(
+                symptom_code__isnull=True
+            )
             .values(
                 "symptom_code_id",
                 "symptom_code__code",
             )
-            .annotate(count=Count("id"))
-            .filter(count__gte=2)
+            .annotate(
+                count=Count("id")
+            )
+            .filter(
+                count__gte=2
+            )
             .order_by("-count")
         )
 
         recurring_problems = [
             {
-                "symptom_code_id": row["symptom_code_id"],
-                "symptom_code": row["symptom_code__code"],
-                "ticket_count": row["count"],
+                "symptom_code_id": (
+                    row["symptom_code_id"]
+                ),
+                "symptom_code": (
+                    row[
+                        "symptom_code__code"
+                    ]
+                ),
+                "ticket_count": (
+                    row["count"]
+                ),
             }
             for row in symptom_rows
         ]
 
-
+        # ============================================================
+        # RESPONSE
+        # ============================================================
         return Response(
             {
                 "filters": {
@@ -10170,41 +10496,76 @@ class TicketReportView(APIView):
                 },
 
                 "summary": {
-                    "total_tickets": total_tickets,
-                    "resolved_tickets": resolved_tickets,
-                    "resolution_rate": resolution_rate,
-                    "breached_tickets": breached_tickets,
-                    "escalated_tickets": escalated_tickets,
+                    "total_tickets": (
+                        total_tickets
+                    ),
+                    "resolved_tickets": (
+                        resolved_tickets
+                    ),
+                    "resolution_rate": (
+                        resolution_rate
+                    ),
+                    "breached_tickets": (
+                        breached_tickets
+                    ),
+                    "escalated_tickets": (
+                        escalated_tickets
+                    ),
                     "average_resolution_seconds": (
                         average_resolution_seconds
                     ),
                 },
 
-                "ticket_volume": ticket_volume,
+                "ticket_volume": (
+                    ticket_volume
+                ),
 
-                "tickets_by_status": tickets_by_status,
+                "tickets_by_status": (
+                    tickets_by_status
+                ),
 
-                "tickets_by_priority": tickets_by_priority,
+                "tickets_by_priority": (
+                    tickets_by_priority
+                ),
 
-                "tickets_by_category": tickets_by_category,
+                "tickets_by_category": (
+                    tickets_by_category
+                ),
 
-                "tickets_by_department": tickets_by_department,
+                "tickets_by_department": (
+                    tickets_by_department
+                ),
 
-                "resolution_remarks": resolution_remarks,
+                # NEW:
+                # Rule-Based / Machine Learning /
+                # Manual Override counts.
+                "classification_methods": (
+                    classification_methods
+                ),
 
-                "returned_tickets": returned_tickets,
+                "resolution_remarks": (
+                    resolution_remarks
+                ),
+
+                "returned_tickets": (
+                    returned_tickets
+                ),
 
                 "priority_change_requests": (
                     priority_change_requests
                 ),
 
-                "review_flags": review_flags,
+                "review_flags": (
+                    review_flags
+                ),
 
                 "recurring_workstations": (
                     recurring_workstations
                 ),
 
-                "recurring_problems": recurring_problems,
+                "recurring_problems": (
+                    recurring_problems
+                ),
             },
             status=status.HTTP_200_OK,
         )
@@ -11391,6 +11752,76 @@ class SupervisorReportsExcelExportView(APIView):
                 ],
             )
 
+        # ------------------------------------------------------------
+        # Classification Method
+        # ------------------------------------------------------------
+        row += 2
+
+        self.write_section_title(
+            sheet,
+            row,
+            "Ticket Classification Method",
+            2,
+        )
+
+        row += 1
+
+        self.write_headers(
+            sheet,
+            row,
+            [
+                "Classification Method",
+                "Count",
+            ],
+        )
+
+        classification_methods = data.get(
+            "classification_methods",
+            {},
+        )
+
+        classification_rows = [
+            (
+                "Rule-Based",
+                classification_methods.get(
+                    "rule_based",
+                    0,
+                ),
+            ),
+            (
+                "Machine Learning",
+                classification_methods.get(
+                    "machine_learning",
+                    0,
+                ),
+            ),
+            (
+                "Manual Override",
+                classification_methods.get(
+                    "manual_override",
+                    0,
+                ),
+            ),
+            (
+                "Total Classified",
+                classification_methods.get(
+                    "total_classified",
+                    0,
+                ),
+            ),
+        ]
+
+        for classification_method, count in classification_rows:
+            row += 1
+
+            self.write_row(
+                sheet,
+                row,
+                [
+                    classification_method,
+                    count,
+                ],
+            )
         # ------------------------------------------------------------
         # Volume
         # ------------------------------------------------------------

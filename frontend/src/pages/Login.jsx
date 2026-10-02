@@ -271,19 +271,6 @@ export default function Login() {
                         </button>
 
                     </form>
-
-                    <div className="mt-6 text-center">
-
-                        <p className="text-xs text-gray-400">
-                            Having trouble signing in?
-                        </p>
-
-                        <p className="text-xs text-gray-500 mt-1">
-                            Contact IT Service Desk.
-                        </p>
-
-                    </div>
-
                 </div>
             </div>
 
