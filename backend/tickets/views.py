@@ -12665,3 +12665,286 @@ class SupervisorDashboardOverviewView(APIView):
             },
             status=status.HTTP_200_OK,
         )
+
+class SupervisorDashboardOverviewView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        # ---------------------------------------------------------
+        # PERMISSION
+        # ---------------------------------------------------------
+        role = getattr(request.user, "role", None)
+        role_name = role.name if role else None
+
+        if role_name != "IT Supervisor":
+            return Response(
+                {
+                    "detail": (
+                        "Only IT Supervisors can access "
+                        "the supervisor dashboard overview."
+                    )
+                },
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
+        # ---------------------------------------------------------
+        # ACTIVE TICKETS
+        # ---------------------------------------------------------
+        # Supervisor overview covers ALL IT departments.
+        #
+        # Resolved, closed, and cancelled tickets are no longer
+        # considered active.
+        # ---------------------------------------------------------
+        active_tickets = Ticket.objects.exclude(
+            status__in=[
+                "resolved",
+                "closed",
+                "cancelled",
+            ]
+        )
+
+        active_count = active_tickets.count()
+
+        # ---------------------------------------------------------
+        # SLA BREACHED
+        # ---------------------------------------------------------
+        # Count active tickets where either response SLA or
+        # resolution SLA has been breached.
+        #
+        # A ticket is counted once even if BOTH are breached.
+        # ---------------------------------------------------------
+        sla_breached_count = (
+            active_tickets
+            .filter(
+                Q(response_sla_status="BREACHED")
+                | Q(resolution_sla_status="BREACHED")
+            )
+            .distinct()
+            .count()
+        )
+
+        # ---------------------------------------------------------
+        # ESCALATED TICKETS
+        # ---------------------------------------------------------
+        # Active tickets currently marked as escalated.
+        # ---------------------------------------------------------
+        escalated_count = active_tickets.filter(
+            is_escalated=True
+        ).count()
+
+        # ---------------------------------------------------------
+        # TODAY
+        # ---------------------------------------------------------
+        today = timezone.localdate()
+
+        # ---------------------------------------------------------
+        # RESOLVED TODAY
+        # ---------------------------------------------------------
+        # Use resolved_at instead of updated_at so editing an old
+        # resolved ticket today does not make it count as newly
+        # resolved.
+        # ---------------------------------------------------------
+        resolved_today_count = Ticket.objects.filter(
+            resolved_at__date=today
+        ).count()
+
+        # ---------------------------------------------------------
+        # TICKET VOLUME - LAST 7 CALENDAR DAYS
+        # ---------------------------------------------------------
+        # Includes today plus the previous 6 days.
+        #
+        # Missing dates are explicitly returned with total = 0 so
+        # the frontend always receives exactly 7 chart points.
+        # ---------------------------------------------------------
+        start_date = today - timezone.timedelta(
+            days=6
+        )
+
+        volume_rows = (
+            Ticket.objects
+            .filter(
+                created_at__date__gte=start_date,
+                created_at__date__lte=today,
+            )
+            .annotate(
+                created_date=TruncDate(
+                    "created_at"
+                )
+            )
+            .values(
+                "created_date"
+            )
+            .annotate(
+                total=Count("id")
+            )
+            .order_by(
+                "created_date"
+            )
+        )
+
+        volume_map = {
+            row["created_date"]: row["total"]
+            for row in volume_rows
+        }
+
+        ticket_volume = []
+
+        for offset in range(7):
+            current_date = (
+                start_date
+                + timezone.timedelta(
+                    days=offset
+                )
+            )
+
+            ticket_volume.append(
+                {
+                    "date": current_date.isoformat(),
+                    "day": current_date.strftime("%a"),
+                    "total": volume_map.get(
+                        current_date,
+                        0,
+                    ),
+                }
+            )
+
+        # ---------------------------------------------------------
+        # RESPONSE SLA PERFORMANCE
+        # ---------------------------------------------------------
+        # Only finalized response SLA outcomes are included:
+        #
+        # MET / (MET + BREACHED)
+        # ---------------------------------------------------------
+        response_met = Ticket.objects.filter(
+            response_sla_status="MET"
+        ).count()
+
+        response_breached = Ticket.objects.filter(
+            response_sla_status="BREACHED"
+        ).count()
+
+        response_finalized = (
+            response_met
+            + response_breached
+        )
+
+        response_sla = (
+            round(
+                (
+                    response_met
+                    / response_finalized
+                )
+                * 100,
+                1,
+            )
+            if response_finalized
+            else 0
+        )
+
+        # ---------------------------------------------------------
+        # RESOLUTION SLA PERFORMANCE
+        # ---------------------------------------------------------
+        # Only finalized resolution outcomes are included:
+        #
+        # MET / (MET + BREACHED)
+        #
+        # SAFE, WARNING, and CRITICAL are active operational
+        # states, so they are not included in the denominator.
+        # ---------------------------------------------------------
+        resolution_met = Ticket.objects.filter(
+            resolution_sla_status="MET"
+        ).count()
+
+        resolution_breached = Ticket.objects.filter(
+            resolution_sla_status="BREACHED"
+        ).count()
+
+        resolution_finalized = (
+            resolution_met
+            + resolution_breached
+        )
+
+        resolution_sla = (
+            round(
+                (
+                    resolution_met
+                    / resolution_finalized
+                )
+                * 100,
+                1,
+            )
+            if resolution_finalized
+            else 0
+        )
+
+        # ---------------------------------------------------------
+        # OVERALL SLA COMPLIANCE
+        # ---------------------------------------------------------
+        # Combine all finalized response + resolution outcomes.
+        #
+        # Example:
+        #
+        # Response:
+        #   90 MET
+        #   10 BREACHED
+        #
+        # Resolution:
+        #   80 MET
+        #   20 BREACHED
+        #
+        # Overall:
+        #   (90 + 80) / (100 + 100)
+        #   = 85%
+        # ---------------------------------------------------------
+        combined_met = (
+            response_met
+            + resolution_met
+        )
+
+        combined_finalized = (
+            response_finalized
+            + resolution_finalized
+        )
+
+        overall_compliance = (
+            round(
+                (
+                    combined_met
+                    / combined_finalized
+                )
+                * 100,
+                1,
+            )
+            if combined_finalized
+            else 0
+        )
+
+        # ---------------------------------------------------------
+        # RESPONSE
+        # ---------------------------------------------------------
+        return Response(
+            {
+                # Dashboard KPI cards
+                "active_tickets": active_count,
+                "sla_breached": sla_breached_count,
+                "escalated_tickets": escalated_count,
+                "resolved_today": resolved_today_count,
+
+                # Ticket Volume chart
+                "ticket_volume": ticket_volume,
+
+                # SLA Performance card
+                "sla_performance": {
+                    "overall_compliance": (
+                        overall_compliance
+                    ),
+                    "response_sla": (
+                        response_sla
+                    ),
+                    "resolution_sla": (
+                        resolution_sla
+                    ),
+                },
+            },
+            status=status.HTTP_200_OK,
+        )
