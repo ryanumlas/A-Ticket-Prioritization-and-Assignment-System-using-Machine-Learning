@@ -13,46 +13,82 @@ import {
     ArrowLeftRight,
 } from "lucide-react";
 
+import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
+
+import api from "../api";
 import { formatDate } from "../utils/formatDate";
 import { getHistoryColor } from "../utils/historyColor";
 
-export default function RecentStatusHistory() {
-    const history = [
-        {
-            id: 4,
-            event_type: "STATUS_CHANGED",
-            new_value: "in_progress",
-            title: "In Progress",
-            message: "Your ticket is currently being worked on.",
-            created_at: "2026-09-24T14:32:00",
-        },
-        {
-            id: 3,
-            event_type: "ASSIGNED",
-            title: "Assigned",
-            message: "Your ticket was assigned to Adrian Santos.",
-            created_at: "2026-09-24T14:18:00",
-        },
-        {
-            id: 2,
-            event_type: "STATUS_CHANGED",
-            new_value: "open",
-            title: "Open",
-            message: "Your ticket is waiting to be processed.",
-            created_at: "2026-09-24T13:45:00",
-        },
-        {
-            id: 1,
-            event_type: "CREATED",
-            title: "Ticket Submitted",
-            message:
-                "Your support ticket was successfully submitted.",
-            created_at: "2026-09-24T13:20:00",
-        },
-    ];
+export default function RecentStatusHistory({ ticket }) {
+    const navigate = useNavigate();
+
+    const [history, setHistory] = useState([]);
+    const [loading, setLoading] = useState(false);
+    const [error, setError] = useState("");
+
+    useEffect(() => {
+        let cancelled = false;
+
+        const fetchHistory = async () => {
+            if (!ticket?.id) {
+                setHistory([]);
+                setError("");
+                setLoading(false);
+                return;
+            }
+
+            try {
+                setLoading(true);
+                setError("");
+
+                const response = await api.get(
+                    `/tickets/${ticket.id}/history/`
+                );
+
+                if (cancelled) {
+                    return;
+                }
+
+                const historyData = Array.isArray(response.data)
+                    ? response.data
+                    : response.data?.results || [];
+
+                setHistory(historyData);
+            } catch (error) {
+                if (cancelled) {
+                    return;
+                }
+
+                console.error(
+                    "Failed to fetch ticket status history:",
+                    error
+                );
+
+                setHistory([]);
+                setError(
+                    "Unable to load the recent status history."
+                );
+            } finally {
+                if (!cancelled) {
+                    setLoading(false);
+                }
+            }
+        };
+
+        fetchHistory();
+
+        return () => {
+            cancelled = true;
+        };
+    }, [ticket?.id]);
+
+    const recentHistory = history.slice(0, 4);
 
     const latestHistoryId =
-        history.length > 0 ? history[0].id : null;
+        recentHistory.length > 0
+            ? recentHistory[0].id
+            : null;
 
     const getHistoryIcon = (item) => {
         if (item.event_type === "CREATED") {
@@ -192,8 +228,17 @@ export default function RecentStatusHistory() {
         return formatStatus(item.event_type);
     };
 
+    const handleViewFullHistory = () => {
+        if (!ticket?.id) {
+            return;
+        }
+
+        navigate(`/ticket/${ticket.id}`);
+    };
+
     return (
         <div className="flex h-full min-h-[320px] w-full flex-col rounded-xl border border-gray-300 bg-white">
+            {/* Header */}
             <div className="shrink-0 border-b border-gray-200 px-5 py-4 sm:px-6">
                 <div className="flex items-center gap-2">
                     <History
@@ -207,22 +252,72 @@ export default function RecentStatusHistory() {
                 </div>
 
                 <p className="mt-1 text-xs text-gray-500 sm:text-sm">
-                    Track recent updates on your support requests.
+                    {ticket?.ticket_code
+                        ? `Recent updates for ${ticket.ticket_code}.`
+                        : "Track recent updates on your active support request."}
                 </p>
             </div>
 
+            {/* Content */}
             <div className="min-h-0 flex-1 overflow-y-auto p-5 sm:p-6 [&::-webkit-scrollbar]:w-1 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-transparent hover:[&::-webkit-scrollbar-thumb]:bg-gray-300">
-                {history.length === 0 ? (
+                {loading ? (
                     <div className="flex h-full min-h-[220px] items-center justify-center">
-                        <p className="text-sm text-gray-500">
-                            No recent status history available.
-                        </p>
+                        <div className="flex flex-col items-center gap-3 text-center">
+                            <Clock3
+                                size={24}
+                                className="animate-pulse text-gray-400"
+                            />
+
+                            <p className="text-sm text-gray-500">
+                                Loading status history...
+                            </p>
+                        </div>
+                    </div>
+                ) : error ? (
+                    <div className="flex h-full min-h-[220px] items-center justify-center">
+                        <div className="max-w-sm text-center">
+                            <AlertTriangle
+                                size={24}
+                                className="mx-auto text-red-500"
+                            />
+
+                            <p className="mt-3 text-sm font-medium text-gray-700">
+                                {error}
+                            </p>
+                        </div>
+                    </div>
+                ) : !ticket ? (
+                    <div className="flex h-full min-h-[220px] items-center justify-center">
+                        <div className="max-w-sm text-center">
+                            <History
+                                size={24}
+                                className="mx-auto text-gray-400"
+                            />
+
+                            <p className="mt-3 text-sm text-gray-500">
+                                No active ticket status history
+                                available.
+                            </p>
+                        </div>
+                    </div>
+                ) : recentHistory.length === 0 ? (
+                    <div className="flex h-full min-h-[220px] items-center justify-center">
+                        <div className="max-w-sm text-center">
+                            <History
+                                size={24}
+                                className="mx-auto text-gray-400"
+                            />
+
+                            <p className="mt-3 text-sm text-gray-500">
+                                No recent status history available.
+                            </p>
+                        </div>
                     </div>
                 ) : (
                     <div className="relative">
                         <div className="absolute bottom-5 left-[15px] top-5 w-px bg-gray-200" />
 
-                        {history.map((item) => {
+                        {recentHistory.map((item) => {
                             const Icon =
                                 getHistoryIcon(item);
 
@@ -236,15 +331,20 @@ export default function RecentStatusHistory() {
                                 <TimelineItem
                                     key={item.id}
                                     icon={Icon}
-                                    title={getHistoryTitle(item)}
+                                    title={getHistoryTitle(
+                                        item
+                                    )}
                                     description={
                                         item.message ||
+                                        item.remarks ||
                                         "Ticket was updated."
                                     }
                                     date={formatDate(
                                         item.created_at
                                     )}
-                                    colorClass={colorClass}
+                                    colorClass={
+                                        colorClass
+                                    }
                                     current={current}
                                 />
                             );
@@ -253,10 +353,17 @@ export default function RecentStatusHistory() {
                 )}
             </div>
 
+            {/* Footer */}
             <div className="shrink-0 border-t border-gray-200 px-5 py-3.5 sm:px-6">
                 <button
                     type="button"
-                    className="text-sm font-medium text-[#2563EB] transition-colors hover:text-[#1D4ED8]"
+                    onClick={handleViewFullHistory}
+                    disabled={!ticket?.id}
+                    className={`text-sm font-medium transition-colors ${
+                        ticket?.id
+                            ? "cursor-pointer text-[#2563EB] hover:text-[#1D4ED8]"
+                            : "cursor-not-allowed text-gray-400"
+                    }`}
                 >
                     View Full Status History
                 </button>

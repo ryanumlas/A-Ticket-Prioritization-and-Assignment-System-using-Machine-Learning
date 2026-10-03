@@ -119,7 +119,7 @@ export default function EmployeeDashboard() {
 
             {/* Recent Status History */}
             <div className="col-span-12 lg:col-span-7">
-                <RecentStatusHistory />
+                <RecentStatusHistory ticket={currentTicket}/>
             </div>
 
             {/* My Tickets */}
