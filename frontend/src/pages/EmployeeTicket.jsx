@@ -339,7 +339,7 @@ export default function EmployeeTicket() {
                             "
                         >
                             <option value="">
-                                All Statuses
+                                All Status
                             </option>
 
                             <option value="open">
@@ -352,10 +352,6 @@ export default function EmployeeTicket() {
 
                             <option value="under_review">
                                 Under Review
-                            </option>
-
-                            <option value="returned">
-                                Returned
                             </option>
 
                             <option value="resolved">

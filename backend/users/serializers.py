@@ -52,36 +52,51 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
         username = attrs.get("username")
         password = attrs.get("password")
 
+        UserModel = get_user_model()
+
+        existing_user = (
+            UserModel.objects
+            .filter(username=username)
+            .first()
+        )
+
+        # Username does not exist
+        if existing_user is None:
+            raise serializers.ValidationError(
+                {
+                    "username": "Username does not exist"
+                }
+            )
+
+        # Check inactive account before authenticate(),
+        # because Django may reject inactive users automatically.
+        if not existing_user.is_active:
+            raise serializers.ValidationError(
+                {
+                    "account": (
+                        "Your account has been deactivated. "
+                        "Please contact the IT Support."
+                    )
+                }
+            )
+
+        # Now authenticate the active user
         user = authenticate(
             username=username,
             password=password
         )
 
         if user is None:
-            User = get_user_model()
-
-            if not User.objects.filter(username=username).exists():
-                raise serializers.ValidationError(
-                    {
-                        "username": "Username does not exist"
-                    }
-                )
-            else:
-                raise serializers.ValidationError(
-                    {
-                        "password": "Incorrect Password"
-                    }
-                )
-
-        if not user.is_active:
             raise serializers.ValidationError(
                 {
-                    "account": "Account is inactive"
+                    "password": "Incorrect Password"
                 }
             )
 
         user.last_login = timezone.now()
-        user.save(update_fields=["last_login"])
+        user.save(
+            update_fields=["last_login"]
+        )
 
         AuditLogs.objects.create(
             user=user,
@@ -827,6 +842,7 @@ class AdminUserCreateSerializer(serializers.ModelSerializer):
 
         return user
 class AdminUserUpdateSerializer(serializers.ModelSerializer):
+    
     email = serializers.EmailField(
         required=False,
         allow_blank=True,
@@ -860,6 +876,7 @@ class AdminUserUpdateSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = [
+            "username",
             "first_name",
             "last_name",
             "email",
@@ -869,6 +886,27 @@ class AdminUserUpdateSerializer(serializers.ModelSerializer):
             "office_location",
             "specializations",
         ]
+
+    def validate_username(self, value):
+        value = value.strip()
+
+        if not value:
+            raise serializers.ValidationError(
+                "Username is required."
+            )
+
+        duplicate = (
+            User.objects
+            .filter(username__iexact=value)
+            .exclude(pk=self.instance.pk)
+        )
+
+        if duplicate.exists():
+            raise serializers.ValidationError(
+                "Username is already in use."
+            )
+
+        return value
 
     def validate_email(self, value):
         if value is None:
@@ -994,6 +1032,10 @@ class AdminUserUpdateSerializer(serializers.ModelSerializer):
         it_department = validated_data.pop("it_department")
         office_location = validated_data.pop("office_location")
         specializations = validated_data.pop("specializations")
+        instance.username = validated_data.get(
+            "username",
+            instance.username,
+        ).strip()
 
         instance.first_name = validated_data.get(
             "first_name",

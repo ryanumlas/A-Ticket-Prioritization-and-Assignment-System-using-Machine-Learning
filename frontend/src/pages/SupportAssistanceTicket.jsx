@@ -364,7 +364,7 @@ export default function SupportAssistanceTickets() {
                                 "
                             >
                                 <option value="">
-                                    All Statuses
+                                    All Status
                                 </option>
 
                                 <option value="open">
@@ -377,10 +377,6 @@ export default function SupportAssistanceTickets() {
 
                                 <option value="in_progress">
                                     In Progress
-                                </option>
-
-                                <option value="returned">
-                                    Returned
                                 </option>
 
                                 <option value="resolved">

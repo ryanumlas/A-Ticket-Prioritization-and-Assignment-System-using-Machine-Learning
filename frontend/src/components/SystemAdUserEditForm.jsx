@@ -161,7 +161,7 @@ export default function SystemAdUserEditForm({
     const handleSubmit = async (event) => {
         event.preventDefault();
 
-        if (!form.first_name.trim() || !form.last_name.trim() || !form.role) {
+        if (!form.username.trim() || !form.first_name.trim() || !form.last_name.trim() || !form.role) {
             toast.error("Complete the required user fields.");
             return;
         }
@@ -181,6 +181,7 @@ export default function SystemAdUserEditForm({
         setSaving(true);
         try {
             await api.patch(`/users/admin/${userId}/update/`, {
+                username: form.username.trim(),
                 first_name: form.first_name.trim(),
                 last_name: form.last_name.trim(),
                 email: form.email.trim(),
@@ -235,9 +236,12 @@ export default function SystemAdUserEditForm({
                     <label className={labelClassName}>
                         Username
                         <input
+                            name="username"
                             value={form.username}
-                            readOnly
-                            className={`${inputClassName} bg-gray-50 text-gray-500`}
+                            onChange={handleChange}
+                            required
+                            autoComplete="username"
+                            className={inputClassName}
                         />
                     </label>
                     <label className={labelClassName}>

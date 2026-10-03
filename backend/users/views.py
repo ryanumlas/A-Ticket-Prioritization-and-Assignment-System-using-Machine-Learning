@@ -993,3 +993,95 @@ class SpecializationOptionsView(APIView):
         )
 
         return Response(serializer.data)
+
+class AdminUserStatusUpdateView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    @transaction.atomic
+    def patch(self, request, user_id):
+        if (
+            not request.user.role
+            or request.user.role.name != "System Administrator"
+        ):
+            return Response(
+                {
+                    "detail":
+                        "You do not have permission to change user status."
+                },
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
+        user = get_object_or_404(User, id=user_id)
+
+        if user.pk == request.user.pk:
+            return Response(
+                {
+                    "detail":
+                        "You cannot deactivate your own account."
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        is_active = request.data.get("is_active")
+
+        if not isinstance(is_active, bool):
+            return Response(
+                {
+                    "detail":
+                        "is_active must be true or false."
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        if user.is_active == is_active:
+            return Response(
+                {
+                    "message": (
+                        "User is already active."
+                        if is_active
+                        else "User is already inactive."
+                    ),
+                    "is_active": user.is_active,
+                },
+                status=status.HTTP_200_OK,
+            )
+
+        user.is_active = is_active
+        user.updated_by = request.user
+
+        user.save(
+            update_fields=[
+                "is_active",
+                "updated_by",
+                "updated_at",
+            ]
+        )
+
+        AuditLogs.objects.create(
+            user=user,
+            module="User Management",
+            action=(
+                "USER_ACTIVATED"
+                if is_active
+                else "USER_DEACTIVATED"
+            ),
+            reference_id=user.user_code or str(user.id),
+            remarks=(
+                "User account was activated."
+                if is_active
+                else "User account was deactivated."
+            ),
+            created_by=request.user,
+        )
+
+        return Response(
+            {
+                "message": (
+                    "User activated successfully."
+                    if is_active
+                    else "User deactivated successfully."
+                ),
+                "is_active": user.is_active,
+            },
+            status=status.HTTP_200_OK,
+        )

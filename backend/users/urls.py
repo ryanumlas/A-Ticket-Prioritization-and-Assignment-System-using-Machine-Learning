@@ -1,7 +1,7 @@
 from django.urls import path
-from django.urls import path
 
 from .views import (
+    AdminUserStatusUpdateView,
     CreateITSupportProfileView,
     MyAvailabilityUpdateView,
     MyProfileView,
@@ -67,7 +67,11 @@ urlpatterns = [
     path("notifications/list/",NotificationListView.as_view(), name="notification-list",),
     path("notifications/unread-count/",NotificationUnreadCountView.as_view(), name="notification-unread-count",),
     path("notifications/<int:pk>/read/",NotificationMarkReadView.as_view(), name="notification-mark-read",),
-
+    path(
+        "admin/<int:user_id>/status/",
+        AdminUserStatusUpdateView.as_view(),
+        name="admin-user-status-update",
+    ),
     path(
         "profile/",
         MyProfileView.as_view(),

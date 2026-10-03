@@ -533,8 +533,15 @@ function getDetails(log) {
     const action = log.action || "";
 
     const details = {
+        // ============================================================
+        // TICKET
+        // ============================================================
+
         TICKET_CREATED:
             "Ticket has been created.",
+
+        TICKET_RESUBMITTED:
+            "Ticket has been resubmitted after clarification.",
 
         UPDATE:
             "Ticket information has been updated.",
@@ -548,8 +555,37 @@ function getDetails(log) {
         REASSIGNED:
             "Ticket has been reassigned.",
 
+        USER_DEACTIVATED:
+            "User account has been deactivated.",
+
+        USER_ACTIVATED:
+            "User account has been activated.",
+
+        // ============================================================
+        // PRIORITY
+        // ============================================================
+
         PRIORITY_CHANGED:
             "Ticket priority has been changed.",
+
+        PRIORITY_REVIEW_REQUESTED:
+            "Priority review has been requested.",
+
+        PRIORITY_REVIEW:
+            "Priority review has been requested.",
+
+        PRIORITY_REJECTED:
+            "Priority change request has been rejected.",
+
+        "Accepted Priority Assessment":
+            "The ticket priority assessment has been accepted by the Service Desk.",
+
+        "Overrode Priority Assessment":
+            "The ticket priority assessment has been overridden by the Service Desk.",
+
+        // ============================================================
+        // RETURN REQUEST
+        // ============================================================
 
         RETURNED:
             "Ticket has been returned to the Service Desk.",
@@ -560,17 +596,29 @@ function getDetails(log) {
         RETURN_REJECTED:
             "Ticket return request has been rejected.",
 
+        // ============================================================
+        // REVIEW
+        // ============================================================
+
         REVIEW_COMPLETED:
             "Ticket review has been completed.",
 
-        PRIORITY_REVIEW_REQUESTED:
-            "Priority review has been requested.",
+        // ============================================================
+        // REOPEN REQUEST
+        // ============================================================
 
-        PRIORITY_REVIEW:
-            "Priority review has been requested.",
+        REOPEN_REQUESTED:
+            "A request to reopen the resolved ticket has been submitted.",
 
-        PRIORITY_REJECTED:
-            "Priority change request has been rejected.",
+        REOPEN_APPROVED:
+            "The ticket reopen request has been approved.",
+
+        REOPEN_REJECTED:
+            "The ticket reopen request has been rejected.",
+
+        // ============================================================
+        // ESCALATION
+        // ============================================================
 
         ESCALATED:
             "Ticket has been escalated for Supervisor review.",
@@ -584,6 +632,26 @@ function getDetails(log) {
         ESCALATION_COMPLETED:
             "Ticket escalation has been completed by the IT Supervisor.",
 
+        // ============================================================
+        // ASSISTANCE
+        // ============================================================
+
+        ASSISTANCE_REQUESTED:
+            "Assistance from another IT Support Specialist has been requested.",
+
+        ASSISTANCE_REQUEST_CANCELLED:
+            "The assistance request has been cancelled.",
+
+        ASSISTANCE_ACCEPTED:
+            "The assistance request has been accepted by an IT Support Specialist.",
+
+        ASSISTANCE_COMPLETED:
+            "Assistance for the ticket has been completed.",
+
+        // ============================================================
+        // AUTHENTICATION
+        // ============================================================
+
         LOGIN:
             "User has logged in.",
 
@@ -591,19 +659,37 @@ function getDetails(log) {
             "User has logged out.",
     };
 
+    // Use the backend remarks whenever possible.
+    // This gives the user more specific information about the activity.
+    if (log.remarks && String(log.remarks).trim()) {
+        return String(log.remarks).trim();
+    }
+
     return (
         details[action] ||
         "System activity recorded."
     );
 }
 
+
 function ActionBadge({ action }) {
     const config = {
+        // ============================================================
+        // TICKET
+        // ============================================================
+
         TICKET_CREATED: {
             label: "Created",
             icon: <CheckCircle2 size={14} />,
             className:
                 "border-green-300 bg-green-50 text-green-700",
+        },
+
+        TICKET_RESUBMITTED: {
+            label: "Resubmitted",
+            icon: <ArrowRight size={14} />,
+            className:
+                "border-blue-300 bg-blue-50 text-blue-700",
         },
 
         UPDATE: {
@@ -620,6 +706,20 @@ function ActionBadge({ action }) {
                 "border-blue-300 bg-blue-50 text-blue-700",
         },
 
+        USER_DEACTIVATED: {
+            label: "User Deactivated",
+            icon: <User size={14} />,
+            className:
+                "border-red-300 bg-red-50 text-red-700",
+        },
+
+        USER_ACTIVATED: {
+            label: "User Activated",
+            icon: <User size={14} />,
+            className:
+                "border-green-300 bg-green-50 text-green-700",
+        },
+
         ASSIGNED: {
             label: "Assigned",
             icon: <User size={14} />,
@@ -634,39 +734,15 @@ function ActionBadge({ action }) {
                 "border-indigo-300 bg-indigo-50 text-indigo-700",
         },
 
+        // ============================================================
+        // PRIORITY
+        // ============================================================
+
         PRIORITY_CHANGED: {
             label: "Priority Changed",
             icon: <AlertCircle size={14} />,
             className:
                 "border-amber-300 bg-amber-50 text-amber-700",
-        },
-
-        RETURNED: {
-            label: "Returned",
-            icon: <ArrowRight size={14} />,
-            className:
-                "border-orange-300 bg-orange-50 text-orange-700",
-        },
-
-        RETURN_APPROVED: {
-            label: "Return Approved",
-            icon: <CheckCircle2 size={14} />,
-            className:
-                "border-green-300 bg-green-50 text-green-700",
-        },
-
-        RETURN_REJECTED: {
-            label: "Return Rejected",
-            icon: <AlertCircle size={14} />,
-            className:
-                "border-red-300 bg-red-50 text-red-700",
-        },
-
-        REVIEW_COMPLETED: {
-            label: "Review Completed",
-            icon: <CheckCircle2 size={14} />,
-            className:
-                "border-green-300 bg-green-50 text-green-700",
         },
 
         PRIORITY_REVIEW_REQUESTED: {
@@ -690,7 +766,93 @@ function ActionBadge({ action }) {
                 "border-red-300 bg-red-50 text-red-700",
         },
 
+        "Accepted Priority Assessment": {
+            label: "Priority Accepted",
+            icon: <CheckCircle2 size={14} />,
+            className:
+                "border-green-300 bg-green-50 text-green-700",
+        },
+
+        "Overrode Priority Assessment": {
+            label: "Priority Overridden",
+            icon: <AlertCircle size={14} />,
+            className:
+                "border-amber-300 bg-amber-50 text-amber-700",
+        },
+
+        // ============================================================
+        // RETURN
+        // ============================================================
+
+        RETURNED: {
+            label: "Returned",
+            icon: <ArrowRight size={14} />,
+            className:
+                "border-orange-300 bg-orange-50 text-orange-700",
+        },
+
+        RETURN_APPROVED: {
+            label: "Return Approved",
+            icon: <CheckCircle2 size={14} />,
+            className:
+                "border-green-300 bg-green-50 text-green-700",
+        },
+
+        RETURN_REJECTED: {
+            label: "Return Rejected",
+            icon: <AlertCircle size={14} />,
+            className:
+                "border-red-300 bg-red-50 text-red-700",
+        },
+
+        // ============================================================
+        // REVIEW
+        // ============================================================
+
+        REVIEW_COMPLETED: {
+            label: "Review Completed",
+            icon: <CheckCircle2 size={14} />,
+            className:
+                "border-green-300 bg-green-50 text-green-700",
+        },
+
+        // ============================================================
+        // REOPEN
+        // ============================================================
+
+        REOPEN_REQUESTED: {
+            label: "Reopen Requested",
+            icon: <Clock3 size={14} />,
+            className:
+                "border-amber-300 bg-amber-50 text-amber-700",
+        },
+
+        REOPEN_APPROVED: {
+            label: "Reopen Approved",
+            icon: <CheckCircle2 size={14} />,
+            className:
+                "border-green-300 bg-green-50 text-green-700",
+        },
+
+        REOPEN_REJECTED: {
+            label: "Reopen Rejected",
+            icon: <AlertCircle size={14} />,
+            className:
+                "border-red-300 bg-red-50 text-red-700",
+        },
+
+        // ============================================================
+        // ESCALATION
+        // ============================================================
+
         ESCALATED: {
+            label: "Escalated",
+            icon: <AlertCircle size={14} />,
+            className:
+                "border-red-300 bg-red-50 text-red-700",
+        },
+
+        "Ticket Escalated": {
             label: "Escalated",
             icon: <AlertCircle size={14} />,
             className:
@@ -711,6 +873,42 @@ function ActionBadge({ action }) {
                 "border-green-300 bg-green-50 text-green-700",
         },
 
+        // ============================================================
+        // ASSISTANCE
+        // ============================================================
+
+        ASSISTANCE_REQUESTED: {
+            label: "Assistance Requested",
+            icon: <User size={14} />,
+            className:
+                "border-blue-300 bg-blue-50 text-blue-700",
+        },
+
+        ASSISTANCE_REQUEST_CANCELLED: {
+            label: "Assistance Cancelled",
+            icon: <AlertCircle size={14} />,
+            className:
+                "border-gray-300 bg-gray-100 text-gray-700",
+        },
+
+        ASSISTANCE_ACCEPTED: {
+            label: "Assistance Accepted",
+            icon: <CheckCircle2 size={14} />,
+            className:
+                "border-green-300 bg-green-50 text-green-700",
+        },
+
+        ASSISTANCE_COMPLETED: {
+            label: "Assistance Completed",
+            icon: <CheckCircle2 size={14} />,
+            className:
+                "border-green-300 bg-green-50 text-green-700",
+        },
+
+        // ============================================================
+        // AUTHENTICATION
+        // ============================================================
+
         LOGIN: {
             label: "Login",
             icon: <Clock3 size={14} />,
@@ -728,7 +926,7 @@ function ActionBadge({ action }) {
 
     const current =
         config[action] || {
-            label: action || "Activity",
+            label: formatUnknownAction(action),
             icon: <FileText size={14} />,
             className:
                 "border-gray-300 bg-gray-100 text-gray-700",
@@ -748,10 +946,12 @@ function ActionBadge({ action }) {
                 text-xs
                 font-medium
                 ${current.className}
+
                 min-[1280px]:max-[1365px]:gap-1
                 min-[1280px]:max-[1365px]:px-1.5
                 min-[1280px]:max-[1365px]:py-0.5
                 min-[1280px]:max-[1365px]:text-[10px]
+
                 min-[1366px]:max-[1537px]:gap-1
                 min-[1366px]:max-[1537px]:px-1.5
                 min-[1366px]:max-[1537px]:py-0.5
@@ -774,6 +974,22 @@ function ActionBadge({ action }) {
             </span>
         </span>
     );
+}
+
+
+function formatUnknownAction(action) {
+    if (!action) {
+        return "Activity";
+    }
+
+    return String(action)
+        .replace(/_/g, " ")
+        .replace(/\s+/g, " ")
+        .trim()
+        .toLowerCase()
+        .replace(/\b\w/g, (character) =>
+            character.toUpperCase()
+        );
 }
 
 function RoleBadge({ role }) {

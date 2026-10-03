@@ -123,7 +123,7 @@ export default function SystemAdUserList() {
 
     const handleToggleStatus = async (user) => {
         try {
-            await api.patch(
+            const response = await api.patch(
                 `/users/admin/${user.id}/status/`,
                 {
                     is_active: !user.is_active,
@@ -131,14 +131,20 @@ export default function SystemAdUserList() {
             );
 
             toast.success(
-                user.is_active
-                    ? "User deactivated successfully."
-                    : "User activated successfully."
+                response.data?.message ||
+                    (
+                        user.is_active
+                            ? "User deactivated successfully."
+                            : "User activated successfully."
+                    )
             );
 
-            fetchUsers();
-        } catch {
-            toast.error("Failed to update user status.");
+            await fetchUsers();
+        } catch (error) {
+            toast.error(
+                error.response?.data?.detail ||
+                    "Failed to update user status."
+            );
         }
     };
 

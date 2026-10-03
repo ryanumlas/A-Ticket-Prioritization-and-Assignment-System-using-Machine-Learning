@@ -318,10 +318,6 @@ export default function SupportTicket() {
                                     Under Review
                                 </option>
 
-                                <option value="returned">
-                                    Returned
-                                </option>
-
                                 <option value="resolved">
                                     Resolved
                                 </option>

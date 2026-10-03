@@ -207,7 +207,7 @@ export default function SupportAssistanceQueue() {
                                 className="h-10 cursor-pointer rounded-lg border border-gray-300 bg-white px-3 text-sm text-gray-700 outline-none transition focus:border-[#2563EB] focus:ring-2 focus:ring-blue-100 min-[1366px]:max-[1535px]:h-9 min-[1366px]:max-[1535px]:px-2 min-[1366px]:max-[1535px]:text-xs"
                             >
                                 <option value="">
-                                    All Ticket Status
+                                    All Status
                                 </option>
 
                                 <option value="open">
@@ -220,10 +220,6 @@ export default function SupportAssistanceQueue() {
 
                                 <option value="under_review">
                                     Under Review
-                                </option>
-
-                                <option value="returned">
-                                    Returned
                                 </option>
 
                                 <option value="resolved">

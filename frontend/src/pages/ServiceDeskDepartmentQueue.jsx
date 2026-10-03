@@ -368,9 +368,6 @@ export default function ServiceDeskDepartmentQueue() {
                                             <option value="under_review">
                                                 Under Review
                                             </option>
-                                            <option value="returned">
-                                                Returned
-                                            </option>
                                             <option value="resolved">
                                                 Resolved
                                             </option>
